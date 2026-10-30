@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>千手院 · QIANSHOU LAB</title>
-<meta name="description" content="千手院（QIANSHOU LAB）：赛博禅宗硬核造物所。不求香火，只渡被繁文缛节折磨的苦命打工人。">
+<meta name="description" content="千手院（QIANSHOU LAB）：赛博禅宗 · 硬核造物所。不求香火，不超亡魂，专渡世间苦命打工人。">
 <meta property="og:title" content="千手院 · QIANSHOU LAB">
-<meta property="og:description" content="赛博禅宗硬核造物所。不求香火，只渡被繁文缛节折磨的苦命打工人。">
+<meta property="og:description" content="赛博禅宗 · 硬核造物所。入我千手院，凡事尽释手；千僧替牛马，施主自风流。">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#04050d" id="theme">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFB547'/%3E%3Cstop offset='1' stop-color='%23EF6A1A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23s)'/%3E%3Cpath d='M37.5 17A16 16 0 1 0 47.5 27.9' fill='none' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -42,10 +42,17 @@
     text-shadow: 0 0 16px rgba(255, 176, 80, .8), 0 0 48px rgba(255, 120, 40, .5);
   }
   .en { margin-top: 14px; font-size: 12px; font-weight: 600; letter-spacing: .55em; margin-right: -.55em; color: var(--gold); opacity: .9; }
-  .tag { position: absolute; left: 50%; bottom: 14vh; transform: translateX(-50%); white-space: nowrap;
+  .foot-a { position: absolute; left: 0; right: 0; bottom: 12vh; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .tag { white-space: nowrap;
          padding: 6px 18px 6px 24px; border-radius: 999px; background: rgba(4, 5, 13, .55);
          -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1px solid rgba(255, 196, 107, .18);
          color: #F1E4CC; font-size: 16px; letter-spacing: .3em; }
+  .gatha { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "SimSun", serif;
+           color: #FFE2AE; font-size: 15px; letter-spacing: .18em; line-height: 1.9; margin: 0 14px;
+           padding: 6px 14px 6px 20px; border-radius: 14px; background: rgba(4, 5, 13, .55);
+           -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1px solid rgba(255, 196, 107, .12);
+           text-shadow: 0 0 12px rgba(255, 150, 60, .5); }
+  .gatha span { display: inline-block; }
   .hint { position: absolute; left: 50%; bottom: 24px; width: 26px; height: 40px; margin-left: -13px; border-radius: 13px;
           border: 1.5px solid rgba(255, 196, 107, .55); }
   .hint::after { content: ""; position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px; border-radius: 2px;
@@ -80,7 +87,9 @@
   footer a { color: var(--muted); }
 
   @media (max-width: 560px) {
-    .tag { font-size: 15px; letter-spacing: .2em; bottom: 13vh; }
+    .tag { font-size: 15px; letter-spacing: .2em; }
+    .foot-a { bottom: 11vh; gap: 10px; }
+    .gatha { font-size: 14px; letter-spacing: .12em; }
     .card { padding: 22px 20px; border-radius: 18px; }
     .card p { font-size: 16px; }
     h2, .sec-title { font-size: 22px; }
@@ -141,6 +150,14 @@
   .en { margin-top: 18px; font-family: var(--mono); font-size: 13px; letter-spacing: .6em; padding-left: .6em; color: var(--cyan);
         text-shadow: 0 0 10px rgba(0, 240, 255, .7); }
   .tag { margin-top: 10px; font-size: 16px; letter-spacing: .32em; padding-left: .32em; color: #FFD3E8; }
+  .gatha { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "SimSun", serif;
+           font-size: 15px; letter-spacing: .2em; line-height: 1.9; color: #E8F9FF;
+           text-shadow: 0 0 8px rgba(0, 240, 255, .75), 0 0 22px rgba(255, 46, 136, .5); }
+  .gatha span { display: inline-block; }
+  .g-top { display: none; margin-top: 14px; padding: 0 16px; }
+  .g-bot { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); white-space: nowrap;
+           padding: 5px 16px 5px 22px; border-radius: 6px; background: rgba(11, 2, 33, .6);
+           -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1px solid rgba(0, 240, 255, .25); }
   .hint { position: absolute; left: 0; right: 0; bottom: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .4em;
           color: rgba(255, 255, 255, .7); animation: pulse 2s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .35; } }
@@ -179,6 +196,9 @@
   @media (max-width: 560px) {
     .hero-in { top: 9vh; }
     .tag { font-size: 14px; letter-spacing: .2em; }
+    .gatha { font-size: 14px; letter-spacing: .12em; }
+    .g-top { display: block; }
+    .g-bot { display: none; }
     .card { padding: 22px 20px; }
     .card p { font-size: 16px; }
     h2, .sec-title { font-size: 22px; }
@@ -211,15 +231,20 @@
       <div class="title">千手院</div>
       <div class="en">QIANSHOU LAB</div>
     </div>
-    <div class="tag">赛博禅宗硬核造物所</div>
+    <div class="foot-a">
+      <div class="tag">赛博禅宗 · 硬核造物所</div>
+      <div class="gatha"><span>「 入我千手院，凡事尽释手；</span><span>千僧替牛马，施主自风流。 」</span></div>
+    </div>
     <div class="hint" aria-hidden="true"></div>
   </header>
   <header class="hero hero-b" id="hero">
     <div class="hero-in">
       <div class="title" data-t="千手院">千手院</div>
       <div class="en">QIANSHOU LAB</div>
-      <div class="tag">赛博禅宗硬核造物所</div>
+      <div class="tag">赛博禅宗 · 硬核造物所</div>
+      <div class="gatha g-top"><span>「 入我千手院，凡事尽释手；</span><span>千僧替牛马，施主自风流。 」</span></div>
     </div>
+    <div class="gatha g-bot"><span>「 入我千手院，凡事尽释手；</span><span>千僧替牛马，施主自风流。 」</span></div>
     <div class="hint" aria-hidden="true">▼ 往下滑 · 进山门</div>
   </header>
 
@@ -227,8 +252,8 @@
     <div class="card">
       <div class="label">// TEMPLE.INFO</div>
       <h2>🛕 寺院简介</h2>
-      <p>本院全称千手院（QIANSHOU LAB），乃世间罕见的赛博禅宗硬核造物所。</p>
-      <p>世人皆苦于填表、核对、录入与内耗，众生皆为牛马。本院不求香火，不度化亡魂，只渡被繁文缛节折磨的苦命打工人。院内千百尊赛博罗汉（录入僧、鬼画符僧、算账僧……）昼夜不休、各显神通，专替凡间施主挡下一切烂表、废字、穷极无聊的表格大劫。</p>
+      <p>众生皆苦于填表、核对、录入与内耗，朝九晚九，沦为牛马。</p>
+      <p>本院不求香火，不超亡魂，专渡世间苦命打工人。院内千百尊赛博罗汉，昼夜不休、各显神通，专替凡间施主挡下一切烂表、废字与人间苦役。</p>
     </div>
   </section>
 
@@ -247,9 +272,9 @@
       <div>
         <div class="name">录入僧</div>
         <div class="sub">施主去玩，贫僧填表</div>
-        <div class="what">照片丢进文件夹，Excel 表自己出来。Windows 电脑版。</div>
+        <div class="what">照片往文件夹里一丢，Excel 表自己长出来。专治车间刀单、流水杂表。<span style="white-space:nowrap">（Windows 电脑版）</span></div>
       </div>
-      <span class="go">进去看看 ›</span>
+      <span class="go">请他干活 ›</span>
     </a>
   </section>
 
@@ -257,14 +282,14 @@
     <div class="card">
       <div class="label">// ABBOT.ID</div>
       <h2>🧘 方丈法号：释手</h2>
-      <p>世人入佛门，讲究的是“放不下”；而本院方丈修的是“彻底撒手”。</p>
-      <p>正因为本院有千手千眼的AI矩阵代劳，方丈与诸位施主才得以将尘世间的一切苦役“释手”不管。</p>
+      <p>世人苦修，难在“放不下”；本院坐禅，赢在“早撒手”。</p>
+      <p>老衲法号“释手”。正因院内有千手千眼的 AI 罗汉替人当牛做马，方丈与诸位施主才得以将尘世苦役彻底“释手”，安心下山快活。</p>
     </div>
   </section>
 
   <footer>
     <span>千手院 · QIANSHOU LAB</span>
-    <span>找方丈：<a id="mail" href="#">发邮件</a></span>
+    <span>有烂活找方丈：<a id="mail" href="#">飞鸽传书（发邮件）</a></span>
   </footer>
 </main>
 
@@ -273,7 +298,7 @@
     var mail = document.getElementById('mail');
     var addr = ['oilsongchengmin', 'gmail.com'].join('@');       // 拼起来写，少招点垃圾邮件
     mail.href = 'mailto:' + addr + '?subject=' + encodeURIComponent('千手院');
-    mail.textContent = addr;
+    mail.title = addr;
   })();
 </script>
 <script type="module">
