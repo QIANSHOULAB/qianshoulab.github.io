@@ -98,8 +98,8 @@ if (renderer) {
       }`,
   });
 
-  const layers = [];
-  LAYERS.forEach((L, li) => {
+  const layers = [], spins = [];
+  function addLayer(L, li, spin) {
     const g = new THREE.Group();
     const pos = [], col = [], eyes = [], phases = [], sizes = [], tipCols = [];
     const tip = new THREE.Color(L.tip), mid = new THREE.Color(0x8a4c16), dark = new THREE.Color(0x000000);
@@ -132,7 +132,16 @@ if (renderer) {
     g.add(new THREE.Points(eg, eyeMat));
     halo.add(g);
     layers.push(g);
-  });
+    spins.push(spin);
+    return g;
+  }
+  LAYERS.forEach((L, li) => addLayer(L, li, 0.018 + 0.01 * li));
+  // 横着的屏幕（电脑）再伸两圈长手，铺到屏幕左右两边；手机竖着用不上，藏起来
+  const WIDE = [
+    { n: 420, r0: 3.75, r1: 9.0, z: -3.6, tip: 0x9fe8ff },
+    { n: 520, r0: 3.95, r1: 12.0, z: -4.6, tip: 0xffd28a },
+  ];
+  const wide = WIDE.map((L, i) => addLayer(L, LAYERS.length + i, 0.03 - 0.006 * i));
 
   // 满天星
   {
@@ -164,16 +173,33 @@ if (renderer) {
     size: 0.32, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   })));
 
+  // 镜头离多远：禅圈在屏幕上占多大由页面里的 qsRing() 定（「千手院」三个字也照它定大小，所以永远站在圈里）
+  const TAN = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   let baseZ = 14;
   function resize() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    baseZ = camera.aspect < 0.8 ? 17.5 : 14;
+    const f = window.qsRing ? window.qsRing() : (camera.aspect < 0.8 ? 0.2819 : 0.35);
+    baseZ = camera.aspect < 0.8 ? 17.5 : 2.3 / (f * TAN);
+    // 离镜头那么远、半径 r 的一圈，在屏幕上半径几像素
+    const px = (r, z) => r * (h / 2) / ((baseZ - z) * TAN);
+    if (camera.aspect < 0.8) {
+      wide.forEach((g) => { g.visible = false; });      // 手机竖着：照旧
+    } else {
+      // 两圈长手：外圈手尖伸出屏幕左右边一点，里圈落在里头那团手和屏幕边中间
+      const edge = 1.06 * w / 2, inner = px(8.7, -2.7);
+      [(inner + edge) / 2, edge].forEach((target, i) => {
+        const k = Math.max(1, target / px(WIDE[i].r1, WIDE[i].z));
+        wide[i].scale.set(k, k, 1);
+        wide[i].visible = true;
+      });
+    }
     camera.updateProjectionMatrix();
   }
   resize();
   window.addEventListener('resize', resize);
+  if (document.fonts) document.fonts.ready.then(resize);   // 字体到了「赛博禅宗」那块高度会变一点
 
   let tx = 0, ty = 0, rx = 0, ry = 0;
   window.addEventListener('pointermove', (e) => {
@@ -192,7 +218,7 @@ if (renderer) {
     ry += (ty - ry) * 0.05;
     halo.rotation.x = rx + Math.sin(t * 0.2) * 0.06;
     halo.rotation.y = ry + Math.cos(t * 0.17) * 0.05;
-    layers.forEach((g, i) => { g.rotation.z = t * (i % 2 ? -1 : 1) * (0.018 + 0.01 * i); });
+    layers.forEach((g, i) => { g.rotation.z = t * (i % 2 ? -1 : 1) * spins[i]; });
     enso.rotation.z = Math.PI * 0.3 + Math.sin(t * 0.35) * 0.06;
     bloom.material.opacity = 0.85 + Math.sin(t * 1.3) * 0.15;
     eyeMat.uniforms.uTime.value = t;
