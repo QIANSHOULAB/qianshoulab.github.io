@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>千手院 · QIANSHOU LAB</title>
+<meta name="description" content="千手院（QIANSHOU LAB）：赛博禅宗硬核造物所。不求香火，只渡被繁文缛节折磨的苦命打工人。">
+<meta property="og:title" content="千手院 · QIANSHOU LAB">
+<meta property="og:description" content="赛博禅宗硬核造物所。不求香火，只渡被繁文缛节折磨的苦命打工人。">
+<meta property="og:type" content="website">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFB547'/%3E%3Cstop offset='1' stop-color='%23EF6A1A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23s)'/%3E%3Cpath d='M37.5 17A16 16 0 1 0 47.5 27.9' fill='none' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --card: #FFFDFB;
+    --line: #EFE6DA;
+    --text: #1D1D1F;
+    --grey: #7A746C;
+    --accent: #E8661A;
+    --blue: #007AFF;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, #FCEEDD 0%, #FBF4EB 420px, #F7F5F2 100%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei",
+                 "Segoe UI", "Noto Sans CJK SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.75;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+
+  .hero { padding: 72px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; }
+  .icon { width: 96px; height: 96px; display: block; filter: drop-shadow(0 12px 20px rgba(232, 102, 26, .28)); }
+  h1 { font-size: 52px; line-height: 1.05; margin: 0; letter-spacing: .06em; }
+  .en { margin-top: 8px; font-size: 13px; font-weight: 600; letter-spacing: .32em; color: var(--accent); }
+  .tagline { margin-top: 6px; color: var(--grey); font-size: 18px; }
+
+  section { padding: 56px 0 0; }
+  h2 { font-size: 26px; margin: 0 0 16px; letter-spacing: .02em; }
+  .text p { margin: 0 0 12px; font-size: 17px; max-width: 760px; }
+
+  .monk {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px;
+    color: var(--text); box-shadow: 0 16px 40px -28px rgba(120, 70, 20, .45);
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+  }
+  .monk:hover { transform: translateY(-2px); border-color: #F2C9A6; box-shadow: 0 22px 44px -26px rgba(120, 70, 20, .5); }
+  .monk svg { width: 64px; height: 64px; display: block; }
+  .monk .name { font-size: 22px; font-weight: 700; }
+  .monk .sub { color: var(--grey); font-size: 15px; }
+  .monk .what { font-size: 15px; margin-top: 4px; color: #3A3A3C; }
+  .monk .go { color: var(--blue); font-weight: 600; font-size: 16px; white-space: nowrap; }
+
+  .abbot { border-left: 3px solid var(--accent); padding: 2px 0 2px 20px; }
+  .abbot p:last-child { margin-bottom: 0; }
+
+  footer { margin: 72px 0 0; padding: 24px 0 40px; border-top: 1px solid var(--line); color: var(--grey); font-size: 14px;
+           display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: space-between; }
+  footer a { color: var(--grey); }
+
+  @media (max-width: 560px) {
+    .hero { padding-top: 44px; grid-template-columns: 1fr; gap: 16px; }
+    .icon { width: 72px; height: 72px; }
+    h1 { font-size: 40px; }
+    .tagline { font-size: 16px; }
+    section { padding-top: 44px; }
+    h2 { font-size: 22px; }
+    .text p { font-size: 16px; }
+    .monk { grid-template-columns: auto 1fr; padding: 18px; gap: 16px; }
+    .monk svg { width: 52px; height: 52px; }
+    .monk .go { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <svg class="icon" viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FFB547"/><stop offset="1" stop-color="#EF6A1A"/></linearGradient></defs>
+      <rect width="64" height="64" rx="15" fill="url(#s)"/>
+      <path d="M37.5 17A16 16 0 1 0 47.5 27.9" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <h1>千手院</h1>
+      <div class="en">QIANSHOU LAB</div>
+      <div class="tagline">赛博禅宗硬核造物所</div>
+    </div>
+  </header>
+
+  <section class="text">
+    <h2>🛕 寺院简介</h2>
+    <p>本院全称千手院（QIANSHOU LAB），乃世间罕见的赛博禅宗硬核造物所。</p>
+    <p>世人皆苦于填表、核对、录入与内耗，众生皆为牛马。本院不求香火，不度化亡魂，只渡被繁文缛节折磨的苦命打工人。院内千百尊赛博罗汉（录入僧、鬼画符僧、算账僧……）昼夜不休、各显神通，专替凡间施主挡下一切烂表、废字、穷极无聊的表格大劫。</p>
+  </section>
+
+  <section>
+    <h2>在岗罗汉</h2>
+    <a class="monk" href="https://oilsongchengmin-svg.github.io/luruseng/">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5AB4FF"/><stop offset="1" stop-color="#1E7BF2"/></linearGradient></defs>
+        <rect width="64" height="64" rx="15" fill="url(#g)"/>
+        <rect x="19" y="15" width="26" height="34" rx="4.5" fill="#fff"/>
+        <rect x="24" y="23" width="14" height="3" rx="1.5" fill="#2F8BF5"/>
+        <rect x="24" y="30.5" width="14" height="3" rx="1.5" fill="#2F8BF5"/>
+        <rect x="24" y="38" width="9" height="3" rx="1.5" fill="#2F8BF5"/>
+      </svg>
+      <div>
+        <div class="name">录入僧</div>
+        <div class="sub">施主去玩，贫僧填表</div>
+        <div class="what">照片丢进文件夹，Excel 表自己出来。Windows 电脑版。</div>
+      </div>
+      <span class="go">进去看看 ›</span>
+    </a>
+  </section>
+
+  <section class="text">
+    <div class="abbot">
+      <h2>🧘 方丈法号：释手</h2>
+      <p>老衲法号释手。</p>
+      <p>世人入佛门，讲究的是“放不下”；而本院方丈修的是“彻底撒手”。</p>
+      <p>正因为本院有千手千眼的AI矩阵代劳，方丈与诸位施主才得以将尘世间的一切苦役“释手”不管。</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>千手院 · QIANSHOU LAB</span>
+    <span>找方丈：<a id="mail" href="#">发邮件</a></span>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var mail = document.getElementById('mail');
+    var addr = ['oilsongchengmin', 'gmail.com'].join('@');       // 拼起来写，少招点垃圾邮件
+    mail.href = 'mailto:' + addr + '?subject=' + encodeURIComponent('千手院');
+    mail.textContent = addr;
+  })();
+</script>
+</body>
+</html>
