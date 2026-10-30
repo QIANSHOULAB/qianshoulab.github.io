@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>千手院 · QIANSHOU LAB</title>
+<meta name="description" content="千手院（QIANSHOU LAB）：赛博禅宗硬核造物所。不求香火，只渡被繁文缛节折磨的苦命打工人。">
+<meta property="og:title" content="千手院 · QIANSHOU LAB">
+<meta property="og:description" content="赛博禅宗硬核造物所。不求香火，只渡被繁文缛节折磨的苦命打工人。">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0221">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFB547'/%3E%3Cstop offset='1' stop-color='%23EF6A1A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23s)'/%3E%3Cpath d='M37.5 17A16 16 0 1 0 47.5 27.9' fill='none' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&text=%E5%8D%83%E6%89%8B%E9%99%A2%E5%AF%BA%E7%AE%80%E4%BB%8B%E5%9C%A8%E5%B2%97%E7%BD%97%E6%B1%89%E6%96%B9%E4%B8%88%E6%B3%95%E5%8F%B7%E9%87%8A%E5%BD%95%E5%85%A5%E5%83%A7%EF%BC%9A&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #FF2E88;
+    --cyan: #00F0FF;
+    --text: #F2E9FF;
+    --muted: #B8A6D9;
+    --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    --mono: ui-monospace, "SF Mono", Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; background: #0b0221; }
+  body {
+    margin: 0; color: var(--text);
+    background: linear-gradient(180deg, #07011a 0%, #160433 34%, #3a0a52 52%, #8e1a6e 60%, #ff5a8a 64%, #2a0640 64.5%, #0b0221 100%) fixed;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei",
+                 "Segoe UI", "Noto Sans CJK SC", sans-serif;
+    line-height: 1.85; -webkit-font-smoothing: antialiased;
+  }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+  main { position: relative; z-index: 1; }
+  a { color: var(--cyan); text-decoration: none; }
+
+  .hero { height: 100vh; height: 100svh; position: relative; text-align: center; }
+  .hero-in { position: absolute; left: 0; right: 0; top: 11vh; }
+  .title {
+    position: relative; display: inline-block;
+    font-family: var(--serif); font-weight: 900; font-size: clamp(50px, 10vw, 112px); line-height: 1;
+    letter-spacing: .16em; margin-right: -.16em; color: #FFF;
+    text-shadow: 0 0 6px #fff, 0 0 18px var(--pink), 0 0 42px var(--pink), 0 0 80px rgba(255, 46, 136, .6);
+  }
+  .title::before, .title::after {
+    content: attr(data-t); position: absolute; inset: 0; letter-spacing: inherit; pointer-events: none;
+    text-shadow: none; opacity: .75; mix-blend-mode: screen;
+  }
+  .title::before { color: var(--cyan); animation: glitchA 3.2s infinite steps(1); }
+  .title::after { color: var(--pink); animation: glitchB 2.7s infinite steps(1); }
+  @keyframes glitchA {
+    0%, 86%, 100% { transform: none; clip-path: inset(0 0 100% 0); }
+    87% { transform: translate(-4px, 1px); clip-path: inset(18% 0 52% 0); }
+    90% { transform: translate(3px, -1px); clip-path: inset(62% 0 8% 0); }
+    93% { transform: translate(-2px, 0); clip-path: inset(36% 0 40% 0); }
+  }
+  @keyframes glitchB {
+    0%, 80%, 100% { transform: none; clip-path: inset(0 0 100% 0); }
+    81% { transform: translate(4px, -1px); clip-path: inset(70% 0 6% 0); }
+    84% { transform: translate(-3px, 1px); clip-path: inset(10% 0 66% 0); }
+  }
+  .en { margin-top: 18px; font-family: var(--mono); font-size: 13px; letter-spacing: .6em; padding-left: .6em; color: var(--cyan);
+        text-shadow: 0 0 10px rgba(0, 240, 255, .7); }
+  .tag { margin-top: 10px; font-size: 16px; letter-spacing: .32em; padding-left: .32em; color: #FFD3E8; }
+  .hint { position: absolute; left: 0; right: 0; bottom: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .4em;
+          color: rgba(255, 255, 255, .7); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  section { max-width: 880px; margin: 0 auto; padding: 0 20px 26px; }
+  .panel {
+    position: relative; background: rgba(11, 2, 33, .72); border: 1px solid rgba(0, 240, 255, .35); border-radius: 6px;
+    padding: 28px 32px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    box-shadow: 0 0 0 1px rgba(255, 46, 136, .15), 0 0 32px -6px rgba(0, 240, 255, .35), inset 0 0 40px -20px rgba(255, 46, 136, .5);
+  }
+  .panel::before, .panel::after { content: ""; position: absolute; width: 18px; height: 18px; border: 2px solid var(--pink); }
+  .panel::before { left: -2px; top: -2px; border-right: 0; border-bottom: 0; }
+  .panel::after { right: -2px; bottom: -2px; border-left: 0; border-top: 0; }
+  .label { font-family: var(--mono); font-size: 11px; letter-spacing: .35em; color: var(--cyan); opacity: .8; margin-bottom: 6px; }
+  h2 { font-family: var(--serif); font-weight: 900; font-size: 27px; margin: 0 0 14px; letter-spacing: .08em; color: #fff;
+       text-shadow: 0 0 12px rgba(255, 46, 136, .8); }
+  .panel p { margin: 0 0 12px; font-size: 17px; }
+  .panel p:last-child { margin-bottom: 0; }
+
+  .monk { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; color: var(--text);
+          transition: transform .2s, box-shadow .2s; }
+  .monk:hover { transform: translateY(-3px) skewX(-1deg);
+                box-shadow: 0 0 0 1px rgba(255, 46, 136, .5), 0 0 46px -4px rgba(255, 46, 136, .6), inset 0 0 40px -20px rgba(0, 240, 255, .6); }
+  .monk svg { width: 64px; height: 64px; display: block; filter: drop-shadow(0 0 14px rgba(0, 200, 255, .6)); }
+  .monk .name { font-family: var(--serif); font-weight: 900; font-size: 25px; letter-spacing: .08em; color: #fff; }
+  .monk .sub { color: #FF9CC8; font-size: 15px; }
+  .monk .what { color: var(--muted); font-size: 15px; margin-top: 2px; }
+  .monk .go { font-family: var(--mono); color: var(--cyan); font-weight: 700; white-space: nowrap; text-shadow: 0 0 10px rgba(0, 240, 255, .7); }
+  .sec-title { font-family: var(--serif); font-weight: 900; font-size: 27px; letter-spacing: .08em; margin: 26px 4px 14px; color: #fff;
+               text-shadow: 0 0 12px rgba(0, 240, 255, .8); }
+
+  footer { max-width: 880px; margin: 40px auto 0; padding: 22px 20px 40px; color: var(--muted); font-size: 14px; font-family: var(--mono);
+           display: flex; flex-wrap: wrap; gap: 6px 22px; justify-content: space-between; }
+  footer a { color: var(--muted); }
+
+  @media (max-width: 560px) {
+    .hero-in { top: 9vh; }
+    .tag { font-size: 14px; letter-spacing: .2em; }
+    .panel { padding: 22px 20px; }
+    .panel p { font-size: 16px; }
+    h2, .sec-title { font-size: 22px; }
+    .monk { grid-template-columns: auto 1fr; gap: 16px; }
+    .monk svg { width: 52px; height: 52px; }
+    .monk .go { grid-column: 1 / -1; }
+  }
+  @media (prefers-reduced-motion: reduce) { .title::before, .title::after, .hint { animation: none; } }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<main>
+  <header class="hero" id="hero">
+    <div class="hero-in">
+      <div class="title" data-t="千手院">千手院</div>
+      <div class="en">QIANSHOU LAB</div>
+      <div class="tag">赛博禅宗硬核造物所</div>
+    </div>
+    <div class="hint" aria-hidden="true">▼ 往下滑 · 进山门</div>
+  </header>
+
+  <section>
+    <div class="panel">
+      <div class="label">// TEMPLE.INFO</div>
+      <h2>🛕 寺院简介</h2>
+      <p>本院全称千手院（QIANSHOU LAB），乃世间罕见的赛博禅宗硬核造物所。</p>
+      <p>世人皆苦于填表、核对、录入与内耗，众生皆为牛马。本院不求香火，不度化亡魂，只渡被繁文缛节折磨的苦命打工人。院内千百尊赛博罗汉（录入僧、鬼画符僧、算账僧……）昼夜不休、各显神通，专替凡间施主挡下一切烂表、废字、穷极无聊的表格大劫。</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-title">在岗罗汉</div>
+    <a class="panel monk" href="https://oilsongchengmin-svg.github.io/luruseng/">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5AB4FF"/><stop offset="1" stop-color="#1E7BF2"/></linearGradient></defs>
+        <rect width="64" height="64" rx="15" fill="url(#g)"/>
+        <rect x="19" y="15" width="26" height="34" rx="4.5" fill="#fff"/>
+        <rect x="24" y="23" width="14" height="3" rx="1.5" fill="#2F8BF5"/>
+        <rect x="24" y="30.5" width="14" height="3" rx="1.5" fill="#2F8BF5"/>
+        <rect x="24" y="38" width="9" height="3" rx="1.5" fill="#2F8BF5"/>
+      </svg>
+      <div>
+        <div class="name">录入僧</div>
+        <div class="sub">施主去玩，贫僧填表</div>
+        <div class="what">照片丢进文件夹，Excel 表自己出来。Windows 电脑版。</div>
+      </div>
+      <span class="go">进去看看 ›</span>
+    </a>
+  </section>
+
+  <section>
+    <div class="panel">
+      <div class="label">// ABBOT.ID</div>
+      <h2>🧘 方丈法号：释手</h2>
+      <p>老衲法号释手。</p>
+      <p>世人入佛门，讲究的是“放不下”；而本院方丈修的是“彻底撒手”。</p>
+      <p>正因为本院有千手千眼的AI矩阵代劳，方丈与诸位施主才得以将尘世间的一切苦役“释手”不管。</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>千手院 · QIANSHOU LAB</span>
+    <span>找方丈：<a id="mail" href="#">发邮件</a></span>
+  </footer>
+</main>
+
+<script>
+  (function () {
+    var mail = document.getElementById('mail');
+    var addr = ['oilsongchengmin', 'gmail.com'].join('@');       // 拼起来写，少招点垃圾邮件
+    mail.href = 'mailto:' + addr + '?subject=' + encodeURIComponent('千手院');
+    mail.textContent = addr;
+  })();
+</script>
+
+<script type="module">
+// 方案二「赛博山门」：霓虹牌坊 + 五层宝塔，地上一张往脚下流的光网，天边一轮切成条的夕阳。往下滑，镜头穿过山门。
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const canvas = document.getElementById('scene');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+} catch (e) { /* 没有 WebGL：留着 CSS 渐变天空 */ }
+
+if (renderer) {
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x1a0533, 40, 150);
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
+
+  const PINK = 0xff2e88, CYAN = 0x00f0ff, VIOLET = 0xb26bff;
+
+  function canvasTexture(w, h, draw) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
+  // 天边的切条夕阳
+  const sunTex = canvasTexture(512, 512, (g, w, h) => {
+    const grd = g.createLinearGradient(0, 0, 0, h);
+    grd.addColorStop(0, '#FFF27A'); grd.addColorStop(0.45, '#FF9A4D'); grd.addColorStop(1, '#FF2E88');
+    g.fillStyle = grd;
+    g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2); g.fill();
+    g.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 9; i++) {
+      const y = h * (0.52 + i * 0.055), th = 3 + i * 2.4;
+      g.fillRect(0, y, w, th);
+    }
+  });
+  const sun = new THREE.Mesh(new THREE.PlaneGeometry(56, 56),
+    new THREE.MeshBasicMaterial({ map: sunTex, transparent: true, fog: false, depthWrite: false }));
+  sun.position.set(0, 13, -150);
+  scene.add(sun);
+
+  // 往脚下流的光网
+  const grid = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uA: { value: new THREE.Color(PINK) }, uB: { value: new THREE.Color(VIOLET) } },
+    vertexShader: `varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+    fragmentShader: `
+      uniform float uTime; uniform vec3 uA; uniform vec3 uB; varying vec3 vW;
+      float gridLine(float x) { float d = abs(fract(x - 0.5) - 0.5) / fwidth(x); return 1.0 - min(d / 1.3, 1.0); }
+      void main(){
+        vec2 p = vW.xz / 3.0; p.y += uTime * 0.9;
+        float g = max(gridLine(p.x), gridLine(p.y));
+        float dist = length(vW.xz - cameraPosition.xz);
+        float fade = 1.0 - smoothstep(25.0, 150.0, dist);
+        vec3 col = mix(uA, uB, smoothstep(-120.0, 10.0, vW.z));
+        gl_FragColor = vec4(col * g * fade * 1.4 + vec3(0.035, 0.0, 0.07), 1.0);
+      }`,
+  }));
+  grid.rotation.x = -Math.PI / 2;
+  scene.add(grid);
+
+  // 霓虹线框：亮线 + 一层淡一点、略大的「光晕」+ 深紫半透明的面挡住后面
+  const faceMat = new THREE.MeshBasicMaterial({ color: 0x12032a, transparent: true, opacity: 0.82, side: THREE.DoubleSide });
+  function neon(geo, color, parent, x, y, z, ry = 0, sx = 1, sy = 1, sz = 1) {
+    const holder = new THREE.Group();
+    holder.position.set(x, y, z); holder.rotation.y = ry; holder.scale.set(sx, sy, sz);
+    holder.add(new THREE.Mesh(geo, faceMat));
+    const edges = new THREE.EdgesGeometry(geo, 12);
+    holder.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color })));
+    const halo = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+      color, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    halo.scale.setScalar(1.025);
+    holder.add(halo);
+    parent.add(holder);
+    return holder;
+  }
+  function roof(R, H) {          // 四角起翘的屋顶：凹面四棱锥（车床旋转 4 段）
+    const pts = [
+      new THREE.Vector2(0.0, H), new THREE.Vector2(R * 0.22, H * 0.74), new THREE.Vector2(R * 0.5, H * 0.42),
+      new THREE.Vector2(R * 0.78, H * 0.16), new THREE.Vector2(R * 1.0, 0.0), new THREE.Vector2(R * 1.14, H * 0.16),
+    ];
+    return new THREE.LatheGeometry(pts, 4, Math.PI / 4);
+  }
+
+  // 五层宝塔
+  const pagoda = new THREE.Group();
+  pagoda.position.set(0, 0, -48);
+  scene.add(pagoda);
+  let y = 0;
+  for (let i = 0; i < 5; i++) {
+    const w = 6.2 - i * 0.95, h = i === 0 ? 2.6 : 1.7;
+    neon(new THREE.BoxGeometry(w, h, w), CYAN, pagoda, 0, y + h / 2, 0);
+    y += h;
+    neon(roof(w * 0.86, 1.25), PINK, pagoda, 0, y - 0.15, 0);
+    y += 0.55;
+  }
+  neon(new THREE.CylinderGeometry(0.07, 0.07, 3.2, 8), CYAN, pagoda, 0, y + 1.5, 0);
+  for (let k = 0; k < 6; k++) neon(new THREE.TorusGeometry(0.42 - k * 0.05, 0.05, 6, 20), PINK, pagoda, 0, y + 0.5 + k * 0.42, 0);
+  pagoda.children.slice(-6).forEach((m) => { m.rotation.x = Math.PI / 2; });
+  neon(new THREE.OctahedronGeometry(0.35), 0xffffff, pagoda, 0, y + 3.4, 0);
+  pagoda.scale.setScalar(1.35);
+
+  // 山门（牌坊）+ 匾额「千手院」
+  const gate = new THREE.Group();
+  gate.position.set(0, 0, -6);
+  scene.add(gate);
+  [-4, 4].forEach((x) => neon(new THREE.BoxGeometry(0.6, 8.2, 0.6), PINK, gate, x, 4.1, 0));
+  [-2.2, 2.2].forEach((x) => neon(new THREE.BoxGeometry(0.4, 6.6, 0.4), PINK, gate, x, 3.3, 0));
+  neon(new THREE.BoxGeometry(10.8, 0.5, 0.7), CYAN, gate, 0, 7.0, 0);
+  neon(new THREE.BoxGeometry(9.2, 0.32, 0.55), CYAN, gate, 0, 5.4, 0);
+  neon(roof(2.2, 1.3), PINK, gate, 0, 7.25, 0, 0, 2.75, 1, 0.55);
+  const plaqueTex = canvasTexture(512, 192, (g, w, h) => {
+    g.fillStyle = '#12032a'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#00F0FF'; g.lineWidth = 6; g.strokeRect(8, 8, w - 16, h - 16);
+    g.font = '900 112px "Noto Serif SC","Songti SC","SimSun",serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = '#FF2E88'; g.shadowBlur = 24; g.fillStyle = '#FFFFFF';
+    g.fillText('千手院', w / 2, h / 2 + 6);
+  });
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.27), new THREE.MeshBasicMaterial({ map: plaqueTex }));
+  plaque.position.set(0, 6.2, 0.4);
+  gate.add(plaque);
+
+  // 绕塔飘的大字
+  const glyphs = [];
+  '禅渡空表录算释手千院'.split('').forEach((ch, i) => {
+    const color = i % 2 ? '#FF2E88' : '#00F0FF';
+    const tex = canvasTexture(128, 128, (g, w, h) => {
+      g.font = '900 96px "Noto Serif SC","Songti SC","SimSun",serif';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.shadowColor = color; g.shadowBlur = 18; g.fillStyle = color;
+      g.fillText(ch, w / 2, h / 2 + 4);
+    });
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.userData = { a: (i / 10) * Math.PI * 2, r: 12 + (i % 3) * 3, y: 4 + (i % 4) * 3.2, sp: 0.08 + (i % 3) * 0.03 };
+    s.scale.setScalar(2.2);
+    scene.add(s);
+    glyphs.push(s);
+  });
+
+  // 香烟：从山门脚下往上飘的紫粉色光点
+  const N = 360;
+  const smoke = new Float32Array(N * 3), seed = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    smoke[i * 3] = (Math.random() - 0.5) * 30;
+    smoke[i * 3 + 1] = Math.random() * 16;
+    smoke[i * 3 + 2] = -60 + Math.random() * 62;
+    seed[i] = Math.random() * 10;
+  }
+  const smokeGeo = new THREE.BufferGeometry();
+  smokeGeo.setAttribute('position', new THREE.BufferAttribute(smoke, 3));
+  const dotTex = canvasTexture(64, 64, (g) => {
+    const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, 'rgba(255,200,240,1)'); grd.addColorStop(0.4, 'rgba(255,46,136,0.5)'); grd.addColorStop(1, 'rgba(255,46,136,0)');
+    g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+  });
+  scene.add(new THREE.Points(smokeGeo, new THREE.PointsMaterial({
+    map: dotTex, size: 0.34, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+
+  // 星星
+  {
+    const p = [];
+    for (let i = 0; i < 900; i++) p.push((Math.random() - 0.5) * 400, 20 + Math.random() * 120, -200 + Math.random() * 120);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+    scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, transparent: true, opacity: 0.7, fog: false })));
+  }
+
+  let narrow = false;
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    narrow = camera.aspect < 0.8;
+    camera.fov = narrow ? 72 : 55;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  let mx = 0, my = 0, sx = 0, sy = 0;
+  window.addEventListener('pointermove', (e) => {
+    mx = (e.clientX / window.innerWidth - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  }, { passive: true });
+
+  const hero = document.getElementById('hero');
+  const clock = new THREE.Clock();
+  const speed = still ? 0.2 : 1;
+  function frame() {
+    requestAnimationFrame(frame);
+    if (document.hidden) return;
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime * speed;
+    sx += (mx - sx) * 0.04; sy += (my - sy) * 0.04;
+    grid.material.uniforms.uTime.value = t;
+    pagoda.rotation.y = t * 0.12;
+    glyphs.forEach((s) => {
+      const u = s.userData, a = u.a + t * u.sp;
+      s.position.set(Math.cos(a) * u.r, u.y + Math.sin(t * 0.8 + u.a) * 0.6, -48 + Math.sin(a) * u.r);
+    });
+    for (let i = 0; i < N; i++) {
+      smoke[i * 3 + 1] += (0.5 + (i % 5) * 0.12) * dt * speed;
+      smoke[i * 3] += Math.sin(t * 0.7 + seed[i]) * 0.01;
+      if (smoke[i * 3 + 1] > 16) smoke[i * 3 + 1] = 0;
+    }
+    smokeGeo.attributes.position.needsUpdate = true;
+    // 往下滑：镜头从山门外穿过去，停在塔前
+    const s = Math.min(window.scrollY / (window.innerHeight * 1.1), 1);
+    const e = s * s * (3 - 2 * s);
+    const z0 = narrow ? 14 : 19;
+    camera.position.set(sx * 1.2, 2.6 + e * 1.8 - sy * 0.4, z0 + e * (-26 - z0));
+    camera.lookAt(sx * 0.6, (narrow ? 7 : 10.5) + e * 2, -48);
+    hero.style.opacity = String(Math.max(0, 1 - s * 2.2));
+    renderer.render(scene, camera);
+  }
+  frame();
+}
+</script>
+</body>
+</html>
