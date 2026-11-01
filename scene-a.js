@@ -58,7 +58,7 @@ if (renderer) {
     map: glowTexture([[0, 'rgba(255,180,90,0.55)'], [0.35, 'rgba(255,120,40,0.22)'], [1, 'rgba(255,90,20,0)']]),
     blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
   }));
-  bloom.scale.set(11, 11, 1);
+  bloom.scale.set(10, 10, 1);                       // 光晕收一点，只托着圈
   halo.add(bloom);
 
   // 千手：五圈，一圈比一圈长、一圈比一圈靠后；单数圈顺转，双数圈逆转
@@ -71,11 +71,12 @@ if (renderer) {
   ];
   const eyeMat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false,
-    uniforms: { uTime: { value: 0 }, uPixel: { value: PR * EYE } },
+    // 眼睛离圈越远越暗（到屏幕边上剩 45%）：大屏幕上满屏亮色，「千手院」那个圈就出不来（Song：「颜色都是亮色，突出不了主题」）
+    uniforms: { uTime: { value: 0 }, uPixel: { value: PR * EYE }, uAspect: { value: 1 }, uEdge: { value: 0.45 } },
     vertexShader: `
       attribute float aPhase; attribute float aSize; attribute vec3 aColor;
-      uniform float uTime; uniform float uPixel;
-      varying float vOpen; varying vec3 vColor;
+      uniform float uTime; uniform float uPixel; uniform float uAspect; uniform float uEdge;
+      varying float vOpen; varying vec3 vColor; varying float vDim;
       void main() {
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_Position = projectionMatrix * mv;
@@ -84,9 +85,11 @@ if (renderer) {
         float shut = smoothstep(0.0, 0.015, t) * (1.0 - smoothstep(0.025, 0.045, t));
         vOpen = 1.0 - shut;
         vColor = aColor;
+        vec2 ndc = gl_Position.xy / gl_Position.w;
+        vDim = mix(1.0, uEdge, smoothstep(0.55, 1.6, length(vec2(ndc.x * uAspect, ndc.y))));
       }`,
     fragmentShader: `
-      varying float vOpen; varying vec3 vColor;
+      varying float vOpen; varying vec3 vColor; varying float vDim;
       void main() {
         vec2 p = gl_PointCoord * 2.0 - 1.0;
         float lid = 0.5 * (1.0 - p.x * p.x) * max(vOpen, 0.05);
@@ -96,13 +99,13 @@ if (renderer) {
         float r = length(p);
         float iris = 1.0 - smoothstep(0.26, 0.32, r);
         float pupil = 1.0 - smoothstep(0.1, 0.15, r);
-        vec3 col = mix(vec3(1.0, 0.93, 0.82) * 0.8, vColor, iris);
+        vec3 col = mix(vec3(1.0, 0.93, 0.82) * 0.7, vColor, iris);   // 眼白不那么白
         col = mix(col, vec3(0.06, 0.03, 0.01), pupil);
-        float glow = exp(-r * r * 2.6) * 0.45;
+        float glow = exp(-r * r * 2.6) * 0.3;
         vec3 c = col * inside + vColor * rim * 1.3 + vColor * glow;
         float a = max(max(inside, rim), glow);
         if (a < 0.02) discard;
-        gl_FragColor = vec4(c, a);
+        gl_FragColor = vec4(c * vDim, a);
       }`,
   });
 
@@ -120,7 +123,8 @@ if (renderer) {
       const p1 = [m * Math.cos(a + bend), m * Math.sin(a + bend), L.z + 0.2];
       const p2 = [len * Math.cos(a + bend * 0.6), len * Math.sin(a + bend * 0.6), L.z + 0.35];
       pos.push(...p0, ...p1, ...p1, ...p2);
-      col.push(dark.r, dark.g, dark.b, mid.r, mid.g, mid.b, mid.r, mid.g, mid.b, tip.r * 0.9, tip.g * 0.9, tip.b * 0.9);
+      // 连着眼睛的线压暗（Song：「把眼睛的链接线做暗一些」）：根上那团金褐色留六成，伸到眼睛那头只剩四成
+      col.push(dark.r, dark.g, dark.b, mid.r * 0.6, mid.g * 0.6, mid.b * 0.6, mid.r * 0.6, mid.g * 0.6, mid.b * 0.6, tip.r * 0.4, tip.g * 0.4, tip.b * 0.4);
       eyes.push(...p2);
       phases.push(Math.random());
       sizes.push(6.5 + li * 1.3 + Math.random() * 3);
@@ -204,6 +208,7 @@ if (renderer) {
         wide[i].visible = true;
       });
     }
+    eyeMat.uniforms.uAspect.value = camera.aspect;
     camera.updateProjectionMatrix();
   }
   resize();
@@ -229,7 +234,7 @@ if (renderer) {
     halo.rotation.y = ry + Math.cos(t * 0.17) * 0.05;
     layers.forEach((g, i) => { g.rotation.z = t * (i % 2 ? -1 : 1) * spins[i]; });
     enso.rotation.z = Math.PI * 0.3 + Math.sin(t * 0.35) * 0.06;
-    bloom.material.opacity = 0.85 + Math.sin(t * 1.3) * 0.15;
+    bloom.material.opacity = 0.75 + Math.sin(t * 1.3) * 0.12;
     eyeMat.uniforms.uTime.value = t;
     for (let i = 0; i < EMBERS; i++) {
       emberPos[i * 3 + 1] += emberVel[i] * dt * speed;
