@@ -11,7 +11,15 @@ try {
 
 if (renderer) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // 使劲画（Song：「使劲画得了」）：手机按屏幕实际倍数画（iPhone 3 倍屏以前按 2 倍画再拉大，线和眼睛就糊了），
+  // 1 倍屏（多数电脑）也按 2 倍画了再缩，线边上不起锯齿
+  const DPR = window.devicePixelRatio || 1;
+  const PR = Math.min(Math.max(DPR, 2), 4);
+  renderer.setPixelRatio(PR);
+  // 1 倍屏上一只眼睛只分到六七个像素，画不出眼睛的样子，只剩个点：放大一点（最多 1.3 倍，再大满屏都是眼珠子，光芒没了）
+  const EYE = Math.min(1.3, Math.max(1, 1.8 / DPR));
+  // 画得越细，一根线就越细越暗：亮度照原样补回来，手往外伸的那股劲不能弱
+  const LINE_GAIN = PR / Math.min(DPR, 2);
   renderer.setClearColor(0x04050d, 1);
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x04050d, 0.028);
@@ -63,7 +71,7 @@ if (renderer) {
   ];
   const eyeMat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false,
-    uniforms: { uTime: { value: 0 }, uPixel: { value: renderer.getPixelRatio() } },
+    uniforms: { uTime: { value: 0 }, uPixel: { value: PR * EYE } },
     vertexShader: `
       attribute float aPhase; attribute float aSize; attribute vec3 aColor;
       uniform float uTime; uniform float uPixel;
@@ -123,6 +131,7 @@ if (renderer) {
     lg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     g.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({
       vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+      color: new THREE.Color(LINE_GAIN, LINE_GAIN, LINE_GAIN),
     })));
     const eg = new THREE.BufferGeometry();
     eg.setAttribute('position', new THREE.Float32BufferAttribute(eyes, 3));

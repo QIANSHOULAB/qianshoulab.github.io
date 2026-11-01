@@ -9,7 +9,11 @@ try {
 
 if (renderer) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // 使劲画：手机按屏幕实际倍数画，1 倍屏也按 2 倍画了再缩（跟千手法相那套一样）
+  const DPR = window.devicePixelRatio || 1;
+  const PR = Math.min(Math.max(DPR, 2), 4);
+  renderer.setPixelRatio(PR);
+  const LINE_GAIN = PR / Math.min(DPR, 2);                 // 线画细了：光晕那层亮一点、地上光网的线照原来的粗细补回来
   renderer.setClearColor(0x000000, 0);
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x1a0533, 40, 150);
@@ -45,11 +49,11 @@ if (renderer) {
 
   // 往脚下流的光网
   const grid = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uA: { value: new THREE.Color(PINK) }, uB: { value: new THREE.Color(VIOLET) } },
+    uniforms: { uTime: { value: 0 }, uA: { value: new THREE.Color(PINK) }, uB: { value: new THREE.Color(VIOLET) }, uW: { value: 1.3 * LINE_GAIN } },
     vertexShader: `varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
     fragmentShader: `
-      uniform float uTime; uniform vec3 uA; uniform vec3 uB; varying vec3 vW;
-      float gridLine(float x) { float d = abs(fract(x - 0.5) - 0.5) / fwidth(x); return 1.0 - min(d / 1.3, 1.0); }
+      uniform float uTime; uniform vec3 uA; uniform vec3 uB; uniform float uW; varying vec3 vW;
+      float gridLine(float x) { float d = abs(fract(x - 0.5) - 0.5) / fwidth(x); return 1.0 - min(d / uW, 1.0); }
       void main(){
         vec2 p = vW.xz / 3.0; p.y += uTime * 0.9;
         float g = max(gridLine(p.x), gridLine(p.y));
@@ -71,7 +75,7 @@ if (renderer) {
     const edges = new THREE.EdgesGeometry(geo, 12);
     holder.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color })));
     const halo = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
-      color, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+      color, transparent: true, opacity: Math.min(1, 0.35 * LINE_GAIN), blending: THREE.AdditiveBlending, depthWrite: false }));
     halo.scale.setScalar(1.025);
     holder.add(halo);
     parent.add(holder);
