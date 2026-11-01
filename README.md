@@ -10,4 +10,5 @@
 在岗罗汉：
 
 - [录入僧](https://qianshoulab.github.io/luruseng/)：施主去玩，贫僧填表
+- [扒表僧](https://qianshoulab.github.io/pabiao/)：施主丢卷，贫僧扒表（PDF 转 Excel，扫描件也认，文件不上传）
 - [工时榨汁机](https://qianshoulab.github.io/gongshi/)：水分榨干，只剩真工时（换型实际用时，自动扣茶歇饭点）
