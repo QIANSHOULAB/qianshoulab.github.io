@@ -11,4 +11,8 @@
 
 - [录入僧](https://qianshoulab.github.io/luruseng/)：施主去玩，贫僧填表
 - [渡表僧](https://qianshoulab.github.io/pabiao/)：表丢来，你去玩，贫僧超度（PDF 转 Excel，扫描件也认，文件不上传）
+
+小工具：
+
 - [工时榨汁机](https://qianshoulab.github.io/gongshi/)：水分榨干，只剩真工时（换型实际用时，自动扣茶歇饭点）
+- [千叶](https://qianshoulab.github.io/qianye/)：施主乱写，贫僧誊抄（手写拍照、打字粘贴，一键排成好看的图分享）
