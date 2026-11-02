@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>译经僧</title>
+<meta name="description" content="把 A 系统导出的文件翻成 B 系统的导入格式：自动对列、改日期、拆姓名、加国家码、换值，预览后一键导出。文件不出浏览器。">
+<meta name="apple-mobile-web-app-title" content="译经僧">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<style>
+/* Layout: glass nav; hero; two "ends" cards (source → target); mapping list (one row per target column); preview table; sticky export dock */
+:root{
+  --bg:#F2F2F7; --card:#FFFFFF; --elev:#F2F2F7; --elev-card:#FFFFFF;
+  --fill:rgba(118,118,128,.12); --fill2:rgba(120,120,128,.16);
+  --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#AEAEB2; --sep:rgba(60,60,67,.17);
+  --accent:#0071E3; --accent-tint:rgba(0,113,227,.10); --on-accent:#FFFFFF;
+  --amber:#FF9500; --amber-ink:#A85100; --amber-tint:rgba(255,149,0,.14);
+  --good:#1F7A36; --good-mark:#34C759; --good-tint:rgba(52,199,89,.16);
+  --bad:#D70015; --bad-mark:#FF3B30; --bad-tint:rgba(255,59,48,.10);
+  --glass:rgba(242,242,247,.8); --glass2:rgba(255,255,255,.78); --scrim:rgba(0,0,0,.3);
+  --toast-bg:rgba(29,29,31,.92); --toast-fg:#F5F5F7;
+  --shadow:0 1px 1px rgba(0,0,0,.03),0 6px 20px rgba(0,0,0,.05);
+  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:20px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --card:#1C1C1E; --elev:#1C1C1E; --elev-card:#2C2C2E;
+    --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.32);
+    --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+    --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
+    --amber:#FF9F0A; --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
+    --good:#30D158; --good-mark:#30D158; --good-tint:rgba(48,209,88,.20);
+    --bad:#FF6961; --bad-mark:#FF453A; --bad-tint:rgba(255,69,58,.18);
+    --glass:rgba(18,18,20,.72); --glass2:rgba(28,28,30,.78); --scrim:rgba(0,0,0,.55);
+    --toast-bg:rgba(58,58,60,.95); --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --card:#1C1C1E; --elev:#1C1C1E; --elev-card:#2C2C2E;
+  --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.32);
+  --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+  --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
+  --amber:#FF9F0A; --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
+  --good:#30D158; --good-mark:#30D158; --good-tint:rgba(48,209,88,.20);
+  --bad:#FF6961; --bad-mark:#FF453A; --bad-tint:rgba(255,69,58,.18);
+  --glass:rgba(18,18,20,.72); --glass2:rgba(28,28,30,.78); --scrim:rgba(0,0,0,.55);
+  --toast-bg:rgba(58,58,60,.95); --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);font:400 17px/1.35 var(--f-text);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit;-webkit-appearance:none;appearance:none}
+a{color:inherit;text-decoration:none}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+button:focus:not(:focus-visible){outline:none}
+svg{display:block}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:50px;padding:0 max(16px,calc(50% - 520px));transition:background-color .2s,box-shadow .2s}
+.nav.scrolled{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--sep)}
+.nav-back{justify-self:start;display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-size:17px;height:44px;margin-left:-4px}
+.nav-back svg{width:11px;height:19px}
+.nav-t{font-weight:600;opacity:0;transition:opacity .2s}
+.nav.scrolled .nav-t{opacity:1}
+.nav-a{justify-self:end;display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-size:15px;font-weight:600;height:34px;padding:0 14px;border-radius:999px;background:var(--fill)}
+.nav-a svg{width:16px;height:16px}
+.nav-a .n{font-size:13px;color:var(--fg2);font-weight:600}
+
+/* page */
+.wrap{max-width:1072px;margin:0 auto;padding:0 16px 128px}
+.lt{padding:4px 4px 20px}
+.lt h1{margin:0;font-size:34px;line-height:1.2;font-weight:700;letter-spacing:.005em}
+.tag{margin:4px 0 0;color:var(--fg2);font-size:17px}
+.hint{margin:10px 0 0;color:var(--fg2);font-size:13px;display:flex;align-items:center;gap:6px}
+.hint svg{width:14px;height:14px;color:var(--good-mark);flex:none}
+@media (min-width:760px){.lt{padding:20px 4px 28px}.lt h1{font-size:48px;letter-spacing:-.01em}.tag{font-size:21px}}
+
+/* ends */
+.ends{display:grid;grid-template-columns:1fr;gap:10px;align-items:stretch}
+@media (min-width:760px){.ends{grid-template-columns:1fr 36px 1fr;gap:0}}
+.end{position:relative;display:flex;align-items:center;gap:14px;background:var(--card);border-radius:var(--r);padding:16px 16px 16px 18px;box-shadow:var(--shadow);min-width:0;transition:box-shadow .2s,transform .2s}
+.end-ico{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--accent-tint);color:var(--accent)}
+.end-ico svg{width:22px;height:22px}
+.end.tgt .end-ico{background:var(--good-tint);color:var(--good)}
+.end-main{flex:1;min-width:0}
+.end-k{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--fg2)}
+.end-t{font-size:17px;font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.end-s{font-size:13px;color:var(--fg2);margin-top:1px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arrow{display:grid;place-items:center;color:var(--fg3)}
+.arrow svg{width:18px;height:18px}
+@media (max-width:759px){.arrow{display:none}}
+.chip{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font-size:11px;font-weight:600;background:var(--fill);color:var(--fg2)}
+.chip.demo{background:var(--accent-tint);color:var(--accent)}
+.chip.rec{background:var(--good-tint);color:var(--good)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:50px;padding:0 22px;border-radius:999px;font-size:17px;font-weight:600;white-space:nowrap;transition:transform .12s,opacity .12s}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn svg{width:17px;height:17px;flex:none}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.tinted{background:var(--accent-tint);color:var(--accent)}
+.btn.plain{color:var(--accent)}
+.btn.small{min-height:34px;padding:0 14px;font-size:15px}
+.btn.block{width:100%}
+.btn.danger{color:var(--bad)}
+
+/* groups */
+.grp{margin-top:32px}
+.grp-h{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 4px 10px}
+.grp-h h2{margin:0;font-size:22px;font-weight:700;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.grp-sub{font-size:15px;font-weight:400;color:var(--fg2);font-variant-numeric:tabular-nums}
+.grp-sub b{font-weight:600}
+.grp-sub .g{color:var(--good)} .grp-sub .a{color:var(--amber-ink)} .grp-sub .r{color:var(--bad)}
+.grp-foot{margin:10px 0 0;padding:0 16px;font-size:13px;color:var(--fg2)}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+
+/* mapping rows */
+.mhead{display:none}
+.mrow{position:relative;display:grid;grid-template-columns:26px minmax(0,1fr) 12px;grid-template-areas:"st t ch" ". s ch" ". x ch";column-gap:12px;row-gap:2px;align-items:center;width:100%;padding:12px 16px;min-height:60px;transition:background-color .15s}
+.mrow:active,.mrow:hover{background:var(--fill)}
+.mrow+.mrow::before{content:"";position:absolute;top:0;left:54px;right:0;height:.5px;background:var(--sep)}
+.st{grid-area:st;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
+.st svg{width:12px;height:12px}
+.st.sure{background:var(--good-mark)} .st.guess{background:var(--amber)} .st.blank{background:var(--fill2);color:var(--fg2)} .st.req{background:var(--bad-mark)} .st.user{background:var(--accent)}
+.m-t{grid-area:t;font-weight:600;min-width:0;display:flex;align-items:center;gap:6px;overflow:hidden}
+.m-t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m-t .ty{flex:none;font-style:normal;font-size:11px;font-weight:600;color:var(--fg2);background:var(--fill);border-radius:5px;padding:1px 5px}
+.m-s{grid-area:s;font-size:15px;color:var(--fg2);min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.m-s .from{color:var(--fg)}
+.m-s .op{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-tint);border-radius:5px;padding:1px 6px}
+.m-s .none{color:var(--fg3)}
+.m-s .note{width:100%;font-size:12px;color:var(--amber-ink)}
+.m-s .note.r{color:var(--bad)}
+.m-x{grid-area:x;font-size:13px;color:var(--fg2);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.m-x b{font-weight:500;color:var(--fg)}
+.m-x i{font-style:normal;color:var(--fg3);margin:0 4px}
+.m-x .bc{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;color:var(--amber-ink);background:var(--amber-tint);border-radius:5px;padding:1px 6px}
+.chev{grid-area:ch;color:var(--fg3)}
+.chev svg{width:8px;height:13px}
+@media (min-width:760px){
+  .mhead{display:grid;grid-template-columns:26px minmax(150px,1fr) minmax(190px,1.25fr) minmax(200px,1.35fr) 12px;column-gap:16px;padding:10px 16px 8px;font-size:12px;font-weight:600;color:var(--fg2);border-bottom:.5px solid var(--sep)}
+  .mrow{grid-template-columns:26px minmax(150px,1fr) minmax(190px,1.25fr) minmax(200px,1.35fr) 12px;grid-template-areas:"st t s x ch";column-gap:16px;min-height:54px;padding:10px 16px}
+  .m-x{font-size:15px}
+}
+
+/* preview table */
+.tbl{overflow:auto;max-height:560px;-webkit-overflow-scrolling:touch}
+table{border-collapse:separate;border-spacing:0;font-size:13px;font-variant-numeric:tabular-nums;min-width:100%}
+th,td{padding:8px 12px;text-align:left;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--sep)}
+th{position:sticky;top:0;z-index:1;background:var(--card);font-weight:600;color:var(--fg);box-shadow:0 .5px 0 var(--sep)}
+th small{display:block;font-weight:400;color:var(--fg2);font-size:11px}
+td.n,th.n{color:var(--fg3);text-align:right;padding-right:4px;position:sticky;left:0;background:var(--card);z-index:1}
+th.n{z-index:2}
+td.e{color:var(--fg3)}
+td.bad{background:var(--amber-tint);color:var(--amber-ink)}
+tr:last-child td{border-bottom:0}
+
+/* dock */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--glass2);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 -.5px 0 var(--sep);padding:10px 16px max(10px,env(safe-area-inset-bottom,0px))}
+.dock-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.dock-f{flex:1;min-width:0;font-size:13px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dock .btn{min-height:44px}
+@media (max-width:759px){.dock-f{display:none}.dock .btn.primary{flex:1}}
+.seg{display:inline-flex;padding:2px;border-radius:9px;background:var(--fill);flex:none}
+.seg button{min-height:32px;padding:0 12px;border-radius:7px;font-size:13px;font-weight:600;color:var(--fg)}
+.seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{background:#636366}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{background:#636366}}
+
+/* footer */
+.foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.8;color:var(--fg2);text-align:center}
+.foot a{color:var(--accent)}
+.mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
+
+/* sheets */
+#sheets{position:fixed;inset:0;z-index:50}
+.scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;transition:opacity .3s}
+.sheet{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:600px;max-height:calc(100% - 28px);overflow-y:auto;overscroll-behavior:contain;background:var(--elev);border-radius:24px 24px 0 0;transform:translateY(104%);transition:transform .42s cubic-bezier(.32,.72,0,1);padding-bottom:max(20px,env(safe-area-inset-bottom,0px))}
+#sheets.open .scrim{opacity:1}
+#sheets.open .sheet{transform:none}
+@media (min-width:760px){
+  .sheet{top:50%;bottom:auto;max-height:84vh;border-radius:20px;transform:translateY(-46%) scale(.97);opacity:0;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .2s;box-shadow:0 30px 80px rgba(0,0,0,.25)}
+  #sheets.open .sheet{transform:translateY(-50%);opacity:1}
+  .grab{display:none}
+}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--fg3);opacity:.6;margin:6px auto 0}
+.sh-head{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;min-height:52px;padding:0 16px;background:var(--elev)}
+.sh-x{justify-self:start;color:var(--accent);font-size:17px;min-height:44px}
+.sh-ok{justify-self:end;color:var(--accent);font-size:17px;font-weight:600;min-height:44px}
+.sh-t{font-size:17px;font-weight:600;text-align:center;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sh-body{display:flex;flex-direction:column;gap:10px;padding:4px 16px 8px}
+.lab{font-size:13px;color:var(--fg2);padding:8px 16px 0;display:flex;justify-content:space-between;gap:8px}
+.form{background:var(--elev-card);border-radius:14px;overflow:hidden}
+.f-row{position:relative;display:flex;align-items:center;gap:12px;min-height:48px;padding:0 16px}
+.form>.f-row+.f-row::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
+.f-k{flex:none;font-size:17px}
+.f-row input,.f-row select{flex:1;min-width:0;height:46px;border:0;background:transparent;outline:none;text-align:right;font-size:17px;color:var(--fg)}
+.f-row select{text-align:right;text-align-last:right;cursor:pointer;color:var(--accent);-webkit-appearance:none;appearance:none}
+.f-row input::placeholder{color:var(--fg3)}
+.f-row .x{color:var(--fg3);flex:none;width:28px;height:28px;display:grid;place-items:center}
+.f-row .x svg{width:14px;height:14px}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick button{min-height:34px;padding:0 13px;border-radius:999px;background:var(--elev-card);font-size:15px}
+.pick button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.switch{position:relative;flex:none;width:51px;height:31px;border-radius:999px;background:var(--fill2);margin-left:auto;transition:background-color .2s}
+.switch i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15);transition:transform .22s}
+.switch[aria-checked="true"]{background:var(--good-mark)}
+.switch[aria-checked="true"] i{transform:translateX(20px)}
+.vmap .f-row{gap:10px}
+.vmap .vk{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+.vmap .vk small{color:var(--fg3);margin-left:6px;font-variant-numeric:tabular-nums}
+.vmap input{flex:0 0 42%;text-align:left;border-radius:8px;background:var(--fill);height:34px;padding:0 10px;font-size:15px}
+.vmap .ar{color:var(--fg3);flex:none}
+.pv{font-size:13px}
+.pv .f-row{min-height:38px;font-variant-numeric:tabular-nums}
+.pv .a{flex:1;min-width:0;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv .b{flex:1;min-width:0;text-align:right;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv .b.bad{color:var(--amber-ink)}
+.pv .ar{color:var(--fg3);flex:none}
+.list .f-row{min-height:56px}
+.list .li{flex:1;min-width:0;padding:8px 0;display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.list .li b{font-weight:400;font-size:17px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .li small{font-size:13px;color:var(--fg2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .ck{color:var(--accent);flex:none}
+.list .ck svg{width:16px;height:16px}
+.empty-note{font-size:15px;color:var(--fg2);text-align:center;padding:24px 16px}
+.sh-foot{font-size:13px;color:var(--fg2);padding:0 16px}
+
+/* drop overlay */
+#drop{position:fixed;inset:0;z-index:60;background:var(--scrim);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}
+.dz{border-radius:24px;border:2px dashed rgba(255,255,255,.7);display:grid;place-items:center;color:#fff;font-size:24px;font-weight:700;text-align:center;transition:background-color .15s}
+.dz small{display:block;font-size:15px;font-weight:400;opacity:.85;margin-top:6px}
+.dz.on{background:rgba(0,113,227,.45);border-style:solid}
+
+/* toast & busy */
+.toast{position:fixed;left:50%;bottom:86px;z-index:70;transform:translate(-50%,20px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);padding:12px 18px;border-radius:14px;background:var(--toast-bg);color:var(--toast-fg);font-size:15px;transition:opacity .2s,transform .25s}
+.toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{color:#64B5FF;font-weight:600;white-space:nowrap}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header class="nav" id="nav">
+  <a class="nav-back" id="navBack" href="https://qianshoulab.github.io/"></a>
+  <div class="nav-t" id="navT"></div>
+  <button type="button" class="nav-a" data-act="recipes" id="navRec"></button>
+</header>
+<main class="wrap" id="app"></main>
+<div class="dock" id="dock"></div>
+<div id="sheets" hidden><div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"></div></div>
+<div id="drop" hidden><div class="dz" data-zone="src"></div><div class="dz" data-zone="tgt"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="fSrc" hidden accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
+<input type="file" id="fTgt" hidden accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
+<input type="file" id="fRec" hidden accept=".json,application/json">
+<script>
+'use strict';
+/* ================= 界面文字（全在这里，加英文就再抄一份） ================= */
+const STR = {
+  app: '译经僧', tag: '施主搬家，贫僧译经',
+  hint: '文件丢进来就开译，一个字节都不出这台电脑。',
+  home: '千手院', recipes: '配方',
+  src: '来源', tgt: '目标', demo: '示例', recChip: '配方',
+  demoName: '旧 CRM 客户表.csv',
+  rc: (r, c) => `${fmtInt(r)} 行 · ${c} 列`,
+  tgtSub: (c, f) => `${c} 列 · 导出 ${f}`,
+  pickSrc: '换文件', pickTgt: '换格式',
+  mapH: '对列',
+  mapSub: (n, ok, q, b, r) => [`${n} 列`, ok && `<b class="g">${ok} 对上</b>`, q && `<b class="a">${q} 存疑</b>`, r && `<b class="r">${r} 必填没着落</b>`, b && `${b} 留空`].filter(Boolean).join(' · '),
+  colT: '目标列', colS: '从哪来', colX: '第一行译出来',
+  saveRec: '存配方',
+  unused: n => `没用上的来源列：${n}`,
+  allUsed: '来源列一个没落下。',
+  blank: '留空', constOf: v => `固定值「${v}」`,
+  noteAmb: '日/月分不清，按 月/日/年 译的', noteGuess: '名字像，没十成把握', noteByVal: '列名不像，看内容猜的',
+  noteReq: '目标系统要这列', noteMiss: '配方里的列这次没见到', noteHandle: '借货号当网址别名，同款多规格要改', noteUser: '',
+  badN: n => `${fmtInt(n)} 处不对`,
+  prevH: '预览', prevSub: n => `前 ${n} 行`, prevBad: n => `全表 ${fmtInt(n)} 处译不动，黄格子`, prevOk: '全表译完没毛病',
+  exportBtn: n => `导出 ${fmtInt(n)} 行`,
+  done: '好了', cancel: '取消', close: '关闭',
+  fromWhere: '从哪列来', howTo: '怎么译', preview: '前几行', sep: '分隔符', value: '值',
+  optConst: '（固定值）', optBlank: '（留空）', addCol: '再合并一列',
+  ops: { none: '原样', date: '改日期', name: '拆姓名', join: '合并', phone: '加国家码', num: '理数字', map: '换值', case: '大小写' },
+  types: { text: '', date: '日期', number: '数字', phone: '电话', enum: '选项', email: '邮箱', first: '名', last: '姓', full: '姓名' },
+  dFrom: '原来长这样', dTo: '译成', dAuto: o => `自动（看着像${o}）`, dOrders: { YMD: '年/月/日', DMY: '日/月/年', MDY: '月/日/年', serial: 'Excel 序号', unix: '时间戳' },
+  nameLast: '取姓', nameFirst: '取名',
+  smartName: '按姓名规矩排', smartNameS: '中文姓在前不加空格，英文名在前姓在后',
+  cc: '国家码', style: '写法', e164: '+8613800138000', spaced: '+86 13800138000', digits: '8613800138000',
+  dec: '小数', decKeep: '原样', thou: '千分位',
+  mapKeep: '没填的保持原样', mapNone: '这列是空的，没东西可换',
+  caseLower: '全小写', caseUpper: '全大写', caseTitle: '首字母大写', caseTrim: '只去空格',
+  constPh: '填个值', sepPh: '空格',
+  tplH: '目标格式', tplBuiltin: '常用模板', tplFile: '丢目标系统的导入模板', tplFileS: 'CSV、Excel、JSON 都行，贫僧只看表头',
+  recH: '配方', recEmpty: '还没存过配方。对好一次列，点「存配方」，下回同样的文件丢进来自动套上。',
+  recSub: (n, d) => `${n} 列 · ${d}`, recApply: '用这个', recDel: '删除',
+  recExport: '导出配方文件', recImport: '导入配方文件',
+  recName: '配方名字', recSave: '存', recSaveH: '存配方',
+  recSaved: n => `存好了：${n}`, recAuto: n => `认出来了，套上配方「${n}」`, recUndo: '不用',
+  recImported: n => `导入 ${n} 个配方`, recBadFile: '这不是配方文件',
+  dropSrc: '当来源文件', dropSrcS: '要搬走的那份', dropTgt: '当目标模板', dropTgtS: '新系统给的导入模板',
+  reading: '贫僧在读…', readFail: '读不出来：', emptyFile: '文件里没找到表格', exporting: '贫僧在译…',
+  exported: (n, s) => `译完 ${fmtInt(n)} 行，用时 ${s} 秒`,
+  sheetNote: n => `有 ${n} 个工作表，用的第一个有数据的`,
+  footApp: '千手院 · 译经僧 0.1', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
+};
+
+/* ================= 小工具 ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtInt = n => Number(n).toLocaleString('en-US');
+const clone = o => JSON.parse(JSON.stringify(o));
+const CJK = /[㐀-鿿豈-﫿]/;
+const norm = s => String(s ?? '').toLowerCase().replace(/[\s_\-.*()（）:：\/\\#'"`\[\]【】,，、]/g, '');
+const ICON = {
+  chevL: '<svg viewBox="0 0 11 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 1.5 2 9.5l7.5 8"/></svg>',
+  chevR: '<svg viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m1.5 1.5 5 5-5 5"/></svg>',
+  arrow: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h13M11 4.5 16.5 10 11 15.5"/></svg>',
+  check: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.2 6.4 2.4 2.4 5.2-5.6"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 2.8h8l4.5 4.5V20a1.2 1.2 0 0 1-1.2 1.2H6A1.2 1.2 0 0 1 4.8 20V4A1.2 1.2 0 0 1 6 2.8Z"/><path d="M13.6 2.8v4.8h4.9M8.3 12.5h7.4M8.3 16.3h5"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="4" width="17" height="16" rx="2.2"/><path d="M3.5 9.3h17M3.5 14.6h17M9.5 4v16"/></svg>',
+  book: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 3.2h9.5a2 2 0 0 1 2 2v11.6H6a2 2 0 0 1-2-2Z"/><path d="M4 14.8a2 2 0 0 1 2-2h9.5M7.5 6.7h4.5"/></svg>',
+  down: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M5.5 8.8 10 13.3l4.5-4.5M4 16.8h12"/></svg>',
+  lock: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.2a3.6 3.6 0 0 0-3.6 3.6V6.6H4A1.3 1.3 0 0 0 2.7 8v5.5A1.3 1.3 0 0 0 4 14.8h8a1.3 1.3 0 0 0 1.3-1.3V8A1.3 1.3 0 0 0 12 6.6h-.4V4.8A3.6 3.6 0 0 0 8 1.2Zm-2.1 5.4V4.8a2.1 2.1 0 1 1 4.2 0v1.8Z"/></svg>',
+  x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>',
+};
+
+/* ================= 概念词典（列名同义词，中英都认） ================= */
+// t: 目标列的类型；同义词只要列名规整后完全一样就算，含在里面算「存疑」
+const C = {
+  id: { t: 'text', s: ['id', 'customer id', 'customer number', 'contact id', 'client id', 'lead id', 'account id', 'external id', 'record id', 'member id', '客户编号', '客户id', '编号', '会员编号', '客户代码', '会员号'] },
+  full: { t: 'full', s: ['full name', 'contact name', 'customer name', '姓名', '客户姓名', '联系人', '联系人姓名', '会员姓名'] },
+  first: { t: 'first', s: ['first name', 'firstname', 'given name', 'fname', 'first', '名', '名字'] },
+  last: { t: 'last', s: ['last name', 'lastname', 'surname', 'family name', 'lname', 'last', '姓', '姓氏'] },
+  email: { t: 'email', s: ['email', 'e-mail', 'mail', 'email address', 'e-mail address', '邮箱', '电子邮件', '电子邮箱', '邮件地址', '邮箱地址'] },
+  phone: { t: 'phone', s: ['phone', 'mobile', 'tel', 'telephone', 'cell', 'mobile phone', 'phone number', 'mobile number', 'contact number', '手机', '电话', '手机号', '手机号码', '联系电话', '电话号码', '联系方式'] },
+  company: { t: 'text', s: ['company', 'company name', 'organization', 'organisation', 'organization name', 'employer', '公司', '单位', '企业', '公司名称', '工作单位', '企业名称'] },
+  jtitle: { t: 'text', s: ['job title', 'position', 'role', 'designation', '职位', '职务', '岗位', '头衔'] },
+  gender: { t: 'enum', s: ['gender', 'sex', '性别'] },
+  city: { t: 'text', s: ['city', 'town', '城市', '市'] },
+  state: { t: 'text', s: ['state', 'province', 'region', '省', '省份', '州'] },
+  country: { t: 'text', s: ['country', 'country region', 'nation', '国家', '国家地区', '国家/地区'] },
+  zip: { t: 'text', s: ['zip', 'zip code', 'postcode', 'postal code', '邮编', '邮政编码'] },
+  address: { t: 'text', s: ['address', 'street', 'street address', 'address line 1', '地址', '详细地址', '联系地址', '收货地址'] },
+  created: { t: 'date', s: ['created', 'created at', 'created date', 'create date', 'create time', 'created time', 'created on', 'signup date', 'sign up date', 'registration date', 'date added', 'join date', '创建时间', '创建日期', '注册时间', '注册日期', '建档日期', '加入时间', '入会时间', '添加时间'] },
+  birthday: { t: 'date', s: ['birthday', 'birth date', 'birthdate', 'date of birth', 'dob', '生日', '出生日期'] },
+  ltv: { t: 'number', s: ['lifetime value', 'total spent', 'total spend', 'total sales', 'ltv', '累计消费', '消费总额', '总消费', '累计金额', '消费金额'] },
+  notes: { t: 'text', s: ['notes', 'note', 'remark', 'remarks', 'comment', 'comments', 'memo', '备注', '说明', '备注信息'] },
+  tags: { t: 'text', s: ['tags', 'tag', 'labels', '标签'] },
+  handle: { t: 'text', s: ['handle', 'url handle', 'slug', '网址别名'] },
+  sku: { t: 'text', s: ['sku', 'variant sku', 'item code', 'product code', 'item number', 'sku code', '货号', '商品编码', '商品编号', 'sku编码', '款号', '商家编码'] },
+  pname: { t: 'text', s: ['product name', 'product title', 'item name', 'item title', '商品名称', '品名', '商品名', '产品名称', '宝贝标题', '商品标题', '产品名'] },
+  desc: { t: 'text', s: ['description', 'body', 'body html', 'product description', '描述', '详情', '商品描述', '商品详情', '产品描述'] },
+  vendor: { t: 'text', s: ['vendor', 'brand', 'manufacturer', 'supplier', '品牌', '供应商', '厂商', '厂家'] },
+  ptype: { t: 'text', s: ['product type', 'category', 'product category', 'item type', '分类', '类别', '商品分类', '品类', '类目', '商品类目'] },
+  price: { t: 'number', s: ['price', 'variant price', 'sale price', 'unit price', 'selling price', 'retail price', '售价', '单价', '价格', '零售价', '销售价', '一口价'] },
+  cprice: { t: 'number', s: ['compare at price', 'variant compare at price', 'list price', 'msrp', 'original price', '原价', '划线价', '市场价', '吊牌价'] },
+  cost: { t: 'number', s: ['cost', 'cost per item', 'unit cost', 'purchase price', '进价', '成本', '成本价', '采购价'] },
+  stock: { t: 'number', s: ['qty', 'quantity', 'inventory', 'stock', 'on hand', 'variant inventory qty', 'inventory quantity', 'stock qty', '库存', '数量', '库存数量', '可售库存', '库存量', '现有库存'] },
+  barcode: { t: 'text', s: ['barcode', 'variant barcode', 'ean', 'upc', 'gtin', 'isbn', '条码', '条形码', '商品条码'] },
+  image: { t: 'text', s: ['image', 'image src', 'image url', 'picture', 'photo', 'photo url', '图片', '主图', '图片链接', '主图链接', '商品图片', '图片地址'] },
+  weight: { t: 'number', s: ['weight', 'grams', 'variant grams', '重量', '克重', '毛重'] },
+  pstatus: { t: 'enum', s: ['status', 'product status', 'listing status', '状态', '上架状态', '商品状态', '销售状态'] },
+  published: { t: 'enum', s: ['published', 'is published', 'visible', '是否上架', '是否发布', '是否显示'] },
+  acode: { t: 'text', s: ['account code', 'account number', 'gl code', 'gl account', '科目编码', '科目代码', '科目号', '科目编号'] },
+  aname: { t: 'text', s: ['account name', 'account title', '科目名称', '科目名', '会计科目'] },
+  atype: { t: 'enum', s: ['account type', 'account class', 'account category', '科目类别', '科目类型', '科目性质', '科目分类'] },
+  adir: { t: 'enum', s: ['normal balance', 'balance direction', 'debit credit', 'dr cr', '余额方向', '借贷方向', '方向'] },
+  abal: { t: 'number', s: ['opening balance', 'beginning balance', 'balance', 'start balance', '期初余额', '年初余额', '余额', '期初数'] },
+};
+const CN = {};
+for (const k in C) for (const s of C[k].s) if (!CN[norm(s)]) CN[norm(s)] = k;
+const CN_KEYS = Object.keys(CN).sort((a, b) => b.length - a.length);
+function conceptOf(h) {
+  const n = norm(h);
+  if (!n) return null;
+  if (CN[n]) return { c: CN[n], exact: true };
+  for (const k of CN_KEYS) if ((CJK.test(k) ? k.length >= 2 : k.length >= 4) && n.includes(k)) return { c: CN[k], exact: false };
+  return null;
+}
+// 选项值同义词（男/女 → M/F 之类）
+const VS = [
+  ['m', '男', '男性', 'male', 'man', '先生', '公'], ['f', '女', '女性', 'female', 'woman', '女士', '母'],
+  ['true', '是', 'yes', 'y', '1', '已上架', '上架', '在售', '发布', '已发布', '启用', 'on', '显示'],
+  ['false', '否', 'no', 'n', '0', '已下架', '下架', '停售', '未发布', '禁用', 'off', '隐藏'],
+  ['active', '在售', '上架', '已上架', '启用', '正常', '销售中', '出售中', 'enabled'],
+  ['draft', '下架', '已下架', '草稿', '停售', '仓库中', '未上架', 'disabled', 'inactive'],
+  ['archived', '归档', '已归档', '删除', '已删除'],
+  ['上架', '在售', '已上架', 'active', '启用', '出售中', '销售中', 'true', 'yes', '是'], ['下架', '已下架', '停售', 'draft', 'inactive', '仓库中', 'false', 'no', '否'],
+  ['asset', '资产', '资产类', 'assets'], ['liability', '负债', '负债类', 'liabilities'], ['equity', '所有者权益', '权益', '所有者权益类', 'owners equity'],
+  ['revenue', '收入', '营业收入', '收入类', 'income'], ['expense', '费用', '支出', '费用类', 'expenses', '成本类'],
+  ['资产', 'asset', 'assets'], ['负债', 'liability', 'liabilities'], ['所有者权益', 'equity', '权益'], ['成本', 'cost', '成本类', 'cost of sales'], ['损益', '收入', '费用', 'revenue', 'expense', 'income', '损益类'],
+  ['借', 'debit', 'dr', '借方', 'd'], ['贷', 'credit', 'cr', '贷方', 'c'],
+].map(g => g.map(norm));
+
+/* ================= 内置目标模板 ================= */
+// c: 指定概念（不靠猜）；t: 类型；v: 选项；fmt: 日期格式；dec: 小数位；req: 必填
+const TPL = {
+  crm: { name: 'CRM 联系人（通用英文表头）', fmt: 'csv', cols: [
+    { name: 'Customer ID', c: 'id' }, { name: 'First Name', c: 'first', t: 'first' }, { name: 'Last Name', c: 'last', t: 'last', req: 1 },
+    { name: 'Email', c: 'email', t: 'email', req: 1 }, { name: 'Phone', c: 'phone', t: 'phone' }, { name: 'Gender', c: 'gender', t: 'enum', v: ['M', 'F'] },
+    { name: 'Company', c: 'company' }, { name: 'Job Title', c: 'jtitle' }, { name: 'City', c: 'city' }, { name: 'Country', c: 'country' },
+    { name: 'Created Date', c: 'created', t: 'date', fmt: 'YYYY-MM-DD' }, { name: 'Lifetime Value', c: 'ltv', t: 'number', dec: 2 }, { name: 'Notes', c: 'notes' }] },
+  contacts_cn: { name: '客户名单（中文通用）', fmt: 'xlsx', cols: [
+    { name: '姓名', c: 'full', t: 'full', req: 1 }, { name: '手机', c: 'phone', t: 'phone' }, { name: '邮箱', c: 'email', t: 'email' }, { name: '公司', c: 'company' },
+    { name: '职位', c: 'jtitle' }, { name: '城市', c: 'city' }, { name: '创建日期', c: 'created', t: 'date', fmt: 'YYYY-MM-DD' }, { name: '备注', c: 'notes' }] },
+  shopify: { name: 'Shopify 商品（常用列）', fmt: 'csv', cols: [
+    { name: 'Handle', c: 'handle', req: 1 }, { name: 'Title', c: 'pname', req: 1 }, { name: 'Body (HTML)', c: 'desc' }, { name: 'Vendor', c: 'vendor' }, { name: 'Type', c: 'ptype' },
+    { name: 'Tags', c: 'tags' }, { name: 'Published', c: 'published', t: 'enum', v: ['TRUE', 'FALSE'] }, { name: 'Variant SKU', c: 'sku' },
+    { name: 'Variant Grams', c: 'weight', t: 'number', dec: 0 }, { name: 'Variant Inventory Qty', c: 'stock', t: 'number', dec: 0 }, { name: 'Variant Price', c: 'price', t: 'number', dec: 2 },
+    { name: 'Variant Compare At Price', c: 'cprice', t: 'number', dec: 2 }, { name: 'Variant Barcode', c: 'barcode' }, { name: 'Image Src', c: 'image' },
+    { name: 'Status', c: 'pstatus', t: 'enum', v: ['active', 'draft', 'archived'] }] },
+  shop_cn: { name: '网店商品（中文通用）', fmt: 'xlsx', cols: [
+    { name: '商品编码', c: 'sku', req: 1 }, { name: '商品名称', c: 'pname', req: 1 }, { name: '分类', c: 'ptype' }, { name: '品牌', c: 'vendor' },
+    { name: '售价', c: 'price', t: 'number', dec: 2 }, { name: '划线价', c: 'cprice', t: 'number', dec: 2 }, { name: '库存', c: 'stock', t: 'number', dec: 0 },
+    { name: '条码', c: 'barcode' }, { name: '上架状态', c: 'pstatus', t: 'enum', v: ['上架', '下架'] }, { name: '商品描述', c: 'desc' }, { name: '主图链接', c: 'image' }] },
+  coa_cn: { name: '会计科目（中文通用）', fmt: 'xlsx', cols: [
+    { name: '科目编码', c: 'acode', req: 1 }, { name: '科目名称', c: 'aname', req: 1 }, { name: '科目类别', c: 'atype', t: 'enum', v: ['资产', '负债', '所有者权益', '成本', '损益'] },
+    { name: '余额方向', c: 'adir', t: 'enum', v: ['借', '贷'] }, { name: '期初余额', c: 'abal', t: 'number', dec: 2 }] },
+  coa_en: { name: 'Chart of Accounts（通用英文）', fmt: 'csv', cols: [
+    { name: 'Code', c: 'acode', req: 1 }, { name: 'Name', c: 'aname', req: 1 }, { name: 'Type', c: 'atype', t: 'enum', v: ['Asset', 'Liability', 'Equity', 'Revenue', 'Expense'], req: 1 },
+    { name: 'Description', c: 'desc' }, { name: 'Opening Balance', c: 'abal', t: 'number', dec: 2 }] },
+};
+function tplFrom(key) { const t = clone(TPL[key]); t.id = key; t.cols.forEach(c => { c.t = c.t || 'text'; }); return t; }
+
+/* ================= 示例数据（虚构） ================= */
+function demoSource() {
+  let seed = 7; const r = n => (seed = (seed * 16807) % 2147483647) % n;
+  const sur = ['王', '李', '张', '刘', '陈', '杨', '黄', '赵', '周', '吴', '司马', '林'];
+  const giv = ['子涵', '浩然', '雨桐', '思远', '晓峰', '若溪', '嘉怡', '俊杰', '梦琪', '文博', '欣然', '志强'];
+  const py = ['zihan', 'haoran', 'yutong', 'siyuan', 'xiaofeng', 'ruoxi', 'jiayi', 'junjie', 'mengqi', 'wenbo', 'xinran', 'zhiqiang'];
+  const en = ['Alex Lim', 'Mia Tan', 'Ryan Goh', 'Chloe Ng'];
+  const co = ['一苇渡江科技', '不二法门咨询', '菩提树下贸易', '明镜台设计', '拈花微笑文化', '南山南物流', '山高水长传媒', '松风明月食品'];
+  const jt = ['销售总监', '采购经理', '行政主管', '创始人', '财务', '运营专员', '市场经理', '技术负责人'];
+  const city = ['上海', '北京', '深圳', '杭州', '成都', '新加坡', '广州', '苏州'];
+  const note = ['', '', '', '', '老客户，别催款', '只在周三回消息', '爱喝茶', '', '年底要发票', ''];
+  const H = ['客户编号', '姓名', '性别', '手机', '邮箱', '公司', '职位', '所在城市', '创建时间', '累计消费(元)', '备注'];
+  const rows = [];
+  for (let i = 0; i < 60; i++) {
+    let name, mail, ph, g = r(2) ? '男' : '女';
+    if (i === 0) { name = '欧阳晓峰'; mail = 'Ouyang.XiaoFeng@Example.com'; g = '男'; }
+    else if (i % 15 === 7) { name = en[r(4)]; mail = name.toLowerCase().replace(' ', '.') + '@example.com'; }
+    else { const s = r(12), k = r(12); name = sur[s] + giv[k]; mail = py[k] + (100 + i) + '@example.cn'; }
+    const city1 = city[r(8)];
+    ph = city1 === '新加坡' ? `+65 ${8 + r(2)}${r(10)}${r(10)}${r(10)} ${1000 + r(9000)}` : `1${3 + r(6)}${r(10)}${String(r(100000000)).padStart(8, '0')}`;
+    if (i === 3) ph = '139-0012-3456';
+    if (i === 11) ph = '';
+    if (i === 5) g = '未知';
+    if (i === 9) mail = 'zhao.wenbo#example.cn';
+    const d = `20${22 + r(3)}/${1 + r(12)}/${1 + r(28)} ${r(24)}:${String(r(60)).padStart(2, '0')}`;
+    const amt = r(5) === 0 ? '0' : (r(3) === 0 ? '¥' : '') + fmtInt(r(80000)) + (r(2) ? '.' + String(r(100)).padStart(2, '0') : '');
+    rows.push([`C${10001 + i}`, name, g, ph, mail, co[r(8)], jt[r(8)], city1, d, amt, note[r(10)]]);
+  }
+  return { name: STR.demoName, demo: true, kind: 'csv', headers: H, rows };
+}
+
+/* ================= 读文件 ================= */
+function decodeText(buf) {
+  const b = new Uint8Array(buf);
+  if (b[0] === 0xEF && b[1] === 0xBB && b[2] === 0xBF) return new TextDecoder('utf-8').decode(b.subarray(3));
+  if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder('utf-16le').decode(b.subarray(2));
+  if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder('utf-16be').decode(b.subarray(2));
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(b); } catch (e) { return new TextDecoder('gb18030').decode(b); }
+}
+function sniffDelim(text) {
+  const lines = text.slice(0, 20000).split(/\r?\n/).filter(Boolean).slice(0, 8);
+  let best = ',', bs = -1;
+  for (const d of [',', '\t', ';', '|']) {
+    const cnt = lines.map(l => l.split(d).length - 1);
+    if (!cnt.length || !cnt[0]) continue;
+    const same = cnt.filter(x => x === cnt[0]).length;
+    const s = same * 100 + cnt[0];
+    if (s > bs) { bs = s; best = d; }
+  }
+  return best;
+}
+function parseCSV(text, delim) {
+  const D = delim.charCodeAt(0), n = text.length, rows = [];
+  let row = [], field = '', i = 0, q = false;
+  while (i < n) {
+    const c = text.charCodeAt(i);
+    if (q) {
+      if (c === 34) { if (text.charCodeAt(i + 1) === 34) { field += '"'; i += 2; continue; } q = false; i++; continue; }
+      const nx = text.indexOf('"', i);
+      if (nx < 0) { field += text.slice(i); i = n; break; }
+      field += text.slice(i, nx); i = nx; continue;
+    }
+    if (c === 34 && field === '') { q = true; i++; continue; }
+    if (c === D) { row.push(field); field = ''; i++; continue; }
+    if (c === 10 || c === 13) { row.push(field); field = ''; rows.push(row); row = []; if (c === 13 && text.charCodeAt(i + 1) === 10) i++; i++; continue; }
+    let j = i + 1;
+    while (j < n) { const d = text.charCodeAt(j); if (d === D || d === 10 || d === 13) break; j++; }
+    field += text.slice(i, j); i = j;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+function tableFromRows(rows) {
+  const isEmpty = r => !r || r.every(v => v == null || String(v).trim() === '');
+  rows = rows.filter(r => !isEmpty(r));
+  if (!rows.length) return null;
+  const top = rows.slice(0, 10), maxC = Math.max(...top.map(r => r.filter(v => String(v ?? '').trim() !== '').length));
+  let hi = top.findIndex(r => r.filter(v => String(v ?? '').trim() !== '').length >= Math.max(1, Math.ceil(maxC * .6)));
+  if (hi < 0) hi = 0;
+  const raw = rows[hi].map(v => String(v ?? '').trim());
+  let width = raw.length; for (let k = hi + 1; k < Math.min(rows.length, hi + 200); k++) width = Math.max(width, rows[k].length);
+  const seen = {}, headers = [];
+  for (let k = 0; k < width; k++) {
+    let h = raw[k] || `列${k + 1}`;
+    if (seen[h]) { seen[h]++; h = `${h} (${seen[h]})`; } else seen[h] = 1;
+    headers.push(h);
+  }
+  return { headers, rows: rows.slice(hi + 1) };
+}
+function flatten(o, pre, out) {
+  for (const k in o) {
+    const v = o[k], key = pre ? pre + '.' + k : k;
+    if (v && typeof v === 'object' && !Array.isArray(v)) flatten(v, key, out);
+    else if (Array.isArray(v)) out[key] = v.every(x => x === null || typeof x !== 'object') ? v.join('; ') : JSON.stringify(v);
+    else out[key] = v == null ? '' : String(v);
+  }
+  return out;
+}
+function tableFromJSON(text) {
+  let d = JSON.parse(text.replace(/^﻿/, ''));
+  if (!Array.isArray(d)) {
+    const arr = Object.values(d || {}).find(v => Array.isArray(v) && v.length && typeof v[0] === 'object');
+    d = arr || [d];
+  }
+  const objs = d.filter(x => x && typeof x === 'object').map(x => flatten(x, '', {}));
+  const hs = [], seen = new Set();
+  for (const o of objs) for (const k in o) if (!seen.has(k)) { seen.add(k); hs.push(k); }
+  return { headers: hs, rows: objs.map(o => hs.map(h => o[h] ?? '')) };
+}
+let xlsxP = null;
+function loadXLSX() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return xlsxP || (xlsxP = new Promise((ok, bad) => {
+    const s = document.createElement('script'); s.src = 'lib/xlsx.full.min.js';
+    s.onload = () => ok(window.XLSX); s.onerror = () => { xlsxP = null; bad(new Error('xlsx')); };
+    document.head.appendChild(s);
+  }));
+}
+const pad = n => String(n).padStart(2, '0');
+function cellStr(v) {
+  if (v == null) return '';
+  if (v instanceof Date) {
+    const d = new Date(Math.round(v.getTime() / 1000) * 1000);
+    const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return d.getHours() || d.getMinutes() || d.getSeconds() ? `${day} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}` : day;
+  }
+  if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+  return String(v);
+}
+async function readFile(file) {
+  const buf = await file.arrayBuffer();
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  let t, kind = 'csv', note = '';
+  if (['xlsx', 'xls', 'xlsm', 'ods'].includes(ext)) {
+    const X = await loadXLSX();
+    const wb = X.read(buf, { type: 'array', cellDates: true, dense: true });
+    let rows = [];
+    for (const nm of wb.SheetNames) { rows = X.utils.sheet_to_json(wb.Sheets[nm], { header: 1, raw: true, defval: '' }); if (rows.length) break; }
+    if (wb.SheetNames.length > 1) note = STR.sheetNote(wb.SheetNames.length);
+    t = tableFromRows(rows.map(r => r.map(cellStr))); kind = 'xlsx';
+  } else {
+    const text = decodeText(buf);
+    if (ext === 'json' || /^\s*[\[{]/.test(text.slice(0, 200))) { t = tableFromJSON(text); kind = 'json'; }
+    else t = tableFromRows(parseCSV(text, ext === 'tsv' ? '\t' : sniffDelim(text)));
+  }
+  if (!t || !t.headers.length) throw new Error(STR.emptyFile);
+  return { name: file.name, kind, note, ...t };
+}
+
+/* ================= 转换 ================= */
+let BAD = false;
+const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
+const fy = y => (y = +y, y < 100 ? (y < 70 ? 2000 + y : 1900 + y) : y);
+function mk(y, m, d, H, M, S) {
+  y = +y; m = +m; d = +d;
+  if (!(m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1000 && y <= 9999)) return null;
+  const dim = new Date(Date.UTC(y, m, 0)).getUTCDate(); if (d > dim) return null;
+  return { y, m, d, H: +(H || 0), M: +(M || 0), S: +(S || 0), t: H != null && H !== '' };
+}
+function fromEpoch(ms) { const x = new Date(ms); return { y: x.getUTCFullYear(), m: x.getUTCMonth() + 1, d: x.getUTCDate(), H: x.getUTCHours(), M: x.getUTCMinutes(), S: x.getUTCSeconds(), t: !!(x.getUTCHours() || x.getUTCMinutes() || x.getUTCSeconds()) }; }
+const TM = '(?:[ T]+(\\d{1,2})[:：](\\d{2})(?:[:：](\\d{2}))?(?:\\.\\d+)?\\s*(am|pm|AM|PM)?)?';
+const RE_YMD = new RegExp('^(\\d{4})\\s*[-/.年]\\s*(\\d{1,2})\\s*[-/.月]\\s*(\\d{1,2})\\s*日?' + TM);
+const RE_ABY = new RegExp('^(\\d{1,2})[-/.](\\d{1,2})[-/.](\\d{2,4})' + TM);
+const RE_MON1 = /^(\d{1,2})[\s\-]([a-z]{3,9})\.?[\s\-,]+(\d{2,4})/i, RE_MON2 = /^([a-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i;
+function ampm(H, ap) { H = +(H || 0); if (ap) { ap = ap.toLowerCase(); if (ap === 'pm' && H < 12) H += 12; if (ap === 'am' && H === 12) H = 0; } return H; }
+function parseDate(s, order) {
+  s = s.trim(); let m;
+  if (order === 'serial' || (order !== 'unix' && /^\d{5}(\.\d+)?$/.test(s) && +s > 20000 && +s < 80000)) { if (!/^\d+(\.\d+)?$/.test(s)) return null; return fromEpoch(Math.round((+s - 25569) * 86400) * 1000); }
+  if (order === 'unix' || /^\d{10}$|^\d{13}$/.test(s)) { if (!/^\d{10}(\d{3})?$/.test(s)) return null; return fromEpoch(s.length === 10 ? +s * 1000 : +s); }
+  if ((m = RE_YMD.exec(s))) return mk(m[1], m[2], m[3], m[4] != null ? ampm(m[4], m[7]) : null, m[5], m[6]);
+  if ((m = RE_ABY.exec(s))) {
+    const [a, b] = order === 'DMY' ? [m[2], m[1]] : [m[1], m[2]];
+    return mk(fy(m[3]), a, b, m[4] != null ? ampm(m[4], m[7]) : null, m[5], m[6]);
+  }
+  if (/^\d{8}$/.test(s)) return mk(s.slice(0, 4), s.slice(4, 6), s.slice(6, 8));
+  const monOf = w => MON[w.slice(0, 4).toLowerCase()] || MON[w.slice(0, 3).toLowerCase()];
+  if ((m = RE_MON1.exec(s)) && monOf(m[2])) return mk(fy(m[3]), monOf(m[2]), m[1]);
+  if ((m = RE_MON2.exec(s)) && monOf(m[1])) return mk(m[3], monOf(m[1]), m[2]);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) { const t = Date.parse(s); if (!isNaN(t)) return fromEpoch(t); }
+  return null;
+}
+// 看一列日期：日月顺序
+function detectOrder(vals) {
+  let dmy = 0, mdy = 0, any = 0, serial = 0;
+  for (const v of vals) {
+    const m = RE_ABY.exec(v.trim());
+    if (m) { any++; if (+m[1] > 12) dmy++; if (+m[2] > 12) mdy++; }
+    if (/^\d{5}(\.\d+)?$/.test(v.trim())) serial++;
+  }
+  if (!any) return { order: 'YMD', amb: false, serial: serial > vals.length / 2 };
+  if (dmy && !mdy) return { order: 'DMY', amb: false };
+  if (mdy && !dmy) return { order: 'MDY', amb: false };
+  return { order: 'MDY', amb: true };
+}
+const DATE_OUT = ['YYYY-MM-DD', 'YYYY/MM/DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD HH:mm:ss', 'YYYY年M月D日', 'YYYYMMDD', 'ISO'];
+function fmtDate(d, f) {
+  if (f === 'ISO') f = d.t ? 'YYYY-MM-DDTHH:mm:ss' : 'YYYY-MM-DD';
+  return f.replace(/YYYY|MM|DD|HH|mm|ss|M|D/g, k => ({ YYYY: d.y, MM: pad(d.m), DD: pad(d.d), HH: pad(d.H), mm: pad(d.M), ss: pad(d.S), M: d.m, D: d.d }[k]));
+}
+const COMPOUND = ['欧阳', '司马', '上官', '诸葛', '东方', '皇甫', '尉迟', '公孙', '慕容', '长孙', '宇文', '司徒', '令狐', '夏侯', '轩辕', '端木', '南宫', '西门', '独孤', '呼延', '澹台', '公冶', '申屠', '太史', '万俟', '闻人', '赫连', '钟离', '濮阳', '单于'];
+function splitName(s) {
+  s = s.trim(); if (!s) return ['', ''];
+  if (CJK.test(s) && !/[a-z]/i.test(s)) {
+    const t = s.replace(/[\s·•]/g, '');
+    const sl = COMPOUND.some(c => t.startsWith(c)) && t.length > 2 ? 2 : 1;
+    return [t.slice(0, sl), t.slice(sl)];
+  }
+  if (s.includes(',')) { const [a, b] = s.split(','); return [a.trim(), b.trim()]; }
+  const p = s.split(/\s+/); if (p.length === 1) return [p[0], ''];
+  return [p[p.length - 1], p.slice(0, -1).join(' ')];
+}
+function guessCC(vals) {
+  const c = { '86': 0, '65': 0, '852': 0, '60': 0, '1': 0, '44': 0, '886': 0 };
+  for (let v of vals) {
+    v = v.replace(/[^\d+]/g, '');
+    if (/^1[3-9]\d{9}$/.test(v)) c['86']++;
+    else if (/^[689]\d{7}$/.test(v)) c['65']++;
+  }
+  let best = '86', bn = 0; for (const k in c) if (c[k] > bn) { bn = c[k]; best = k; }
+  return best;
+}
+function fmtPhone(s, cc, style) {
+  let v = s.trim(); if (!v) return '';
+  const plus = /^\s*(\+|00)/.test(v) || /^\(\+?\d{1,3}\)/.test(v);
+  let d = v.replace(/^00/, '').replace(/\D/g, '');
+  if (!plus) {
+    if (cc === '86' && /^86(1[3-9]\d{9})$/.test(d)) d = d;
+    else if (d.startsWith(cc) && d.length > 10 + cc.length - 1 && cc !== '1') d = d;
+    else d = cc + d.replace(/^0+/, '');
+  }
+  if (d.length < 8 || d.length > 15) { BAD = true; return v; }
+  if (style === 'digits') return d;
+  if (style === 'spaced') { const k = ['852', '853', '886', '855', '880'].find(x => d.startsWith(x)) || (d[0] === '1' || d[0] === '7' ? d[0] : d.slice(0, 2)); return '+' + k + ' ' + d.slice(k.length); }
+  return '+' + d;
+}
+function parseNum(s) {
+  let v = s.trim(); if (!v) return null;
+  let neg = /^\(.*\)$/.test(v) || /^-|-$/.test(v.replace(/[^\d\-().,]/g, ''));
+  v = v.replace(/[^\d.,]/g, '');
+  if (!/\d/.test(v)) return NaN;
+  const lc = v.lastIndexOf(','), ld = v.lastIndexOf('.');
+  if (lc > -1 && ld > -1) v = lc > ld ? v.replace(/\./g, '').replace(',', '.') : v.replace(/,/g, '');
+  else if (lc > -1) v = /^\d{1,3}(,\d{3})+$/.test(v) ? v.replace(/,/g, '') : (v.split(',').length === 2 && /,\d{1,2}$/.test(v) ? v.replace(',', '.') : v.replace(/,/g, ''));
+  else if ((v.match(/\./g) || []).length > 1) v = v.replace(/\./g, '');
+  const n = parseFloat(v); return neg ? -n : n;
+}
+function fmtNum(n, dec, thou) {
+  let s = dec === 'keep' ? String(+n.toPrecision(15)) : n.toFixed(+dec);
+  if (/e/i.test(s)) s = n.toFixed(dec === 'keep' ? 2 : +dec);
+  if (thou) { const [a, b] = s.split('.'); s = a.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (b != null ? '.' + b : ''); }
+  return s;
+}
+function autoPairs(values, distinct) {
+  const pairs = [];
+  for (const [v] of distinct) {
+    const nv = norm(v); let hit = values.find(t => norm(t) === nv);
+    if (!hit) for (const g of VS) { if (!g.includes(nv)) continue; hit = values.find(t => g.includes(norm(t))); if (hit) break; }
+    pairs.push([v, hit || '']);
+  }
+  return pairs;
+}
+function distinctOf(j, cap = 60) {
+  const m = new Map(); const rows = S.src.rows;
+  for (let i = 0; i < rows.length; i++) { const v = String(rows[i][j] ?? '').trim(); if (!v) continue; m.set(v, (m.get(v) || 0) + 1); if (m.size > 2000) break; }
+  return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, cap);
+}
+function colSample(j, n = 300) {
+  const out = [], rows = S.src.rows;
+  for (let i = 0; i < rows.length && out.length < n; i++) { const v = String(rows[i][j] ?? '').trim(); if (v) out.push(v); }
+  return out;
+}
+
+/* 编译一列：返回 row => 字符串，出错时置 BAD */
+function compile(m, tc) {
+  const op = m.op || { t: 'none' };
+  const g = j => row => { const v = row[j]; return v == null ? '' : String(v).trim(); };
+  let get;
+  if (m.cnst != null) { const c = m.cnst; get = () => c; }
+  else if (!m.src.length) get = () => '';
+  else get = g(m.src[0]);
+  let f = get;
+  switch (op.t) {
+    case 'date': {
+      const ord = op.from === 'auto' ? detectOrder(colSample(m.src[0] ?? -1, 200)).order : op.from, to = op.to || 'YYYY-MM-DD';
+      f = row => { const v = get(row); if (!v) return ''; const d = parseDate(v, ord); if (!d) { BAD = true; return v; } return fmtDate(d, to); };
+      break;
+    }
+    case 'name': { const k = op.part === 'last' ? 0 : 1; f = row => splitName(get(row))[k]; break; }
+    case 'join': {
+      const gs = m.src.map(g), sep = op.sep ?? ' ';
+      f = op.smart && gs.length === 2
+        ? row => { const a = gs[0](row), b = gs[1](row); if (CJK.test(a + b) && !/[a-z]/i.test(a + b)) return b + a; return [a, b].filter(Boolean).join(' '); }
+        : row => gs.map(x => x(row)).filter(Boolean).join(sep);
+      break;
+    }
+    case 'phone': { const cc = String(op.cc || '86').replace(/\D/g, '') || '86', st = op.style || 'e164'; f = row => fmtPhone(get(row), cc, st); break; }
+    case 'num': { const dec = op.dec ?? 'keep', th = !!op.thou; f = row => { const v = get(row); if (!v) return ''; const n = parseNum(v); if (n == null) return ''; if (isNaN(n)) { BAD = true; return v; } return fmtNum(n, dec, th); }; break; }
+    case 'map': {
+      const mp = new Map(); for (const [a, b] of op.pairs || []) if (b !== '' && b != null) mp.set(a, b);
+      f = row => { const v = get(row); return mp.has(v) ? mp.get(v) : v; };
+      break;
+    }
+    case 'case': {
+      const md = op.mode || 'lower';
+      f = md === 'lower' ? row => get(row).toLowerCase() : md === 'upper' ? row => get(row).toUpperCase()
+        : md === 'title' ? row => get(row).toLowerCase().replace(/(^|[\s\-'])([a-z])/g, (_, a, b) => a + b.toUpperCase()) : get;
+      break;
+    }
+  }
+  // 按目标类型验货
+  const ty = tc.t, vals = tc.v && tc.v.length ? new Set(tc.v.map(x => x.toLowerCase())) : null, req = !!tc.req;
+  if (ty === 'email') { const f0 = f; f = row => { const v = f0(row); if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) BAD = true; return v; }; }
+  if (vals) { const f1 = f; f = row => { const v = f1(row); if (v && !vals.has(v.toLowerCase())) BAD = true; return v; }; }
+  if (req) { const f2 = f; f = row => { const v = f2(row); if (!v) BAD = true; return v; }; }
+  return f;
+}
+
+/* ================= 自动对列 ================= */
+function bigram(a, b) {
+  if (a.length < 2 || b.length < 2) return 0;
+  const A = new Map(); for (let i = 0; i < a.length - 1; i++) { const k = a.slice(i, i + 2); A.set(k, (A.get(k) || 0) + 1); }
+  let hit = 0; for (let i = 0; i < b.length - 1; i++) { const k = b.slice(i, i + 2); const c = A.get(k); if (c) { hit++; A.set(k, c - 1); } }
+  return 2 * hit / (a.length + b.length - 2);
+}
+function fuzzy(a, b) {
+  if (!a || !b) return 0;
+  if (a.length >= 3 && b.length >= 3 && (a.includes(b) || b.includes(a))) return 66;
+  const d = bigram(a, b); return d >= .6 ? Math.round(50 + d * 25) : 0;
+}
+const looks = {
+  email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+  phone: v => /^[+\d][\d\s\-()]{6,18}$/.test(v) && v.replace(/\D/g, '').length >= 7,
+  date: v => !!parseDate(v, 'MDY') && !/^\d+(\.\d+)?$/.test(v),
+};
+function tgtConcept(tc) { return tc.c || (conceptOf(tc.name) || {}).c; }
+function inferOp(tc, j, sample) {
+  const t = tc.t;
+  if (t === 'date') { const d = detectOrder(sample); return { op: { t: 'date', from: d.serial ? 'serial' : 'auto', to: tc.fmt || 'YYYY-MM-DD' }, amb: d.amb }; }
+  if (t === 'number') return { op: { t: 'num', dec: tc.dec ?? 'keep', thou: false } };
+  if (t === 'phone') return { op: { t: 'phone', cc: guessCC(sample), style: 'e164' } };
+  if (t === 'email') return { op: { t: 'case', mode: 'lower' } };
+  if (t === 'enum' && tc.v && tc.v.length) return { op: { t: 'map', pairs: autoPairs(tc.v, distinctOf(j)) } };
+  return { op: { t: 'none' } };
+}
+function autoMap() {
+  const H = S.src.headers, N = H.map(norm), HC = H.map(conceptOf), cols = S.tgt.cols;
+  const pairs = [];
+  cols.forEach((tc, i) => {
+    const tn = norm(tc.name), tcpt = tgtConcept(tc);
+    H.forEach((h, j) => {
+      let s = 0;
+      if (N[j] && N[j] === tn) s = 100;
+      else if (tcpt && HC[j] && HC[j].c === tcpt) s = HC[j].exact ? 92 : 72;
+      else s = fuzzy(tn, N[j]);
+      if (s >= 60) pairs.push({ i, j, s });
+    });
+  });
+  pairs.sort((a, b) => b.s - a.s || a.j - b.j);
+  const usedT = new Set(), usedS = new Set(), hit = cols.map(() => null);
+  for (const p of pairs) { if (usedT.has(p.i) || usedS.has(p.j)) continue; hit[p.i] = p; usedT.add(p.i); usedS.add(p.j); }
+  const samples = H.map((_, j) => colSample(j, 300));
+  const fullJ = HC.findIndex(x => x && x.c === 'full'), firstJ = HC.findIndex(x => x && x.c === 'first'), lastJ = HC.findIndex(x => x && x.c === 'last');
+  return cols.map((tc, i) => {
+    const cp = tgtConcept(tc), t = tc.t;
+    // 姓名拆/合
+    if (!hit[i] && (cp === 'first' || cp === 'last') && fullJ >= 0) return { src: [fullJ], cnst: null, op: { t: 'name', part: cp }, conf: 'sure', note: '' };
+    if (!hit[i] && cp === 'handle') { const sj = HC.findIndex(x => x && x.c === 'sku'); if (sj >= 0) return { src: [sj], cnst: null, op: { t: 'case', mode: 'lower' }, conf: 'guess', note: STR.noteHandle }; }
+    if (!hit[i] && cp === 'full' && firstJ >= 0 && lastJ >= 0) return { src: [firstJ, lastJ], cnst: null, op: { t: 'join', sep: ' ', smart: true }, conf: 'sure', note: '' };
+    let h = hit[i], note = '';
+    if (!h && looks[t]) {
+      const j = H.findIndex((_, j) => !usedS.has(j) && samples[j].length && samples[j].filter(looks[t]).length / samples[j].length >= .8);
+      if (j >= 0) { h = { j, s: 58 }; usedS.add(j); note = STR.noteByVal; }
+    }
+    if (!h) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'blank', note: tc.req ? STR.noteReq : '' };
+    const r = inferOp(tc, h.j, samples[h.j]);
+    let conf = h.s >= 80 ? 'sure' : 'guess';
+    if (h.s < 80 && !note) note = STR.noteGuess;
+    if (r.amb) { conf = 'guess'; note = STR.noteAmb; }
+    return { src: [h.j], cnst: null, op: r.op, conf, note };
+  });
+}
+
+/* ================= 状态 ================= */
+const S = { src: null, tgt: null, maps: [], fmt: 'csv', recipe: null, bad: null, badTotal: 0 };
+let FNS = [];
+function rebuild() { FNS = S.maps.map((m, i) => compile(m, S.tgt.cols[i])); }
+function outRow(row, flags) {
+  const o = new Array(FNS.length);
+  for (let k = 0; k < FNS.length; k++) { BAD = false; o[k] = FNS[k](row); if (flags) flags[k] = BAD; }
+  return o;
+}
+let scanT = 0;
+function scan() {
+  clearTimeout(scanT);
+  scanT = setTimeout(() => {
+    const rows = S.src.rows, n = FNS.length, cnt = new Array(n).fill(0);
+    for (let r = 0; r < rows.length; r++) { const row = rows[r]; for (let k = 0; k < n; k++) { BAD = false; FNS[k](row); if (BAD) cnt[k]++; } }
+    S.bad = cnt; S.badTotal = cnt.reduce((a, b) => a + b, 0);
+    renderMaps(); renderPreview();
+  }, 60);
+}
+function changed() { rebuild(); S.bad = null; render(); scan(); }
+
+/* ================= 渲染 ================= */
+const app = $('#app');
+const typeLabel = tc => STR.types[tc.t] || '';
+function opLabel(m) {
+  const o = m.op || {};
+  switch (o.t) {
+    case 'date': return `${STR.ops.date} → ${o.to}`;
+    case 'name': return o.part === 'last' ? STR.nameLast : STR.nameFirst;
+    case 'join': return STR.ops.join;
+    case 'phone': return `+${o.cc}`;
+    case 'num': return o.thou ? STR.thou : STR.ops.num;
+    case 'map': return `${STR.ops.map} ${(o.pairs || []).filter(p => p[1] !== '').length}`;
+    case 'case': return { lower: STR.caseLower, upper: STR.caseUpper, title: STR.caseTitle, trim: STR.caseTrim }[o.mode] || '';
+  }
+  return '';
+}
+function firstExample(i) {
+  const m = S.maps[i]; const rows = S.src.rows;
+  for (let r = 0; r < Math.min(rows.length, 50); r++) {
+    const before = m.cnst != null ? '' : m.src.map(j => String(rows[r][j] ?? '').trim()).filter(Boolean).join(' + ');
+    if (m.cnst == null && !before) continue;
+    BAD = false; const after = FNS[i](rows[r]);
+    return { before, after, bad: BAD };
+  }
+  return null;
+}
+function confOf(i) { const m = S.maps[i]; return m.conf; }
+function stIcon(c) { return c === 'sure' || c === 'user' ? ICON.check : c === 'guess' ? '?' : c === 'req' ? '!' : '–'; }
+function renderEnds() {
+  const s = S.src, t = S.tgt;
+  const fmtName = { csv: 'CSV', xlsx: 'Excel', json: 'JSON' }[S.fmt];
+  return `<section class="ends">
+    <div class="end src" data-zone="src">
+      <div class="end-ico">${ICON.doc}</div>
+      <div class="end-main"><div class="end-k">${STR.src}${s.demo ? `<span class="chip demo">${STR.demo}</span>` : ''}</div>
+      <div class="end-t" title="${esc(s.name)}">${esc(s.name)}</div><div class="end-s">${STR.rc(s.rows.length, s.headers.length)}${s.note ? ' · ' + esc(s.note) : ''}</div></div>
+      <button type="button" class="btn small tinted" data-act="pick-src">${STR.pickSrc}</button>
+    </div>
+    <div class="arrow">${ICON.arrow}</div>
+    <div class="end tgt" data-zone="tgt">
+      <div class="end-ico">${ICON.grid}</div>
+      <div class="end-main"><div class="end-k">${STR.tgt}${S.recipe ? `<span class="chip rec">${STR.recChip}</span>` : ''}</div>
+      <div class="end-t" title="${esc(t.name)}">${esc(t.name)}</div><div class="end-s">${STR.tgtSub(t.cols.length, fmtName)}</div></div>
+      <button type="button" class="btn small tinted" data-act="pick-tgt">${STR.pickTgt}</button>
+    </div></section>`;
+}
+function mapRows() {
+  return S.tgt.cols.map((tc, i) => {
+    const m = S.maps[i], c = confOf(i), ex = firstExample(i);
+    let from;
+    if (m.cnst != null) from = `<span class="from">${esc(STR.constOf(m.cnst))}</span>`;
+    else if (!m.src.length) from = `<span class="none">${STR.blank}</span>`;
+    else from = `<span class="from">${esc(m.src.map(j => S.src.headers[j]).join(' + '))}</span>`;
+    const ol = m.cnst == null && m.src.length ? opLabel(m) : '';
+    const bc = S.bad && S.bad[i] ? `<span class="bc">${STR.badN(S.bad[i])}</span>` : '';
+    const x = ex ? (ex.before && ex.before !== ex.after ? `${esc(ex.before)}<i>→</i><b>${esc(ex.after) || '∅'}</b>` : `<b>${esc(ex.after)}</b>`) : '';
+    return `<button type="button" class="mrow" data-act="col" data-i="${i}">
+      <span class="st ${c}">${stIcon(c)}</span>
+      <span class="m-t"><span>${esc(tc.name)}</span>${typeLabel(tc) ? `<em class="ty">${typeLabel(tc)}</em>` : ''}</span>
+      <span class="m-s">${from}${ol ? `<span class="op">${esc(ol)}</span>` : ''}${m.note ? `<span class="note${c === 'req' ? ' r' : ''}">${esc(m.note)}</span>` : ''}</span>
+      <span class="m-x">${x}${bc}</span>
+      <span class="chev">${ICON.chevR}</span></button>`;
+  }).join('');
+}
+function renderMapsInner() {
+  const cs = S.maps.map(m => m.conf);
+  const ok = cs.filter(c => c === 'sure' || c === 'user').length, q = cs.filter(c => c === 'guess').length, b = cs.filter(c => c === 'blank').length, r = cs.filter(c => c === 'req').length;
+  const used = new Set(); S.maps.forEach(m => { if (m.cnst == null) m.src.forEach(j => used.add(j)); });
+  const un = S.src.headers.filter((_, j) => !used.has(j));
+  return `<div class="grp-h"><h2>${STR.mapH}<span class="grp-sub">${STR.mapSub(cs.length, ok, q, b, r)}</span></h2>
+    <button type="button" class="btn small tinted" data-act="save-rec">${STR.saveRec}</button></div>
+    <div class="card"><div class="mhead"><span></span><span>${STR.colT}</span><span>${STR.colS}</span><span>${STR.colX}</span><span></span></div>${mapRows()}</div>
+    <p class="grp-foot">${un.length ? esc(STR.unused(un.join('、'))) : STR.allUsed}</p>`;
+}
+const PREV_N = 20;
+function renderPreviewInner() {
+  const rows = S.src.rows.slice(0, PREV_N), cols = S.tgt.cols;
+  const flags = new Array(cols.length);
+  const body = rows.map((row, r) => {
+    const o = outRow(row, flags);
+    return `<tr><td class="n">${r + 1}</td>${o.map((v, k) => `<td class="${flags[k] ? 'bad' : v === '' ? 'e' : ''}" title="${esc(v)}">${v === '' ? '' : esc(v)}</td>`).join('')}</tr>`;
+  }).join('');
+  const sub = S.bad == null ? STR.prevSub(Math.min(PREV_N, S.src.rows.length)) : S.badTotal ? `${STR.prevSub(Math.min(PREV_N, S.src.rows.length))} · <b class="a">${STR.prevBad(S.badTotal)}</b>` : `${STR.prevSub(Math.min(PREV_N, S.src.rows.length))} · <b class="g">${STR.prevOk}</b>`;
+  return `<div class="grp-h"><h2>${STR.prevH}<span class="grp-sub">${sub}</span></h2></div>
+    <div class="card tbl"><table><thead><tr><th class="n"></th>${cols.map(c => `<th>${esc(c.name)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function renderMaps() { const el = $('#maps'); if (el) el.innerHTML = renderMapsInner(); }
+function renderPreview() { const el = $('#prev'); if (el) el.innerHTML = renderPreviewInner(); }
+function outName() {
+  const base = S.src.name.replace(/\.[^.]+$/, ''), tn = S.tgt.name.replace(/（.*?）|\(.*?\)/g, '').trim();
+  return `${base} → ${tn}`.replace(/[\\/:*?"<>|]/g, '').slice(0, 120) + '.' + S.fmt;
+}
+function renderDock() {
+  $('#dock').innerHTML = `<div class="dock-in"><div class="seg" role="group">${['csv', 'xlsx', 'json'].map(f => `<button type="button" data-act="fmt" data-f="${f}" aria-pressed="${S.fmt === f}">${{ csv: 'CSV', xlsx: 'Excel', json: 'JSON' }[f]}</button>`).join('')}</div>
+    <span class="dock-f">${esc(outName())}</span>
+    <button type="button" class="btn primary" data-act="export">${ICON.down}${STR.exportBtn(S.src.rows.length)}</button></div>`;
+}
+function render() {
+  app.innerHTML = `<div class="lt"><h1>${STR.app}</h1><p class="tag">${STR.tag}</p><p class="hint">${ICON.lock}${STR.hint}</p></div>
+    ${renderEnds()}<section class="grp" id="maps">${renderMapsInner()}</section><section class="grp" id="prev">${renderPreviewInner()}</section>
+    <footer class="foot"><div>${STR.footApp}</div><div>${STR.footMail}<span class="mail">oilsongchengmin@gmail.com</span></div><div><a href="https://qianshoulab.github.io/">${STR.footHome}</a></div></footer>`;
+  renderDock();
+  const n = recipes().length;
+  $('#navRec').innerHTML = `${ICON.book}${STR.recipes}${n ? `<span class="n">${n}</span>` : ''}`;
+}
+
+/* ================= 弹层 ================= */
+const sheets = $('#sheets'), sheetEl = $('.sheet', sheets);
+let sheetKind = null, sheetCol = -1, lastFocus = null;
+function openSheet(kind, title, body, ok) {
+  sheetKind = kind; lastFocus = document.activeElement; $('#toast').classList.remove('on');
+  sheetEl.innerHTML = `<div class="grab"></div><div class="sh-head"><button type="button" class="sh-x" data-act="close">${ok ? STR.cancel : ''}</button><div class="sh-t">${esc(title)}</div><button type="button" class="sh-ok" data-act="close">${ok || STR.done}</button></div><div class="sh-body">${body}</div>`;
+  sheets.hidden = false; requestAnimationFrame(() => requestAnimationFrame(() => sheets.classList.add('open')));
+  setTimeout(() => { const f = sheetEl.querySelector('input[autofocus]') || sheetEl.querySelector('.sh-ok'); f && f.focus({ preventScroll: true }); }, 60);
+}
+function closeSheet() {
+  if (sheets.hidden) return;
+  sheets.classList.remove('open'); sheetKind = null; sheetCol = -1;
+  setTimeout(() => { sheets.hidden = true; sheetEl.innerHTML = ''; }, 380);
+  lastFocus && lastFocus.focus && lastFocus.focus({ preventScroll: true });
+}
+const pickHTML = (name, opts, cur) => `<div class="pick" data-pick="${name}">${opts.map(([v, l]) => `<button type="button" data-v="${esc(v)}" aria-pressed="${String(v) === String(cur)}">${esc(l)}</button>`).join('')}</div>`;
+function srcOptions(sel, withExtra) {
+  const H = S.src.headers;
+  let o = H.map((h, j) => { const s = colSample(j, 1)[0]; return `<option value="${j}"${sel === j ? ' selected' : ''}>${esc(h)}${s ? ' · ' + esc(s.slice(0, 18)) : ''}</option>`; }).join('');
+  if (withExtra) o = `<option value="blank"${sel === 'blank' ? ' selected' : ''}>${STR.optBlank}</option><option value="const"${sel === 'const' ? ' selected' : ''}>${STR.optConst}</option>` + o;
+  return o;
+}
+function colSheetBody(i) {
+  const m = S.maps[i], tc = S.tgt.cols[i], o = m.op || { t: 'none' };
+  const mode = m.cnst != null ? 'const' : !m.src.length ? 'blank' : m.src[0];
+  let h = `<div class="lab"><span>${STR.fromWhere}</span></div>`;
+  if (o.t === 'join' && m.cnst == null) {
+    h += `<div class="form">${m.src.map((j, k) => `<div class="f-row"><select data-in="joinsrc" data-k="${k}" aria-label="${STR.fromWhere}">${srcOptions(j)}</select>${m.src.length > 1 ? `<button type="button" class="x" data-act="join-rm" data-k="${k}" aria-label="${STR.recDel}">${ICON.x}</button>` : ''}</div>`).join('')}
+      <div class="f-row"><button type="button" class="btn plain small" data-act="join-add" style="padding:0">＋ ${STR.addCol}</button></div></div>`;
+  } else {
+    h += `<div class="form"><div class="f-row"><span class="f-k">${esc(tc.name)} ←</span><select data-in="src" aria-label="${STR.fromWhere}">${srcOptions(mode, true)}</select></div>
+      ${m.cnst != null ? `<div class="f-row"><span class="f-k">${STR.value}</span><input data-in="const" value="${esc(m.cnst)}" placeholder="${STR.constPh}" autofocus></div>` : ''}</div>`;
+  }
+  if (m.cnst == null && m.src.length) {
+    h += `<div class="lab"><span>${STR.howTo}</span></div>` + pickHTML('op', Object.entries(STR.ops), o.t);
+    if (o.t === 'date') {
+      const det = detectOrder(colSample(m.src[0], 200));
+      h += `<div class="form"><div class="f-row"><span class="f-k">${STR.dFrom}</span><select data-in="dfrom">${[['auto', STR.dAuto(STR.dOrders[det.order])], ...Object.entries(STR.dOrders)].map(([v, l]) => `<option value="${v}"${o.from === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="f-row"><span class="f-k">${STR.dTo}</span><select data-in="dto">${DATE_OUT.map(f => `<option value="${f}"${o.to === f ? ' selected' : ''}>${f === 'ISO' ? 'ISO 8601' : f}</option>`).join('')}</select></div></div>`;
+    }
+    if (o.t === 'name') h += pickHTML('part', [['last', STR.nameLast], ['first', STR.nameFirst]], o.part || 'first');
+    if (o.t === 'join') h += `<div class="form"><div class="f-row"><span class="f-k">${STR.smartName}</span><button type="button" class="switch" role="switch" data-act="smart" aria-checked="${!!o.smart}"><i></i></button></div>${o.smart ? '' : `<div class="f-row"><span class="f-k">${STR.sep}</span><input data-in="sep" value="${esc(o.sep ?? ' ')}" placeholder="${STR.sepPh}"></div>`}</div>${o.smart ? `<div class="sh-foot">${STR.smartNameS}</div>` : ''}`;
+    if (o.t === 'phone') h += `<div class="form"><div class="f-row"><span class="f-k">${STR.cc}</span><input data-in="cc" inputmode="numeric" value="${esc(o.cc || '86')}"></div></div>` + pickHTML('style', [['e164', STR.e164], ['spaced', STR.spaced], ['digits', STR.digits]], o.style || 'e164');
+    if (o.t === 'num') h += `<div class="form"><div class="f-row"><span class="f-k">${STR.dec}</span><select data-in="dec">${[['keep', STR.decKeep], ['0', '0'], ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']].map(([v, l]) => `<option value="${v}"${String(o.dec ?? 'keep') === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div><div class="f-row"><span class="f-k">${STR.thou}</span><button type="button" class="switch" role="switch" data-act="thou" aria-checked="${!!o.thou}"><i></i></button></div></div>`;
+    if (o.t === 'case') h += pickHTML('mode', [['lower', STR.caseLower], ['upper', STR.caseUpper], ['title', STR.caseTitle], ['trim', STR.caseTrim]], o.mode || 'lower');
+    if (o.t === 'map') {
+      const pairs = o.pairs || [];
+      const cnt = new Map(distinctOf(m.src[0], 200));
+      h += pairs.length ? `<div class="lab"><span>${STR.mapKeep}</span>${tc.v ? `<span>${esc(tc.v.join(' / '))}</span>` : ''}</div><div class="form vmap">${pairs.map(([a, b], k) => `<div class="f-row"><span class="vk">${esc(a)}<small>${fmtInt(cnt.get(a) || 0)}</small></span><span class="ar">→</span><input data-in="map" data-k="${k}" value="${esc(b)}" placeholder="${esc(a)}"${tc.v ? ` list="vl${i}"` : ''}></div>`).join('')}</div>${tc.v ? `<datalist id="vl${i}">${tc.v.map(v => `<option value="${esc(v)}">`).join('')}</datalist>` : ''}`
+        : `<div class="empty-note">${STR.mapNone}</div>`;
+    }
+  }
+  h += `<div class="lab"><span>${STR.preview}</span></div><div class="form pv" id="pv">${pvRows(i)}</div>`;
+  return h;
+}
+function pvRows(i) {
+  const m = S.maps[i], f = compile(m, S.tgt.cols[i]), rows = S.src.rows, out = [];
+  for (let r = 0; r < rows.length && out.length < 6; r++) {
+    const before = m.cnst != null ? '' : m.src.map(j => String(rows[r][j] ?? '').trim()).filter(Boolean).join(' + ');
+    if (m.cnst == null && m.src.length && !before && r < rows.length - 1 && out.length < 5) continue;
+    BAD = false; const after = f(rows[r]);
+    out.push(`<div class="f-row"><span class="a">${esc(before) || '∅'}</span><span class="ar">→</span><span class="b${BAD ? ' bad' : ''}">${esc(after) || '∅'}</span></div>`);
+  }
+  return out.join('') || `<div class="empty-note">∅</div>`;
+}
+function openCol(i) { sheetCol = i; openSheet('col', S.tgt.cols[i].name, colSheetBody(i)); }
+function refreshCol(full) {
+  const i = sheetCol; if (i < 0) return;
+  S.maps[i].conf = 'user'; S.maps[i].note = '';
+  if (full) { const st = sheetEl.scrollTop; $('.sh-body', sheetEl).innerHTML = colSheetBody(i); sheetEl.scrollTop = st; }
+  else { const pv = $('#pv', sheetEl); if (pv) pv.innerHTML = pvRows(i); }
+  rebuild(); renderMaps(); renderPreview(); scan();
+}
+function setOp(i, t) {
+  const m = S.maps[i], tc = S.tgt.cols[i], j = m.src[0], smp = colSample(j, 300);
+  if (t === 'map') m.op = { t, pairs: tc.v && tc.v.length ? autoPairs(tc.v, distinctOf(j)) : distinctOf(j).map(([v]) => [v, '']) };
+  else if (t === 'date') m.op = { t, from: 'auto', to: tc.fmt || (m.op.t === 'date' ? m.op.to : 'YYYY-MM-DD') };
+  else if (t === 'phone') m.op = { t, cc: guessCC(smp), style: 'e164' };
+  else if (t === 'num') m.op = { t, dec: tc.dec ?? 'keep', thou: false };
+  else if (t === 'name') m.op = { t, part: tgtConcept(tc) === 'last' ? 'last' : 'first' };
+  else if (t === 'join') { m.op = { t, sep: ' ', smart: false }; if (m.src.length < 2) { const k = S.src.headers.findIndex((_, x) => x !== j); m.src = k >= 0 ? [j, k] : [j]; } }
+  else if (t === 'case') m.op = { t, mode: 'lower' };
+  else m.op = { t: 'none' };
+  if (t !== 'join' && m.src.length > 1) m.src = [m.src[0]];
+}
+function openTpl() {
+  const cur = S.tgt.id;
+  const body = `<div class="lab"><span>${STR.tplBuiltin}</span></div><div class="form list">${Object.entries(TPL).map(([k, t]) => `<div class="f-row"><button type="button" class="li" data-act="tpl" data-k="${k}"><b>${esc(t.name)}</b><small>${esc(t.cols.map(c => c.name).join(' · '))}</small></button>${cur === k ? `<span class="ck">${ICON.check}</span>` : ''}</div>`).join('')}</div>
+    <button type="button" class="btn tinted block" data-act="pick-tgt-file">${STR.tplFile}</button><div class="sh-foot" style="text-align:center">${STR.tplFileS}</div>`;
+  openSheet('tpl', STR.tplH, body);
+}
+
+/* ================= 配方 ================= */
+const RK = 'yijing.recipes.v1';
+function recipes() { try { return JSON.parse(localStorage.getItem(RK) || '[]'); } catch (e) { return []; } }
+function saveRecipes(a) { try { localStorage.setItem(RK, JSON.stringify(a)); return true; } catch (e) { return false; } }
+function currentRecipe(name) {
+  const H = S.src.headers;
+  return { v: 1, id: 'r' + Date.now().toString(36), name, created: new Date().toISOString(), srcHeaders: H.slice(), fmt: S.fmt,
+    tgt: { id: S.tgt.id, name: S.tgt.name, cols: S.tgt.cols }, maps: S.maps.map(m => ({ src: m.src.map(j => H[j]), cnst: m.cnst, op: m.op })) };
+}
+function applyRecipe(r) {
+  const H = S.src.headers, N = H.map(norm);
+  const find = h => { let j = H.indexOf(h); if (j < 0) j = N.indexOf(norm(h)); return j; };
+  S.tgt = clone(r.tgt); S.fmt = r.fmt || 'csv'; S.recipe = r.id;
+  S.maps = r.maps.map((m, i) => {
+    const src = m.src.map(find), miss = src.some(j => j < 0);
+    const ok = src.filter(j => j >= 0);
+    const tc = S.tgt.cols[i];
+    if (m.cnst != null) return { src: [], cnst: m.cnst, op: m.op, conf: 'sure', note: '' };
+    if (!m.src.length) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'blank', note: tc.req ? STR.noteReq : '' };
+    if (!ok.length) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'guess', note: STR.noteMiss };
+    return { src: ok, cnst: null, op: clone(m.op), conf: miss ? 'guess' : 'sure', note: miss ? STR.noteMiss : '' };
+  });
+}
+function matchRecipe() {
+  const cur = new Set(S.src.headers.map(norm)); let best = null, bs = 0;
+  for (const r of recipes()) {
+    const need = new Set(); r.maps.forEach(m => m.src.forEach(h => need.add(norm(h))));
+    if (![...need].every(h => cur.has(h))) continue;
+    const rs = new Set(r.srcHeaders.map(norm)); let inter = 0; rs.forEach(h => cur.has(h) && inter++);
+    const jac = inter / (rs.size + cur.size - inter);
+    if (jac >= .6 && jac > bs) { bs = jac; best = r; }
+  }
+  return best;
+}
+function openRecipes() {
+  const rs = recipes();
+  const body = (rs.length ? `<div class="form list">${rs.map(r => `<div class="f-row"><button type="button" class="li" data-act="rec-apply" data-id="${r.id}"><b>${esc(r.name)}</b><small>${esc(STR.recSub(r.tgt.cols.length, r.created.slice(0, 10)))} · ${esc(r.tgt.name)}</small></button>${S.recipe === r.id ? `<span class="ck">${ICON.check}</span>` : ''}<button type="button" class="btn small danger" data-act="rec-del" data-id="${r.id}">${STR.recDel}</button></div>`).join('')}</div>`
+    : `<div class="empty-note">${STR.recEmpty}</div>`) +
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">${rs.length ? `<button type="button" class="btn plain small" data-act="rec-export">${STR.recExport}</button>` : ''}<button type="button" class="btn plain small" data-act="rec-import">${STR.recImport}</button></div>`;
+  openSheet('rec', STR.recH, body);
+}
+function openSaveRec() {
+  const def = `${S.src.demo ? '旧 CRM' : S.src.name.replace(/\.[^.]+$/, '')} → ${S.tgt.name.replace(/（.*?）|\(.*?\)/g, '').trim()}`;
+  openSheet('save', STR.recSaveH, `<div class="form"><div class="f-row"><span class="f-k">${STR.recName}</span><input id="recName" value="${esc(def)}" autofocus maxlength="60"></div></div>`, STR.recSave);
+  $('.sh-ok', sheetEl).dataset.act = 'rec-save';
+}
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ================= 导出 ================= */
+const csvCell = v => /[",\r\n]|^\s|\s$/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+async function doExport() {
+  const t0 = performance.now();
+  toast(STR.exporting, null, null, true);
+  await new Promise(r => setTimeout(r, 30));
+  const cols = S.tgt.cols, rows = S.src.rows, name = outName();
+  try {
+    if (S.fmt === 'csv') {
+      const parts = [cols.map(c => csvCell(c.name)).join(',')];
+      for (let r = 0; r < rows.length; r++) parts.push(outRow(rows[r]).map(csvCell).join(','));
+      download(new Blob(['﻿' + parts.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }), name);
+    } else if (S.fmt === 'json') {
+      const keys = cols.map(c => c.name), arr = new Array(rows.length);
+      for (let r = 0; r < rows.length; r++) { const o = outRow(rows[r]), ob = {}; for (let k = 0; k < keys.length; k++) ob[keys[k]] = o[k]; arr[r] = ob; }
+      download(new Blob([JSON.stringify(arr, null, 1)], { type: 'application/json' }), name);
+    } else {
+      const X = await loadXLSX();
+      const numK = cols.map(c => c.t === 'number');
+      const aoa = [cols.map(c => c.name)];
+      for (let r = 0; r < rows.length; r++) { const o = outRow(rows[r]); for (let k = 0; k < o.length; k++) if (numK[k] && o[k] !== '' && /^-?\d+(\.\d+)?$/.test(o[k])) o[k] = +o[k]; aoa.push(o); }
+      const ws = X.utils.aoa_to_sheet(aoa, { dense: true }), wb = X.utils.book_new();
+      X.utils.book_append_sheet(wb, ws, 'Sheet1');
+      const out = X.write(wb, { type: 'array', bookType: 'xlsx', compression: true });
+      download(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name);
+    }
+    const s = ((performance.now() - t0) / 1000).toFixed(1);
+    window.__lastExport = { ms: performance.now() - t0, rows: rows.length, fmt: S.fmt };
+    toast(STR.exported(rows.length, s));
+  } catch (e) { toast(STR.readFail + e.message); }
+}
+
+/* ================= 吐司 ================= */
+let toastT = 0, toastFn = null;
+function toast(msg, act, fn, busy) {
+  const el = $('#toast'); clearTimeout(toastT); toastFn = fn || null;
+  el.innerHTML = `${busy ? '<span class="spin"></span>' : ''}<span>${esc(msg)}</span>${act ? `<button type="button" data-act="toast">${esc(act)}</button>` : ''}`;
+  el.classList.add('on');
+  if (!busy) toastT = setTimeout(() => el.classList.remove('on'), act ? 6000 : 2600);
+}
+
+/* ================= 载入 ================= */
+function setSource(src, tryRecipe) {
+  S.src = src; S.recipe = null;
+  const prevTgt = S.tgt, prevFmt = S.fmt;
+  let r = tryRecipe ? matchRecipe() : null;
+  if (r) {
+    applyRecipe(r); changed();
+    toast(STR.recAuto(r.name), STR.recUndo, () => { S.tgt = prevTgt; S.fmt = prevFmt; S.recipe = null; S.maps = autoMap(); changed(); });
+  } else { S.maps = autoMap(); changed(); }
+}
+async function loadFile(file, as) {
+  toast(STR.reading, null, null, true);
+  await new Promise(r => setTimeout(r, 20));
+  const t0 = performance.now();
+  try {
+    const t = await readFile(file);
+    window.__lastRead = { ms: performance.now() - t0, rows: t.rows.length };
+    if (as === 'tgt') {
+      const cols = t.headers.map((h, k) => {
+        const c = conceptOf(h), ty = c && c.exact ? C[c.c].t : 'text';
+        const col = { name: h, t: ty === 'enum' ? 'text' : ty };
+        if (ty === 'date') { const ex = t.rows.map(r => String(r[k] ?? '')).find(Boolean); col.fmt = ex ? guessFmt(ex) : 'YYYY-MM-DD'; }
+        return col;
+      });
+      S.tgt = { id: 'file', name: file.name.replace(/\.[^.]+$/, ''), cols };
+      S.fmt = t.kind; S.recipe = null; S.maps = autoMap(); changed();
+      toast(`${file.name} · ${cols.length} 列`);
+    } else {
+      setSource(t, true);
+      if (!$('#toast').querySelector('button')) toast(`${file.name} · ${STR.rc(t.rows.length, t.headers.length)}`);
+    }
+  } catch (e) { console.warn(e); toast(STR.readFail + (e.message || e)); }
+}
+function guessFmt(ex) {
+  ex = ex.trim();
+  if (/^\d{4}-\d{2}-\d{2}T/.test(ex)) return 'ISO';
+  if (/^\d{4}-\d{1,2}-\d{1,2} \d/.test(ex)) return 'YYYY-MM-DD HH:mm:ss';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ex)) return 'YYYY-MM-DD';
+  if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(ex)) return 'YYYY/MM/DD';
+  if (/^\d{4}年/.test(ex)) return 'YYYY年M月D日';
+  if (/^\d{8}$/.test(ex)) return 'YYYYMMDD';
+  const m = /^(\d{1,2})\/(\d{1,2})\/\d{4}$/.exec(ex);
+  if (m) return +m[1] > 12 ? 'DD/MM/YYYY' : 'MM/DD/YYYY';
+  return 'YYYY-MM-DD';
+}
+
+/* ================= 事件 ================= */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act;
+  if (a === 'close') return closeSheet();
+  if (a === 'pick-src') return $('#fSrc').click();
+  if (a === 'pick-tgt') return openTpl();
+  if (a === 'pick-tgt-file') { closeSheet(); return $('#fTgt').click(); }
+  if (a === 'tpl') { S.tgt = tplFrom(b.dataset.k); S.fmt = S.tgt.fmt; S.recipe = null; S.maps = autoMap(); closeSheet(); return changed(); }
+  if (a === 'col') return openCol(+b.dataset.i);
+  if (a === 'fmt') { S.fmt = b.dataset.f; return renderDock(), void $('.end.tgt .end-s').replaceChildren(document.createTextNode(STR.tgtSub(S.tgt.cols.length, { csv: 'CSV', xlsx: 'Excel', json: 'JSON' }[S.fmt]))); }
+  if (a === 'export') return doExport();
+  if (a === 'recipes') return openRecipes();
+  if (a === 'save-rec') return openSaveRec();
+  if (a === 'rec-save') {
+    const name = ($('#recName').value || '').trim() || STR.recipes;
+    const rs = recipes().filter(r => r.name !== name); const r = currentRecipe(name); rs.unshift(r);
+    saveRecipes(rs); S.recipe = r.id; closeSheet(); render(); return toast(STR.recSaved(name));
+  }
+  if (a === 'rec-apply') { const r = recipes().find(x => x.id === b.dataset.id); if (r) { applyRecipe(r); closeSheet(); changed(); toast(STR.recAuto(r.name)); } return; }
+  if (a === 'rec-del') { saveRecipes(recipes().filter(x => x.id !== b.dataset.id)); if (S.recipe === b.dataset.id) S.recipe = null; render(); return openRecipes(); }
+  if (a === 'rec-export') { download(new Blob([JSON.stringify({ app: 'yijing', v: 1, recipes: recipes() }, null, 1)], { type: 'application/json' }), `译经僧配方-${new Date().toISOString().slice(0, 10)}.json`); return; }
+  if (a === 'rec-import') return $('#fRec').click();
+  if (a === 'toast') { const f = toastFn; $('#toast').classList.remove('on'); toastFn = null; return f && f(); }
+  if (sheetCol >= 0) {
+    const m = S.maps[sheetCol];
+    if (a === 'join-add') { const k = S.src.headers.findIndex((_, x) => !m.src.includes(x)); m.src.push(k >= 0 ? k : 0); return refreshCol(true); }
+    if (a === 'join-rm') { m.src.splice(+b.dataset.k, 1); return refreshCol(true); }
+    if (a === 'smart') { m.op.smart = !m.op.smart; return refreshCol(true); }
+    if (a === 'thou') { m.op.thou = !m.op.thou; return refreshCol(true); }
+  }
+});
+sheetEl.addEventListener('click', e => {
+  const p = e.target.closest('.pick button'); if (!p || sheetCol < 0) return;
+  const k = p.closest('.pick').dataset.pick, v = p.dataset.v, m = S.maps[sheetCol];
+  if (k === 'op') setOp(sheetCol, v); else m.op[k] = v;
+  refreshCol(true);
+});
+sheetEl.addEventListener('change', e => {
+  const el = e.target, k = el.dataset.in; if (!k || sheetCol < 0) return;
+  const m = S.maps[sheetCol];
+  if (k === 'src') {
+    const v = el.value;
+    if (v === 'blank') { m.src = []; m.cnst = null; m.op = { t: 'none' }; }
+    else if (v === 'const') { m.src = []; m.cnst = m.cnst ?? ''; m.op = { t: 'none' }; }
+    else { m.src = [+v]; m.cnst = null; const r = inferOp(S.tgt.cols[sheetCol], +v, colSample(+v, 300)); m.op = r.op; }
+    return refreshCol(true);
+  }
+  if (k === 'joinsrc') { m.src[+el.dataset.k] = +el.value; return refreshCol(true); }
+  if (k === 'dfrom') m.op.from = el.value;
+  if (k === 'dto') m.op.to = el.value;
+  if (k === 'dec') m.op.dec = el.value === 'keep' ? 'keep' : +el.value;
+  if (['dfrom', 'dto', 'dec'].includes(k)) refreshCol(false);
+});
+sheetEl.addEventListener('input', e => {
+  const el = e.target, k = el.dataset.in; if (!k || sheetCol < 0) return;
+  const m = S.maps[sheetCol];
+  if (k === 'const') m.cnst = el.value;
+  else if (k === 'sep') m.op.sep = el.value;
+  else if (k === 'cc') m.op.cc = el.value.replace(/\D/g, '');
+  else if (k === 'map') m.op.pairs[+el.dataset.k][1] = el.value;
+  else return;
+  refreshCol(false);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSheet();
+  if (e.key === 'Enter' && sheetKind === 'save' && e.target.id === 'recName') { e.preventDefault(); $('.sh-ok', sheetEl).click(); }
+});
+$('#fSrc').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) loadFile(f, 'src'); });
+$('#fTgt').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) loadFile(f, 'tgt'); });
+$('#fRec').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text()); const list = Array.isArray(d) ? d : d.recipes;
+    if (!Array.isArray(list) || !list.every(r => r && r.tgt && Array.isArray(r.maps))) throw 0;
+    const rs = recipes(), ids = new Set(rs.map(r => r.id));
+    list.forEach(r => { if (!ids.has(r.id)) rs.push(r); });
+    saveRecipes(rs); render(); if (sheetKind === 'rec') openRecipes(); toast(STR.recImported(list.length));
+  } catch (_) { toast(STR.recBadFile); }
+});
+// 拖放
+const drop = $('#drop'); let dragN = 0;
+drop.querySelector('[data-zone="src"]').innerHTML = `<div>${STR.dropSrc}<small>${STR.dropSrcS}</small></div>`;
+drop.querySelector('[data-zone="tgt"]').innerHTML = `<div>${STR.dropTgt}<small>${STR.dropTgtS}</small></div>`;
+const hasFiles = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+window.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); dragN++; drop.hidden = false; });
+window.addEventListener('dragleave', e => { if (!hasFiles(e)) return; if (--dragN <= 0) { dragN = 0; drop.hidden = true; } });
+window.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); drop.querySelectorAll('.dz').forEach(z => z.classList.toggle('on', z.contains(e.target))); });
+window.addEventListener('drop', e => {
+  if (!hasFiles(e)) return; e.preventDefault(); dragN = 0; drop.hidden = true;
+  const z = e.target.closest && e.target.closest('[data-zone]'); const f = e.dataTransfer.files[0];
+  if (f) loadFile(f, z && z.dataset.zone === 'tgt' ? 'tgt' : 'src');
+});
+// 导航
+const nav = $('#nav');
+$('#navBack').innerHTML = `${ICON.chevL}<span>${STR.home}</span>`;
+$('#navT').textContent = STR.app;
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 30), { passive: true });
+
+/* ================= 开张 ================= */
+S.tgt = tplFrom('crm'); S.fmt = 'csv';
+setSource(demoSource(), false);
+window.__yj = { S, loadFile, autoMap, parseDate, splitName, fmtPhone, parseNum, parseCSV };
+</script>
+</body>
+</html>
