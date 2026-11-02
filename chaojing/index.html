@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>抄经僧</title>
+<meta name="description" content="批量出文档：表格一行出一份证书、发票、合同。Word 模板 + Excel 表格，一键打包 Word / PDF。全在浏览器里干，不上传。">
+<meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<style>
+/* 布局：电脑左栏四张步骤卡（模板/表格/对号入座/出货）+ 右栏粘性预览纸；手机单列，预览插在表格后面 */
+:root{
+  --bg:#F5F5F7; --card:#FFFFFF; --fill:rgba(118,118,128,.12); --fill2:rgba(118,118,128,.2);
+  --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#AEAEB2; --sep:rgba(60,60,67,.14);
+  --accent:#0071E3; --accent-tint:rgba(0,113,227,.10); --on-accent:#FFFFFF;
+  --good:#1F7A36; --good-tint:rgba(52,199,89,.16); --bad:#D70015; --bad-tint:rgba(255,59,48,.10);
+  --amber-ink:#A85100; --amber-tint:rgba(255,149,0,.14);
+  --desk:#E8E8ED; --paper-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.10);
+  --glass:rgba(245,245,247,.8); --scrim:rgba(0,0,0,.32);
+  --toast-bg:rgba(29,29,31,.92); --toast-fg:#F5F5F7;
+  --shadow:0 1px 1px rgba(0,0,0,.03),0 6px 20px rgba(0,0,0,.05);
+  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+  --f-num:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,"PingFang SC",sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:18px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --card:#1C1C1E; --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.34);
+    --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+    --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
+    --good:#30D158; --good-tint:rgba(48,209,88,.20); --bad:#FF6961; --bad-tint:rgba(255,69,58,.18);
+    --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
+    --desk:#111113; --paper-shadow:0 0 0 .5px rgba(255,255,255,.08),0 12px 36px rgba(0,0,0,.6);
+    --glass:rgba(18,18,20,.72); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(58,58,60,.95);
+    --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --card:#1C1C1E; --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.34);
+  --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+  --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
+  --good:#30D158; --good-tint:rgba(48,209,88,.20); --bad:#FF6961; --bad-tint:rgba(255,69,58,.18);
+  --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
+  --desk:#111113; --paper-shadow:0 0 0 .5px rgba(255,255,255,.08),0 12px 36px rgba(0,0,0,.6);
+  --glass:rgba(18,18,20,.72); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(58,58,60,.95);
+  --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.45 var(--f-text);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-appearance:none;appearance:none}
+a{color:var(--accent);text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+[hidden]{display:none!important}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) 40px max(16px,env(safe-area-inset-right))}
+header.top{padding:44px 4px 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:52px;height:52px;border-radius:14px;background:linear-gradient(160deg,#3A3A3C,#1D1D1F);display:grid;place-items:center;color:#F5D79E;font:600 26px/1 "Songti SC","STSong","Noto Serif SC","SimSun",serif;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+h1{margin:0;font-size:34px;line-height:1.15;font-weight:700;letter-spacing:.01em}
+.tagline{margin:4px 0 0;color:var(--fg2);font-size:15px}
+.privacy{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--fg2);background:var(--fill);padding:6px 12px;border-radius:999px}
+.privacy svg{width:13px;height:13px}
+
+.grid{display:grid;grid-template-columns:400px minmax(0,1fr);gap:24px;align-items:start;
+  grid-template-areas:"tpl pv" "data pv" "map pv" "out pv" ". pv"}
+#cTpl{grid-area:tpl}#cData{grid-area:data}#cMap{grid-area:map}#cOut{grid-area:out}#cPv{grid-area:pv}
+.left-stack{display:contents}
+@media (max-width:900px){
+  .grid{grid-template-columns:minmax(0,1fr);gap:16px;grid-template-areas:"tpl" "data" "pv" "map" "out"}
+  header.top{padding:28px 4px 18px}
+  h1{font-size:30px}
+}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;min-height:28px}
+.card-h h2{margin:0;font-size:19px;font-weight:700;display:flex;align-items:center;gap:10px}
+.step{width:22px;height:22px;border-radius:50%;background:var(--fg);color:var(--bg);font:700 12px/22px var(--f-num);text-align:center;flex:none}
+.meta{font-size:13px;color:var(--fg2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hint{margin:10px 0 0;font-size:13px;color:var(--fg2)}
+.hint code,.mono{font-family:var(--f-mono);font-size:12.5px;background:var(--fill);padding:1px 5px;border-radius:5px}
+
+.file{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--fill);margin-bottom:12px;min-height:52px}
+.ficon{width:30px;height:36px;border-radius:5px;flex:none;display:grid;place-items:center;font:700 9px/1 var(--f-text);color:#fff;letter-spacing:.02em}
+.ficon.w{background:#2B579A}.ficon.x{background:#1E7145}.ficon.e{background:var(--accent)}
+.fname{flex:1;min-width:0}
+.fname b{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fname span{font-size:12.5px;color:var(--fg2)}
+.chip{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--fill);color:var(--fg2);white-space:nowrap}
+.chip.demo{background:var(--accent-tint);color:var(--accent)}
+.chip.ok{background:var(--good-tint);color:var(--good)}
+.chip.bad{background:var(--bad-tint);color:var(--bad)}
+.chip.warn{background:var(--amber-tint);color:var(--amber-ink)}
+
+.samples{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.pill{height:30px;padding:0 13px;border-radius:999px;background:var(--fill);font-size:13px;font-weight:600;color:var(--fg2);transition:background .15s}
+.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.pill:hover{background:var(--fill2)}.pill[aria-pressed="true"]:hover{background:var(--fg)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;background:var(--fill);color:var(--accent);transition:transform .12s,background .15s;white-space:nowrap}
+.btn:hover{background:var(--fill2)}
+.btn:active{transform:scale(.97)}
+.btn svg{width:15px;height:15px}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.big{width:100%;height:52px;font-size:17px;border-radius:14px}
+.btn.big:disabled{opacity:.45;cursor:default;transform:none}
+.btn.ghost{background:none;padding:0 8px}
+
+/* table */
+.tbl-wrap{max-height:244px;overflow:auto;border-radius:12px;box-shadow:inset 0 0 0 .5px var(--sep);overscroll-behavior:contain}
+table.data{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+table.data th,table.data td{padding:7px 12px;text-align:left;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--sep)}
+table.data th{position:sticky;top:0;background:var(--card);font-weight:600;color:var(--fg2);z-index:1}
+table.data td.n,table.data th.n{color:var(--fg3);width:1%;padding-right:4px;text-align:right}
+table.data tbody tr{cursor:pointer}
+table.data tbody tr:hover td{background:var(--fill)}
+table.data tbody tr.sel td{background:var(--accent-tint)}
+table.data tbody tr.sel td.n{color:var(--accent);font-weight:700}
+.more{padding:8px 12px;font-size:12.5px;color:var(--fg2)}
+
+/* map */
+.maplist{display:flex;flex-direction:column}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 0;border-top:.5px solid var(--sep)}
+.mrow:first-child{border-top:0}
+.tagname{font-family:var(--f-mono);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arrow{color:var(--fg3);width:14px;height:14px}
+.sel-wrap{position:relative}
+.sel-wrap select{width:100%;height:32px;border-radius:9px;border:0;background:var(--fill);padding:0 26px 0 10px;font-size:13.5px;-webkit-appearance:none;appearance:none;cursor:pointer;text-overflow:ellipsis}
+.sel-wrap::after{content:"";position:absolute;right:11px;top:12px;width:6px;height:6px;border-right:1.6px solid var(--fg2);border-bottom:1.6px solid var(--fg2);transform:rotate(45deg);pointer-events:none}
+.mrow.bad .sel-wrap select{background:var(--bad-tint);color:var(--bad)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
+.mrow.bad .dot{background:var(--bad)}
+.mrow.blank .dot{background:var(--fg3)}
+.mapsum{font-size:13px;font-weight:600}
+.mapsum.ok{color:var(--good)}.mapsum.bad{color:var(--bad)}
+.unused{margin-top:10px;font-size:12.5px;color:var(--fg2)}
+
+/* output */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--fg2);margin:0 0 6px 2px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;padding:2px;border-radius:10px;background:var(--fill)}
+.seg button{height:32px;border-radius:8px;font-size:14px;font-weight:600;color:var(--fg2)}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.inp{width:100%;height:38px;border-radius:10px;border:0;background:var(--fill);padding:0 12px;font-family:var(--f-mono);font-size:13.5px;outline:none}
+.inp:focus{box-shadow:0 0 0 2px var(--accent)}
+.namepv{margin:6px 2px 0;font-size:12.5px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog{margin-top:12px}
+.bar{height:6px;border-radius:3px;background:var(--fill);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .15s}
+.prog-t{display:flex;justify-content:space-between;margin-top:6px;font-size:12.5px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.done{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--good-tint);color:var(--good);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.done .btn{background:var(--card);height:30px;font-size:13px}
+
+/* preview */
+#cPv{position:sticky;top:16px;padding:0;overflow:hidden;background:var(--desk)}
+.pv-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--card);border-bottom:.5px solid var(--sep)}
+.pv-h h2{margin:0;font-size:15px;font-weight:700}
+.rownav{display:flex;align-items:center;gap:4px}
+.rn-b{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--accent);background:var(--fill)}
+.rn-b:disabled{color:var(--fg3);cursor:default}
+.rn-b svg{width:8px;height:13px}
+.rn-t{min-width:92px;text-align:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.rn-t span{display:block;font-size:11.5px;font-weight:400;color:var(--fg2);max-width:120px;margin:0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-body{padding:24px;min-height:300px;max-height:calc(100vh - 110px);overflow:auto;overscroll-behavior:contain}
+@media (max-width:900px){#cPv{position:static}.pv-body{padding:14px;max-height:none}}
+.pv-stage{margin:0 auto;transform-origin:top left}
+.pv-scale{transform-origin:top left}
+.pv-scale section.docx{background:#fff;box-shadow:var(--paper-shadow)!important;margin:0 0 18px!important}
+.pv-err{padding:40px 20px;text-align:center;color:var(--fg2)}
+.pv-foot{display:flex;gap:8px;justify-content:center;padding:0 14px 16px}
+.pv-loading{opacity:.55;transition:opacity .2s}
+
+/* footer */
+footer{margin-top:40px;padding:22px 4px 0;border-top:.5px solid var(--sep);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--fg2)}
+footer .mail{-webkit-user-select:text;user-select:text;font-family:var(--f-text)}
+
+/* sheet (editor / paste) */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.sheet{background:var(--card);border-radius:20px;width:min(1000px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:rise .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{transform:translateY(24px);opacity:.5}}
+.sheet.small{width:min(560px,100%)}
+.sh-h{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 12px;border-bottom:.5px solid var(--sep)}
+.sh-h b{font-size:16px}
+.sh-h .l{justify-self:start}.sh-h .r{justify-self:end}
+@media (max-width:640px){.scrim{padding:0;align-items:stretch}.sheet{border-radius:0;height:100%}}
+.toolbar{display:flex;gap:4px;padding:8px 10px;border-bottom:.5px solid var(--sep);overflow-x:auto;scrollbar-width:none;align-items:center}
+.toolbar::-webkit-scrollbar{display:none}
+.tb{height:32px;min-width:32px;padding:0 9px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--fg);display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;flex:none}
+.tb:hover{background:var(--fill)}
+.tb.on{background:var(--fill2)}
+.tb svg{width:16px;height:16px}
+.tb.fld{background:var(--accent-tint);color:var(--accent)}
+.tbsep{width:.5px;height:20px;background:var(--sep);margin:0 4px;flex:none}
+.sw{width:18px;height:18px;border-radius:50%;box-shadow:0 0 0 1px var(--sep)}
+.ed-desk{flex:1;overflow:auto;background:var(--desk);padding:24px}
+@media (max-width:640px){.ed-desk{padding:12px}}
+.ed-stage{margin:0 auto;transform-origin:top left}
+.page{background:#fff;color:#1d1d1f;box-shadow:var(--paper-shadow);transform-origin:top left;outline:none;font-family:Arial,"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;font-size:16px;line-height:1.5;caret-color:#0071E3}
+.page{position:relative}
+.page.bordered::before{content:"";position:absolute;inset:37px;border:6px double var(--bd);pointer-events:none}
+.page.portrait{width:794px;min-height:1123px;padding:96px}
+.page.landscape{width:1123px;min-height:794px;padding:76px 96px}
+.page>*{margin:0 0 8px}
+.page h1{font-size:37px;font-weight:700;line-height:1.2}
+.page h2{font-size:24px;font-weight:700;line-height:1.25}
+.page h3{font-size:18.7px;font-weight:700}
+.page p{font-size:16px}
+.page h6{font-size:12px;font-weight:400;color:#8E8E93;letter-spacing:2px}
+.page hr{border:0;border-bottom:1px solid #C7C7CC;height:0;margin:4px 0 12px}
+.page table{border-collapse:collapse;width:100%;margin-bottom:12px}
+.page td,.page th{border:1px solid #D1D1D6;padding:6px 8px;text-align:left;font-size:16px;vertical-align:top}
+.page th{background:#F2F2F7;font-weight:700}
+.menu{position:fixed;z-index:60;background:var(--card);border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.25),0 0 0 .5px var(--sep);padding:6px;min-width:180px;max-height:300px;overflow:auto}
+.menu button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:7px;font-size:14px}
+.menu button:hover{background:var(--fill)}
+.menu .mono{background:none;padding:0}
+textarea.paste{flex:1;min-height:260px;margin:14px;border-radius:12px;border:0;background:var(--fill);padding:12px;font:13px/1.5 var(--f-mono);resize:none;outline:none}
+.sh-foot{padding:0 14px 14px;font-size:12.5px;color:var(--fg2)}
+
+.drop{position:fixed;inset:0;z-index:70;background:rgba(0,113,227,.12);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:grid;place-items:center;pointer-events:none}
+.drop div{background:var(--card);padding:22px 30px;border-radius:18px;font-size:19px;font-weight:700;box-shadow:0 20px 60px rgba(0,0,0,.2);border:2px dashed var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-fg);padding:11px 18px;border-radius:999px;font-size:14px;font-weight:500;z-index:80;max-width:calc(100% - 32px);text-align:center;animation:rise .25s}
+#renderer{position:fixed;left:-20000px;top:0;width:1400px;height:1200px;border:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">抄</div>
+      <div><h1 data-t="title"></h1><p class="tagline" data-t="tagline"></p></div>
+    </div>
+    <div class="privacy"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 12 6h-.5V4.5A3.5 3.5 0 0 0 8 1Zm-2 5V4.5a2 2 0 1 1 4 0V6H6Z"/></svg><span data-t="privacy"></span></div>
+  </header>
+
+  <main class="grid">
+    <section class="card" id="cTpl">
+      <div class="card-h"><h2><span class="step">1</span><span data-t="tplTitle"></span></h2><span class="meta" id="tplMeta"></span></div>
+      <div class="samples" id="samples" role="group"></div>
+      <div class="file"><div class="ficon w" id="tplIcon">DOCX</div><div class="fname"><b id="tplName"></b><span id="tplSub"></span></div><span class="chip demo" id="tplChip" data-t="demo"></span></div>
+      <div class="btns">
+        <button class="btn primary" id="bUpTpl"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2M4.5 5.5 8 2l3.5 3.5M2.5 11v2.5h11V11"/></svg><span data-t="upWord"></span></button>
+        <button class="btn" id="bEdit"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 2.5 3 3L6 13H3v-3z"/></svg><span data-t="editOnline"></span></button>
+        <button class="btn ghost" id="bDlTpl" data-t="dlTpl"></button>
+      </div>
+      <p class="hint" data-t="tplHint"></p>
+      <input type="file" id="fTpl" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+    </section>
+
+    <section class="card" id="cData">
+      <div class="card-h"><h2><span class="step">2</span><span data-t="dataTitle"></span></h2><span class="meta" id="dataMeta"></span></div>
+      <div class="file"><div class="ficon x" id="dataIcon">XLSX</div><div class="fname"><b id="dataName"></b><span id="dataSub"></span></div><span class="chip demo" id="dataChip" data-t="demo"></span></div>
+      <div class="btns" style="margin-bottom:12px">
+        <button class="btn primary" id="bUpData"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2M4.5 5.5 8 2l3.5 3.5M2.5 11v2.5h11V11"/></svg><span data-t="upData"></span></button>
+        <button class="btn" id="bPaste" data-t="paste"></button>
+        <span class="sel-wrap" id="sheetWrap" hidden><select id="sheetSel" aria-label="sheet"></select></span>
+      </div>
+      <div class="tbl-wrap" id="tblWrap"></div>
+      <p class="hint" data-t="dataHint"></p>
+      <input type="file" id="fData" accept=".xlsx,.xls,.csv,.tsv,.txt,.ods,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden>
+    </section>
+
+    <section class="card" id="cMap">
+      <div class="card-h"><h2><span class="step">3</span><span data-t="mapTitle"></span></h2><span class="mapsum" id="mapSum"></span></div>
+      <div class="maplist" id="mapList"></div>
+      <p class="unused" id="unused" hidden></p>
+    </section>
+
+    <section class="card" id="cOut">
+      <div class="card-h"><h2><span class="step">4</span><span data-t="outTitle"></span></h2></div>
+      <div class="field"><label data-t="fmt"></label>
+        <div class="seg" id="fmtSeg"><button data-v="docx">Word</button><button data-v="pdf">PDF</button><button data-v="both" data-t="both"></button></div>
+      </div>
+      <div class="field"><label for="nameRule" data-t="nameRule"></label>
+        <input class="inp" id="nameRule" spellcheck="false" autocomplete="off">
+        <p class="namepv" id="namePv"></p>
+      </div>
+      <button class="btn primary big" id="bGo"></button>
+      <div class="prog" id="prog" hidden><div class="bar"><i id="barI"></i></div><div class="prog-t"><span id="progT"></span><button class="btn ghost" id="bStop" data-t="stop" style="height:22px;font-size:12.5px"></button></div></div>
+      <div class="done" id="done" hidden><span id="doneT"></span><button class="btn" id="bAgain" data-t="again"></button></div>
+    </section>
+
+    <section class="card" id="cPv">
+      <div class="pv-h">
+        <h2 data-t="pvTitle"></h2>
+        <div class="rownav">
+          <button class="rn-b" id="bPrev" aria-label="上一行"><svg viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 1.5 6.5l5 5"/></svg></button>
+          <div class="rn-t" id="rnT"></div>
+          <button class="rn-b" id="bNext" aria-label="下一行"><svg viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m1.5 1.5 5 5-5 5"/></svg></button>
+        </div>
+      </div>
+      <div class="pv-body" id="pvBody"><div class="pv-stage" id="pvStage"><div class="pv-scale" id="pvScale"></div></div></div>
+      <div class="pv-foot"><button class="btn" id="bOneDocx" data-t="oneDocx"></button><button class="btn" id="bOnePdf" data-t="onePdf"></button></div>
+    </section>
+  </main>
+
+  <footer>
+    <span><a href="https://qianshoulab.github.io/" data-t="home"></a> · <span data-t="title"></span></span>
+    <span><span data-t="findAbbot"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
+  </footer>
+</div>
+
+<div id="layer"></div>
+<iframe id="renderer" title="renderer" aria-hidden="true" tabindex="-1"></iframe>
+
+<script src="lib/jszip.min.js"></script>
+<script src="lib/docx-preview.min.js"></script>
+<script src="lib/pizzip.min.js"></script>
+<script src="lib/docxtemplater.min.js"></script>
+<script>
+"use strict";
+/* ============ 界面文字：全在这儿，以后加英文就再抄一份 ============ */
+const T = {
+  title:"抄经僧",
+  tagline:"名单丢来，你去喝茶，贫僧一行抄一份",
+  privacy:"文件不出这台电脑",
+  demo:"示例",
+  tplTitle:"模板", dataTitle:"表格", mapTitle:"对号入座", outTitle:"出货", pvTitle:"预览",
+  upWord:"上传 Word", editOnline:"在线编辑", dlTpl:"下载模板",
+  tplHint:"Word 里写 {{姓名}} 这样的空位，贫僧自己认。",
+  upData:"上传 Excel / CSV", paste:"粘贴",
+  dataHint:"第一行当表头。点哪行，右边就预览哪行。",
+  fmt:"格式", both:"都要", nameRule:"文件名",
+  go:n=>`生成 ${n} 份`, goNone:"表里没东西", stop:"停",
+  again:"再下一次",
+  oneDocx:"下载这份 Word", onePdf:"下载这份 PDF",
+  home:"千手院", findAbbot:"找方丈：",
+  samples:{cert:"结业证书", invoice:"发票", offer:"录用通知"},
+  tplSubTags:n=>`认出 ${n} 个空位`,
+  tplSubNone:"一个 {{空位}} 都没找到",
+  fromEditor:"在线编辑", fromWord:"Word 模板",
+  dataSub:(r,c)=>`${r} 行 · ${c} 列`,
+  moreRows:n=>`还有 ${n} 行没列出来，生成时一行不落。`,
+  mapAllOk:n=>`${n} 个全对上了`,
+  mapBad:n=>`${n} 个没对上`,
+  mapNone:"模板里没有空位",
+  optUnmapped:"— 没对上 —", optBlank:"留空",
+  unused:list=>`表里没用上的列：${list}`,
+  rowOf:(i,n)=>`第 ${i} / ${n} 行`,
+  progress:(i,n,s)=>`已抄 ${i} / ${n} 份 · ${s} 秒`,
+  packing:"正在打包…",
+  doneMsg:(n,s)=>`${n} 份抄完，用时 ${s} 秒`,
+  stopped:"停了，抄好的那些照样给你",
+  badTpl:"这个 Word 打不开，确定是 .docx？",
+  badTplSyntax:m=>`模板里的花括号没配对：${m}`,
+  badData:"这表读不出来，换个 xlsx 或 csv 试试",
+  emptyData:"表里一行数据都没有",
+  dropHere:"松手，贫僧接着",
+  dropWhat:"只认 .docx 模板和 Excel / CSV 表格",
+  pvFail:"这份预览不出来，但生成照样能用 Word 打开",
+  edTitle:"在线编辑", cancel:"取消", use:"用这个",
+  edField:"插入空位", edNewField:"新空位…", edNewFieldAsk:"空位叫什么？", edHr:"分隔线",
+  edH1:"大标题", edH2:"标题", edH3:"小标题", edP:"正文", edSmall:"小字",
+  edPortrait:"竖版", edLandscape:"横版", edBorder:"花边",
+  pasteTitle:"粘贴表格", pasteHint:"从 Excel、WPS、飞书表格里整块复制过来，第一行是表头。", pasteOk:"用这个",
+  editorName:"在线编辑的模板",
+  pasted:"粘贴的表格",
+  noHeaderCol:i=>`第${i}列`,
+  pdfNote:"PDF 首次要多加载 0.5 MB 工具，稍等",
+};
+
+/* ============ 示例：模板（编辑器 HTML）+ 表格 ============ */
+const GOLD="#8B6A2F", INK="#1D1D1F";
+const EXAMPLES = {
+  cert:{
+    orient:"landscape", border:GOLD, file:"结业证书", rule:"{{姓名}}-结业证书",
+    html:`<p><br></p><p><br></p><h6 style="text-align:center;color:${GOLD}">CERTIFICATE OF COMPLETION</h6><h1 style="text-align:center"><span style="font-size:48px">结 业 证 书</span></h1><p style="text-align:center"><br></p><p style="text-align:center"><span style="font-size:18.7px;color:#6E6E73">兹证明</span></p><h1 style="text-align:center"><span style="color:${GOLD};font-size:53px">{{姓名}}</span></h1><p style="text-align:center"><span style="font-size:18.7px">于 {{结业日期}} 完成「{{课程}}」全部课程，共计 {{学时}} 学时，考核合格，特发此证。</span></p><p style="text-align:center"><br></p><p style="text-align:right"><span style="font-size:18.7px"><b>千手书院 · 教务处</b></span></p><h6 style="text-align:right">证书编号 {{证书编号}}</h6>`,
+    headers:["姓名","课程","学时","结业日期","证书编号","手机"],
+    rows:[
+      ["林小满","Excel 从入门到装懂","32","2026年11月2日","QS-2026-0001","138 0000 0001"],
+      ["周不凡","PPT 一页讲完年终总结","16","2026年11月2日","QS-2026-0002","138 0000 0002"],
+      ["陈一鸣","会议纪要速记术","12","2026年11月3日","QS-2026-0003","138 0000 0003"],
+      ["赵晚晴","邮件礼仪与甩锅艺术","8","2026年11月3日","QS-2026-0004","138 0000 0004"],
+      ["孙浩然","Excel 从入门到装懂","32","2026年11月4日","QS-2026-0005","138 0000 0005"],
+      ["吴可可","数据透视表七十二变","24","2026年11月4日","QS-2026-0006","138 0000 0006"],
+      ["郑大白","PPT 一页讲完年终总结","16","2026年11月5日","QS-2026-0007","138 0000 0007"],
+      ["王知秋","会议纪要速记术","12","2026年11月5日","QS-2026-0008","138 0000 0008"],
+    ]},
+  invoice:{
+    orient:"portrait", file:"发票", rule:"{{发票号}}-{{客户}}",
+    html:`<h6 style="color:${GOLD}">INVOICE</h6><h1>发票</h1><p><span style="color:#6E6E73">发票号</span>　{{发票号}}　　<span style="color:#6E6E73">开票日期</span>　{{开票日期}}</p><hr><h3>开给</h3><p>{{客户}}<br>{{地址}}</p><p><br></p><table><tbody><tr><th>项目</th><th style="text-align:right">数量</th><th style="text-align:right">单价（元）</th><th style="text-align:right">金额（元）</th></tr><tr><td>{{项目}}</td><td style="text-align:right">{{数量}}</td><td style="text-align:right">{{单价}}</td><td style="text-align:right">{{金额}}</td></tr></tbody></table><h2 style="text-align:right">合计 ¥{{金额}}</h2><p><br></p><h6>请于 {{付款期限}} 前转账至：千手文具有限公司 · 账号见合同</h6>`,
+    headers:["发票号","客户","地址","项目","数量","单价","金额","开票日期","付款期限"],
+    rows:[
+      ["INV-1101","青柠咖啡（静安店）","上海市静安区梧桐路 18 号","A4 复印纸（箱）","12","168.00","2,016.00","2026-11-02","2026-11-30"],
+      ["INV-1102","木星设计工作室","杭州市西湖区云栖路 7 号","中性笔（盒）","30","24.50","735.00","2026-11-02","2026-11-30"],
+      ["INV-1103","大鹅物流","成都市武侯区天府大道 99 号","文件柜","2","1,280.00","2,560.00","2026-11-03","2026-12-03"],
+      ["INV-1104","晚风书店","广州市越秀区北京路 3 号","便利贴（包）","100","6.80","680.00","2026-11-03","2026-12-03"],
+      ["INV-1105","星河健身","深圳市南山区科技园 66 号","白板 1.2 米","4","399.00","1,596.00","2026-11-04","2026-12-04"],
+      ["INV-1106","橘子幼儿园","南京市鼓楼区中山路 12 号","彩色卡纸（包）","50","15.00","750.00","2026-11-04","2026-12-04"],
+    ]},
+  offer:{
+    orient:"portrait", file:"录用通知", rule:"录用通知-{{姓名}}",
+    html:`<h6 style="color:${GOLD}">OFFER LETTER</h6><h1>录用通知书</h1><p><br></p><p><b>{{姓名}}</b>：</p><p>你好！感谢你对山海星辰科技的信任。经过几轮面试，我们很高兴地通知你：你已被录用为 <b>{{部门}}</b> 的 <b>{{岗位}}</b>。</p><table><tbody><tr><th>入职日期</th><td>{{入职日期}}</td></tr><tr><th>税前月薪</th><td>{{月薪}} 元</td></tr><tr><th>试用期</th><td>{{试用期}}</td></tr><tr><th>工作地点</th><td>{{工作地点}}</td></tr></tbody></table><p>请在入职当天上午 9:30 带上身份证件到前台报到。如有疑问，随时找 HR。期待与你共事。</p><p><br></p><p style="text-align:right">山海星辰科技有限公司 · 人力资源部</p><p style="text-align:right">{{发出日期}}</p>`,
+    headers:["姓名","部门","岗位","入职日期","月薪","试用期","工作地点","发出日期"],
+    rows:[
+      ["林小满","产品部","产品经理","2026年12月1日","22,000","3 个月","上海","2026年11月2日"],
+      ["周不凡","研发部","前端工程师","2026年12月1日","25,000","3 个月","上海","2026年11月2日"],
+      ["陈一鸣","市场部","品牌策划","2026年12月8日","16,000","2 个月","杭州","2026年11月2日"],
+      ["赵晚晴","财务部","会计","2026年12月8日","14,000","2 个月","杭州","2026年11月2日"],
+      ["孙浩然","研发部","后端工程师","2026年12月15日","26,000","3 个月","深圳","2026年11月3日"],
+    ]},
+};
+
+/* ============ 小工具 ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const tick=()=>new Promise(r=>setTimeout(r,0));
+function toast(msg,ms=2600){const d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),ms)}
+function download(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+const loaded={};
+function loadScript(src){return loaded[src]||(loaded[src]=new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>{delete loaded[src];no(new Error("load "+src))};document.head.appendChild(s)}))}
+const norm=s=>String(s).toLowerCase().replace(/[\s　_\-－—:：()（）\[\]【】]/g,"");
+
+/* ============ 状态 ============ */
+const S={
+  tpl:null,   // {name, buf:ArrayBuffer, tags:[], source:'example'|'word'|'editor', html, orient, sample}
+  data:null,  // {name, headers:[], rows:[[]], source, sheets?, wb?}
+  map:{},     // tag -> col index | -1 没对上 | -2 留空
+  row:0, fmt:"docx", rule:"", ruleTouched:false, busy:false, stop:false, lastZip:null
+};
+
+/* ============ Word 模板：认空位 ============ */
+const TAG_RE=/\{\{\s*([^{}]+?)\s*\}\}/g;
+function decodeXml(s){return s.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&")}
+function extractTags(buf){
+  const zip=new PizZip(buf); const tags=[]; const seen=new Set();
+  const files=Object.keys(zip.files).filter(f=>/^word\/(document|header\d*|footer\d*|footnotes|endnotes)\.xml$/.test(f)).sort((a,b)=>(a.includes("document")?-1:0)-(b.includes("document")?-1:0));
+  for(const f of files){
+    const xml=zip.file(f).asText();
+    const paras=xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g)||[];
+    for(const p of paras){
+      const text=(p.match(/<w:t(?:\s[^>]*)?>[^<]*<\/w:t>/g)||[]).map(t=>decodeXml(t.replace(/<[^>]+>/g,""))).join("");
+      let m; TAG_RE.lastIndex=0;
+      while((m=TAG_RE.exec(text))){const k=m[1].trim(); if(/^[#^\/]/.test(k)) continue; if(!seen.has(k)){seen.add(k);tags.push(k)}}
+    }
+  }
+  return tags;
+}
+function pageBorder(buf){
+  try{
+    const xml=new PizZip(buf).file("word/document.xml").asText(); const m=xml.match(/<w:pgBorders([^>]*)>([\s\S]*?)<\/w:pgBorders>/); if(!m)return null;
+    const top=m[2].match(/<w:top\b[^>]*>/); if(!top)return null; const a=k=>(top[0].match(new RegExp(`w:${k}="([^"]*)"`))||[])[1];
+    const val=a("val")||"single"; if(val==="none"||val==="nil")return null;
+    const fromPage=/w:offsetFrom="page"/.test(m[1]); const space=+a("space")||0; const w=Math.max(.5,(+a("sz")||4)/8);
+    let inset=space; if(!fromPage){const mar=xml.match(/<w:pgMar[^>]*w:top="(\d+)"/);inset=Math.max(4,(mar?+mar[1]/20:72)-space-w)}
+    const col=a("color"); return{inset,w,style:/double/.test(val)?"double":/dash/.test(val)?"dashed":/dot/.test(val)?"dotted":"solid",color:col&&col!=="auto"?"#"+col:"#000"};
+  }catch(e){return null}
+}
+function borderCss(b){return b?`section.docx{position:relative}section.docx::before{content:"";position:absolute;inset:${b.inset}pt;border:${b.style==="double"?Math.max(3,b.w):b.w}pt ${b.style} ${b.color};pointer-events:none;z-index:0}`:""}
+function applyBorderCss(doc){let st=doc.getElementById("pgb");if(!st){st=doc.createElement("style");st.id="pgb";doc.head.appendChild(st)}st.textContent=borderCss(S.tpl&&S.tpl.pgb)}
+function pageSize(buf){
+  try{const xml=new PizZip(buf).file("word/document.xml").asText();const m=xml.match(/<w:pgSz[^>]*>/);if(m){const w=+(m[0].match(/w:w="(\d+)"/)||[])[1],h=+(m[0].match(/w:h="(\d+)"/)||[])[1];if(w&&h)return{w:w/20,h:h/20}}}catch(e){}
+  return{w:595.3,h:841.9};
+}
+
+/* ============ 填一份 ============ */
+function rowValues(i){
+  const r=S.data.rows[i]||[]; const o={};
+  for(const t of S.tpl.tags){const c=S.map[t]; o[t]= c>=0 ? (r[c]??"") : c===-2 ? "" : `{{${t}}}`}
+  return o;
+}
+function makeDoc(buf){
+  return new docxtemplater(new PizZip(buf),{
+    delimiters:{start:"{{",end:"}}"}, paragraphLoop:true, linebreaks:true,
+    nullGetter:()=> "",
+    parser:tag=>({get:scope=>{const k=tag.trim(); return k in scope ? scope[k] : ""}})
+  });
+}
+function fillDocx(i,compress){
+  const doc=makeDoc(S.tpl.buf); doc.render(rowValues(i));
+  return doc.getZip().generate({type:"uint8array",compression:compress?"DEFLATE":"STORE"});
+}
+function tplSyntaxError(buf){
+  try{makeDoc(buf);return null}catch(e){
+    const errs=(e.properties&&e.properties.errors)||[e];
+    return errs.slice(0,2).map(x=>(x.properties&&(x.properties.xtag||x.properties.context))||x.message).join("、");
+  }
+}
+
+/* ============ 编辑器 HTML → docx ============ */
+const BLOCK={H1:{sz:56,b:1,after:160,line:288},H2:{sz:36,b:1,after:120,line:300},H3:{sz:28,b:1,after:80},P:{sz:24,after:120},DIV:{sz:24,after:120},H6:{sz:18,color:"8E8E93",sp:40,after:80},LI:{sz:24,after:60}};
+function xe(s){return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function hexColor(c){
+  if(!c)return null; c=c.trim();
+  let m=c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i); if(m){let h=m[1];if(h.length===3)h=h.split("").map(x=>x+x).join("");return h.toUpperCase()}
+  m=c.match(/rgba?\((\d+)\D+(\d+)\D+(\d+)/); if(m)return [m[1],m[2],m[3]].map(x=>(+x).toString(16).padStart(2,"0")).join("").toUpperCase();
+  return null;
+}
+function runsOf(node,fmt,out){
+  for(const n of node.childNodes){
+    if(n.nodeType===3){ if(n.nodeValue) out.push({t:n.nodeValue,...fmt}); continue }
+    if(n.nodeType!==1) continue;
+    const tg=n.tagName; if(tg==="BR"){out.push({br:1});continue}
+    const f={...fmt};
+    if(tg==="B"||tg==="STRONG")f.b=1; if(tg==="I"||tg==="EM")f.i=1; if(tg==="U")f.u=1;
+    if(tg==="FONT"&&n.getAttribute("color"))f.color=hexColor(n.getAttribute("color"));
+    const st=n.style||{};
+    if(st.fontWeight&&(st.fontWeight==="bold"||+st.fontWeight>=600))f.b=1;
+    if(st.fontStyle==="italic")f.i=1;
+    if(st.textDecoration&&st.textDecoration.includes("underline")||st.textDecorationLine&&st.textDecorationLine.includes("underline"))f.u=1;
+    if(st.color)f.color=hexColor(st.color)||f.color;
+    if(st.fontSize){const m=st.fontSize.match(/^([\d.]+)(px|pt)$/);if(m){const pt=m[2]==="px"?+m[1]*.75:+m[1];f.sz=Math.round(pt*2)}}
+    runsOf(n,f,out);
+  }
+  return out;
+}
+function runXml(r){
+  if(r.br)return "<w:r><w:br/></w:r>";
+  let p="";
+  if(r.b)p+="<w:b/><w:bCs/>"; if(r.i)p+="<w:i/><w:iCs/>"; if(r.u)p+='<w:u w:val="single"/>';
+  if(r.color)p+=`<w:color w:val="${r.color}"/>`; if(r.sp)p+=`<w:spacing w:val="${r.sp}"/>`;
+  if(r.sz)p+=`<w:sz w:val="${r.sz}"/><w:szCs w:val="${r.sz}"/>`;
+  return `<w:r>${p?`<w:rPr>${p}</w:rPr>`:""}<w:t xml:space="preserve">${xe(r.t.replace(/ /g," "))}</w:t></w:r>`;
+}
+const JC={left:"left",start:"left",center:"center",right:"right",end:"right",justify:"both"};
+function paraXml(el,tag,extra){
+  const B=BLOCK[tag]||BLOCK.P; const st=el.style||{};
+  const jc=JC[st.textAlign]; let ppr="";
+  if(extra&&extra.pBdr)ppr+=extra.pBdr;
+  ppr+=`<w:spacing w:before="0" w:after="${extra&&extra.after!=null?extra.after:B.after}"${B.line?` w:line="${B.line}" w:lineRule="auto"`:""}/>`;
+  if(jc)ppr+=`<w:jc w:val="${jc}"/>`;
+  const base={sz:B.sz}; if(B.b)base.b=1; if(B.color)base.color=B.color; if(B.sp)base.sp=B.sp;
+  const runs=runsOf(el,base,[]); while(runs.length&&runs[runs.length-1].br)runs.pop(); // 浏览器里块末尾的 <br> 不占行，Word 里会多一行
+  if(tag==="LI")runs.unshift({...base,t:"• "});
+  return `<w:p><w:pPr>${ppr}<w:rPr><w:sz w:val="${B.sz}"/></w:rPr></w:pPr>${runs.map(runXml).join("")}</w:p>`;
+}
+function tableXml(tbl,contentW){
+  const rows=[...tbl.querySelectorAll("tr")]; if(!rows.length)return "";
+  const nc=Math.max(...rows.map(r=>r.children.length));
+  let widths=Array(nc).fill(Math.floor(contentW/nc));
+  if(nc===2)widths=[Math.round(contentW*.3),contentW-Math.round(contentW*.3)];
+  if(nc===4)widths=[.43,.17,.2,.2].map(x=>Math.round(contentW*x));
+  const bd=["top","left","bottom","right","insideH","insideV"].map(s=>`<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D1D1D6"/>`).join("");
+  let x=`<w:tbl><w:tblPr><w:tblW w:w="${contentW}" w:type="dxa"/><w:tblBorders>${bd}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="90" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="90" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map(w=>`<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>`;
+  for(const tr of rows){
+    x+="<w:tr>";
+    [...tr.children].forEach((td,ci)=>{
+      const th=td.tagName==="TH";
+      const blocks=[...td.children].filter(c=>/^(P|DIV|H\d)$/.test(c.tagName));
+      let inner="";
+      const cellPara=(el)=>{const p=paraXml(el,"P",{after:0}); return th?p.replace(/<w:r>(<w:rPr>)?/g,(m,a)=>a?"<w:r><w:rPr><w:b/>":"<w:r><w:rPr><w:b/></w:rPr>"):p};
+      if(blocks.length&&blocks.length===td.childNodes.length)inner=blocks.map(cellPara).join("");
+      else inner=cellPara(td);
+      x+=`<w:tc><w:tcPr><w:tcW w:w="${widths[ci]||widths[0]}" w:type="dxa"/>${th?'<w:shd w:val="clear" w:color="auto" w:fill="F2F2F7"/>':""}<w:vAlign w:val="center"/></w:tcPr>${inner}</w:tc>`;
+    });
+    for(let k=tr.children.length;k<nc;k++)x+=`<w:tc><w:tcPr><w:tcW w:w="${widths[k]}" w:type="dxa"/></w:tcPr><w:p/></w:tc>`;
+    x+="</w:tr>";
+  }
+  return x+"</w:tbl><w:p><w:pPr><w:spacing w:before=\"0\" w:after=\"120\"/></w:pPr></w:p>";
+}
+function htmlToDocx(html,orient,border){
+  const land=orient==="landscape";
+  const pg=land?{w:16838,h:11906,t:1134,b:1134,l:1440,r:1440}:{w:11906,h:16838,t:1440,b:1440,l:1440,r:1440};
+  const cw=pg.w-pg.l-pg.r;
+  const doc=new DOMParser().parseFromString(`<body>${html}</body>`,"text/html").body;
+  let body=""; let loose=null;
+  const flush=()=>{if(loose){body+=paraXml(loose,"P");loose=null}};
+  for(const n of [...doc.childNodes]){
+    if(n.nodeType===3||(n.nodeType===1&&/^(B|I|U|SPAN|STRONG|EM|FONT|BR|A)$/.test(n.tagName))){ if(!loose)loose=document.createElement("p"); loose.appendChild(n.cloneNode(true)); continue }
+    flush(); if(n.nodeType!==1)continue;
+    const tg=n.tagName;
+    if(tg==="TABLE")body+=tableXml(n,cw);
+    else if(tg==="HR")body+=`<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="C7C7CC"/></w:pBdr><w:spacing w:before="0" w:after="200"/><w:rPr><w:sz w:val="8"/></w:rPr></w:pPr></w:p>`;
+    else if(tg==="UL"||tg==="OL")[...n.querySelectorAll("li")].forEach(li=>body+=paraXml(li,"LI"));
+    else if(/^H[1-6]$/.test(tg))body+=paraXml(n,BLOCK[tg]?tg:"H3");
+    else body+=paraXml(n,"P");
+  }
+  flush();
+  const W='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+  const files={
+    "[Content_Types].xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
+    "_rels/.rels":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`,
+    "docProps/core.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>抄经僧</dc:creator></cp:coreProperties>`,
+    "docProps/app.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>抄经僧</Application></Properties>`,
+    "word/_rels/document.xml.rels":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>`,
+    "word/settings.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings ${W}><w:defaultTabStop w:val="420"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`,
+    "word/styles.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Microsoft YaHei" w:cs="Arial"/><w:color w:val="1D1D1F"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US" w:eastAsia="zh-CN"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="360" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`,
+    "word/document.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${body}<w:sectPr><w:pgSz w:w="${pg.w}" w:h="${pg.h}"${land?' w:orient="landscape"':""}/><w:pgMar w:top="${pg.t}" w:right="${pg.r}" w:bottom="${pg.b}" w:left="${pg.l}" w:header="720" w:footer="720" w:gutter="0"/>${border?`<w:pgBorders w:offsetFrom="page">${["top","left","bottom","right"].map(k=>`<w:${k} w:val="double" w:sz="18" w:space="28" w:color="${hexColor(border)||"8B6A2F"}"/>`).join("")}</w:pgBorders>`:""}</w:sectPr></w:body></w:document>`
+  };
+  const z=new PizZip(); for(const k in files)z.file(k,files[k]);
+  return z.generate({type:"arraybuffer",compression:"DEFLATE"});
+}
+
+/* ============ 套模板 / 套表格 ============ */
+function setTemplate(t){
+  const err=tplSyntaxError(t.buf);
+  if(err){toast(T.badTplSyntax(err),4200);return false}
+  t.tags=extractTags(t.buf); t.page=pageSize(t.buf); t.pgb=pageBorder(t.buf);
+  S.tpl=t; autoMap(); applyBorderCss(document); if(rendererWin)applyBorderCss(rendererWin.document);
+  if(!S.ruleTouched||t.source==="example")resetRule();
+  renderTpl(); renderMap(); renderOut(); preview();
+  return true;
+}
+function setData(d){
+  // 清洗：去空行，补表头，去重名
+  const seen={};
+  d.headers=d.headers.map((h,i)=>{let s=String(h??"").trim()||T.noHeaderCol(i+1);if(seen[s]){seen[s]++;s=s+seen[s]}else seen[s]=1;return s});
+  d.rows=d.rows.filter(r=>r.some(c=>String(c??"").trim()!=="")).map(r=>d.headers.map((_,i)=>String(r[i]??"")));
+  S.data=d; S.row=0; autoMap(); renderData(); renderMap(); renderOut(); preview();
+}
+function loadExample(key){
+  const e=EXAMPLES[key];
+  const ok=setTemplate({name:e.file+".docx",buf:htmlToDocx(e.html,e.orient,e.border),source:"example",html:e.html,orient:e.orient,border:e.border||null,sample:key,rule:e.rule});
+  if(ok){S.ruleTouched=false;resetRule();setData({name:e.file+"名单.xlsx",headers:[...e.headers],rows:e.rows.map(r=>[...r]),source:"example"})}
+}
+function autoMap(){
+  if(!S.tpl||!S.data)return; const H=S.data.headers.map(norm); const old=S.map; S.map={};
+  for(const t of S.tpl.tags){
+    const n=norm(t);
+    let c=H.indexOf(n);
+    if(c<0&&n.length>=2)c=H.findIndex(h=>h&&(h.includes(n)||n.includes(h))&&Math.min(h.length,n.length)>=2);
+    if(c<0&&old[t]!=null&&old[t]<S.data.headers.length)c=old[t];
+    S.map[t]=c>=0?c:-1;
+  }
+}
+function resetRule(){
+  const t=S.tpl; if(!t)return;
+  if(t.rule){S.rule=t.rule}
+  else{const base=t.name.replace(/\.docx$/i,""); const first=(S.data&&S.data.headers[0])||t.tags[0]; S.rule=first?`{{${first}}}-${base}`:base}
+  $("#nameRule").value=S.rule;
+}
+
+/* ============ 读表格 ============ */
+async function readTable(file){
+  const buf=await file.arrayBuffer();
+  const isText=/\.(csv|tsv|txt)$/i.test(file.name)||/text\//.test(file.type);
+  if(isText){
+    let text; try{text=new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){text=new TextDecoder("gb18030").decode(buf)}
+    text=text.replace(/^﻿/,"");
+    return parseText(text,file.name);
+  }
+  await loadScript("lib/xlsx.full.min.js");
+  const wb=XLSX.read(buf,{type:"array",cellDates:false});
+  return sheetToData(wb,null,file.name);
+}
+function sheetToData(wb,name,fname){
+  const names=wb.SheetNames;
+  let pick=name;
+  if(!pick){pick=names.find(n=>{const ws=wb.Sheets[n];return ws&&ws["!ref"]})||names[0]}
+  const aoa=XLSX.utils.sheet_to_json(wb.Sheets[pick],{header:1,raw:false,defval:"",blankrows:false});
+  const hi=aoa.findIndex(r=>r.some(c=>String(c).trim()!==""));
+  if(hi<0)return{name:fname,headers:[],rows:[],sheets:names,sheet:pick,wb};
+  return{name:fname,headers:aoa[hi],rows:aoa.slice(hi+1),sheets:names,sheet:pick,wb};
+}
+function parseText(text,fname){
+  const first=text.split(/\r?\n/)[0]||"";
+  const delim=(first.match(/\t/g)||[]).length>=(first.match(/,/g)||[]).length&&first.includes("\t")?"\t":(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?";":",";
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=c;continue}
+    if(c==='"'&&f===""){q=true;continue}
+    if(c===delim){row.push(f);f="";continue}
+    if(c==="\n"||c==="\r"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f="";continue}
+    f+=c;
+  }
+  if(f!==""||row.length){row.push(f);rows.push(row)}
+  const hi=rows.findIndex(r=>r.some(c=>c.trim()!==""));
+  if(hi<0)return{name:fname,headers:[],rows:[]};
+  return{name:fname,headers:rows[hi].map(s=>s.trim()),rows:rows.slice(hi+1)};
+}
+
+/* ============ 渲染：卡片 ============ */
+function applyT(){document.querySelectorAll("[data-t]").forEach(el=>{const v=T[el.dataset.t];if(typeof v==="string")el.textContent=v})}
+function renderSamples(){
+  const box=$("#samples");box.innerHTML="";
+  for(const k in EXAMPLES){const b=document.createElement("button");b.className="pill";b.textContent=T.samples[k];b.setAttribute("aria-pressed",String(!!(S.tpl&&S.tpl.sample===k)));b.onclick=()=>loadExample(k);box.appendChild(b)}
+}
+function renderTpl(){
+  const t=S.tpl; renderSamples();
+  $("#tplName").textContent=t.name;
+  $("#tplSub").textContent=(t.source==="word"?T.fromWord:t.source==="editor"?T.fromEditor:T.fromEditor)+" · "+(t.tags.length?T.tplSubTags(t.tags.length):T.tplSubNone);
+  $("#tplIcon").className="ficon "+(t.source==="word"?"w":"e"); $("#tplIcon").textContent=t.source==="word"?"DOCX":"编辑";
+  $("#tplChip").hidden=t.source!=="example";
+  $("#tplMeta").textContent=t.orient==="landscape"||t.page&&t.page.w>t.page.h?T.edLandscape:T.edPortrait;
+}
+const MAXSHOW=300;
+function renderData(){
+  const d=S.data;
+  $("#dataName").textContent=d.name; $("#dataSub").textContent=T.dataSub(d.rows.length,d.headers.length);
+  $("#dataChip").hidden=d.source!=="example";
+  $("#dataIcon").textContent=/\.csv$/i.test(d.name)?"CSV":d.source==="paste"?"粘贴":"XLSX";
+  $("#dataMeta").textContent="";
+  const sw=$("#sheetWrap");
+  if(d.sheets&&d.sheets.length>1){sw.hidden=false;$("#sheetSel").innerHTML=d.sheets.map(n=>`<option${n===d.sheet?" selected":""}>${esc(n)}</option>`).join("")}else sw.hidden=true;
+  const n=Math.min(d.rows.length,MAXSHOW);
+  let h=`<table class="data"><thead><tr><th class="n">#</th>${d.headers.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>`;
+  for(let i=0;i<n;i++)h+=`<tr data-i="${i}"${i===S.row?' class="sel"':""}><td class="n">${i+1}</td>${d.rows[i].map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`;
+  h+="</tbody></table>"; if(d.rows.length>MAXSHOW)h+=`<div class="more">${T.moreRows(d.rows.length-MAXSHOW)}</div>`;
+  const tw=$("#tblWrap"); tw.innerHTML=h; tw.scrollLeft=0; tw.scrollTop=0;
+}
+function markRow(){
+  document.querySelectorAll("#tblWrap tr.sel").forEach(r=>r.classList.remove("sel"));
+  const tr=document.querySelector(`#tblWrap tr[data-i="${S.row}"]`); if(tr){tr.classList.add("sel");const w=$("#tblWrap");const top=tr.offsetTop-30;if(top<w.scrollTop||top>w.scrollTop+w.clientHeight-60)w.scrollTop=Math.max(0,top-60)}
+}
+function renderMap(){
+  if(!S.tpl||!S.data)return;
+  const tags=S.tpl.tags, H=S.data.headers; const list=$("#mapList"); list.innerHTML="";
+  let bad=0;
+  for(const t of tags){
+    const c=S.map[t]; if(c===-1)bad++;
+    const row=document.createElement("div"); row.className="mrow"+(c===-1?" bad":c===-2?" blank":"");
+    row.innerHTML=`<span class="tagname" title="{{${esc(t)}}}">{{${esc(t)}}}</span><svg class="arrow" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 7h10M8.5 3.5 12 7l-3.5 3.5"/></svg><span class="sel-wrap"><select aria-label="${esc(t)}"><option value="-1">${T.optUnmapped}</option><option value="-2">${T.optBlank}</option>${H.map((h,i)=>`<option value="${i}">${esc(h)}</option>`).join("")}</select></span><span class="dot"></span>`;
+    const sel=row.querySelector("select"); sel.value=String(c);
+    sel.onchange=()=>{S.map[t]=+sel.value;renderMap();renderOut();preview()};
+    list.appendChild(row);
+  }
+  const sum=$("#mapSum");
+  if(!tags.length){sum.textContent=T.mapNone;sum.className="mapsum"}
+  else if(bad){sum.textContent=T.mapBad(bad);sum.className="mapsum bad"}
+  else{sum.textContent=T.mapAllOk(tags.length);sum.className="mapsum ok"}
+  const used=new Set(Object.values(S.map)); const un=H.filter((_,i)=>!used.has(i));
+  const u=$("#unused"); u.hidden=!un.length||!tags.length; u.textContent=T.unused(un.join("、"));
+}
+function renderOut(){
+  if(!S.busy&&S.lastSig!==sig()){$("#done").hidden=true}
+  document.querySelectorAll("#fmtSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===S.fmt)));
+  const n=S.data?S.data.rows.length:0;
+  const go=$("#bGo"); go.textContent=n?T.go(n):T.goNone; go.disabled=!n||S.busy;
+  renderNamePv(); renderNav();
+}
+function renderNamePv(){
+  if(!S.data||!S.data.rows.length){$("#namePv").textContent="";return}
+  const ext=S.fmt==="pdf"?".pdf":".docx";
+  $("#namePv").textContent="→ "+fileBase(S.row)+ext;
+}
+function renderNav(){
+  const n=S.data?S.data.rows.length:0;
+  $("#rnT").innerHTML=n?`${T.rowOf(S.row+1,n)}<span>${esc(fileBase(S.row))}</span>`:"";
+  $("#bPrev").disabled=S.row<=0; $("#bNext").disabled=S.row>=n-1;
+}
+
+function sig(){return [S.tpl&&S.tpl.name,S.tpl&&S.tpl.tags.length,S.data&&S.data.name,S.data&&S.data.rows.length,S.fmt,JSON.stringify(S.map)].join("|")}
+
+/* ============ 文件名 ============ */
+function fileBase(i){
+  const r=S.data.rows[i]||[]; const H=S.data.headers;
+  let s=(S.rule||"").replace(TAG_RE,(m,k)=>{k=k.trim();let c=S.map[k];if(c==null||c<0)c=H.indexOf(k);if(c<0){const nk=norm(k);c=H.findIndex(h=>norm(h)===nk)}return c>=0?(r[c]??""):""});
+  s=s.replace(/[\\/:*?"<>|\u0000-\u001F]/g,"_").replace(/\s+/g," ").trim().replace(/^[.\s]+|[.\s]+$/g,"");
+  if(!s||/^[-_ ]+$/.test(s))s=`第${i+1}份`;
+  return s.slice(0,90);
+}
+
+/* ============ 预览 ============ */
+let pvToken=0;
+const PV_OPTS={className:"docx",inWrapper:false,ignoreWidth:false,ignoreHeight:false,breakPages:true,ignoreLastRenderedPageBreak:true,experimental:true,renderHeaders:true,renderFooters:true,renderFootnotes:true,useBase64URL:true};
+async function preview(){
+  if(!S.tpl||!S.data)return; const my=++pvToken;
+  renderNav(); renderNamePv(); markRow();
+  const scale=$("#pvScale");
+  scale.classList.add("pv-loading");
+  await tick(); if(my!==pvToken)return;
+  try{
+    const bytes=fillDocx(S.row,false);
+    const tmp=document.createElement("div");
+    await docx.renderAsync(bytes,tmp,null,PV_OPTS);
+    if(my!==pvToken)return;
+    scale.replaceChildren(...tmp.childNodes);
+  }catch(e){console.warn(e);scale.innerHTML=`<div class="pv-err">${T.pvFail}</div>`}
+  scale.classList.remove("pv-loading");
+  fitPreview();
+}
+function fitPreview(){
+  const body=$("#pvBody"), stage=$("#pvStage"), sc=$("#pvScale");
+  const secs=sc.querySelectorAll("section.docx"); if(!secs.length){stage.style.width="";stage.style.height="";sc.style.transform="";return}
+  sc.style.transform="none"; sc.style.width="max-content";
+  const w=Math.max(...[...secs].map(s=>s.offsetWidth)); const h=sc.scrollHeight;
+  const avail=body.clientWidth-parseFloat(getComputedStyle(body).paddingLeft)*2;
+  const k=Math.min(1,avail/w);
+  sc.style.transform=`scale(${k})`; stage.style.width=w*k+"px"; stage.style.height=h*k+"px";
+}
+window.addEventListener("resize",()=>{clearTimeout(fitPreview.t);fitPreview.t=setTimeout(fitPreview,80)});
+
+/* ============ PDF：在隐藏 iframe 里画 ============ */
+let rendererReady=null, rendererWin=null;
+function ensureRenderer(){
+  if(rendererReady)return rendererReady;
+  rendererReady=(async()=>{
+    await loadScript("lib/jspdf.umd.min.js");
+    const ifr=$("#renderer");
+    await new Promise(ok=>{ifr.onload=ok;ifr.srcdoc=`<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#fff}#host{width:max-content}section.docx{margin:0!important;box-shadow:none!important}</style><script src="lib/jszip.min.js"><\/script><script src="lib/docx-preview.min.js"><\/script><script src="lib/html2canvas.min.js"><\/script></head><body><div id="host"></div></body></html>`});
+    const w=ifr.contentWindow; if(!w.html2canvas||!w.docx)throw new Error("renderer"); rendererWin=w; applyBorderCss(w.document);
+    return w;
+  })();
+  rendererReady.catch(()=>{rendererReady=null});
+  return rendererReady;
+}
+async function docxToPdf(bytes){
+  const w=await ensureRenderer(); const host=w.document.getElementById("host");
+  host.innerHTML="";
+  await w.docx.renderAsync(new w.Uint8Array(bytes),host,null,PV_OPTS); // 跨 iframe 要换成它自己的 Uint8Array，不然 JSZip 不认
+  const imgs=[...host.querySelectorAll("img")]; await Promise.all(imgs.map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
+  if(w.document.fonts&&w.document.fonts.ready)await w.document.fonts.ready;
+  const secs=[...host.querySelectorAll("section.docx")];
+  const pg=S.tpl.page; const land=pg.w>pg.h;
+  const pdf=new window.jspdf.jsPDF({orientation:land?"landscape":"portrait",unit:"pt",format:[pg.w,pg.h],compress:true});
+  let first=true;
+  for(const sec of secs){
+    const cv=await w.html2canvas(sec,{scale:2,backgroundColor:"#ffffff",logging:false,useCORS:true,windowWidth:host.scrollWidth});
+    const pagePx=cv.width*pg.h/pg.w;
+    const n=Math.max(1,Math.ceil(cv.height/pagePx-0.03));
+    for(let p=0;p<n;p++){
+      let src=cv;
+      if(n>1){src=document.createElement("canvas");src.width=cv.width;src.height=Math.round(pagePx);const c=src.getContext("2d");c.fillStyle="#fff";c.fillRect(0,0,src.width,src.height);c.drawImage(cv,0,-Math.round(p*pagePx))}
+      if(!first)pdf.addPage([pg.w,pg.h],land?"landscape":"portrait"); first=false;
+      pdf.addImage(src.toDataURL("image/jpeg",0.88),"JPEG",0,0,pg.w,pg.h,undefined,"FAST");
+    }
+  }
+  return pdf.output("arraybuffer");
+}
+
+/* ============ 批量生成 ============ */
+async function generate(){
+  if(S.busy||!S.data||!S.data.rows.length)return;
+  S.busy=true; S.stop=false; renderOut();
+  const n=S.data.rows.length, fmt=S.fmt, wantDocx=fmt!=="pdf", wantPdf=fmt!=="docx";
+  $("#done").hidden=true; $("#prog").hidden=false; $("#bStop").hidden=false;
+  const bar=$("#barI"), pt=$("#progT"); const t0=performance.now();
+  const sec=()=>((performance.now()-t0)/1000).toFixed(1);
+  const zip=new JSZip(); const used={};
+  const uniq=b=>{let k=b.toLowerCase();if(!used[k]){used[k]=1;return b}let j=++used[k];return `${b}(${j})`};
+  let made=0;
+  try{
+    if(wantPdf){pt.textContent=T.pdfNote;await ensureRenderer()}
+    for(let i=0;i<n;i++){
+      if(S.stop)break;
+      const base=uniq(fileBase(i));
+      const bytes=fillDocx(i,wantDocx);
+      if(wantDocx)zip.file((fmt==="both"?"Word/":"")+base+".docx",bytes);
+      if(wantPdf){const pdf=await docxToPdf(wantDocx?fillDocx(i,false):bytes);zip.file((fmt==="both"?"PDF/":"")+base+".pdf",pdf)}
+      made=i+1;
+      if(wantPdf||i%15===14||i===n-1){bar.style.width=(made/n*100)+"%";pt.textContent=T.progress(made,n,sec());await tick()}
+    }
+    if(made){
+      pt.textContent=T.packing; $("#bStop").hidden=true; await tick();
+      const blob=await zip.generateAsync({type:"blob",compression:"STORE"});
+      const tname=S.tpl.name.replace(/\.docx$/i,"");
+      const zname=`${tname}-${made}份.zip`;
+      S.lastZip={blob,name:zname};
+      download(blob,zname);
+      $("#doneT").textContent=S.stop?T.stopped:T.doneMsg(made,sec()); $("#done").hidden=false; S.lastSig=sig();
+      window.__lastRun={n:made,seconds:+sec(),fmt,bytes:blob.size};
+    }
+  }catch(e){console.error(e);toast(e.message||String(e),4000)}
+  $("#prog").hidden=true; S.busy=false; renderOut();
+}
+
+/* ============ 单份下载 ============ */
+async function downloadOne(kind){
+  if(!S.data||!S.data.rows.length)return;
+  const base=fileBase(S.row);
+  try{
+    if(kind==="docx")download(new Blob([fillDocx(S.row,true)],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}),base+".docx");
+    else{toast(T.pdfNote,1500);const pdf=await docxToPdf(fillDocx(S.row,false));download(new Blob([pdf],{type:"application/pdf"}),base+".pdf")}
+  }catch(e){console.error(e);toast(e.message||String(e),4000)}
+}
+
+/* ============ 上传 ============ */
+async function onTemplateFile(file){
+  try{
+    const buf=await file.arrayBuffer(); new PizZip(buf).file("word/document.xml").asText();
+    S.ruleTouched=false;
+    setTemplate({name:file.name,buf,source:"word"});
+  }catch(e){console.warn(e);toast(T.badTpl)}
+}
+async function onDataFile(file){
+  try{const d=await readTable(file);d.source="file";if(!d.rows.length){toast(T.emptyData);}setData(d);if(!S.ruleTouched)resetRule();renderOut()}
+  catch(e){console.warn(e);toast(T.badData)}
+}
+function routeFile(file){
+  if(/\.docx$/i.test(file.name))return onTemplateFile(file);
+  if(/\.(xlsx|xls|xlsm|csv|tsv|txt|ods)$/i.test(file.name))return onDataFile(file);
+  toast(T.dropWhat);
+}
+$("#bUpTpl").onclick=()=>$("#fTpl").click();
+$("#bUpData").onclick=()=>$("#fData").click();
+$("#fTpl").onchange=e=>{const f=e.target.files[0];if(f)onTemplateFile(f);e.target.value=""};
+$("#fData").onchange=e=>{const f=e.target.files[0];if(f)onDataFile(f);e.target.value=""};
+$("#sheetSel").onchange=e=>{const d=S.data;if(!d.wb)return;const nd=sheetToData(d.wb,e.target.value,d.name);nd.source="file";setData(nd)};
+$("#bDlTpl").onclick=()=>download(new Blob([S.tpl.buf],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}),S.tpl.name);
+let dragN=0;
+addEventListener("dragenter",e=>{if(!e.dataTransfer||![...e.dataTransfer.types].includes("Files"))return;e.preventDefault();if(dragN++===0){const d=document.createElement("div");d.className="drop";d.id="dropOv";d.innerHTML=`<div>${T.dropHere}</div>`;document.body.appendChild(d)}});
+addEventListener("dragover",e=>e.preventDefault());
+addEventListener("dragleave",()=>{if(--dragN<=0){dragN=0;$("#dropOv")?.remove()}});
+addEventListener("drop",e=>{e.preventDefault();dragN=0;$("#dropOv")?.remove();[...(e.dataTransfer?.files||[])].forEach(routeFile)});
+
+/* ============ 交互 ============ */
+$("#tblWrap").addEventListener("click",e=>{const tr=e.target.closest("tr[data-i]");if(!tr)return;S.row=+tr.dataset.i;preview()});
+$("#bPrev").onclick=()=>{if(S.row>0){S.row--;preview()}};
+$("#bNext").onclick=()=>{if(S.row<S.data.rows.length-1){S.row++;preview()}};
+addEventListener("keydown",e=>{if($("#layer").childElementCount||/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==="ArrowLeft")$("#bPrev").click();if(e.key==="ArrowRight")$("#bNext").click()});
+$("#fmtSeg").onclick=e=>{const b=e.target.closest("button");if(!b||S.busy)return;S.fmt=b.dataset.v;renderOut();if(S.fmt!=="docx")ensureRenderer().catch(()=>{})};
+$("#nameRule").oninput=e=>{S.rule=e.target.value;S.ruleTouched=true;renderNamePv();renderNav()};
+$("#bGo").onclick=generate;
+$("#bStop").onclick=()=>{S.stop=true};
+$("#bAgain").onclick=()=>{if(S.lastZip)download(S.lastZip.blob,S.lastZip.name)};
+$("#bOneDocx").onclick=()=>downloadOne("docx");
+$("#bOnePdf").onclick=()=>downloadOne("pdf");
+
+/* ============ 粘贴表格 ============ */
+$("#bPaste").onclick=()=>{
+  const L=$("#layer");
+  L.innerHTML=`<div class="scrim"><div class="sheet small" role="dialog" aria-label="${T.pasteTitle}"><div class="sh-h"><button class="btn ghost l" id="pX">${T.cancel}</button><b>${T.pasteTitle}</b><button class="btn primary r" id="pOk" style="height:32px">${T.pasteOk}</button></div><textarea class="paste" id="pTa" spellcheck="false" placeholder="姓名\t课程\t日期&#10;林小满\tExcel 入门\t2026-11-02"></textarea><div class="sh-foot">${T.pasteHint}</div></div></div>`;
+  const close=()=>L.innerHTML=""; $("#pX").onclick=close; L.querySelector(".scrim").onclick=e=>{if(e.target.classList.contains("scrim"))close()};
+  $("#pTa").focus();
+  $("#pOk").onclick=()=>{const v=$("#pTa").value;if(!v.trim()){close();return}const d=parseText(v.replace(/^﻿/,""),T.pasted);d.source="paste";close();setData(d);if(!S.ruleTouched)resetRule();renderOut()};
+};
+
+/* ============ 在线编辑器 ============ */
+const ICON={
+  b:'<b style="font-size:15px">B</b>', i:'<i style="font-size:15px;font-family:Georgia,serif">I</i>', u:'<u style="font-size:15px">U</u>',
+  l:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3.5h12M2 6.5h8M2 9.5h12M2 12.5h8"/></svg>',
+  c:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3.5h12M4 6.5h8M2 9.5h12M4 12.5h8"/></svg>',
+  r:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3.5h12M6 6.5h8M2 9.5h12M6 12.5h8"/></svg>',
+};
+function openEditor(){
+  const t=S.tpl; const L=$("#layer");
+  const startHtml=t&&t.html?t.html:`<h1>标题</h1><p>{{姓名}}：</p><p>正文写在这里。</p>`;
+  let orient=t&&t.html?(t.orient||"portrait"):"portrait"; let border=t&&t.html?t.border||null:null;
+  const sw=c=>`<button class="tb" data-color="${c}" title="${c}"><span class="sw" style="background:${c}"></span></button>`;
+  L.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-label="${T.edTitle}" style="height:100%">
+    <div class="sh-h"><button class="btn ghost l" id="eX">${T.cancel}</button><b>${T.edTitle}</b><button class="btn primary r" id="eOk" style="height:32px">${T.use}</button></div>
+    <div class="toolbar" id="eTb">
+      <button class="tb fld" id="eField">{{ }} ${T.edField}</button><span class="tbsep"></span>
+      <button class="tb" data-block="h1">${T.edH1}</button><button class="tb" data-block="h2">${T.edH2}</button><button class="tb" data-block="h3">${T.edH3}</button><button class="tb" data-block="p">${T.edP}</button><button class="tb" data-block="h6">${T.edSmall}</button><span class="tbsep"></span>
+      <button class="tb" data-cmd="bold">${ICON.b}</button><button class="tb" data-cmd="italic">${ICON.i}</button><button class="tb" data-cmd="underline">${ICON.u}</button><span class="tbsep"></span>
+      <button class="tb" data-cmd="justifyLeft">${ICON.l}</button><button class="tb" data-cmd="justifyCenter">${ICON.c}</button><button class="tb" data-cmd="justifyRight">${ICON.r}</button><span class="tbsep"></span>
+      ${sw(INK)}${sw(GOLD)}${sw("#0071E3")}${sw("#C0392B")}${sw("#8E8E93")}<span class="tbsep"></span>
+      <button class="tb" id="eHr">${T.edHr}</button><button class="tb" id="eBd">${T.edBorder}</button><button class="tb" id="eOr"></button>
+    </div>
+    <div class="ed-desk" id="eDesk"><div class="ed-stage" id="eStage"><div class="page" id="ePage" contenteditable="true" spellcheck="false"></div></div></div>
+  </div></div>`;
+  const page=$("#ePage"); page.innerHTML=startHtml;
+  try{document.execCommand("defaultParagraphSeparator",false,"p");document.execCommand("styleWithCSS",false,true)}catch(e){}
+  const setOr=()=>{page.className="page "+orient+(border?" bordered":"");page.style.setProperty("--bd",border||GOLD);$("#eBd").classList.toggle("on",!!border);$("#eOr").textContent=orient==="portrait"?T.edLandscape:T.edPortrait;fitEd()};
+  const fitEd=()=>{const desk=$("#eDesk");if(!desk)return;const pw=orient==="portrait"?794:1123;const avail=desk.clientWidth-parseFloat(getComputedStyle(desk).paddingLeft)*2;const k=Math.min(1,avail/pw);page.style.transform=`scale(${k})`;$("#eStage").style.width=pw*k+"px";$("#eStage").style.height=page.offsetHeight*k+"px"};
+  setOr(); new ResizeObserver(fitEd).observe(page); addEventListener("resize",fitEd);
+  const close=()=>{L.innerHTML="";removeEventListener("resize",fitEd)};
+  $("#eX").onclick=close;
+  $("#eOr").onclick=()=>{orient=orient==="portrait"?"landscape":"portrait";setOr()};
+  $("#eBd").onclick=()=>{border=border?null:GOLD;setOr()};
+  const tb=$("#eTb");
+  tb.addEventListener("mousedown",e=>{if(e.target.closest(".tb"))e.preventDefault()});
+  tb.addEventListener("click",e=>{
+    const b=e.target.closest(".tb"); if(!b)return;
+    if(document.activeElement!==page&&!page.contains(document.activeElement))page.focus();
+    if(b.dataset.block)document.execCommand("formatBlock",false,b.dataset.block);
+    else if(b.dataset.cmd)document.execCommand(b.dataset.cmd);
+    else if(b.dataset.color)document.execCommand("foreColor",false,b.dataset.color);
+  });
+  $("#eHr").onclick=()=>{page.focus();document.execCommand("insertHorizontalRule")};
+  page.addEventListener("paste",e=>{e.preventDefault();const tx=(e.clipboardData||window.clipboardData).getData("text/plain");document.execCommand("insertText",false,tx)});
+  let saved=null;
+  const keep=()=>{const s=getSelection();if(s.rangeCount&&page.contains(s.anchorNode))saved=s.getRangeAt(0).cloneRange()};
+  document.addEventListener("selectionchange",keep);
+  const insert=txt=>{page.focus();if(saved){const s=getSelection();s.removeAllRanges();s.addRange(saved)}document.execCommand("insertText",false,txt)};
+  $("#eField").onclick=e=>{
+    keep(); const r=e.currentTarget.getBoundingClientRect();
+    const m=document.createElement("div"); m.className="menu"; m.style.left=Math.min(r.left,innerWidth-200)+"px"; m.style.top=r.bottom+6+"px";
+    const cols=S.data?S.data.headers:[];
+    m.innerHTML=cols.map((h,i)=>`<button data-i="${i}"><span class="mono">{{${esc(h)}}}</span></button>`).join("")+`<button data-new="1" style="color:var(--accent)">${T.edNewField}</button>`;
+    document.body.appendChild(m);
+    const off=ev=>{if(!m.contains(ev.target)){m.remove();document.removeEventListener("mousedown",off,true)}};
+    setTimeout(()=>document.addEventListener("mousedown",off,true));
+    m.addEventListener("mousedown",ev=>ev.preventDefault());
+    m.onclick=ev=>{const b=ev.target.closest("button");if(!b)return;m.remove();document.removeEventListener("mousedown",off,true);
+      if(b.dataset.new){const k=prompt(T.edNewFieldAsk);if(k&&k.trim())insert(`{{${k.trim()}}}`)}else insert(`{{${cols[+b.dataset.i]}}}`)};
+  };
+  $("#eOk").onclick=()=>{
+    const html=page.innerHTML; document.removeEventListener("selectionchange",keep);
+    const name=t&&t.source!=="word"?t.name:T.editorName+".docx";
+    const ok=setTemplate({name,buf:htmlToDocx(html,orient,border),source:"editor",html,orient,border,rule:t&&t.html?S.rule:null});
+    if(ok)close();
+  };
+}
+$("#bEdit").onclick=openEditor;
+
+/* ============ 开机 ============ */
+applyT();
+loadExample("cert");
+window.__S=S; window.__api={htmlToDocx,extractTags,fillDocx,docxToPdf,setData,generate};
+</script>
+</body>
+</html>
