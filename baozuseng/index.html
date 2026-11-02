@@ -1,0 +1,1223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>包租僧</title>
+<meta name="description" content="二房东算账：电费按人头自动平摊，房租和固定支出每月自动带出，名单粘贴一次建好。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="包租僧">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+/* Layout: one phone-width column (max 560px) of iOS inset-grouped lists under a glass nav bar; one hero number per view */
+:root{
+  --bg:#F2F2F7; --card:#FFFFFF; --elev:#F2F2F7; --elev-card:#FFFFFF;
+  --fill:rgba(118,118,128,.12); --fill2:rgba(120,120,128,.16);
+  --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#AEAEB2; --sep:rgba(60,60,67,.17);
+  --accent:#0071E3; --accent-tint:rgba(0,113,227,.10); --on-accent:#FFFFFF;
+  --amber:#FF9500; --amber-ink:#A85100; --amber-tint:rgba(255,149,0,.14);
+  --good:#1F7A36; --good-mark:#34C759; --good-tint:rgba(52,199,89,.16);
+  --bad:#D70015; --bad-mark:#FF3B30; --bad-tint:rgba(255,59,48,.10);
+  --bar-de:#C3D8F1; --glass:rgba(242,242,247,.8); --scrim:rgba(0,0,0,.3);
+  --toast-bg:rgba(29,29,31,.92); --toast-fg:#F5F5F7; --knob:#FFFFFF;
+  --shadow:0 1px 1px rgba(0,0,0,.03),0 6px 20px rgba(0,0,0,.05);
+  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+  --f-num:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,"PingFang SC",sans-serif;
+  --r:20px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --card:#1C1C1E; --elev:#1C1C1E; --elev-card:#2C2C2E;
+    --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.32);
+    --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+    --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18); --on-accent:#FFFFFF;
+    --amber:#FF9F0A; --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
+    --good:#30D158; --good-mark:#30D158; --good-tint:rgba(48,209,88,.20);
+    --bad:#FF6961; --bad-mark:#FF453A; --bad-tint:rgba(255,69,58,.18);
+    --bar-de:#23466E; --glass:rgba(18,18,20,.72); --scrim:rgba(0,0,0,.55);
+    --toast-bg:rgba(58,58,60,.95); --toast-fg:#F5F5F7; --knob:#FFFFFF;
+    --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --card:#1C1C1E; --elev:#1C1C1E; --elev-card:#2C2C2E;
+  --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.32);
+  --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+  --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18); --on-accent:#FFFFFF;
+  --amber:#FF9F0A; --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
+  --good:#30D158; --good-mark:#30D158; --good-tint:rgba(48,209,88,.20);
+  --bad:#FF6961; --bad-mark:#FF453A; --bad-tint:rgba(255,69,58,.18);
+  --bar-de:#23466E; --glass:rgba(18,18,20,.72); --scrim:rgba(0,0,0,.55);
+  --toast-bg:rgba(58,58,60,.95); --toast-fg:#F5F5F7; --knob:#FFFFFF;
+  --shadow:none; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:400 17px/1.35 var(--f-text);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+button,input,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit;-webkit-appearance:none;appearance:none}
+button,a{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+a{color:inherit;text-decoration:none}
+button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:50px;padding-left:max(16px,env(safe-area-inset-left,0px),calc(50% - 264px));padding-right:max(16px,env(safe-area-inset-right,0px),calc(50% - 264px));transition:background-color .2s,box-shadow .2s}
+.nav.scrolled{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--sep)}
+.nav-l{justify-self:start;min-width:0}
+.nav-r{justify-self:end}
+.nav-t{font-weight:600;font-size:17px;opacity:0;transition:opacity .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50vw}
+.nav.scrolled .nav-t{opacity:1}
+.nav-back{display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-size:17px;height:44px;margin-left:-4px;padding-right:8px}
+.nav-back svg{width:11px;height:19px}
+.nav-a{display:inline-flex;align-items:center;justify-content:center;color:var(--accent);font-size:15px;font-weight:600;height:34px;border-radius:999px;background:var(--fill)}
+.nav-a.pill{padding:0 14px}
+.nav-a.round{width:34px}
+.nav-a.round svg{width:20px;height:20px}
+
+/* page */
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px}
+.enter{animation:push .34s cubic-bezier(.2,.8,.2,1)}
+@keyframes push{from{transform:translateX(14px)}to{transform:none}}
+.lt{padding:0 4px 16px}
+.lt h1{margin:0;font-size:34px;line-height:1.2;font-weight:700;letter-spacing:.005em;text-wrap:balance}
+.tag{margin:6px 0 0;color:var(--fg2);font-size:15px}
+.eyebrow{display:flex;align-items:center;gap:8px;color:var(--fg2);font-size:15px;font-weight:600;margin-bottom:2px}
+
+/* month / year switch */
+.mswitch{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;height:44px;background:var(--fill);border-radius:999px;margin:0 0 16px;padding:0 2px}
+.ms-b{height:40px;border-radius:999px;display:grid;place-items:center;color:var(--accent)}
+.ms-b svg{width:9px;height:15px}
+.ms-b:disabled{color:var(--fg3);cursor:default}
+.ms-t{justify-self:center;display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600;height:40px;padding:0 12px;border-radius:999px}
+.ms-t:disabled{cursor:default;color:var(--fg)}
+.ms-now{font-size:12px;font-weight:600;color:var(--fg2)}
+.ms-back{font-size:12px;font-weight:600;color:var(--accent)}
+
+/* hero number */
+.hero{display:block;background:var(--card);border-radius:var(--r);padding:18px 18px 16px;box-shadow:var(--shadow)}
+.hhero{padding:0 4px;margin:2px 0 18px}
+.hero-l{display:block;font-size:15px;font-weight:600;color:var(--fg2)}
+.hero-n{display:block;font-family:var(--f-num);font-size:52px;line-height:1.1;font-weight:700;letter-spacing:-.015em;margin:4px 0 2px;white-space:nowrap}
+.hero-n .cur{font-size:.58em;font-weight:600;margin-right:2px}
+.hero-n .dec{font-size:.5em;font-weight:600;color:var(--fg2)}
+.hero-s{display:block;color:var(--fg2);font-size:15px}
+.meter{display:block;height:6px;border-radius:3px;background:var(--good-tint);margin:14px 0 8px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:3px;background:var(--good-mark)}
+.hero-f{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--fg2)}
+.hero-f .go{color:var(--accent);font-weight:600;white-space:nowrap}
+.hero-note{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:13px;color:var(--amber-ink)}
+.hero-note::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none}
+.hero-note.bad{color:var(--bad)}
+.hero-note.bad::before{background:var(--bad-mark)}
+
+/* demo banner */
+.demo-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 12px 12px 16px;background:var(--accent-tint);border-radius:16px;margin-bottom:16px}
+.demo-bar b{display:block;font-size:15px;color:var(--accent)}
+.demo-bar span{font-size:13px;color:var(--fg2)}
+.demo-bar .btn{background:var(--card);color:var(--accent);flex:none}
+
+/* groups & lists */
+.grp{margin-top:28px}
+.grp-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 4px 8px;min-height:36px}
+.grp-h h2{margin:0;font-size:22px;font-weight:700;letter-spacing:.005em;display:flex;align-items:baseline;gap:8px;min-width:0}
+.grp-sub{font-size:15px;font-weight:400;color:var(--fg2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.grp-meta{font-size:15px;color:var(--fg2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.grp-foot{margin:8px 0 0;padding:0 16px;font-size:13px;color:var(--fg2)}
+.sub-h{display:flex;justify-content:space-between;gap:12px;padding:14px 16px 6px;font-size:13px;font-weight:600;color:var(--fg2)}
+.sub-h:first-child{padding-top:0}
+.sub-h span:last-child{font-weight:400;font-variant-numeric:tabular-nums}
+.list{background:var(--card);border-radius:var(--r);overflow:hidden}
+.list+.list{margin-top:10px}
+.row{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 16px}
+.list>.row+.row::before{content:"";position:absolute;top:0;right:0;left:16px;height:.5px;background:var(--sep)}
+.list.lead>.row+.row::before{left:56px}
+a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
+.row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.row-t{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:17px}
+.tag2{color:var(--fg2);font-size:15px}
+.row-s{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.row-v{font-family:var(--f-num);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:17px}
+.row-v.mute{color:var(--fg3);font-family:var(--f-text);font-weight:400}
+.chev{width:7px;height:12px;color:var(--fg3);flex:none}
+.row.add{color:var(--accent);min-height:50px;gap:15px;padding-left:15px}
+.plus{width:26px;height:26px;border-radius:50%;background:var(--accent-tint);display:grid;place-items:center;flex:none}
+.plus svg{width:13px;height:13px}
+.emptyrow{color:var(--fg2);font-size:15px}
+.chip{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;font-size:12px;font-weight:600;background:var(--fill);color:var(--fg2);white-space:nowrap;line-height:1}
+.chip.warn{background:var(--amber-tint);color:var(--amber-ink)}
+.chip.ok{background:var(--good-tint);color:var(--good)}
+.chip.bad{background:var(--bad-tint);color:var(--bad)}
+.chip.demo{background:var(--accent-tint);color:var(--accent)}
+
+/* tenant rows */
+.row.ten{padding:0 0 0 6px;gap:6px}
+.paid{flex:none;width:44px;height:62px;display:grid;place-items:center}
+.paid>span{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1.5px var(--fg3);color:var(--on-accent);font-size:12px;font-weight:700;transition:background-color .18s,box-shadow .18s,transform .18s}
+.paid svg{width:13px;height:13px;opacity:0;transition:opacity .15s}
+.paid.on>span{background:var(--good-mark);box-shadow:none}
+.paid.on svg{opacity:1}
+.paid.owe>span{background:var(--bad-mark);box-shadow:none}
+.paid:active>span{transform:scale(.86)}
+.paid.pop>span{animation:pop .32s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(.7)}100%{transform:scale(1)}}
+.row-btn{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:62px;padding:10px 16px 10px 0;text-align:left}
+.seg{display:inline-grid;grid-auto-flow:column;gap:2px;padding:2px;border-radius:999px;background:var(--fill);flex:none}
+.seg button{height:28px;padding:0 11px;border-radius:999px;font-size:13px;font-weight:600;color:var(--fg2)}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* electricity */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow)}
+.elec{padding:16px}
+.elec-h{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--fg2)}
+.elec-h svg{width:16px;height:16px;fill:var(--amber)}
+.elec-field{display:flex;align-items:baseline;gap:2px;margin:6px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--sep);transition:border-color .2s}
+.elec-field:focus-within{border-bottom-color:var(--amber)}
+.elec-field.bad{border-bottom-color:var(--bad-mark)}
+.elec-cur{font-family:var(--f-num);font-size:26px;font-weight:600;color:var(--fg2)}
+.elec-field input{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:0;font-family:var(--f-num);font-size:40px;font-weight:700;letter-spacing:-.01em;color:var(--fg)}
+.elec-field input::placeholder{color:var(--fg3)}
+.elec-hint{margin:0;color:var(--fg2);font-size:15px}
+.heads{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.heads i{width:14px;height:14px;border-radius:50%;background:var(--amber)}
+.heads i.inc{background:transparent;box-shadow:inset 0 0 0 2px var(--amber)}
+.heads i.me{background:var(--fg3)}
+.split-main{font-size:17px}
+.split-main b{font-family:var(--f-num);font-weight:700}
+.split-sub{margin-top:3px;font-size:13px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.elec .btn{margin-top:14px}
+.note-card{padding:22px 20px;text-align:center}
+.note-card p{margin:0 0 14px;color:var(--fg2);font-size:15px}
+.note-card .btn{margin:0 auto}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;padding:0 20px;border-radius:999px;font-size:17px;font-weight:600;transition:transform .12s,opacity .12s}
+.btn:active{transform:scale(.98);opacity:.85}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn svg{width:17px;height:17px;flex:none}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.tinted{background:var(--accent-tint);color:var(--accent)}
+.btn.plain{color:var(--accent)}
+.btn.danger{color:var(--bad)}
+.btn.danger-fill{background:var(--bad-mark);color:var(--on-accent)}
+.btn.small{width:auto;min-height:36px;padding:0 14px;font-size:15px}
+.newhouse{margin-top:24px}
+
+/* empty / loading / footer */
+.empty{background:var(--card);border-radius:var(--r);padding:32px 20px 14px;text-align:center;box-shadow:var(--shadow)}
+.empty-ico{width:64px;height:64px;margin:0 auto 14px;color:var(--accent)}
+.empty-t{font-size:22px;font-weight:700}
+.empty-s{margin:6px auto 20px;color:var(--fg2);font-size:15px;max-width:26em}
+.empty-b{display:flex;flex-direction:column;gap:4px}
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--fg2);padding:56px 0;font-size:15px}
+.spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--fill2);border-top-color:var(--fg2);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.foot{margin-top:44px;padding:0 4px;font-size:12px;line-height:1.7;color:var(--fg2);text-align:center}
+.mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
+
+/* ledger chart */
+.chart{background:var(--card);border-radius:var(--r);padding:16px;margin-top:16px;box-shadow:var(--shadow)}
+.ro{display:grid;grid-template-columns:1fr auto;align-items:center;gap:0 12px;min-height:66px}
+.ro-m,.ro-v,.ro-s{grid-column:1}
+.ro-m{font-size:13px;color:var(--fg2);font-weight:600}
+.ro-v{font-family:var(--f-num);font-size:24px;font-weight:700}
+.ro-s{font-size:13px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.ro-go{grid-column:2;grid-row:1/span 3;color:var(--accent);font-size:15px;font-weight:600;min-height:44px}
+.plot{position:relative;height:152px;margin-top:12px}
+.gl{position:absolute;left:0;right:0;height:1px;background:var(--sep)}
+.gl.zero{background:var(--fg3)}
+.yl{position:absolute;right:0;transform:translateY(-50%);font-size:11px;color:var(--fg2);font-variant-numeric:tabular-nums;background:var(--card);padding-left:6px;line-height:1.2}
+.cols{position:absolute;top:0;bottom:0;left:0;right:46px;display:grid;grid-template-columns:repeat(12,1fr)}
+.col{position:relative;height:100%}
+.col .b{position:absolute;left:50%;width:14px;margin-left:-7px;background:var(--bar-de);transition:background-color .15s}
+.col .b.up{border-radius:4px 4px 0 0}
+.col .b.dn{border-radius:0 0 4px 4px}
+.col.sel .b{background:var(--accent)}
+.col .lbl{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:11px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.col.sel .lbl{color:var(--fg);font-weight:700}
+.col.none .lbl{color:var(--fg3)}
+.col:disabled{cursor:default}
+
+/* sheets */
+#sheets{position:fixed;inset:0;z-index:50}
+.scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;transition:opacity .3s}
+.sheet{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:calc(100% - 28px);overflow-y:auto;overscroll-behavior:contain;background:var(--elev);border-radius:24px 24px 0 0;transform:translateY(104%);transition:transform .42s cubic-bezier(.32,.72,0,1);padding-bottom:max(20px,env(safe-area-inset-bottom,0px))}
+#sheets.open .scrim{opacity:1}
+#sheets.open .sheet{transform:none}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--fg3);opacity:.6;margin:6px auto 0}
+.sh-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;min-height:50px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sh-x{justify-self:start;color:var(--accent);font-size:17px;min-height:44px}
+.sh-ok{justify-self:end;color:var(--accent);font-size:17px;font-weight:600;min-height:44px}
+.sh-ok:disabled{color:var(--fg3);cursor:default}
+.sh-t{font-size:17px;font-weight:600}
+.sh-body{display:flex;flex-direction:column;gap:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:4px 8px}
+.form{background:var(--elev-card);border-radius:14px;overflow:hidden}
+.f-row{position:relative;display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px}
+.form>.f-row+.f-row::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
+.f-k{flex:none;display:flex;flex-direction:column;font-size:17px}
+.f-k small{font-size:12px;color:var(--fg2)}
+.f-row input{flex:1;min-width:0;height:50px;border:0;background:transparent;outline:none;text-align:right;font-size:17px;color:var(--fg)}
+.f-row input.left{text-align:left}
+.f-row input::placeholder,.paste::placeholder{color:var(--fg3)}
+.f-label{font-size:13px;color:var(--fg2);padding:2px 16px 0;margin-bottom:-4px}
+.f-err{margin:-2px 0 0;padding:0 16px;color:var(--bad);font-size:13px}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick button{min-height:36px;padding:0 14px;border-radius:999px;background:var(--elev-card);font-size:15px}
+.pick button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.switch{position:relative;flex:none;width:51px;height:31px;border-radius:999px;background:var(--fill2);margin-left:auto;transition:background-color .2s}
+.switch i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:var(--knob);box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.12);transition:transform .22s cubic-bezier(.3,.7,.3,1)}
+.switch[aria-checked="true"]{background:var(--good-mark)}
+.switch.red[aria-checked="true"]{background:var(--bad-mark)}
+.switch[aria-checked="true"] i{transform:translateX(20px)}
+.sh-acts{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.sh-note{margin:-2px 0 8px;text-align:center;font-size:13px;color:var(--fg2)}
+.prev-owe{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 12px 12px 16px;border-radius:14px;background:var(--bad-tint);font-size:15px}
+.prev-owe b{font-family:var(--f-num);color:var(--bad)}
+.prev-owe .btn{background:var(--elev-card);color:var(--bad);flex:none}
+.cf{padding:18px 20px 4px;text-align:center}
+.cf-t{font-size:20px;font-weight:700}
+.cf-m{color:var(--fg2);margin:8px 0 18px;font-size:15px}
+.cf-b{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.copybox,.paste{width:100%;border:0;border-radius:14px;background:var(--elev-card);color:var(--fg);padding:14px 16px;font:17px/1.5 var(--f-text);resize:none;outline:none}
+.sh-tip{margin:-4px 0 0;padding:0 4px;font-size:13px;color:var(--fg2)}
+.bk-h{display:flex;justify-content:space-between;align-items:baseline;padding:4px 4px 0;font-size:13px;color:var(--fg2)}
+.bk{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;background:var(--elev-card);border-radius:14px;padding:10px 10px 10px 14px}
+.bk+.bk{margin-top:8px}
+.bk input{border:0;background:transparent;outline:none;color:var(--fg);min-width:0}
+.bk-name{font-size:17px;font-weight:600}
+.bk-rent{display:flex;align-items:baseline;gap:2px;justify-self:end;border-radius:10px;background:var(--fill);padding:4px 10px}
+.bk-rent span{color:var(--fg2);font-size:15px}
+.bk-rent input{width:88px;text-align:right;font-family:var(--f-num);font-size:17px;font-weight:600}
+.bk-rent.bad{box-shadow:inset 0 0 0 1.5px var(--bad-mark)}
+.bk-2{grid-column:1/-1;display:flex;align-items:center;gap:8px}
+.bk-room{flex:1;font-size:15px;color:var(--fg2)}
+.bk-sh{height:30px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;background:var(--amber-tint);color:var(--amber-ink);flex:none}
+.bk-sh.inc{background:var(--fill);color:var(--fg2)}
+.bk-del{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--fg2);background:var(--fill);flex:none}
+.bk-del svg{width:10px;height:10px}
+.bk.dup{opacity:.5}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));z-index:60;max-width:calc(100% - 32px);transform:translate(-50%,16px);opacity:0;pointer-events:none;padding:11px 18px;border-radius:999px;background:var(--toast-bg);color:var(--toast-fg);font-size:15px;font-weight:500;transition:opacity .25s,transform .3s cubic-bezier(.2,.8,.2,1)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="nav" id="nav"><div class="nav-l" id="navL"></div><div class="nav-t" id="navT"></div><div class="nav-r" id="navR"></div></header>
+  <main id="view"></main>
+</div>
+<div id="sheets" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+'use strict';
+
+/*MODEL-START*/
+const pad = n => String(n).padStart(2, '0');
+const ymAdd = (ym, k) => { let y = +ym.slice(0, 4), m = +ym.slice(5) + k; y += Math.floor((m - 1) / 12); m = ((m - 1) % 12 + 12) % 12 + 1; return y + '-' + pad(m); };
+const toC = x => Math.round((+x || 0) * 100);
+
+function norm(h) {
+  h.tenants = Array.isArray(h.tenants) ? h.tenants : [];
+  h.fixed = Array.isArray(h.fixed) ? h.fixed : [];
+  h.months = h.months && typeof h.months === 'object' ? h.months : {};
+  for (const k of Object.keys(h.months)) {
+    const r = h.months[k];
+    r.rows = Array.isArray(r.rows) ? r.rows : [];
+    r.exp = Array.isArray(r.exp) ? r.exp : [];
+    if (r.elec === undefined) r.elec = null;
+  }
+  return h;
+}
+
+// A month nobody has touched yet is read straight off the house's current roster and fixed costs.
+function virt(h) {
+  return {
+    elec: null, self: !!h.self,
+    rows: h.tenants.map(t => ({ id: t.id, name: t.name, room: t.room || '', rent: t.rent, share: !!t.share, paid: false })),
+    exp: h.fixed.map(f => ({ id: f.id, name: f.name, amt: f.amt, fixed: true }))
+  };
+}
+function rec(h, m) { return (h.months && h.months[m]) || virt(h); }
+
+// Money in integer cents. Electricity: whole bill ÷ heads (everyone living there, plus the landlord if he lives in);
+// sharers pay their head, the heads of rent-includes-electricity tenants are the landlord's cost.
+function calc(h, m) {
+  const r = rec(h, m);
+  const has = r.elec != null;
+  const heads = r.rows.length + (r.self ? 1 : 0);
+  const elecC = has ? toC(r.elec) : 0;
+  const perC = has && heads ? Math.round(elecC / heads) : 0;
+  const prev = {};
+  for (const k of Object.keys(h.months || {})) {
+    if (k >= m || k < h.created) continue;
+    for (const x of h.months[k].rows || []) if (x.owe > 0) {
+      const p = prev[x.id] || (prev[x.id] = { c: 0, ms: [], name: x.name });
+      p.c += toC(x.owe); p.ms.push(k); p.name = x.name;
+    }
+  }
+  let rentC = 0, inC = 0, paidC = 0, unpaid = 0, sharers = 0, oweNowC = 0;
+  const rows = r.rows.map(x => {
+    const rC = toC(x.rent), eC = x.share && has ? perC : 0, due = rC + eC;
+    const oC = !x.paid && x.owe > 0 ? toC(x.owe) : 0;
+    const st = x.paid ? 'paid' : oC ? 'owe' : 'open';
+    const got = st === 'paid' ? due : st === 'owe' ? Math.max(0, due - oC) : 0;
+    if (x.share) sharers++;
+    rentC += rC; inC += due; paidC += got; oweNowC += oC;
+    if (st === 'open') unpaid++;
+    const p = prev[x.id];
+    return Object.assign({}, x, { rC, eC, due, oC, st, got, prevC: p ? p.c : 0, prevMs: p ? p.ms.sort() : [] });
+  });
+  const here = new Set(r.rows.map(x => x.id));
+  const gone = Object.keys(prev).filter(id => !here.has(id)).map(id => ({ id, name: prev[id].name, c: prev[id].c }));
+  const prevAllC = Object.values(prev).reduce((s, p) => s + p.c, 0);
+  const elecInC = has ? perC * sharers : 0;
+  const otherC = r.exp.reduce((s, e) => s + toC(e.amt), 0);
+  const outC = elecC + otherC;
+  return { r, rows, has, heads, sharers, elecC, perC, rentC, elecInC, inC, otherC, outC, netC: inC - outC,
+    paidC, unpaid, oweNowC, prevAllC, owedC: oweNowC + prevAllC, gone, eatC: elecC - elecInC };
+}
+
+// ---- roster text → tenants (runs on the phone, no API) ----
+const ROOM_PATS = [
+  /主人房\d{0,2}(?!\d)/, /主卧\d{0,2}(?!\d)/, /次卧\d{0,2}(?!\d)/, /普通房\d{0,2}(?!\d)/, /普通间\d{0,2}(?!\d)/,
+  /小房间?\d{0,2}(?!\d)/, /大房间\d{0,2}(?!\d)/, /客厅/, /储物间/, /杂物间/, /工人房/, /女佣房/, /阁楼/,
+  /房间\d{1,2}(?!\d)/, /房间[A-Za-z一二三四五六七八九十](?![A-Za-z])/, /房\d{1,2}(?!\d)/, /\d{1,2}号房/, /[一二三四五六七八九十]号房/, /\b[A-Za-z]房(?!东|租)/,
+  /master\s*(?:bed)?room\s*\d{0,2}(?!\d)/i, /common\s*room\s*\d{0,2}(?!\d)/i, /small\s*room\s*\d{0,2}(?!\d)/i, /living\s*room/i, /store\s*room/i, /\broom\s*\d{1,2}(?!\d)/i
+];
+const SHARE_W = '(不包电|不含电|电费另算|电费另付|电费自理|分摊电费|分摊|平摊|摊电|另算|另付|分电|\\bAA\\b)';
+const INC_W = '(包水电|含水电|水电全包|水电包|电费全包|电费包了|包电费|含电费|包电|含电|utilities\\s*incl\\w*|incl\\w*)';
+function findRoom(s) {
+  let best = null;
+  for (const re of ROOM_PATS) {
+    const m = re.exec(s);
+    if (m && (!best || m.index < best.index || (m.index === best.index && m[0].length > best.text.length))) best = { index: m.index, text: m[0] };
+  }
+  return best;
+}
+function rentNums(s) {
+  const out = [], re = /(?:S\$|RM|HK\$|\$|¥|￥)?\s*(\d{1,3}(?:,\d{3})+|\d+)(\.\d{1,2})?/g;
+  let m;
+  while ((m = re.exec(s))) {
+    const val = parseFloat((m[1] + (m[2] || '')).replace(/,/g, ''));
+    const before = s.slice(Math.max(0, m.index - 10), m.index);
+    const after = s.slice(m.index + m[0].length, m.index + m[0].length + 2);
+    if (/(押金|按金|deposit|电费|水费|网费)\s*[:：]?\s*$/i.test(before)) continue;
+    if (/#\s*$/.test(before) || /^\s*(年|月|号|日|楼|层|栋|座|-)/.test(after)) continue;
+    if (val < 50 || val >= 100000) continue;
+    out.push({ val: Math.round(val * 100) / 100, index: m.index, len: m[0].length, pref: /(房租|月租|租金|租|rent)\s*[:：]?\s*$/i.test(before) });
+  }
+  return out;
+}
+function parseOne(seg, inheritRoom) {
+  let s = ' ' + seg + ' ';
+  let share = true;
+  if (new RegExp(SHARE_W, 'i').test(s)) s = s.replace(new RegExp(SHARE_W, 'gi'), ' ');
+  else if (new RegExp(INC_W, 'i').test(s)) { share = false; s = s.replace(new RegExp(INC_W, 'gi'), ' '); }
+  let room = '';
+  const rm = findRoom(s);
+  if (rm) { room = rm.text.replace(/\s+/g, ' ').trim(); s = s.slice(0, rm.index) + ' ' + s.slice(rm.index + rm.text.length); }
+  let rent = null;
+  const nums = rentNums(s);
+  if (nums.length) { const p = nums.find(n => n.pref) || nums[0]; rent = p.val; s = s.slice(0, p.index) + ' ' + s.slice(p.index + p.len); }
+  s = s.replace(/(押金|按金|deposit|电费|水费|网费)\s*[:：]?\s*(?:S\$|RM|\$|¥|￥)?\s*[\d,.]+/gi, ' ')
+    .replace(/\d{2,4}\s*年|\d{1,2}\s*月(\s*\d{1,2}\s*[日号])?|\d{1,2}\s*[日号]/g, ' ')
+    .replace(/入住|搬入|搬进|起租|到期|开始|电话|手机|微信|whatsapp|mobile|phone|tel\b/gi, ' ')
+    .replace(/S\$|RM|HK\$|NT\$|[$¥￥]|元|块|新币|新元|每月|一个月|\/\s*月|per\s*month|\/mo\b/gi, ' ')
+    .replace(/房租|月租|租金|rent/gi, ' ')
+    .replace(/[:：,，、;；|/\\()（）\[\]【】<>《》"“”'‘’~·•\-—_=+*#@!！?？]/g, ' ')
+    .replace(/(^|\s)[\d.,]+(?=\s|$)/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+  let name = s;
+  if (name.length > 12) name = name.split(' ')[0];
+  if (/^(合计|总计|共计|总共|小计|total|sum)$/i.test(name)) return null;
+  if (!name && rent == null) return null;
+  return { name, room: room || inheritRoom || '', rent, share };
+}
+function parseRoster(text) {
+  const out = [];
+  let ctxRoom = '';
+  for (const raw of String(text || '').replace(/\r/g, '').split('\n')) {
+    let line = raw.replace(/^\s*\[[^\]]*\]\s*/, '').replace(/^\s*(?:\d{1,2}\s*[.、)）:：]|[-*•·●▪])\s*/, '').trim();
+    if (!line) continue;
+    if (!/\d/.test(line)) {
+      const kw = (line.match(/名字|姓名|房间|房租|月租|租金|电费|备注|\bname\b|\broom\b|\brent\b/gi) || []).length;
+      if (kw >= 2 || /名单|租客|房客|tenant/i.test(line)) continue;
+    }
+    const only = findRoom(line);
+    if (only && line.replace(only.text, '').replace(/[\s:：,，、;；|()（）\[\]【】\-—]/g, '') === '') { ctxRoom = only.text.replace(/\s+/g, ' ').trim(); continue; }
+    let lineRoom = '';
+    const pre = line.match(/^(.{1,14}?)\s*[:：]\s*/);
+    if (pre) { const rm = findRoom(pre[1]); if (rm && pre[1].replace(rm.text, '').trim() === '') { lineRoom = rm.text.replace(/\s+/g, ' ').trim(); line = line.slice(pre[0].length); } }
+    const segs = rentNums(line).length >= 2 && /[，,;；、]/.test(line) ? line.split(/[，,;；、]/).filter(x => x.trim()) : [line];
+    for (const seg of segs) { const r = parseOne(seg, lineRoom || ctxRoom); if (r) out.push(r); }
+  }
+  return out;
+}
+
+function makeDemo(base) {
+  const m3 = ymAdd(base, -3), m2 = ymAdd(base, -2), m1 = ymAdd(base, -1);
+  const T = (id, name, room, rent, share) => ({ id, name, room, rent, share });
+  const mk = (ten, fix, self, elec, paid, extra, patch) => ({
+    elec, self,
+    rows: ten.map(t => Object.assign({}, t, { paid: Array.isArray(paid) ? paid.includes(t.id) : paid }, (patch || {})[t.id] || {})),
+    exp: fix.map(f => Object.assign({}, f, { fixed: true })).concat(extra || [])
+  });
+  const t1 = [T('t1', '阿明', '主人房', 900, true), T('t2', '小美', '普通房1', 650, false), T('t3', '阿强', '普通房2', 400, true),
+    T('t4', '阿杰', '普通房2', 400, true), T('t5', 'Raj', '小房', 520, true), T('t6', '陈姐', '客厅', 450, false)];
+  const f1 = [{ id: 'e1', name: '交大房东', amt: 2600 }, { id: 'e2', name: '网费', amt: 45 }];
+  const t2 = [T('t7', '小李', '主人房', 1100, true), T('t8', 'Tom', '普通房', 750, true)];
+  const f2 = [{ id: 'e4', name: '交大房东', amt: 1500 }, { id: 'e5', name: '网费', amt: 30 }];
+  const h1 = { id: 'h-demo1', demo: true, estate: '碧水湾', unit: '12栋 08-21', self: false, byRoom: false, created: m3, tenants: t1, fixed: f1, months: {} };
+  h1.months[m3] = mk(t1, f1, false, 268.3, true);
+  h1.months[m2] = mk(t1, f1, false, 301.75, true, [{ id: 'e3', name: '修空调', amt: 120, fixed: false }]);
+  h1.months[m1] = mk(t1, f1, false, 284.1, ['t1', 't2', 't3', 't4', 't6'], null, { t5: { owe: 200 } });
+  const h2 = { id: 'h-demo2', demo: true, estate: '金沙苑', unit: '3栋 11-05', self: true, byRoom: false, created: m2, tenants: t2, fixed: f2, months: {} };
+  h2.months[m2] = mk(t2, f2, true, 180, true);
+  h2.months[m1] = mk(t2, f2, true, 165.6, true);
+  h2.months[base] = mk(t2, f2, true, 172.5, ['t7']);
+  return [h1, h2];
+}
+/*MODEL-END*/
+
+/* ---------- small helpers ---------- */
+const $ = (s, el) => (el || document).querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rid = p => p + Math.random().toString(36).slice(2, 7) + Date.now().toString(36).slice(-3);
+const NOW = new Date();
+const CUR = NOW.getFullYear() + '-' + pad(NOW.getMonth() + 1);
+const mNum = ym => +ym.slice(5);
+const yNum = ym => +ym.slice(0, 4);
+const mLabel = ym => mNum(ym) + '月';
+const mLong = ym => yNum(ym) + '年' + mNum(ym) + '月';
+const NF = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const num = c => NF.format(c / 100);
+const money = c => (c < 0 ? '−$' : '$') + NF.format(Math.abs(c) / 100);
+const sum = (a, k) => a.reduce((s, x) => s + (x[k] || 0), 0);
+const clone = o => JSON.parse(JSON.stringify(o));
+const stable = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.keys(x).sort().reduce((o, key) => (o[key] = x[key], o), {}) : x);
+function big(c) { const s = NF.format(Math.abs(c) / 100), i = s.lastIndexOf('.'); return '<span class="cur">$</span>' + s.slice(0, i) + '<span class="dec">' + s.slice(i) + '</span>'; }
+function parseAmt(v) {
+  let s = String(v == null ? '' : v).trim().replace(/[\s$¥￥]/g, '');
+  if (!s) return null;
+  if (/^\d+,\d{1,2}$/.test(s)) s = s.replace(',', '.');
+  s = s.replace(/,/g, '');
+  if (!/^(\d+\.?\d*|\.\d+)$/.test(s)) return NaN;
+  return Math.round(parseFloat(s) * 100) / 100;
+}
+const ICON = {
+  chevR: '<svg class="chev" viewBox="0 0 7 12" aria-hidden="true"><path d="M1 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  chevL: '<svg viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2L2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  chevRb: '<svg viewBox="0 0 12 20" aria-hidden="true"><path d="M2 2l8 8-8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.2 2 4.6 13.4h6.1L9.9 22l8.6-11.5h-6.2z"/></svg>',
+  check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 8.6l3 3 6.2-7.2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  plus: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  list: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  x: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  dots: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.9" fill="currentColor"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><circle cx="18.5" cy="12" r="1.9" fill="currentColor"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 5.5V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  house: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 54h44"/><path d="M16 54V14a3 3 0 0 1 3-3h18a3 3 0 0 1 3 3v40"/><path d="M40 26h6a3 3 0 0 1 3 3v25"/><path d="M23 19h4M30 19h3M23 27h4M30 27h3M23 35h4M30 35h3"/><path d="M25 54v-9h7v9"/></svg>'
+};
+
+/* ---------- state ---------- */
+const S = { houses: {}, order: [], month: CUR, year: yNum(CUR), sel: null, route: '', ready: false };
+const St = { mode: 'pending', col: null, dirty: new Set(), busy: new Set(), fails: {}, timer: 0, server: false, slow: false, err: false };
+const LS = 'baozuseng.v1';
+
+function housesInOrder() {
+  const seen = new Set(), out = [];
+  for (const id of S.order) if (S.houses[id] && !seen.has(id)) { seen.add(id); out.push(S.houses[id]); }
+  for (const id of Object.keys(S.houses)) if (!seen.has(id)) out.push(S.houses[id]);
+  return out;
+}
+const firstMonth = hs => hs.reduce((a, h) => (h.created < a ? h.created : a), CUR);
+function freeze(h) { h.months = h.months || {}; for (let m = h.created; m <= CUR; m = ymAdd(m, 1)) if (!h.months[m]) h.months[m] = virt(h); }
+function live(h, m) { freeze(h); if (!h.months[m]) h.months[m] = virt(h); return h.months[m]; }
+const rowOf = (r, id) => r.rows.find(x => x.id === id);
+
+/* ---------- edits (past months stay frozen; editing this month also updates the house going forward) ---------- */
+const Ops = {
+  setElec(h, m, v) { const r = live(h, m); if (r.elec === v) return; r.elec = v; save(h); },
+  togglePaid(h, m, id) { const x = rowOf(live(h, m), id); if (!x) return; if (x.owe > 0) { delete x.owe; x.paid = true; } else x.paid = !x.paid; save(h); },
+  setOwe(h, m, id, amt) { const x = rowOf(live(h, m), id); if (!x) return; if (amt > 0) { x.owe = amt; x.paid = false; } else delete x.owe; save(h); },
+  clearPrev(h, m, id) { freeze(h); for (const k of Object.keys(h.months)) if (k < m) { const x = rowOf(h.months[k], id); if (x && x.owe > 0) { delete x.owe; x.paid = true; } } save(h); },
+  addTenants(h, m, list) { const r = live(h, m); for (const t of list) { r.rows.push(Object.assign({}, t, { paid: false })); if (m === CUR) h.tenants.push(Object.assign({}, t)); } save(h); },
+  editTenant(h, m, id, f) { const x = rowOf(live(h, m), id); if (x) Object.assign(x, f); if (m === CUR) { const t = h.tenants.find(y => y.id === id); if (t) Object.assign(t, f); } save(h); },
+  endTenant(h, id) { freeze(h); h.tenants = h.tenants.filter(t => t.id !== id); save(h); },
+  unEnd(h, m, id) { const x = rowOf(live(h, m), id); if (x && !h.tenants.some(t => t.id === id)) h.tenants.push({ id: x.id, name: x.name, room: x.room, rent: x.rent, share: x.share }); save(h); },
+  delTenant(h, m, id) { const r = live(h, m); r.rows = r.rows.filter(x => x.id !== id); if (m === CUR) h.tenants = h.tenants.filter(t => t.id !== id); save(h); },
+  addExp(h, m, e) { const r = live(h, m); r.exp.push(e); if (m === CUR && e.fixed) h.fixed.push({ id: e.id, name: e.name, amt: e.amt }); save(h); },
+  editExp(h, m, id, f) {
+    const r = live(h, m), x = r.exp.find(y => y.id === id); if (!x) return;
+    Object.assign(x, f);
+    if (m === CUR) { const i = h.fixed.findIndex(y => y.id === id); if (x.fixed) { if (i >= 0) Object.assign(h.fixed[i], { name: x.name, amt: x.amt }); else h.fixed.push({ id, name: x.name, amt: x.amt }); } else if (i >= 0) h.fixed.splice(i, 1); }
+    save(h);
+  },
+  delExp(h, m, id) { const r = live(h, m); r.exp = r.exp.filter(x => x.id !== id); if (m === CUR) h.fixed = h.fixed.filter(y => y.id !== id); save(h); },
+  setSelf(h, v) { freeze(h); h.self = v; h.months[CUR].self = v; save(h); }
+};
+
+/* ---------- storage: private per-person book in the Claude account, cached on the phone ---------- */
+function cache() { try { localStorage.setItem(LS, JSON.stringify({ houses: S.houses, order: S.order })); } catch (e) {} }
+function uncache() {
+  try {
+    const j = JSON.parse(localStorage.getItem(LS) || 'null');
+    if (j && j.houses && typeof j.houses === 'object') { S.houses = j.houses; Object.values(S.houses).forEach(norm); S.order = Array.isArray(j.order) ? j.order : []; return Object.keys(S.houses).length > 0; }
+  } catch (e) {}
+  return false;
+}
+function touch(id) { St.dirty.add(id); cache(); clearTimeout(St.timer); St.timer = setTimeout(flush, 450); }
+function save(h) { touch(h.id); }
+async function writeOne(id) {
+  const ref = St.col.doc(id);
+  if (id === 'meta') return ref.set({ v: 1, order: S.order.filter(x => S.houses[x]) });
+  if (S.houses[id]) return ref.set(clone(S.houses[id]));
+  return ref.delete();
+}
+async function flush() {
+  if (St.mode === 'pending') return;
+  if (St.mode !== 'db') { St.dirty.clear(); return; }
+  const ids = [...St.dirty].filter(id => !St.busy.has(id));
+  await Promise.all(ids.map(async id => {
+    St.dirty.delete(id); St.busy.add(id);
+    try { await writeOne(id); St.fails[id] = 0; if (St.err) { St.err = false; syncLine(); } }
+    catch (e) {
+      const code = e && e.code, n = (St.fails[id] || 0) + 1; St.fails[id] = n;
+      if ((code === 'unavailable' || code === 'resource_exhausted') && n <= 3) St.dirty.add(id);
+      else if (code === 'invalid_argument' || code === 'not_granted' || code === 'revoked') { St.mode = 'local'; St.dirty.clear(); syncLine(); }
+      else { St.err = true; syncLine(); toast(code === 'quota_exceeded' ? '账本塞满了，这笔没存进云端' : '没存上，账先留在这台手机里'); }
+    } finally { St.busy.delete(id); }
+  }));
+  if (St.dirty.size && St.mode === 'db') { clearTimeout(St.timer); St.timer = setTimeout(flush, 1500); }
+}
+function applySnap(snap) {
+  let changed = false, metaSeen = false;
+  const seen = new Set();
+  for (const d of snap.docs) {
+    const body = d.data();
+    if (!body) continue;
+    if (d.id === 'meta') {
+      metaSeen = true;
+      if (!St.dirty.has('meta') && !St.busy.has('meta')) { const o = Array.isArray(body.order) ? body.order.slice() : []; if (o.join() !== S.order.join()) { S.order = o; changed = true; } }
+      continue;
+    }
+    seen.add(d.id);
+    if (St.dirty.has(d.id) || St.busy.has(d.id)) continue;
+    if (!S.houses[d.id] || stable(S.houses[d.id]) !== stable(body)) { S.houses[d.id] = norm(clone(body)); changed = true; }
+  }
+  if (!snap.metadata.fromCache) {
+    if (!St.server && !metaSeen && Object.keys(S.houses).some(id => !seen.has(id))) {
+      for (const id of Object.keys(S.houses)) St.dirty.add(id);
+      St.dirty.add('meta'); setTimeout(flush, 0);
+    } else {
+      for (const id of Object.keys(S.houses)) if (!seen.has(id) && !St.dirty.has(id) && !St.busy.has(id)) { delete S.houses[id]; changed = true; }
+    }
+  }
+  if (changed) cache();
+  return changed;
+}
+async function connect() {
+  let db = null, user = null, uid = null;
+  try { if (window.claude && typeof window.claude.use === 'function') [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]); } catch (e) {}
+  if (db && user) { try { uid = await user.id(); } catch (e) {} }
+  if (!db || !uid) {
+    St.mode = 'local'; St.dirty.clear(); S.ready = true;
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
+    render(); return;
+  }
+  St.mode = 'db';
+  St.col = db.collection('data/users/' + uid);
+  const timer = setTimeout(() => { if (!St.server) { St.slow = true; S.ready = true; render(); } }, 10000);
+  try {
+    St.col.onSnapshot(snap => {
+      const changed = applySnap(snap);
+      const first = !St.server && !snap.metadata.fromCache;
+      if (first) { St.server = true; St.slow = false; clearTimeout(timer); }
+      const wasReady = S.ready;
+      if (first || (snap.docs.length && snap.metadata.fromCache)) S.ready = true;
+      if (changed || first || (S.ready && !wasReady)) render();
+    }, () => { clearTimeout(timer); St.mode = 'local'; St.dirty.clear(); S.ready = true; render(); });
+  } catch (e) { clearTimeout(timer); St.mode = 'local'; S.ready = true; render(); }
+  flush();
+}
+function syncText() {
+  if (St.mode === 'db') return St.err ? '刚才有一笔没存上，账先留在这台手机里。' : St.slow && !St.server ? '云端账本暂时没接上，先看这台手机里的。' : '账存在你的 Claude 账号里，换手机打开这页也在。';
+  return St.mode === 'pending' ? '正在连账本…' : '账只存在这台手机的浏览器里。';
+}
+function syncLine() { const n = $('#syncLine'); if (n) n.textContent = syncText(); }
+
+/* ---------- money text for tenants ---------- */
+function elecNotice(h, c, m) {
+  const inc = c.rows.length - c.sharers;
+  return [`【${mLabel(m)}电费】${h.estate} ${h.unit}`,
+    `电费账单 ${money(c.elecC)}，全屋 ${c.heads} 人${c.r.self ? '（含我）' : ''}平摊，每人 ${money(c.perC)}。`,
+    inc ? '房租含电费的不用付这笔。' : ''].filter(Boolean).join('\n');
+}
+function tenantBill(c, x, m) {
+  const M = mLabel(m);
+  let s, total = x.due;
+  if (!x.share) s = `${x.name}，${M}房租 ${money(x.rC)}（含电费）`;
+  else if (!c.has) s = `${x.name}，${M}房租 ${money(x.rC)}（电费账单还没出，出了再补）`;
+  else s = `${x.name}，${M}房租 ${money(x.rC)} + 电费 ${money(x.eC)}`;
+  if (x.prevC) { total += x.prevC; s += `，加上之前欠的 ${money(x.prevC)}，一共 ${money(total)}。`; }
+  else s += x.share && c.has ? `，一共 ${money(total)}。` : '。';
+  return s;
+}
+
+/* ---------- views ---------- */
+function view(html) { $('#view').innerHTML = html; }
+function setNav(o) {
+  $('#navL').innerHTML = o.back ? `<a class="nav-back" href="#">${ICON.chevL}<span>${esc(o.back)}</span></a>` : '';
+  $('#navT').textContent = o.title || '';
+  $('#navR').innerHTML = o.right || '';
+}
+const loadingBlock = () => '<div class="loading"><span class="spin"></span>贫僧翻账本中…</div>';
+const footer = () => `<footer class="foot"><div>千手院 · 包租僧 0.1</div><div id="syncLine">${syncText()}</div><div>要新花样、嫌哪里反人类，找方丈：<span class="mail">oilsongchengmin@gmail.com</span></div></footer>`;
+const addRow = (act, label, icon) => `<button type="button" class="row add" data-act="${act}"><span class="plus">${icon || ICON.plus}</span><span>${label}</span></button>`;
+function monthSwitch(min) {
+  const m = S.month;
+  return `<div class="mswitch" role="group" aria-label="选月份">
+    <button type="button" class="ms-b" data-act="m-prev" aria-label="上个月"${m <= min ? ' disabled' : ''}>${ICON.chevL}</button>
+    <button type="button" class="ms-t" data-act="m-cur"${m === CUR ? ' disabled' : ''}>${mLong(m)}${m === CUR ? '<span class="ms-now">本月</span>' : '<span class="ms-back">回本月</span>'}</button>
+    <button type="button" class="ms-b" data-act="m-next" aria-label="下个月"${m >= CUR ? ' disabled' : ''}>${ICON.chevRb}</button></div>`;
+}
+
+function render(nav) {
+  const a = document.activeElement, aid = a && a.id, pos = aid && typeof a.selectionStart === 'number' ? a.selectionStart : null;
+  const r = S.route;
+  if (r === 'ledger') renderLedger();
+  else if (r.startsWith('h-') && S.houses[r]) renderHouse(S.houses[r]);
+  else if (r.startsWith('h-') && !S.ready) { setNav({ back: '房子' }); view('<div class="wrap">' + loadingBlock() + '</div>'); }
+  else { if (r) { S.route = ''; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} } renderHome(); }
+  if (nav) { window.scrollTo(0, 0); const w = $('#view .wrap'); if (w) w.classList.add('enter'); }
+  if (aid) { const n = document.getElementById(aid); if (n && n !== a) { try { n.focus({ preventScroll: true }); if (pos != null) n.setSelectionRange(pos, pos); } catch (e) {} } }
+  onScroll();
+}
+
+function renderHome() {
+  const hs = housesInOrder();
+  setNav({ title: '包租僧', right: hs.length ? '<a class="nav-a pill" href="#ledger">总账</a>' : '' });
+  const head = '<div class="lt"><h1>包租僧</h1><p class="tag">电费掰到分，狮子吼都省了</p></div>';
+  if (!hs.length) {
+    view('<div class="wrap">' + head + (S.ready ? `<div class="empty"><div class="empty-ico">${ICON.house}</div><div class="empty-t">账本是空的</div><p class="empty-s">建一套房，把房客名单往里一贴，剩下的贫僧来算。</p><div class="empty-b"><button type="button" class="btn primary" data-act="new-house">建第一套房</button><button type="button" class="btn plain" data-act="load-demo">先看个示例</button></div></div>` + footer() : loadingBlock()) + '</div>');
+    return;
+  }
+  const min = firstMonth(hs);
+  if (S.month < min) S.month = min;
+  if (S.month > CUR) S.month = CUR;
+  const m = S.month;
+  const cs = hs.filter(h => h.created <= m).map(h => calc(h, m));
+  const inC = sum(cs, 'inC'), outC = sum(cs, 'outC'), netC = inC - outC, paidC = sum(cs, 'paidC'), owedC = sum(cs, 'owedC');
+  const miss = cs.filter(c => !c.has).length;
+  const pct = inC > 0 ? Math.max(0, Math.min(100, Math.round(paidC / inC * 100))) : 0;
+  const groups = [];
+  for (const h of hs) { const k = (h.estate || '').trim() || '没写小区'; let g = groups.find(x => x.k === k); if (!g) groups.push(g = { k, hs: [] }); g.hs.push(h); }
+  let html = '<div class="wrap">' + head;
+  if (hs.some(h => h.demo)) html += '<div class="demo-bar"><div><b>示例账本</b><span>随便点，点坏了不心疼。</span></div><button type="button" class="btn small" data-act="clear-demo">清空示例</button></div>';
+  html += monthSwitch(min);
+  html += `<a class="hero" href="#ledger"><span class="hero-l">${mLabel(m)}${netC < 0 ? '倒贴' : '净赚'}</span><span class="hero-n">${big(netC)}</span><span class="hero-s">收入 ${money(inC)} · 支出 ${money(outC)}</span><span class="meter" role="img" aria-label="已收 ${pct}%"><i style="width:${pct}%"></i></span><span class="hero-f"><span>已收 ${money(paidC)} / ${money(inC)}</span><span class="go">总账 ›</span></span>${miss ? `<span class="hero-note">${miss} 套电费还没填，这数不算完</span>` : ''}${owedC ? `<span class="hero-note bad">欠租没收回 ${money(owedC)}</span>` : ''}</a>`;
+  for (const g of groups) {
+    html += `<section class="grp"><div class="grp-h"><h2>${esc(g.k)}</h2><span class="grp-meta">${g.hs.length} 套</span></div><div class="list">${g.hs.map(h => houseRow(h, m)).join('')}</div></section>`;
+  }
+  html += `<button type="button" class="btn tinted newhouse" data-act="new-house">${ICON.plus}新房子</button>` + footer() + '</div>';
+  view(html);
+}
+function houseRow(h, m) {
+  const demo = h.demo ? '<span class="chip demo">示例</span>' : '';
+  if (h.created > m) return `<a class="row" href="#${esc(h.id)}"><span class="row-main"><span class="row-t">${esc(h.unit)}${demo}</span><span class="row-s">${mLabel(h.created)}才开张</span></span><span class="row-v mute">—</span>${ICON.chevR}</a>`;
+  const c = calc(h, m);
+  const chips = [];
+  if (!c.has) chips.push('<span class="chip warn">电费未填</span>');
+  if (c.owedC) chips.push(`<span class="chip bad">欠租 ${money(c.owedC)}</span>`);
+  else if (c.rows.length && c.unpaid) chips.push(`<span class="chip">还差 ${c.unpaid} 人</span>`);
+  else if (c.rows.length && c.has) chips.push('<span class="chip ok">收齐了</span>');
+  return `<a class="row" href="#${esc(h.id)}"><span class="row-main"><span class="row-t">${esc(h.unit)}${demo}</span><span class="row-s">${c.rows.length} 位房客${chips.join('')}</span></span><span class="row-v">${money(c.netC)}</span>${ICON.chevR}</a>`;
+}
+
+function renderHouse(h, part) {
+  const m = S.month;
+  if (!part) {
+    setNav({ back: '房子', title: h.unit, right: `<button type="button" class="nav-a round" data-act="house-menu" aria-label="这套房的设置">${ICON.dots}</button>` });
+    let html = `<div class="wrap"><div class="lt"><div class="eyebrow">${esc(h.estate || '没写小区')}${h.demo ? '<span class="chip demo">示例</span>' : ''}</div><h1>${esc(h.unit)}</h1></div>` + monthSwitch(h.created);
+    if (m < h.created) {
+      view(html + `<div class="card note-card"><p>这套房${mLong(h.created)}才开张，这个月没账。</p><button type="button" class="btn tinted small" data-act="goto-created">去${mLabel(h.created)}</button></div></div>`);
+      return;
+    }
+    const r = rec(h, m);
+    html += `<div id="hHero"></div>
+      <section class="card elec" aria-labelledby="elecLbl">
+        <label class="elec-h" id="elecLbl" for="elecIn">${ICON.bolt}${m === CUR ? '这个月电费' : mLabel(m) + '电费'}</label>
+        <div class="elec-field"><span class="elec-cur">$</span><input id="elecIn" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="0.00" value="${r.elec != null ? num(toC(r.elec)) : ''}"></div>
+        <div id="elecOut"></div>
+      </section>
+      <section class="grp"><div class="grp-h"><h2>房客<span class="grp-sub" id="tenMeta"></span></h2><div class="seg" role="group" aria-label="房客排法"><button type="button" data-act="by-person" id="segP">按人</button><button type="button" data-act="by-room" id="segR">按房间</button></div></div><div id="hTen"></div><p class="grp-foot" id="tenFoot"></p></section>
+      <section class="grp"><div class="grp-h"><h2>支出</h2><span class="grp-meta" id="expMeta"></span></div><div class="list" id="hExp"></div><p class="grp-foot">标「每月」的，下个月自动跟过去。</p></section>
+      ${footer()}</div>`;
+    view(html);
+  }
+  if (!$('#hHero')) return;
+  const c = calc(h, m);
+  const n = c.rows.length;
+  $('#hHero').innerHTML = `<div class="hhero"><div class="hero-l">${mLabel(m)}${c.netC < 0 ? '倒贴' : '净赚'}</div><div class="hero-n">${big(c.netC)}</div><div class="hero-s">收入 ${money(c.inC)} · 支出 ${money(c.outC)}</div>${c.has ? '' : '<div class="hero-note">电费还没填，这数不算完。</div>'}${c.owedC ? `<div class="hero-note bad">欠租没收回 ${money(c.owedC)}</div>` : ''}</div>`;
+  $('#elecOut').innerHTML = elecOut(h, c, m);
+  $('#tenMeta').textContent = n ? (c.unpaid ? `已收 ${n - c.unpaid}/${n}` : '都结了') : '';
+  $('#segP').setAttribute('aria-pressed', String(!h.byRoom));
+  $('#segR').setAttribute('aria-pressed', String(!!h.byRoom));
+  if (part !== 'paid') $('#hTen').innerHTML = tenantBlock(h, c, m);
+  $('#tenFoot').textContent = n && !c.unpaid && !c.oweNowC && c.has ? '全收齐了，今晚加鸡腿。' : '点圆圈记已收；欠租、改房租、退租，点名字。';
+  $('#expMeta').textContent = money(c.outC);
+  $('#hExp').innerHTML = expRows(c);
+}
+function elecOut(h, c, m) {
+  if (!c.has) {
+    const pm = ymAdd(m, -1), prev = pm >= h.created ? rec(h, pm).elec : null;
+    return `<p class="elec-hint">${c.rows.length ? (prev != null ? `上个月 ${money(toC(prev))}。` : '') + '账单总数填进来，剩下的贫僧来掰。' : '还没房客，填了也全归你扛。'}</p>`;
+  }
+  if (!c.heads) return `<p class="elec-hint">没房客，这 ${money(c.elecC)} 全归你扛。</p>`;
+  const inc = c.rows.length - c.sharers;
+  const dots = c.rows.map(x => `<i class="${x.share ? 'pay' : 'inc'}"></i>`).join('') + (c.r.self ? '<i class="me"></i>' : '');
+  let sub;
+  if (!c.sharers) sub = `全是包电的，这 ${money(c.elecC)} 全归你扛。`;
+  else {
+    const mine = [c.r.self ? '你自己' : '', inc ? `包电 ${inc} 份` : ''].filter(Boolean).join(' + ');
+    sub = `${c.sharers} 人掏 ${money(c.elecInC)}` + (mine ? ` · ${mine} ${money(c.eatC)} 你扛` : '');
+  }
+  return `<div class="heads" aria-hidden="true">${dots}</div><div class="split-main">${c.heads} 个人头${c.r.self ? '（含你）' : ''}，每人 <b>${money(c.perC)}</b></div><div class="split-sub">${sub}</div>${c.sharers ? `<button type="button" class="btn tinted" data-act="copy-elec">${ICON.copy}复制电费通知</button>` : ''}`;
+}
+function tenantRow(h, c, x, m, inRoom) {
+  const leaving = m === CUR && !h.tenants.some(t => t.id === x.id);
+  const base = !x.share ? `房租 ${num(x.rC)} · 包电` : c.has ? `房租 ${num(x.rC)} + 电费 ${num(x.eC)}` : `房租 ${num(x.rC)} · 电费待填`;
+  const chips = (x.st === 'owe' ? `<span class="chip bad">欠 ${money(x.oC)}</span>` : '') + (x.prevC ? `<span class="chip bad">之前欠 ${money(x.prevC)}</span>` : '');
+  const mark = x.st === 'paid' ? ' on' : x.st === 'owe' ? ' owe' : '';
+  const label = x.st === 'paid' ? '已收' : x.st === 'owe' ? '欠租' : '未收';
+  return `<div class="row ten"><button type="button" class="paid${mark}" data-act="paid" data-id="${esc(x.id)}" aria-pressed="${x.st === 'paid'}" aria-label="${esc(x.name)}：${label}"><span>${x.st === 'owe' ? '欠' : ICON.check}</span></button><button type="button" class="row-btn" data-act="tenant" data-id="${esc(x.id)}"><span class="row-main"><span class="row-t">${esc(x.name)}${x.room && !inRoom ? `<span class="tag2">${esc(x.room)}</span>` : ''}${leaving ? '<span class="chip">月底走</span>' : ''}</span><span class="row-s">${base}${chips}</span></span><span class="row-v">${money(x.due)}</span>${ICON.chevR}</button></div>`;
+}
+function tenantBlock(h, c, m) {
+  const adds = addRow('add-tenant', '加房客') + addRow('bulk', '粘贴名单，一次加好', ICON.list);
+  const gone = c.gone.length ? `<div class="row emptyrow">搬走的人还欠 ${money(c.gone.reduce((s, g) => s + g.c, 0))}（${c.gone.map(g => esc(g.name)).join('、')}）</div>` : '';
+  if (!c.rows.length) return `<div class="list lead"><div class="row emptyrow">空房不收租，只收灰。</div>${gone}${adds}</div>`;
+  if (!h.byRoom) return `<div class="list lead">${c.rows.map(x => tenantRow(h, c, x, m)).join('')}${gone}${adds}</div>`;
+  const groups = [];
+  for (const x of c.rows) { const k = x.room || ''; let g = groups.find(y => y.k === k); if (!g) groups.push(g = { k, xs: [] }); g.xs.push(x); }
+  groups.sort((a, b) => (a.k === '') - (b.k === ''));
+  return groups.map(g => `<div class="sub-h"><span>${esc(g.k || '没写房间')}</span><span>${g.xs.length} 人 · ${money(g.xs.reduce((s, x) => s + x.due, 0))}</span></div><div class="list lead">${g.xs.map(x => tenantRow(h, c, x, m, true)).join('')}</div>`).join('') + `<div class="list lead">${gone}${adds}</div>`;
+}
+function expRows(c) {
+  let out = `<div class="row"><span class="row-main"><span class="row-t">电费账单</span><span class="row-s">上面填的那个数</span></span><span class="row-v${c.has ? '' : ' mute'}">${c.has ? money(c.elecC) : '未填'}</span></div>`;
+  if (!c.r.exp.length) out += '<div class="row emptyrow">还没别的支出。大房东这个月忘收租了？</div>';
+  for (const e of c.r.exp) out += `<button type="button" class="row" data-act="exp" data-id="${esc(e.id)}"><span class="row-main"><span class="row-t">${esc(e.name)}<span class="chip">${e.fixed ? '每月' : '仅当月'}</span></span></span><span class="row-v">${money(toC(e.amt))}</span>${ICON.chevR}</button>`;
+  return out + addRow('add-exp', '加支出');
+}
+
+/* ---------- ledger ---------- */
+function niceUp(c) { if (c <= 0) return 0; const d = c / 100, p = Math.pow(10, Math.floor(Math.log10(d))), f = d / p; return Math.round((f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p * 100); }
+const axisMoney = c => (c < 0 ? '−$' : '$') + Math.round(Math.abs(c) / 100).toLocaleString('en-US');
+function renderLedger() {
+  const hs = housesInOrder();
+  setNav({ back: '房子', title: '总账' });
+  if (!hs.length) { view('<div class="wrap"><div class="lt"><h1>总账</h1></div>' + (S.ready ? '<div class="card note-card"><p>还没房子，没账可算。</p><a class="btn tinted small" href="#">去建一套</a></div>' : loadingBlock()) + '</div>'); return; }
+  const minY = yNum(firstMonth(hs)), maxY = yNum(CUR);
+  S.year = Math.min(maxY, Math.max(minY, S.year));
+  const Y = S.year, per = [];
+  for (let i = 1; i <= 12; i++) {
+    const m = Y + '-' + pad(i), on = hs.filter(h => h.created <= m);
+    if (m > CUR || !on.length) { per.push(null); continue; }
+    const cs = on.map(h => calc(h, m)), inC = sum(cs, 'inC'), outC = sum(cs, 'outC');
+    per.push({ m, inC, outC, netC: inC - outC, miss: cs.filter(c => !c.has).length });
+  }
+  const data = per.filter(Boolean), yIn = sum(data, 'inC'), yOut = sum(data, 'outC'), yNet = yIn - yOut;
+  const owedNow = hs.reduce((s, h) => s + (h.created <= CUR ? calc(h, CUR).owedC : 0), 0);
+  if (!(S.sel && data.some(p => p.m === S.sel))) S.sel = data.some(p => p.m === S.month) ? S.month : (data.length ? data[data.length - 1].m : null);
+  let html = '<div class="wrap"><div class="lt"><h1>总账</h1></div>';
+  html += `<div class="mswitch" role="group" aria-label="选年份"><button type="button" class="ms-b" data-act="y-prev" aria-label="上一年"${Y <= minY ? ' disabled' : ''}>${ICON.chevL}</button><span class="ms-t">${Y}年</span><button type="button" class="ms-b" data-act="y-next" aria-label="下一年"${Y >= maxY ? ' disabled' : ''}>${ICON.chevRb}</button></div>`;
+  html += `<div class="hero"><span class="hero-l">${Y}年${yNet < 0 ? '倒贴' : '净赚'}</span><span class="hero-n">${big(yNet)}</span><span class="hero-s">收入 ${money(yIn)} · 支出 ${money(yOut)}</span>${owedNow && Y === maxY ? `<span class="hero-note bad">欠租没收回 ${money(owedNow)}</span>` : ''}</div>`;
+  html += `<section class="chart" aria-label="${Y}年每月净赚"><div class="ro">${readout(per, S.sel)}</div>${plot(per, S.sel)}</section>`;
+  const byH = hs.map(h => {
+    const ms = []; for (let i = 1; i <= 12; i++) { const m = Y + '-' + pad(i); if (m >= h.created && m <= CUR) ms.push(m); }
+    if (!ms.length) return null;
+    const cs = ms.map(m => calc(h, m));
+    return { h, n: ms.length, netC: sum(cs, 'inC') - sum(cs, 'outC') };
+  }).filter(Boolean);
+  if (byH.length) html += `<section class="grp"><div class="grp-h"><h2>按房子</h2></div><div class="list">${byH.map(x => `<a class="row" href="#${esc(x.h.id)}"><span class="row-main"><span class="row-t">${esc(x.h.unit)}${x.h.demo ? '<span class="chip demo">示例</span>' : ''}</span><span class="row-s">${esc(x.h.estate)} · ${x.n} 个月</span></span><span class="row-v">${money(x.netC)}</span>${ICON.chevR}</a>`).join('')}</div></section>`;
+  if (data.length) html += `<section class="grp"><div class="grp-h"><h2>按月</h2></div><div class="list">${data.slice().reverse().map(p => `<button type="button" class="row" data-act="open-month" data-m="${p.m}"><span class="row-main"><span class="row-t">${mLabel(p.m)}${p.miss ? '<span class="chip warn">电费未填</span>' : ''}</span><span class="row-s">收入 ${money(p.inC)} · 支出 ${money(p.outC)}</span></span><span class="row-v">${money(p.netC)}</span>${ICON.chevR}</button>`).join('')}</div></section>`;
+  else html += '<div class="card note-card" style="margin-top:16px"><p>这一年还没账。</p></div>';
+  view(html + footer() + '</div>');
+}
+function readout(per, sel) {
+  const p = per.find(x => x && x.m === sel);
+  if (!p) return '<div class="ro-m">这一年还没账</div>';
+  return `<div class="ro-m">${mLong(p.m)}</div><div class="ro-v">${p.netC < 0 ? '倒贴 ' : '净赚 '}${money(Math.abs(p.netC))}</div><div class="ro-s">收入 ${money(p.inC)} · 支出 ${money(p.outC)}</div><button type="button" class="ro-go" data-act="open-month" data-m="${p.m}">去这个月 ›</button>`;
+}
+function plot(per, sel) {
+  const vals = per.map(p => (p ? p.netC : 0));
+  const top = niceUp(Math.max(0, ...vals)), bot = niceUp(Math.max(0, ...vals.map(v => -v)));
+  const span = top + bot || 1, H = 128, zy = Math.round(top / span * H);
+  let g = '';
+  if (top) g += `<div class="gl" style="top:0"></div><div class="yl" style="top:0">${axisMoney(top)}</div>`;
+  g += `<div class="gl zero" style="top:${zy}px"></div><div class="yl" style="top:${zy}px">$0</div>`;
+  if (bot) g += `<div class="gl" style="top:${H}px"></div><div class="yl" style="top:${H}px">${axisMoney(-bot)}</div>`;
+  const cols = per.map((p, i) => {
+    if (!p) return `<button type="button" class="col none" disabled aria-label="${i + 1}月 没账"><span class="lbl">${i + 1}</span></button>`;
+    const hgt = Math.max(2, Math.round(Math.abs(p.netC) / span * H)), y = p.netC >= 0 ? zy - hgt : zy;
+    return `<button type="button" class="col${p.m === sel ? ' sel' : ''}" data-act="pick" data-m="${p.m}" aria-pressed="${p.m === sel}" aria-label="${mLabel(p.m)}${p.netC < 0 ? '倒贴' : '净赚'} ${money(Math.abs(p.netC))}"><span class="b ${p.netC < 0 ? 'dn' : 'up'}" style="top:${y}px;height:${hgt}px"></span><span class="lbl">${i + 1}</span></button>`;
+  }).join('');
+  return `<div class="plot">${g}<div class="cols">${cols}</div></div>`;
+}
+
+/* ---------- sheets ---------- */
+let sheetTok = 0, sheetFrom = null;
+function openSheet(inner, mount) {
+  const root = $('#sheets');
+  sheetTok++;
+  sheetFrom = document.activeElement;
+  root.innerHTML = `<div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${inner}</div>`;
+  root.hidden = false;
+  void root.offsetHeight;
+  root.classList.add('open');
+  fitSheet();
+  if (mount) mount($('.sheet', root));
+}
+function closeSheet() {
+  const root = $('#sheets'), tok = ++sheetTok;
+  root.classList.remove('open');
+  setTimeout(() => { if (tok === sheetTok) { root.hidden = true; root.innerHTML = ''; } }, 330);
+  if (sheetFrom && document.contains(sheetFrom)) try { sheetFrom.focus({ preventScroll: true }); } catch (e) {}
+}
+function fitSheet() {
+  const sh = $('#sheets .sheet'), vv = window.visualViewport;
+  if (!sh || !vv) return;
+  sh.style.bottom = Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px';
+  sh.style.maxHeight = Math.max(240, vv.height - 24) + 'px';
+}
+const head3 = (title, ok, okId, dis) => `<div class="sh-head"><button type="button" class="sh-x" data-act="close">取消</button><div class="sh-t">${title}</div><button type="button" class="sh-ok" id="${okId}"${dis ? ' disabled' : ''}>${ok}</button></div>`;
+function failer(p) { return (msg, el) => { p.textContent = msg; p.hidden = false; if (el) el.focus(); return null; }; }
+function switcher(btn, hint, on, texts, onChange) {
+  let v = on;
+  btn.onclick = () => { v = !v; btn.setAttribute('aria-checked', String(v)); if (hint) hint.textContent = v ? texts[0] : texts[1]; if (onChange) onChange(v); };
+  return () => v;
+}
+function enterNext(sh, ids, done) {
+  ids.forEach((id, i) => { const el = $('#' + id, sh); if (el) el.addEventListener('keydown', e => { if (e.key !== 'Enter') return; e.preventDefault(); const nx = ids[i + 1] && $('#' + ids[i + 1], sh); if (nx) nx.focus(); else done(); }); });
+}
+
+function tenantSheet(h, m, tid) {
+  const cur = m === CUR, r = rec(h, m);
+  const t = tid ? rowOf(r, tid) : null;
+  const cx = tid ? calc(h, m).rows.find(x => x.id === tid) : null;
+  const inTpl = t ? h.tenants.some(x => x.id === tid) : true;
+  const ROOMS = ['主人房', '普通房', '小房', '客厅', '储物间'];
+  const owing = !!(t && !t.paid && t.owe > 0);
+  let acts = '';
+  if (t) {
+    if (cx && cx.prevC) acts += `<div class="prev-owe"><span>之前欠 <b>${money(cx.prevC)}</b>（${cx.prevMs.map(mLabel).join('、')}）</span><button type="button" class="btn small" id="tPrev">还清了</button></div>`;
+    acts += `<div class="sh-acts"><button type="button" class="btn tinted" id="tCopy">${ICON.copy}复制他${cur ? '这个月' : mLabel(m)}的账单</button>`;
+    if (cur && inTpl) acts += '<button type="button" class="btn plain danger" id="tEnd">退租</button><p class="sh-note">下个月起不算他，这个月照收。</p>';
+    if (cur && !inTpl) acts += '<button type="button" class="btn plain" id="tBack">不走了，下个月接着算</button><p class="sh-note">已退租：下个月起不算他。</p>';
+    acts += `<button type="button" class="btn plain danger" id="tDel">删掉这条</button><p class="sh-note">${cur ? '录错了才用，这个月的账也一起删。' : '只删' + mLabel(m) + '这一条。'}</p></div>`;
+  }
+  openSheet(head3(t ? '改房客' : '加房客', '保存', 'tOk') + `<div class="sh-body">
+    <div class="form">
+      <label class="f-row"><span class="f-k">名字</span><input id="tName" autocomplete="off" maxlength="24" enterkeyhint="next" placeholder="比如 阿明" value="${esc(t ? t.name : '')}"></label>
+      <label class="f-row"><span class="f-k">月租</span><input id="tRent" inputmode="decimal" autocomplete="off" enterkeyhint="next" placeholder="$ 0.00" value="${t ? num(toC(t.rent)) : ''}"></label>
+      <div class="f-row"><span class="f-k">分摊电费<small id="tHint">${!t || t.share ? '电费跟大家平摊' : '房租已含电费'}</small></span><button type="button" class="switch" role="switch" id="tShare" aria-checked="${!t || !!t.share}" aria-label="分摊电费"><i></i></button></div>
+    </div>
+    <div class="f-label">房间</div>
+    <div class="pick" id="tRooms">${ROOMS.map(x => `<button type="button" data-room="${x}">${x}</button>`).join('')}</div>
+    <div class="form"><label class="f-row"><input id="tRoom" class="left" autocomplete="off" maxlength="16" enterkeyhint="done" placeholder="或者自己写，比如 普通房2" value="${esc(t ? t.room : '')}"></label></div>
+    ${t ? `<div class="form"><div class="f-row"><span class="f-k">${cur ? '这个月' : mLabel(m)}欠租<small id="tOweHint">${owing ? '标了，算他欠着' : '欠着没给就打开'}</small></span><button type="button" class="switch red" role="switch" id="tOwe" aria-checked="${owing}" aria-label="欠租"><i></i></button></div><label class="f-row" id="tOweRow"${owing ? '' : ' hidden'}><span class="f-k">欠多少</span><input id="tOweAmt" inputmode="decimal" autocomplete="off" placeholder="$ 0.00" value="${owing ? num(toC(t.owe)) : ''}"></label></div>` : ''}
+    <p class="f-err" id="tErr" hidden></p>
+    ${t ? acts : '<button type="button" class="btn tinted" id="tMore">存好，再加一个</button>'}
+  </div>`, sh => {
+    const nameI = $('#tName', sh), rentI = $('#tRent', sh), roomI = $('#tRoom', sh), errP = $('#tErr', sh), fail = failer(errP);
+    const getShare = switcher($('#tShare', sh), $('#tHint', sh), !t || !!t.share, ['电费跟大家平摊', '房租已含电费']);
+    const syncRooms = () => sh.querySelectorAll('#tRooms button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.room === roomI.value.trim())));
+    $('#tRooms', sh).onclick = e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const v = b.dataset.room, taken = rec(h, m).rows.filter(x => x.id !== tid && (x.room || '').startsWith(v)).length;
+      roomI.value = taken ? v + (taken + 1) : v; syncRooms();
+    };
+    roomI.oninput = syncRooms;
+    syncRooms();
+    let getOwe = () => false;
+    if (t) {
+      const oweRow = $('#tOweRow', sh), oweAmt = $('#tOweAmt', sh);
+      getOwe = switcher($('#tOwe', sh), $('#tOweHint', sh), owing, ['标了，算他欠着', '欠着没给就打开'], on => {
+        oweRow.hidden = !on;
+        if (on) { if (!oweAmt.value) { const c = calc(h, m), x = c.rows.find(y => y.id === tid); oweAmt.value = x ? num(x.due) : ''; } oweAmt.focus(); oweAmt.select(); }
+      });
+    }
+    const commit = () => {
+      errP.hidden = true;
+      const name = nameI.value.trim(), rent = parseAmt(rentI.value);
+      if (!name) return fail('名字空着，贫僧找谁收钱？', nameI);
+      if (rent == null || Number.isNaN(rent)) return fail(rent == null ? '月租多少？' : '月租只认数字', rentI);
+      let owe = 0;
+      if (t && getOwe()) { owe = parseAmt($('#tOweAmt', sh).value); if (!(owe > 0)) return fail('欠多少？', $('#tOweAmt', sh)); }
+      const f = { name, room: roomI.value.trim(), rent, share: getShare() };
+      if (t) { Ops.editTenant(h, m, tid, f); Ops.setOwe(h, m, tid, owe); } else Ops.addTenants(h, m, [Object.assign({ id: rid('t') }, f)]);
+      renderHouse(h, true);
+      return true;
+    };
+    $('#tOk', sh).onclick = () => { if (commit()) closeSheet(); };
+    enterNext(sh, ['tName', 'tRent', 'tRoom'], () => $('#tOk', sh).click());
+    const more = $('#tMore', sh);
+    if (more) more.onclick = () => {
+      if (!commit()) return;
+      toast('存好了，下一个');
+      nameI.value = ''; rentI.value = ''; roomI.value = ''; syncRooms();
+      const sw = $('#tShare', sh); if (sw.getAttribute('aria-checked') !== 'true') sw.click();
+      nameI.focus();
+    };
+    if (t) {
+      $('#tCopy', sh).onclick = () => { const c = calc(h, m), x = c.rows.find(y => y.id === tid); if (x) copyText(tenantBill(c, x, m), '复制好了，发给他就行'); };
+      const pv = $('#tPrev', sh); if (pv) pv.onclick = () => { Ops.clearPrev(h, m, tid); closeSheet(); renderHouse(h, true); toast('旧账清了'); };
+      const end = $('#tEnd', sh); if (end) end.onclick = () => { Ops.endTenant(h, tid); closeSheet(); renderHouse(h, true); toast(t.name + ' 下个月起不算了'); };
+      const back = $('#tBack', sh); if (back) back.onclick = () => { Ops.unEnd(h, m, tid); closeSheet(); renderHouse(h, true); toast('好，接着算'); };
+      $('#tDel', sh).onclick = () => { Ops.delTenant(h, m, tid); closeSheet(); renderHouse(h, true); toast('删了'); };
+    } else nameI.focus();
+  });
+}
+
+function bulkSheet(h, m) {
+  const have = new Set(rec(h, m).rows.map(x => x.name.trim()));
+  let items = [];
+  openSheet(head3('房客名单', '建好', 'bOk', true) + `<div class="sh-body">
+    <textarea class="paste" id="bText" rows="5" placeholder="阿明 主人房 900&#10;小美 普通房 650 包电&#10;Raj 小房 520"></textarea>
+    <p class="sh-tip">一行一个人：名字、房间、月租，包电的写上「包电」。手写、打印的名单：iPhone 相册里长按字 → 拷贝，粘进来。</p>
+    <div id="bList"></div>
+    <button type="button" class="btn primary" id="bGo" disabled>建好</button>
+  </div>`, sh => {
+    const list = $('#bList', sh), go = $('#bGo', sh), ok = $('#bOk', sh), ta = $('#bText', sh);
+    const valid = x => !x.dup && x.name && x.rent != null && !Number.isNaN(x.rent);
+    const refresh = () => {
+      const fresh = items.filter(x => !x.dup), good = fresh.filter(valid).length, bad = fresh.length - good;
+      go.disabled = ok.disabled = !good || bad > 0;
+      go.textContent = bad ? `还有 ${bad} 位没写名字或月租` : good ? `建好这 ${good} 位` : '建好';
+    };
+    const draw = () => {
+      if (!items.length) { list.innerHTML = ta.value.trim() ? '<p class="sh-tip">没认出人。一行写一个，名字和月租至少要有。</p>' : ''; refresh(); return; }
+      list.innerHTML = `<div class="bk-h"><span>认出 ${items.length} 位，不对的直接改</span></div>` + items.map((x, i) => `<div class="bk${x.dup ? ' dup' : ''}" data-i="${i}">
+        <input class="bk-name" data-f="name" value="${esc(x.name)}" placeholder="名字" aria-label="名字">
+        <label class="bk-rent${x.rent == null || Number.isNaN(x.rent) ? ' bad' : ''}"><span>$</span><input data-f="rent" inputmode="decimal" value="${x.rent != null && !Number.isNaN(x.rent) ? num(toC(x.rent)) : ''}" placeholder="月租" aria-label="月租"></label>
+        <div class="bk-2"><input class="bk-room" data-f="room" value="${esc(x.room)}" placeholder="房间（可空）" aria-label="房间">${x.dup ? '<span class="chip">已经有了，跳过</span>' : `<button type="button" class="bk-sh${x.share ? '' : ' inc'}" data-f="share">${x.share ? '分摊电费' : '包电'}</button>`}<button type="button" class="bk-del" data-f="del" aria-label="删掉这位">${ICON.x}</button></div></div>`).join('');
+      refresh();
+    };
+    let tm = 0;
+    ta.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(() => { items = parseRoster(ta.value).map(x => Object.assign(x, { dup: have.has(x.name) })); draw(); }, 120); });
+    list.addEventListener('input', e => {
+      const card = e.target.closest('.bk'), f = e.target.dataset.f; if (!card || !f) return;
+      const x = items[+card.dataset.i];
+      if (f === 'rent') { x.rent = parseAmt(e.target.value); e.target.parentNode.classList.toggle('bad', x.rent == null || Number.isNaN(x.rent)); }
+      else x[f] = e.target.value.trim();
+      if (f === 'name') { x.dup = have.has(x.name); card.classList.toggle('dup', x.dup); }
+      refresh();
+    });
+    list.addEventListener('click', e => {
+      const b = e.target.closest('button'), card = e.target.closest('.bk'); if (!b || !card) return;
+      const i = +card.dataset.i;
+      if (b.dataset.f === 'del') { items.splice(i, 1); draw(); }
+      else if (b.dataset.f === 'share') { const x = items[i]; x.share = !x.share; b.classList.toggle('inc', !x.share); b.textContent = x.share ? '分摊电费' : '包电'; }
+    });
+    const commit = () => {
+      const add = items.filter(valid).map(x => ({ id: rid('t'), name: x.name, room: x.room || '', rent: x.rent, share: x.share }));
+      if (!add.length) return;
+      Ops.addTenants(h, m, add); closeSheet(); renderHouse(h, true); toast(`建好 ${add.length} 位`);
+    };
+    go.onclick = commit; ok.onclick = commit;
+    ta.focus();
+  });
+}
+
+function expSheet(h, m, eid) {
+  const cur = m === CUR, r = rec(h, m), e = eid ? r.exp.find(x => x.id === eid) : null;
+  const QUICK = [['交大房东', 1], ['网费', 1], ['水费', 0], ['管理费', 1], ['清洁', 0], ['维修', 0]];
+  openSheet(head3(e ? '改支出' : '加支出', '保存', 'eOk') + `<div class="sh-body">
+    ${e ? '' : `<div class="pick" id="eQuick">${QUICK.map(q => `<button type="button" data-n="${q[0]}" data-f="${q[1]}">${q[0]}</button>`).join('')}</div>`}
+    <div class="form">
+      <label class="f-row"><span class="f-k">名称</span><input id="eName" autocomplete="off" maxlength="24" enterkeyhint="next" placeholder="比如 网费" value="${esc(e ? e.name : '')}"></label>
+      <label class="f-row"><span class="f-k">金额</span><input id="eAmt" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="$ 0.00" value="${e ? num(toC(e.amt)) : ''}"></label>
+      ${cur ? `<div class="f-row"><span class="f-k">每月都有<small id="eHint">${!e || e.fixed ? '下个月自动跟过去' : '只算这个月'}</small></span><button type="button" class="switch" role="switch" id="eFix" aria-checked="${!e || !!e.fixed}" aria-label="每月都有"><i></i></button></div>` : ''}
+    </div>
+    <p class="f-err" id="eErr" hidden></p>
+    ${e ? `<div class="sh-acts"><button type="button" class="btn plain danger" id="eDel">删掉这笔</button><p class="sh-note">${e.fixed && cur ? '下个月起也不再记这笔。' : '只删' + (cur ? '这个月' : mLabel(m)) + '这一笔。'}</p></div>` : ''}
+  </div>`, sh => {
+    const nameI = $('#eName', sh), amtI = $('#eAmt', sh), fail = failer($('#eErr', sh)), fx = $('#eFix', sh);
+    const getFix = fx ? switcher(fx, $('#eHint', sh), !e || !!e.fixed, ['下个月自动跟过去', '只算这个月']) : () => (e ? !!e.fixed : false);
+    const q = $('#eQuick', sh);
+    if (q) q.onclick = ev => { const b = ev.target.closest('button'); if (!b) return; nameI.value = b.dataset.n; if (fx && (fx.getAttribute('aria-checked') === 'true') !== (b.dataset.f === '1')) fx.click(); amtI.focus(); };
+    const commit = () => {
+      $('#eErr', sh).hidden = true;
+      const name = nameI.value.trim(), amt = parseAmt(amtI.value);
+      if (!name) return fail('写个名字，月底才知道钱去哪了', nameI);
+      if (amt == null || Number.isNaN(amt)) return fail('多少钱？', amtI);
+      if (e) Ops.editExp(h, m, eid, { name, amt, fixed: getFix() }); else Ops.addExp(h, m, { id: rid('e'), name, amt, fixed: getFix() });
+      renderHouse(h, true); closeSheet();
+    };
+    $('#eOk', sh).onclick = commit;
+    enterNext(sh, ['eName', 'eAmt'], commit);
+    if (e) $('#eDel', sh).onclick = () => { Ops.delExp(h, m, eid); closeSheet(); renderHouse(h, true); toast('删了'); };
+    else nameI.focus();
+  });
+}
+
+function newHouseSheet() {
+  const estates = [...new Set(housesInOrder().filter(h => !h.demo).map(h => (h.estate || '').trim()).filter(Boolean))];
+  openSheet(head3('新房子', '建好了', 'hOk') + `<div class="sh-body">
+    ${estates.length ? `<div class="f-label">已有的小区</div><div class="pick" id="hEst">${estates.map(x => `<button type="button" data-e="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : ''}
+    <div class="form">
+      <label class="f-row"><span class="f-k">小区</span><input id="hEstate" autocomplete="off" maxlength="24" enterkeyhint="next" placeholder="比如 碧水湾"></label>
+      <label class="f-row"><span class="f-k">门牌</span><input id="hUnit" autocomplete="off" maxlength="24" enterkeyhint="next" placeholder="比如 12栋 08-21"></label>
+      <label class="f-row"><span class="f-k">每月交大房东<small>没有就空着</small></span><input id="hHead" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="$ 0.00"></label>
+      <div class="f-row"><span class="f-k">我也住这<small>算一个人头，一起分电费</small></span><button type="button" class="switch" role="switch" id="hSelf" aria-checked="false" aria-label="我也住这"><i></i></button></div>
+    </div>
+    <p class="f-err" id="hErr" hidden></p>
+  </div>`, sh => {
+    const estI = $('#hEstate', sh), unitI = $('#hUnit', sh), headI = $('#hHead', sh), fail = failer($('#hErr', sh));
+    const getSelf = switcher($('#hSelf', sh), null, false);
+    const pick = $('#hEst', sh);
+    if (pick) pick.onclick = ev => { const b = ev.target.closest('button'); if (b) { estI.value = b.dataset.e; unitI.focus(); } };
+    const commit = () => {
+      $('#hErr', sh).hidden = true;
+      const estate = estI.value.trim(), unit = unitI.value.trim(), head = parseAmt(headI.value);
+      if (!estate) return fail('哪个小区？', estI);
+      if (!unit) return fail('门牌写一下', unitI);
+      if (Number.isNaN(head)) return fail('大房东那笔只认数字', headI);
+      const h = { id: rid('h-'), estate, unit, self: getSelf(), byRoom: false, created: CUR, tenants: [], fixed: [], months: {} };
+      if (head > 0) h.fixed.push({ id: rid('e'), name: '交大房东', amt: head });
+      S.houses[h.id] = h; S.order.push(h.id); S.month = CUR;
+      touch(h.id); touch('meta');
+      go(h.id);
+      bulkSheet(h, CUR);
+    };
+    $('#hOk', sh).onclick = commit;
+    enterNext(sh, ['hEstate', 'hUnit', 'hHead'], commit);
+    estI.focus();
+  });
+}
+
+function houseMenu(h) {
+  openSheet(head3('这套房', '保存', 'mOk') + `<div class="sh-body">
+    <div class="form">
+      <label class="f-row"><span class="f-k">小区</span><input id="mEstate" autocomplete="off" maxlength="24" value="${esc(h.estate)}"></label>
+      <label class="f-row"><span class="f-k">门牌</span><input id="mUnit" autocomplete="off" maxlength="24" value="${esc(h.unit)}"></label>
+      <div class="f-row"><span class="f-k">我也住这<small>算一个人头，一起分电费</small></span><button type="button" class="switch" role="switch" id="mSelf" aria-checked="${!!h.self}" aria-label="我也住这"><i></i></button></div>
+    </div>
+    <p class="f-err" id="mErr" hidden></p>
+    <div class="sh-acts"><button type="button" class="btn plain danger" id="mDel">删掉这套房</button></div>
+  </div>`, sh => {
+    const fail = failer($('#mErr', sh)), getSelf = switcher($('#mSelf', sh), null, !!h.self);
+    $('#mOk', sh).onclick = () => {
+      const estate = $('#mEstate', sh).value.trim(), unit = $('#mUnit', sh).value.trim();
+      if (!estate) return fail('哪个小区？', $('#mEstate', sh));
+      if (!unit) return fail('门牌写一下', $('#mUnit', sh));
+      h.estate = estate; h.unit = unit;
+      if (getSelf() !== !!h.self) Ops.setSelf(h, getSelf()); else save(h);
+      closeSheet(); render();
+    };
+    $('#mDel', sh).onclick = () => confirmSheet({ title: `删掉 ${h.unit}？`, msg: '连房客带账一起删，删了找不回来。', ok: '删掉', onOk: () => {
+      delete S.houses[h.id]; S.order = S.order.filter(x => x !== h.id); touch(h.id); touch('meta'); go(''); toast('删了');
+    } });
+  });
+}
+function confirmSheet(o) {
+  openSheet(`<div class="cf"><div class="cf-t">${esc(o.title)}</div><p class="cf-m">${esc(o.msg)}</p><div class="cf-b"><button type="button" class="btn tinted" data-act="close">取消</button><button type="button" class="btn danger-fill" id="cfOk">${esc(o.ok)}</button></div></div>`, sh => { $('#cfOk', sh).onclick = () => { closeSheet(); o.onOk(); }; });
+}
+
+function copyText(text, msg) {
+  const fallback = () => openSheet(`<div class="sh-head"><span></span><div class="sh-t">手动复制</div><button type="button" class="sh-ok" data-act="close">好了</button></div><div class="sh-body"><textarea class="copybox" id="cpBox" rows="5" readonly>${esc(text)}</textarea><p class="sh-tip">这里不让自动复制。长按上面的字，全选，拷贝。</p></div>`, sh => { const b = $('#cpBox', sh); b.focus(); b.select(); });
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(() => toast(msg), fallback); return; } } catch (e) {}
+  fallback();
+}
+let toastT = 0;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1900); }
+
+/* ---------- routing & events ---------- */
+function go(route) {
+  S.route = route;
+  try { if (location.hash.slice(1) !== route) location.hash = route; } catch (e) {}
+  render(true);
+}
+const curHouse = () => (S.route.startsWith('h-') ? S.houses[S.route] : null);
+function act(name, el) {
+  const h = curHouse();
+  switch (name) {
+    case 'close': closeSheet(); break;
+    case 'm-prev': S.month = ymAdd(S.month, -1); render(); break;
+    case 'm-next': S.month = ymAdd(S.month, 1); render(); break;
+    case 'm-cur': S.month = CUR; render(); break;
+    case 'y-prev': S.year--; S.sel = null; render(); break;
+    case 'y-next': S.year++; S.sel = null; render(); break;
+    case 'pick': S.sel = el.dataset.m; render(); break;
+    case 'open-month': S.month = el.dataset.m; go(''); break;
+    case 'goto-created': if (h) { S.month = h.created; render(); } break;
+    case 'paid':
+      if (h) {
+        Ops.togglePaid(h, S.month, el.dataset.id);
+        const x = calc(h, S.month).rows.find(y => y.id === el.dataset.id);
+        if (x) { el.className = 'paid pop' + (x.st === 'paid' ? ' on' : x.st === 'owe' ? ' owe' : ''); el.setAttribute('aria-pressed', String(x.st === 'paid')); el.firstElementChild.innerHTML = x.st === 'owe' ? '欠' : ICON.check; const s = el.parentNode.querySelector('.row-s .chip.bad'); if (s && x.st !== 'owe' && s.textContent.startsWith('欠')) s.remove(); }
+        renderHouse(h, 'paid');
+      }
+      break;
+    case 'tenant': if (h) tenantSheet(h, S.month, el.dataset.id); break;
+    case 'add-tenant': if (h) tenantSheet(h, S.month); break;
+    case 'bulk': if (h) bulkSheet(h, S.month); break;
+    case 'by-person': case 'by-room': if (h) { const v = name === 'by-room'; if (!!h.byRoom !== v) { h.byRoom = v; save(h); renderHouse(h, true); } } break;
+    case 'exp': if (h) expSheet(h, S.month, el.dataset.id); break;
+    case 'add-exp': if (h) expSheet(h, S.month); break;
+    case 'copy-elec': if (h) copyText(elecNotice(h, calc(h, S.month), S.month), '复制好了，去群里一贴'); break;
+    case 'house-menu': if (h) houseMenu(h); break;
+    case 'new-house': newHouseSheet(); break;
+    case 'load-demo':
+      for (const d of makeDemo(CUR)) { S.houses[d.id] = d; if (!S.order.includes(d.id)) S.order.push(d.id); touch(d.id); }
+      touch('meta'); render(); break;
+    case 'clear-demo':
+      confirmSheet({ title: '清空示例？', msg: '示例房子连账一起删，你自己记的不动。', ok: '清空', onOk: () => {
+        for (const x of Object.values(S.houses)) if (x.demo) { delete S.houses[x.id]; touch(x.id); }
+        S.order = S.order.filter(id => S.houses[id]); touch('meta'); render(); toast('示例清掉了');
+      } });
+      break;
+  }
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="#"]');
+  if (a) { e.preventDefault(); go(a.getAttribute('href').slice(1)); return; }
+  const b = e.target.closest('[data-act]');
+  if (b && !b.disabled) act(b.dataset.act, b);
+});
+document.addEventListener('input', e => {
+  const t = e.target; if (t.id !== 'elecIn') return;
+  const h = curHouse(); if (!h) return;
+  const v = parseAmt(t.value), f = t.closest('.elec-field');
+  if (Number.isNaN(v)) { f.classList.add('bad'); return; }
+  f.classList.remove('bad');
+  Ops.setElec(h, S.month, v);
+  renderHouse(h, true);
+});
+document.addEventListener('change', e => { const t = e.target; if (t.id !== 'elecIn') return; const v = parseAmt(t.value); if (v != null && !Number.isNaN(v)) t.value = num(toC(v)); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#sheets').hidden) closeSheet();
+  if (e.key === 'Enter' && e.target.id === 'elecIn') { e.preventDefault(); e.target.blur(); }
+});
+window.addEventListener('hashchange', () => { const r = location.hash.slice(1); if (r !== S.route) { S.route = r; render(true); } });
+function onScroll() { $('#nav').classList.toggle('scrolled', window.scrollY > 30); }
+window.addEventListener('scroll', onScroll, { passive: true });
+if (window.visualViewport) { visualViewport.addEventListener('resize', fitSheet); visualViewport.addEventListener('scroll', fitSheet); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+
+S.route = (location.hash || '').slice(1);
+if (uncache()) S.ready = true;
+render();
+connect();
+})();
+</script>
+</body>
+</html>
