@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>巡山僧</title>
+<meta name="description" content="浏览器插件：框选网页任意一块，价格、库存、公告一变就弹通知。免费，数据只在你自己的浏览器里。">
+<meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="extension/icons/32.png">
+<style>
+/* 布局：居中单栏（最宽 980），首屏大字 + 下载；三段图文交替；能力小格；安装步骤；页脚 */
+:root{
+  --bg:#F5F5F7; --card:#FFFFFF; --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#A1A1A6; --sep:rgba(60,60,67,.14);
+  --fill:rgba(118,118,128,.12); --accent:#0071E3; --accent-h:#0077ED; --accent-tint:rgba(0,113,227,.10);
+  --shadow:0 2px 6px rgba(0,0,0,.04),0 18px 48px rgba(0,0,0,.08);
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --fn:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#000000; --card:#1C1C1E; --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.55);
+  --fill:rgba(118,118,128,.24); --accent:#0A84FF; --accent-h:#409CFF; --accent-tint:rgba(10,132,255,.18);
+  --shadow:0 0 0 .5px rgba(255,255,255,.1); color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#000000; --card:#1C1C1E; --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.55);
+  --fill:rgba(118,118,128,.24); --accent:#0A84FF; --accent-h:#409CFF; --accent-tint:rgba(10,132,255,.18); --shadow:0 0 0 .5px rgba(255,255,255,.1); color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.5 var(--f);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+img{display:block;max-width:100%;height:auto}
+.wrap{max-width:980px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left))}
+.nav{display:flex;align-items:center;justify-content:space-between;height:52px;font-size:13px;color:var(--fg2)}
+.nav a{color:var(--fg2)}
+.nav a:hover{color:var(--fg)}
+.hero{text-align:center;padding:56px 0 24px}
+.hero .ic{width:96px;height:96px;margin:0 auto 22px;border-radius:22px;box-shadow:0 10px 30px rgba(0,88,214,.28)}
+.hero h1{margin:0;font-size:clamp(44px,8vw,72px);line-height:1.05;font-weight:700;letter-spacing:-.01em}
+.hero .sl{margin:12px 0 0;font-size:clamp(22px,3.4vw,30px);font-weight:600;color:var(--fg)}
+.hero .tg{margin:10px 0 0;font-size:19px;color:var(--fg2)}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 24px;border-radius:999px;font-size:17px;font-weight:500;background:var(--fill);color:var(--accent)}
+.btn.pri{background:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-h)}
+.btn svg{width:18px;height:18px}
+.meta{margin-top:14px;font-size:13px;color:var(--fg3)}
+.shot{margin:44px auto 0;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
+.sec{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;padding:72px 0;border-top:1px solid var(--sep)}
+.sec:first-of-type{border-top:0}
+.sec.flip .txt{order:2}
+.sec h2{margin:0;font-size:clamp(28px,4vw,40px);line-height:1.15;font-weight:700;letter-spacing:-.005em}
+.sec p{margin:14px 0 0;color:var(--fg2);font-size:18px}
+.sec .pic{border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
+.sec .pic.phone{max-width:340px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:12px 0 72px}
+.g{background:var(--card);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.g b{display:block;font-size:17px}
+.g span{display:block;margin-top:4px;font-size:14px;color:var(--fg2)}
+.inst{background:var(--card);border-radius:22px;padding:40px clamp(20px,5vw,56px);box-shadow:var(--shadow)}
+.inst h2{margin:0;font-size:32px}
+.inst .sub{margin:6px 0 0;color:var(--fg2)}
+.inst ol{list-style:none;counter-reset:s;margin:28px 0 0;padding:0;display:grid;gap:16px}
+.inst li{counter-increment:s;display:flex;gap:14px;align-items:flex-start}
+.inst li::before{content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--accent-tint);color:var(--accent);font:600 14px var(--fn);margin-top:1px}
+code{font:500 15px ui-monospace,"SF Mono",Menlo,Consolas,monospace;background:var(--fill);padding:2px 7px;border-radius:6px;user-select:all}
+.inst .later{margin-top:24px;font-size:14px;color:var(--fg3)}
+.foot{margin:64px 0 0;padding:28px 0 calc(40px + env(safe-area-inset-bottom));border-top:1px solid var(--sep);text-align:center;font-size:13px;line-height:1.9;color:var(--fg2)}
+.foot .mail{user-select:all;-webkit-user-select:all;color:var(--fg)}
+@media (max-width:760px){
+  .hero{padding-top:28px}
+  .sec{grid-template-columns:1fr;gap:24px;padding:48px 0}
+  .sec.flip .txt{order:0}
+  .grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:420px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="nav"><a href="https://qianshoulab.github.io/">千手院</a><a href="#install">怎么装</a></nav>
+
+  <header class="hero">
+    <img class="ic" src="extension/icons/128.png" width="96" height="96" alt="">
+    <h1>巡山僧</h1>
+    <p class="sl">施主去睡，贫僧盯着。</p>
+    <p class="tg">价格、库存、公告、名额，一变就叫你。</p>
+    <div class="cta">
+      <a class="btn pri" href="dist/xunshan-0.1.0.zip" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>下载插件</a>
+      <a class="btn" href="#install">怎么装</a>
+    </div>
+    <div class="meta">0.1.0 · Chrome / Edge · 免费 · 48 KB</div>
+    <div class="shot">
+      <picture><source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/app.webp" width="1600" height="1025" alt="巡山僧总览：价格从 1,099 降到 899，红绿对比显示改了哪"></picture>
+    </div>
+  </header>
+
+  <section class="sec">
+    <div class="txt"><h2>点一下，<br>框一块。</h2><p>价格、库存、剩余名额，鼠标点中就算。认出数字就能设线：低于多少才叫，别的波动贫僧替你忍着。</p></div>
+    <div class="pic"><img src="img/pick.webp" width="850" height="740" alt="在商品页上框选价格，面板认出数字 1,299，设低于 1000 再叫"></div>
+  </section>
+
+  <section class="sec flip">
+    <div class="txt"><h2>变了就叫，<br>点了就到。</h2><p>弹系统通知，点一下直接打开那一页。改了哪几个字，红的是走的，绿的是来的。</p></div>
+    <div class="pic"><img src="img/app-news.webp" width="1100" height="987" alt="公告整页盯梢的变化记录，新加的一条标成绿色"></div>
+  </section>
+
+  <section class="sec">
+    <div class="txt"><h2>一眼看完<br>整座山。</h2><p>工具栏一点，在盯什么、谁变了，全在这儿。</p></div>
+    <div class="pic phone"><picture><source srcset="img/popup-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/popup.webp" width="720" height="1120" alt="巡山僧弹窗：当前页一键框选，下面是在盯的清单"></picture></div>
+  </section>
+
+  <section class="grid" aria-label="还能干啥">
+    <div class="g"><b>5 分钟到 1 天</b><span>默认半小时看一次</span></div>
+    <div class="g"><b>要登录的也行</b><span>用你浏览器里现成的登录</span></div>
+    <div class="g"><b>脚本页也行</b><span>直接抓不到，自动开后台标签读</span></div>
+    <div class="g"><b>不扰民</b><span>同一网站有最短间隔，碰到验证码就退</span></div>
+    <div class="g"><b>清单能搬家</b><span>导出、导入一个文件</span></div>
+    <div class="g"><b>哪儿也不去</b><span>清单和记录只存在你自己的浏览器</span></div>
+  </section>
+
+  <section class="inst" id="install">
+    <h2>怎么装</h2>
+    <p class="sub">还没上商店，先手动装，两分钟。</p>
+    <ol>
+      <li><span>下载 <a href="dist/xunshan-0.1.0.zip" download>xunshan-0.1.0.zip</a>，解压成一个文件夹。</span></li>
+      <li><span>地址栏打开 <code>chrome://extensions</code>；Edge 用 <code>edge://extensions</code>。</span></li>
+      <li><span>打开右上角（Edge 在左下）的「开发者模式」。</span></li>
+      <li><span>点「加载已解压的扩展程序」（Edge：「加载解压缩的扩展」），选刚才那个文件夹。</span></li>
+      <li><span>点工具栏的拼图图标，把巡山僧钉出来。去想盯的网页，点它，「框选一块」。</span></li>
+    </ol>
+    <p class="later">浏览器得开着贫僧才醒着。第一次盯某个网站，会问你要这个网站的权限，就这一个。</p>
+  </section>
+
+  <footer class="foot">
+    <div>千手院 · 巡山僧</div>
+    <div>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></div>
+    <div><a href="https://qianshoulab.github.io/">千手院总舵</a></div>
+  </footer>
+</div>
+</body>
+</html>
