@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>商品列表 · 示例后台</title><link rel="stylesheet" href="site.css"></head>
+<body>
+<header class="topnav"><b>示例后台</b><a href="table.html">客户</a><a href="cards.html">线索</a><a href="scroll.html" class=on>商品</a><a href="index.html">报表</a><a href="index.html">设置</a></header>
+<div class="layout"><aside class="side"><ul><li><a href="table.html">客户名单</a></li><li><a href="cards.html">销售线索</a></li><li><a href="scroll.html" class=on>商品列表</a></li><li><a href="index.html">合同</a></li><li><a href="index.html">回款</a></li><li><a href="index.html">工单</a></li><li><a href="index.html">团队</a></li></ul></aside>
+<main class="main"><h1>商品列表</h1><div class="goods" id="goods"></div><div class="loading" id="ld">往下滚，加载更多</div></main></div>
+<footer class="foot">示例后台 · 数据全是随机生成的假数据 · 给 <a href="../">化缘僧</a> 练手用</footer>
+<script src="data.js"></script><script>
+const all=DEMO.items,step=24;let n=0,busy=false;const box=document.getElementById('goods'),ld=document.getElementById('ld');
+function more(){if(busy||n>=all.length)return;busy=true;ld.textContent='加载中…';setTimeout(()=>{box.insertAdjacentHTML('beforeend',all.slice(n,n+step).map(g=>`<div class="goods-item"><img src="${g.img}" alt=""><div class="g-body"><div class="g-title">${g.title}</div><div class="g-price">¥${g.price}</div><div class="g-meta"><span class="g-shop">${g.shop}</span><span class="g-sold">已售 ${g.sold}</span></div><div class="g-meta"><span class="g-sku">${g.sku}</span><span class="g-rating">${g.rating} 分</span></div></div></div>`).join(''));n+=step;busy=false;ld.textContent=n>=all.length?'到底了':'往下滚，加载更多';},500);}
+addEventListener('scroll',()=>{if(innerHeight+scrollY>document.documentElement.scrollHeight-300)more();});more();</script>
+</body></html>

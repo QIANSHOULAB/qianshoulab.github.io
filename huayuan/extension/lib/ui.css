@@ -1,0 +1,60 @@
+/* lib/ui.css — 千手院插件通用的长相：颜色、字体、按钮、分段控件、提示条、页脚。跟随系统浅色/深色。 */
+:root{
+  --bg:#F5F5F7; --card:#FFFFFF; --fill:rgba(118,118,128,.12); --fill2:rgba(120,120,128,.18);
+  --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#AEAEB2; --sep:rgba(60,60,67,.14);
+  --accent:#0071E3; --accent-tint:rgba(0,113,227,.10); --on-accent:#fff;
+  --amber:#FF9500; --amber-ink:#A85100; --amber-tint:rgba(255,149,0,.14);
+  --good:#1F7A36; --good-mark:#34C759; --bad:#D70015;
+  --glass:rgba(245,245,247,.82); --toast-bg:rgba(29,29,31,.92); --toast-fg:#F5F5F7;
+  --shadow:0 1px 1px rgba(0,0,0,.03),0 6px 20px rgba(0,0,0,.05);
+  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+  --f-num:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,"PingFang SC",sans-serif;
+  --r:14px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000; --card:#1C1C1E; --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.32);
+    --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+    --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
+    --amber:#FF9F0A; --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
+    --good:#30D158; --good-mark:#30D158; --bad:#FF6961;
+    --glass:rgba(18,18,20,.78); --toast-bg:rgba(58,58,60,.95); --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000; --card:#1C1C1E; --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.32);
+  --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+  --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
+  --amber:#FF9F0A; --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
+  --good:#30D158; --good-mark:#30D158; --bad:#FF6961;
+  --glass:rgba(18,18,20,.78); --toast-bg:rgba(58,58,60,.95); --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font:400 14px/1.4 var(--f-text);-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-appearance:none;appearance:none}
+button:disabled{cursor:default;opacity:.4}
+a{color:var(--accent);text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+[hidden]{display:none!important}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;transition:transform .12s,background-color .15s,opacity .15s}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.tinted{background:var(--accent-tint);color:var(--accent)}
+.btn.plain{background:var(--fill);color:var(--fg)}
+.btn.stop{background:var(--fg);color:var(--bg)}
+.btn.ghost{color:var(--accent);padding:0 8px}
+.btn.big{height:38px;padding:0 20px;font-size:15px}
+.btn svg{width:16px;height:16px;flex:none}
+
+.seg{display:inline-flex;background:var(--fill);border-radius:9px;padding:2px;gap:2px}
+.seg button{height:28px;padding:0 12px;border-radius:7px;font-size:13px;font-weight:500;color:var(--fg)}
+.seg button[aria-pressed="true"]{background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--toast-bg);color:var(--toast-fg);padding:10px 16px;border-radius:999px;font-size:13px;font-weight:600;transition:all .25s cubic-bezier(.2,.8,.2,1);pointer-events:none;z-index:50;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.qs-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;font-size:12px;color:var(--fg2)}
+.qs-foot .mail{user-select:text;-webkit-user-select:text;cursor:text;color:var(--fg)}

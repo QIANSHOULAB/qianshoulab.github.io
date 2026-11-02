@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>化缘僧</title>
+<link rel="stylesheet" href="lib/ui.css">
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <img class="logo" src="icons/48.png" alt="">
+    <div class="ttl">
+      <b data-t="hyName"></b>
+      <span id="host"></span>
+    </div>
+    <div class="top-r">
+      <button type="button" class="icon-btn" id="gear" aria-label="" data-t-aria="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+      <div class="pop" id="pop" hidden>
+        <label><span data-t="settingDelay"></span><input type="number" id="setDelay" min="0.5" max="30" step="0.5"></label>
+        <label><span data-t="settingMax"></span><input type="number" id="setMax" min="1" max="1000" step="1"></label>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="loading" id="loading"><span class="spin"></span><span data-t="looking"></span></div>
+
+    <section class="ctl" id="ctl" hidden>
+      <div class="ctl-l">
+        <div class="blk">
+          <span class="blk-n" id="blkN"></span>
+          <span class="blk-s" id="blkS"></span>
+          <button type="button" class="btn tinted sm" id="swap" data-t="switchBlock"></button>
+        </div>
+        <div class="mode">
+          <div class="seg" id="seg" role="group">
+            <button type="button" data-mode="next" data-t="modeNext"></button>
+            <button type="button" data-mode="scroll" data-t="modeScroll"></button>
+            <button type="button" data-mode="one" data-t="modeOne"></button>
+          </div>
+          <span class="hint" id="hint"></span>
+          <button type="button" class="btn ghost sm" id="pick"></button>
+        </div>
+      </div>
+      <div class="ctl-r">
+        <button type="button" class="btn primary big" id="go"></button>
+        <span class="status" id="status"></span>
+      </div>
+      <div class="bar" id="bar" hidden><i></i></div>
+    </section>
+
+    <div class="perm" id="perm" hidden>
+      <span data-t="needPerm"></span>
+      <button type="button" class="btn primary sm" id="grant" data-t="grant"></button>
+    </div>
+
+    <section class="empty" id="empty" hidden>
+      <div class="empty-card">
+        <div class="empty-t" id="emptyT"></div>
+        <p class="empty-s" id="emptyS"></p>
+        <button type="button" class="btn tinted" id="openDemo" data-t="demoOpen"></button>
+      </div>
+      <div class="demo-cap"><span class="badge" data-t="demoBadge"></span><span data-t="demoTitle"></span></div>
+    </section>
+
+    <section class="grid-wrap" id="gridWrap" hidden>
+      <div class="grid-scroll" id="gridScroll"><table class="grid" id="grid"></table></div>
+    </section>
+
+    <div class="meta" id="meta"></div>
+  </main>
+
+  <footer class="bottom" id="bottom">
+    <div class="qs-foot">
+      <span data-t="hyFoot"></span>
+      <span><span data-t="footMail"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
+      <a href="https://qianshoulab.github.io/" target="_blank" rel="noopener" data-t="footHome"></a>
+    </div>
+    <div class="exp">
+      <button type="button" class="btn plain" id="copy" data-t="copy"></button>
+      <button type="button" class="btn plain" id="csv" data-t="exportCsv"></button>
+      <button type="button" class="btn primary" id="xlsx" data-t="exportXlsx"></button>
+    </div>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+<script src="lib/strings.js"></script>
+<script src="lib/settings.js"></script>
+<script src="lib/sheet.js"></script>
+<script src="lib/export.js"></script>
+<script src="panel.js"></script>
+</body>
+</html>

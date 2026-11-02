@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "化缘僧：网页名单一键成表",
+  "short_name": "化缘僧",
+  "version": "0.1.0",
+  "description": "点一下，把网页上的列表、表格抓成一张表：自动认列表、自动翻页和滚动、去重，导出 Excel / CSV。数据只在本机。",
+  "homepage_url": "https://qianshoulab.github.io/huayuan/",
+  "minimum_chrome_version": "102",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "optional_host_permissions": ["*://*/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "化缘僧：把这页的列表抓成表",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" }
+  },
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "commands": {
+    "_execute_action": { "suggested_key": { "default": "Alt+Shift+H" }, "description": "打开化缘僧" }
+  }
+}

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>客户名单 · 示例后台</title><link rel="stylesheet" href="site.css"></head>
+<body>
+<header class="topnav"><b>示例后台</b><a href="table.html" class=on>客户</a><a href="cards.html">线索</a><a href="scroll.html">商品</a><a href="index.html">报表</a><a href="index.html">设置</a></header>
+<div class="layout"><aside class="side"><ul><li><a href="table.html" class=on>客户名单</a></li><li><a href="cards.html">销售线索</a></li><li><a href="scroll.html">商品列表</a></li><li><a href="index.html">合同</a></li><li><a href="index.html">回款</a></li><li><a href="index.html">工单</a></li><li><a href="index.html">团队</a></li></ul></aside>
+<main class="main"><h1>客户名单</h1><div class="panel"><table><thead><tr><th>编号</th><th>公司</th><th>联系人</th><th>电话</th><th>邮箱</th><th>城市</th><th>跟进阶段</th><th>建档日期</th><th>操作</th></tr></thead><tbody id="tb"></tbody></table><div class="pager" id="pager"></div></div></main></div>
+<footer class="foot">示例后台 · 数据全是随机生成的假数据 · 给 <a href="../">化缘僧</a> 练手用</footer>
+<script src="data.js"></script><script>
+const per=20,all=DEMO.customers,pages=Math.ceil(all.length/per);
+const p=Math.min(pages,Math.max(1,+new URLSearchParams(location.search).get('p')||1));
+document.getElementById('tb').innerHTML=all.slice((p-1)*per,p*per).map(c=>`<tr><td>${c.id}</td><td><a href="#${c.id}">${c.company}</a></td><td>${c.contact}</td><td>${c.phone}</td><td>${c.email}</td><td>${c.city}</td><td>${c.stage}</td><td>${c.since}</td><td><a href="javascript:void 0">编辑</a></td></tr>`).join('');
+let h=p>1?`<a href="?p=${p-1}">上一页</a>`:`<span class="disabled">上一页</span>`;
+for(let i=1;i<=pages;i++)h+=i===p?`<span class="cur">${i}</span>`:`<a href="?p=${i}">${i}</a>`;
+h+=p<pages?`<a href="?p=${p+1}">下一页</a>`:`<span class="disabled">下一页</span>`;
+document.getElementById('pager').innerHTML=h;</script>
+</body></html>
