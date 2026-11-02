@@ -296,6 +296,29 @@ def test_watcher_waits_for_growing_file(tmp_path):
     assert ls(d / "压缩包") == ["big.zip"]
 
 
+def test_watcher_retries_busy_file(tmp_path, monkeypatch):
+    d = mk(tmp_path / "dl")
+    w = watch.Watcher(str(d), {"rules": [{"by": "type"}]})
+    mk(d, "a.pdf")
+    real = os.rename
+    busy = {"on": True}
+
+    def fake(src, dst):
+        if busy["on"] and os.path.basename(src) == "a.pdf":
+            raise PermissionError(32, "占用")
+        return real(src, dst)
+
+    monkeypatch.setattr(os, "rename", fake)
+    w.tick()
+    first = w.tick()
+    assert [x["ok"] for x in first] == [False]
+    assert w.tick() == [] and w.tick() == []   # 还被占着：不重复报
+    busy["on"] = False
+    w.tick()
+    got = w.tick() or w.tick()
+    assert [x["ok"] for x in got] == [True] and ls(d / "文档") == ["a.pdf"]
+
+
 def test_watcher_thread_and_inplace_rename(tmp_path):
     d = mk(tmp_path / "w")
     w = watch.Watcher(str(d), {"rules": [], "rename": [{"type": "insert", "text": "收-", "where": "start"}]}, interval=0.05)

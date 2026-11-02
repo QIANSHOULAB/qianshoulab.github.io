@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>扫地僧</title>
+<meta name="description" content="文件批处理：批量改名、按规则分文件夹、盯着下载文件夹自动整理、批量下载。Windows 电脑程序，免费，文件不出你电脑。">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%235AC8FA'/%3E%3Cstop offset='1' stop-color='%230071E3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='3' y='3' width='58' height='58' rx='14' fill='url(%23g)'/%3E%3Cpath d='M43 16 30 29' stroke='%23fff' stroke-width='4.5' stroke-linecap='round'/%3E%3Cpath d='M27 26l8 8-9 13-12-10z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#FFFFFF; --bg2:#F5F5F7; --card:#FFFFFF; --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#A1A1A6;
+  --sep:rgba(60,60,67,.14); --fill:rgba(118,118,128,.10); --accent:#0071E3; --accent-h:#0062C4; --accent-tint:rgba(0,113,227,.10);
+  --new:#0058B8; --amber:#B25000; --amber-tint:rgba(255,149,0,.14); --good:#248A3D; --good-mark:#34C759;
+  --win:#FFFFFF; --win-side:#F2F2F4; --shadow:0 0 0 .5px rgba(0,0,0,.06),0 20px 60px rgba(0,0,0,.10);
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI","PingFang SC","Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif;
+  --fd:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI","PingFang SC","Microsoft YaHei UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#000000; --bg2:#111113; --card:#1C1C1E; --fg:#F5F5F7; --fg2:#A1A1A6; --fg3:#6E6E73;
+  --sep:rgba(255,255,255,.10); --fill:rgba(118,118,128,.22); --accent:#2997FF; --accent-h:#4DA8FF; --accent-tint:rgba(41,151,255,.16);
+  --new:#64B0FF; --amber:#FFB340; --amber-tint:rgba(255,159,10,.16); --good:#30D158; --good-mark:#30D158;
+  --win:#1C1C1E; --win-side:#232325; --shadow:0 0 0 .5px rgba(255,255,255,.1),0 20px 60px rgba(0,0,0,.6);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#000000; --bg2:#111113; --card:#1C1C1E; --fg:#F5F5F7; --fg2:#A1A1A6; --fg3:#6E6E73;
+  --sep:rgba(255,255,255,.10); --fill:rgba(118,118,128,.22); --accent:#2997FF; --accent-h:#4DA8FF; --accent-tint:rgba(41,151,255,.16);
+  --new:#64B0FF; --amber:#FFB340; --amber-tint:rgba(255,159,10,.16); --good:#30D158; --good-mark:#30D158;
+  --win:#1C1C1E; --win-side:#232325; --shadow:0 0 0 .5px rgba(255,255,255,.1),0 20px 60px rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.5 var(--f);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1000px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px))}
+nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--sep)}
+nav .wrap{display:flex;align-items:center;height:48px;gap:12px}
+nav .back{font-size:14px;color:var(--fg2);display:flex;align-items:center;gap:4px}
+nav .back:hover{color:var(--accent);text-decoration:none}
+nav b{font-size:15px;font-weight:600;margin-left:auto}
+nav .dl{font-size:13px;font-weight:600;background:var(--accent);color:#fff;border-radius:999px;padding:4px 12px}
+nav .dl:hover{background:var(--accent-h);text-decoration:none}
+
+.hero{text-align:center;padding:64px 0 28px}
+.icon{width:88px;height:88px;border-radius:22px;margin:0 auto 22px;background:linear-gradient(160deg,#5AC8FA,#0071E3);display:grid;place-items:center;box-shadow:0 10px 30px rgba(0,113,227,.28)}
+.icon svg{width:52px;height:52px;color:#fff}
+h1{font:700 56px/1.08 var(--fd);letter-spacing:-.01em;margin:0}
+.tag{font:600 28px/1.25 var(--fd);margin:12px 0 0;letter-spacing:.01em}
+.lede{color:var(--fg2);font-size:19px;margin:16px auto 0;max-width:560px}
+.cta{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:30px}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;font-size:17px;font-weight:600;border-radius:999px;padding:12px 26px}
+.btn:hover{background:var(--accent-h);text-decoration:none}
+.btn svg{width:18px;height:18px}
+.meta{font-size:13px;color:var(--fg3)}
+
+/* 演示窗口 */
+.shot{margin:44px auto 0;max-width:880px;border-radius:14px;background:var(--win);box-shadow:var(--shadow);overflow:hidden;text-align:left;font-size:13px}
+.shot .tb{height:34px;display:flex;align-items:center;gap:7px;padding:0 14px;border-bottom:.5px solid var(--sep);background:var(--win-side)}
+.shot .tb i{width:11px;height:11px;border-radius:50%;background:var(--fill)}
+.shot .tb span{margin-left:auto;margin-right:auto;font-size:12px;color:var(--fg2);font-weight:600}
+.shot .in{display:grid;grid-template-columns:200px 1fr}
+.shot .rules{background:var(--win-side);border-right:.5px solid var(--sep);padding:14px}
+.shot .chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.shot .chips b{font-weight:500;font-size:11.5px;background:var(--card);border-radius:999px;padding:3px 9px;box-shadow:0 0 0 .5px var(--sep)}
+.shot .chips b:before{content:"+ ";color:var(--accent)}
+.shot .rule{background:var(--card);border-radius:8px;padding:8px 10px;margin-bottom:6px;box-shadow:0 0 0 .5px var(--sep);font-size:12px}
+.shot .rule em{font-style:normal;color:var(--fg2)}
+.shot .rows{padding:4px 0}
+.shot .r{display:grid;grid-template-columns:1fr 18px 1fr;gap:6px;padding:6px 16px;border-bottom:.5px solid var(--sep);white-space:nowrap}
+.shot .r span{overflow:hidden;text-overflow:ellipsis}
+.shot .r .o{color:var(--fg2)}
+.shot .r .a{color:var(--fg3);text-align:center}
+.shot .r .n{color:var(--new);font-weight:500}
+.shot .r .t{font-size:10.5px;font-weight:600;background:var(--amber-tint);color:var(--amber);border-radius:4px;padding:0 4px;margin-left:5px}
+.shot .foot{display:flex;justify-content:flex-end;padding:10px 16px}
+.shot .foot b{background:var(--accent);color:#fff;border-radius:8px;padding:6px 16px;font-weight:600}
+
+/* 功能 */
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:72px 0 24px}
+.f{background:var(--bg2);border-radius:20px;padding:26px 24px}
+.f .k{width:40px;height:40px;border-radius:11px;background:var(--accent-tint);color:var(--accent);display:grid;place-items:center;margin-bottom:14px}
+.f .k svg{width:22px;height:22px}
+.f h3{margin:0 0 6px;font:700 20px/1.3 var(--fd)}
+.f p{margin:0;color:var(--fg2);font-size:15px}
+.f ul{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.f li{font-size:12.5px;background:var(--card);border-radius:999px;padding:3px 10px;color:var(--fg)}
+
+.how{padding:56px 0 24px;text-align:center}
+.how h2{font:700 34px/1.2 var(--fd);margin:0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px;text-align:left}
+.s{border-top:2px solid var(--fg);padding-top:14px}
+.s b{font:700 15px var(--fd);color:var(--fg3)}
+.s h4{margin:4px 0 6px;font-size:18px}
+.s p{margin:0;color:var(--fg2);font-size:15px}
+.s code{white-space:nowrap;font-family:inherit;background:var(--fill);border-radius:5px;padding:1px 6px;color:var(--fg);font-size:14px}
+
+footer{border-top:.5px solid var(--sep);margin-top:64px;padding:22px 0 calc(32px + env(safe-area-inset-bottom,0px));font-size:13px;color:var(--fg3)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:6px 22px}
+footer .mail{color:var(--fg2);user-select:all;-webkit-user-select:all}
+
+@media (max-width:760px){
+  .hero{padding:40px 0 16px}
+  h1{font-size:44px}
+  .tag{font-size:22px}
+  .lede{font-size:17px}
+  .shot .in{grid-template-columns:1fr}
+  .shot .rules{border-right:0;border-bottom:.5px solid var(--sep)}
+  .shot .rule:nth-of-type(n+3){display:none}
+  .shot .r{grid-template-columns:.75fr 14px 1.25fr;padding:6px 12px;font-size:12px}
+  .feats,.steps{grid-template-columns:1fr}
+  .feats{padding-top:48px}
+  .how h2{font-size:28px}
+}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="back" href="https://qianshoulab.github.io/"><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5 1.5 7.5l6 6"/></svg>千手院</a>
+  <b>扫地僧</b>
+  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.1.0/SaodiSeng-0.1.0.exe">下载</a>
+</div></nav>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3 11.5 10.5"/><path d="M9.6 9.4c1.6-.8 3.6-.4 4.7.8l.5.5c1.2 1.2 1.6 3.1.8 4.7L13.8 18 6 10.2Z"/><path d="M6 10.2 3 13.5c-.6.6-.6 1.6 0 2.2l5.3 5.3c.6.6 1.6.6 2.2 0l3.3-3"/><path d="M6.5 16.5 5 18"/><path d="M9 19l-1 1"/></svg></div>
+    <h1>扫地僧</h1>
+    <p class="tag">文件乱扔，你去玩，贫僧扫</p>
+    <p class="lede">一千个文件改名，眨眼的事。下载文件夹再乱，新来一个分一个。</p>
+    <div class="cta">
+      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.1.0/SaodiSeng-0.1.0.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>下载 Windows 版</a>
+      <span class="meta">0.1.0 · Windows 10 / 11 · 免费 · 不用装，双击就跑</span>
+    </div>
+
+    <div class="shot" aria-label="扫地僧改名界面示意">
+      <div class="tb"><i></i><i></i><i></i><span>扫地僧 — 批量改名</span></div>
+      <div class="in">
+        <div class="rules">
+          <div class="chips"><b>加序号</b><b>替换文字</b><b>加日期</b><b>按拍摄时间</b><b>去多余空格</b></div>
+          <div class="rule">1 替换 <em>IMG_ → 京都-</em></div>
+          <div class="rule">2 日期 <em>拍摄时间 · 前面</em></div>
+          <div class="rule">3 序号 <em>001 · 后面</em></div>
+        </div>
+        <div>
+          <div class="rows">
+            <div class="r"><span class="o">IMG_4021.JPG</span><span class="a">→</span><span class="n">2026-04-03 京都-4021-001.JPG</span></div>
+            <div class="r"><span class="o">IMG_4022.JPG</span><span class="a">→</span><span class="n">2026-04-03 京都-4022-002.JPG</span></div>
+            <div class="r"><span class="o">IMG_4023.HEIC</span><span class="a">→</span><span class="n">2026-04-04 京都-4023-003.HEIC</span></div>
+            <div class="r"><span class="o">IMG_4024.JPG</span><span class="a">→</span><span class="n">2026-04-04 京都-4024-004.JPG</span></div>
+            <div class="r"><span class="o">IMG_4024 (1).JPG</span><span class="a">→</span><span class="n">2026-04-04 京都-4024 (1)-005.JPG</span></div>
+            <div class="r"><span class="o">IMG_4025.JPG</span><span class="a">→</span><span class="n">2026-04-05 京都-4025-006.JPG</span></div>
+          </div>
+          <div class="foot"><b>改名 1,000 个</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="feats">
+    <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7V5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5V7"/><path d="M12 4v16M9 20h6"/></svg></div>
+      <h3>改名，一点就有</h3><p>规则叠着用，右边实时出新旧对照。撞名自动让开，Windows 不认的字符自动换掉。</p>
+      <ul><li>加序号</li><li>替换文字</li><li>加日期</li><li>照片按拍摄时间</li><li>大小写</li><li>去多余空格</li><li>正则</li></ul></div>
+    <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></div>
+      <h3>手滑？整批撤销</h3><p>每一批都记账。改完不满意，点撤销，一千个文件原样回来。上个月的也能撤。</p></div>
+    <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5Z"/><path d="M8 13h8M8 16h5"/></svg></div>
+      <h3>分文件夹</h3><p>按类型、按月份、按拍摄时间、按名字里的关键词。方案存起来，下回一点就分。</p></div>
+    <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+      <h3>盯着文件夹</h3><p>下载文件夹交给贫僧。新文件一落地就按方案归位，没下完的不碰。</p></div>
+    <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg></div>
+      <h3>批量下载</h3><p>一坨文字整个贴进来，网址贫僧自己抠。断网接着下，失败自动重试，名字按你的规矩起。</p></div>
+    <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+      <h3>文件不出门</h3><p>全在你自己电脑上过手，不传任何服务器。贫僧从不删东西，真要扔也是进回收站。</p></div>
+  </section>
+
+  <section class="how">
+    <h2>三步上手</h2>
+    <div class="steps">
+      <div class="s"><b>01</b><h4>下载</h4><p>点上面的蓝按钮，拿到 <code>SaodiSeng-0.1.0.exe</code>。</p></div>
+      <div class="s"><b>02</b><h4>双击</h4><p>不用安装。第一次 Windows 可能拦一下，点 <code>更多信息</code> → <code>仍要运行</code>。</p></div>
+      <div class="s"><b>03</b><h4>拖个文件夹进去</h4><p>点规则，看预览，按蓝按钮。完事。</p></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  <span>千手院 · 扫地僧</span>
+  <span>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></span>
+  <a href="https://qianshoulab.github.io/">千手院总舵</a>
+</div></footer>
+<script>
+/* 下载链接跟着 version.json 走：以后出新版只改 version.json 不用改页面 */
+fetch("version.json", { cache: "no-store" }).then(r => r.json()).then(v => {
+  if (!v.version || v.version === "0.1.0") return;
+  const u = `https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v${v.version}/SaodiSeng-${v.version}.exe`;
+  document.getElementById("dlBtn").href = u;
+  document.getElementById("dlTop").href = u;
+  document.querySelector(".meta").textContent = document.querySelector(".meta").textContent.replace("0.1.0", v.version);
+}).catch(() => {});
+</script>
+</body>
+</html>

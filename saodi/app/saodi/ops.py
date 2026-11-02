@@ -131,7 +131,10 @@ def history(limit: int = 30) -> list[dict]:
             continue
         j = fs.read_json(os.path.join(history_dir(), n), None)
         if j and j.get("ops"):
-            out.append(summarize(j))
+            sm = summarize(j)
+            if sm["kind"] == "watch" and not sm["done"]:
+                continue  # 盯梢时碰到被占用的文件会反复试，空跑的批次不列
+            out.append(sm)
         if len(out) >= limit:
             break
     return out

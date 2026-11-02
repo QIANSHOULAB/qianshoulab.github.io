@@ -23,6 +23,7 @@ class Watcher:
         self.log: list[dict] = []
         self._seen: dict[str, tuple] = {}
         self._pending: dict[str, tuple] = {}
+        self._failed: set[str] = set()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self.started = _dt.datetime.now().isoformat(timespec="seconds")
@@ -32,9 +33,19 @@ class Watcher:
 
     def _snapshot(self) -> dict[str, dict]:
         from .rename import list_files
-        return {f["name"]: f for f in list_files(self.folder, False)}
+        out = {}
+        for f in list_files(self.folder, False):
+            try:  # Windows 目录列表里的大小会滞后，直接 stat 文件本身才准
+                st = os.stat(fs.lp(f["path"]))
+                f["size"], f["mtime"] = st.st_size, st.st_mtime
+            except OSError:
+                continue
+            out[f["name"]] = f
+        return out
 
     def _openable(self, path: str) -> bool:
+        if fs.in_use(path):
+            return False
         try:
             with open(fs.lp(path), "rb+"):
                 return True
@@ -69,7 +80,12 @@ class Watcher:
             rec = {"time": now, "old": it["old"], "to": it["to"], "new": it["new"],
                    "ok": it["old"] not in failed, "batch": res["batch"] if res else None}
             if not rec["ok"]:
-                self._seen[it["old"]] = (snap[it["old"]]["size"], snap[it["old"]]["mtime"])
+                # 没挪动（多半被占用）：不记成见过，下一轮再试；同一个文件只报一次
+                if it["old"] in self._failed:
+                    continue
+                self._failed.add(it["old"])
+            else:
+                self._failed.discard(it["old"])
             done.append(rec)
         # 原地改名后的新名字也算见过，免得被当成新文件再处理一遍
         for r in done:

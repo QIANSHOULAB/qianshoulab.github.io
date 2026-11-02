@@ -140,6 +140,24 @@ def write_json(path: str, data) -> None:
     os.replace(tmp, path)
 
 
+def in_use(path: str) -> bool:
+    """别的程序还开着这个文件吗？Windows 用独占方式试开一下；其他系统一律当没开。"""
+    if not IS_WIN:
+        return False
+    import ctypes
+    from ctypes import wintypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.CreateFileW.restype = wintypes.HANDLE
+    k32.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID,
+                                wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    GENERIC_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL = 0x80000000, 3, 0x80
+    h = k32.CreateFileW(lp(path), GENERIC_READ, 0, None, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, None)
+    if h in (None, wintypes.HANDLE(-1).value):
+        return True
+    k32.CloseHandle(h)
+    return False
+
+
 # ---------------------------------------------------------------- 回收站
 def to_trash(path: str) -> None:
     """进回收站，绝不直接删。失败抛 OSError。"""
