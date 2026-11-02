@@ -1,0 +1,6 @@
+app/dist/
+app/build/
+app/*.spec
+__pycache__/
+.pytest_cache/
+*.pyc
