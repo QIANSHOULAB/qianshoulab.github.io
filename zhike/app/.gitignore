@@ -1,0 +1,7 @@
+dist/
+build/
+*.spec
+zhike.ico
+__pycache__/
+.pytest_cache/
+selftest.json

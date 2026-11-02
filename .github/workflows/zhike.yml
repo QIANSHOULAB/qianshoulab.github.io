@@ -1,0 +1,84 @@
+# 知客僧：Windows exe 打包 + 冒烟测试 + 发布到 zhike-latest
+# 只在 zhike/ 变动时跑，不打扰仓库里别的罗汉。
+name: zhike-windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "zhike/**"
+      - ".github/workflows/zhike.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: zhike-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: zhike/app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 装依赖
+        run: python -m pip install -r requirements.txt pyinstaller==6.11.1 pytest==8.3.4
+
+      - name: 自动化测试（本地假邮箱，不连真邮箱）
+        run: python -m pytest -q tests
+
+      - name: 打包 exe
+        run: |
+          python make_icon.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name Zhike --icon zhike.ico `
+            --add-data "ui;ui" --collect-all webview --hidden-import clr `
+            --hidden-import keyring.backends.Windows --collect-submodules keyring.backends `
+            app.py
+
+      - name: 冒烟测试：exe 自测（假 IMAP/SMTP → Excel / 转发 / 草稿 / 凭据管理器）
+        shell: pwsh
+        run: |
+          $env:ZHIKE_HOME = "$env:RUNNER_TEMP\zhike-smoke"
+          $p = Start-Process dist\Zhike.exe -ArgumentList "--selftest","$env:RUNNER_TEMP\selftest.json" -Wait -PassThru
+          Get-Content "$env:RUNNER_TEMP\selftest.json"
+          if ($p.ExitCode -ne 0) { throw "selftest failed: $($p.ExitCode)" }
+
+      - name: 冒烟测试：窗口能起来、20 秒不崩
+        shell: pwsh
+        run: |
+          $env:ZHIKE_HOME = "$env:RUNNER_TEMP\zhike-gui"
+          $p = Start-Process dist\Zhike.exe -PassThru
+          Start-Sleep -Seconds 20
+          $alive = Get-Process -Id $p.Id -ErrorAction SilentlyContinue
+          if (-not $alive) { throw "Zhike.exe exited early: $($p.ExitCode)" }
+          Get-Process Zhike | Stop-Process -Force
+          Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "QianshouZhike" -ErrorAction SilentlyContinue
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Zhike-exe
+          path: zhike/app/dist/Zhike.exe
+
+      - name: 发布到 zhike-latest（下载页链接固定不变）
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = python -c "import zhike; print(zhike.VERSION)"
+          gh release view zhike-latest 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create zhike-latest --target $env:GITHUB_SHA --title "知客僧 $v" --latest=false `
+              --notes "知客僧 Windows 版。下载 Zhike.exe，双击就跑。介绍页：https://qianshoulab.github.io/zhike/"
+          }
+          gh release edit zhike-latest --title "知客僧 $v" --latest=false
+          gh release upload zhike-latest dist/Zhike.exe --clobber

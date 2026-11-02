@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>知客僧</title>
+<meta name="description" content="邮件分拣：订单号、金额、日期、联系人自动抽进 Excel，按规则自动转发，回信只起草不乱发。Windows 免费，双击就跑。">
+<meta name="theme-color" content="#FBFBFD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<style>
+/* 介绍和下载页：一栏居中，产品页的节奏——大标题、一张真截图、六格功能、三步上手 */
+:root{
+  --bg:#FBFBFD; --card:#FFFFFF; --fill:rgba(118,118,128,.12);
+  --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#AEAEB2; --sep:rgba(60,60,67,.14);
+  --accent:#0071E3; --accent-tint:rgba(0,113,227,.10); --on-accent:#FFFFFF;
+  --good:#1F7A36; --good-tint:rgba(52,199,89,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.08);
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --card:#1C1C1E; --fill:rgba(118,118,128,.24);
+    --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+    --accent:#2997FF; --accent-tint:rgba(41,151,255,.16);
+    --good:#30D158; --good-tint:rgba(48,209,88,.18);
+    --shadow:0 0 0 .5px rgba(255,255,255,.1); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --card:#1C1C1E; --fill:rgba(118,118,128,.24);
+  --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
+  --accent:#2997FF; --accent-tint:rgba(41,151,255,.16);
+  --good:#30D158; --good-tint:rgba(48,209,88,.18);
+  --shadow:0 0 0 .5px rgba(255,255,255,.1); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.5 var(--f);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1040px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px)) 0 max(16px,env(safe-area-inset-right,0px))}
+nav{display:flex;align-items:center;justify-content:space-between;height:52px;font-size:14px}
+nav .home{color:var(--fg2)}
+nav .home:hover{color:var(--fg);text-decoration:none}
+nav b{font-weight:600;color:var(--fg)}
+
+.hero{text-align:center;padding:48px 0 0}
+.eyebrow{font-size:15px;font-weight:600;color:var(--fg2);letter-spacing:.04em}
+h1{font-size:64px;line-height:1.08;margin:8px 0 0;font-weight:700;letter-spacing:.01em}
+.sub{font-size:28px;line-height:1.25;font-weight:600;margin:12px 0 0;background:linear-gradient(90deg,#0071E3,#7D4CDB);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{max-width:600px;margin:18px auto 0;color:var(--fg2);font-size:19px;text-wrap:balance}
+.cta{display:flex;flex-direction:column;align-items:center;gap:10px;margin:28px 0 0}
+.dl{display:inline-flex;align-items:center;gap:10px;height:50px;padding:0 26px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-size:17px;font-weight:600}
+.dl:hover{text-decoration:none;filter:brightness(1.08)}
+.dl svg{width:20px;height:20px}
+.cta small{color:var(--fg2);font-size:13px}
+
+.shot{margin:44px auto 0;max-width:1000px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:.5px solid var(--sep);background:var(--card)}
+.shot img{display:block;width:100%;height:auto}
+
+section{padding:88px 0 0}
+h2{font-size:40px;line-height:1.15;margin:0;font-weight:700;text-align:center;text-wrap:balance}
+.h2s{text-align:center;color:var(--fg2);margin:10px auto 0;max-width:560px;font-size:18px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+.f{background:var(--card);border-radius:18px;padding:24px 22px;box-shadow:var(--shadow)}
+.f i{display:grid;place-items:center;width:40px;height:40px;border-radius:11px;background:var(--accent-tint);color:var(--accent);margin-bottom:14px}
+.f i svg{width:22px;height:22px}
+.f h3{margin:0 0 6px;font-size:19px;font-weight:600}
+.f p{margin:0;color:var(--fg2);font-size:15px;line-height:1.55}
+
+.split{display:grid;grid-template-columns:1fr 1.25fr;gap:36px;align-items:center;margin-top:36px}
+.split h3{font-size:28px;line-height:1.2;margin:0 0 12px}
+.split p{color:var(--fg2);margin:0 0 10px;font-size:16px}
+.split .shot{margin:0}
+
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+.st{background:var(--card);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+.st::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);font-weight:700;font-size:15px;margin-bottom:12px}
+.st b{display:block;font-size:17px;margin-bottom:4px}
+.st p{margin:0;color:var(--fg2);font-size:14.5px}
+
+.boxes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:28px}
+.boxes span{padding:7px 14px;border-radius:999px;background:var(--fill);font-size:14px}
+details{max-width:720px;margin:28px auto 0;background:var(--card);border-radius:14px;box-shadow:var(--shadow)}
+summary{cursor:pointer;padding:16px 20px;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-weight:400;font-size:22px;color:var(--fg2)}
+details[open] summary::after{content:"–"}
+details ul{margin:0;padding:0 22px 18px 40px;color:var(--fg2);font-size:15px}
+details li{margin:6px 0}
+
+.privacy{text-align:center;max-width:640px;margin:0 auto}
+.privacy .lock{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--good-tint);color:var(--good);margin-bottom:16px}
+.privacy .lock svg{width:28px;height:28px}
+
+.end{text-align:center;padding:96px 0 0}
+footer{margin-top:96px;padding:24px 0 calc(32px + env(safe-area-inset-bottom,0px));border-top:.5px solid var(--sep);font-size:13px;color:var(--fg2);line-height:1.9}
+footer .mail{color:var(--fg);-webkit-user-select:text;user-select:text}
+
+@media (max-width: 760px){
+  body{font-size:16px}
+  .hero{padding-top:28px}
+  h1{font-size:44px}
+  .sub{font-size:22px}
+  .lead{font-size:17px}
+  section{padding-top:64px}
+  h2{font-size:30px}
+  .h2s{font-size:16px}
+  .grid,.steps,.split{grid-template-columns:1fr}
+  .split{gap:20px}
+  .split h3{font-size:24px}
+  .shot{margin-top:32px;border-radius:10px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a class="home" href="https://qianshoulab.github.io/">‹ 千手院</a><b>知客僧</b><a href="#dl">下载</a></nav>
+
+  <header class="hero">
+    <div class="eyebrow">千手院 · 罗汉</div>
+    <h1>知客僧</h1>
+    <div class="sub">信来贫僧接，施主去玩</div>
+    <p class="lead">邮件里的订单号、金额、日期、联系人，自己落进 Excel。该转的转，该回的先写好草稿等你点头。</p>
+    <div class="cta" id="dl">
+      <a class="dl" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/zhike-latest/Zhike.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>下载 Windows 版</a>
+      <small>Windows 10 / 11 · 免费 · 双击就跑，不用装别的</small>
+    </div>
+    <div class="shot">
+      <picture>
+        <source srcset="shot-dark.webp" media="(prefers-color-scheme: dark)">
+        <img src="shot-light.webp" width="1770" height="1110" alt="知客僧主界面：左边是邮件列表，右边是一封订单邮件，上方卡片列出抽出来的订单号、金额、联系人等字段">
+      </picture>
+    </div>
+  </header>
+
+  <section>
+    <h2>收发室那点活，贫僧包了</h2>
+    <p class="h2s">对标收费的邮件解析服务，信不出你的电脑。</p>
+    <div class="grid">
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 4h6M9 20h6M12 4v16"/></svg></i><h3>点一下，就会了</h3><p>不写正则。挑封信，选中订单号，贫僧自己琢磨出规律，下一封照抽。好几种写法？多选两封就行。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg></i><h3>同一张 Excel</h3><p>金额是数字，日期是日期，拿去就能求和。Excel 正开着也不怕，排着队，你一关就补上。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l6 6-6 6"/><path d="M20 11H9a5 5 0 0 0-5 5v3"/></svg></i><h3>该转的转</h3><p>按发件人、主题、正文认信，自动转给财务、同事，附件一起带上。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.5H7A2.5 2.5 0 0 0 4.5 7v10A2.5 2.5 0 0 0 7 19.5h10a2.5 2.5 0 0 0 2.5-2.5v-7"/><path d="M18.5 3.5l2 2L12 14l-3 1 1-3z"/></svg></i><h3>回信只起草</h3><p>有 Gemini 免费钥匙就让 AI 写，没有就套模板。全进草稿箱，发不发你说了算。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></i><h3>关了窗口照样盯</h3><p>开机自启，托盘里蹲着。断网自己重试，密码错了停下等你，不会把邮箱撞锁。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></i><h3>信不出门</h3><p>邮件、密码、钥匙都在你电脑上。没有我们的服务器，想传也没地方传。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="split">
+      <div>
+        <h3>人家问价，<br>草稿已经替你写好</h3>
+        <p>规则里打开「草拟回复」，交代一句语气。新信一到，回复就躺在邮箱草稿箱里，抽出来的电话、订单号都给你填上。</p>
+        <p>AI 免费额度用完了？自动退回模板，活照干。</p>
+      </div>
+      <div class="shot"><img src="shot-reply.webp" width="1180" height="740" alt="规则设置里的草拟回复：模板、给 AI 的交代和试写出来的回复" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>三步，上岗</h2>
+    <div class="steps">
+      <div class="st"><b>下载，双击</b><p>Windows 要是拦一下，点「更多信息」→「仍要运行」。</p></div>
+      <div class="st"><b>连邮箱</b><p>填邮箱和应用专用密码（QQ、163 叫授权码），服务器贫僧自己认。</p></div>
+      <div class="st"><b>挑封信，点选</b><p>选中要的字，点「收下」。之后同类的信自己进表。</p></div>
+    </div>
+    <div class="boxes"><span>Gmail</span><span>QQ 邮箱</span><span>腾讯企业邮</span><span>163</span><span>126</span><span>iCloud</span><span>Yahoo</span><span>公司邮箱（IMAP）</span></div>
+    <details>
+      <summary>应用专用密码去哪拿</summary>
+      <ul>
+        <li>Gmail：先开两步验证，再到 <a href="https://myaccount.google.com/apppasswords">myaccount.google.com/apppasswords</a> 生成。</li>
+        <li>QQ 邮箱：网页版 → 设置 → 账号 → 开启 IMAP/SMTP 服务 → 生成授权码。</li>
+        <li>163 / 126：网页版 → 设置 → POP3/SMTP/IMAP → 开启 IMAP → 拿授权码。</li>
+        <li>Outlook / Hotmail：微软在收紧应用密码登录，个人邮箱可能连不上，下一版接微软登录。</li>
+        <li>公司邮箱：问管理员要 IMAP / SMTP 地址，程序里点「自己填服务器」。</li>
+      </ul>
+    </details>
+  </section>
+
+  <section class="privacy">
+    <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></div>
+    <h2>贫僧嘴严</h2>
+    <p class="h2s">密码进 Windows 凭据管理器，AI 钥匙同样。邮件直接从你电脑连你的邮箱，AI 起草时信直接发给你自己的 Google 钥匙，中间没有千手院。</p>
+  </section>
+
+  <div class="end">
+    <a class="dl" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/zhike-latest/Zhike.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>下载 Windows 版</a>
+  </div>
+
+  <footer>
+    <div>千手院 · 知客僧 0.1</div>
+    <div>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></div>
+    <div><a href="https://qianshoulab.github.io/">千手院总舵 https://qianshoulab.github.io/</a></div>
+  </footer>
+</div>
+</body>
+</html>
