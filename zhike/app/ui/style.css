@@ -11,7 +11,9 @@
   --tint:rgba(194,85,42,.1); --tint-2:rgba(194,85,42,.18);
   --bad-ink:#d70015; --doubt-ink:#8a5a00;
   --side:#f5f5f7; --field:#ffffff;
-  --glass:rgba(255,255,255,.72); --glass-dark:rgba(36,36,38,.86);
+  --glass:rgba(255,255,255,.85); --glass-bar:rgba(255,255,255,.98); --glass-dark:rgba(36,36,38,.96);
+  /* 毛玻璃：顶栏、底栏底下有滚过去的字，Chromium 里粘住的栏会把底下的字按 (1 - 不透明度) 透出一层清楚的影子，
+     所以这两条压到 .98（底下的字看不清，放大也认不出）；浮层、菜单、提示条是浮在上面的，模糊照常起作用，.85 / .96 就够 */   /* 压在滚动内容上的毛玻璃：底下的字看不清为止 */
   --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
   --pop:0 12px 40px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06);
@@ -28,7 +30,7 @@
   --tint:rgba(240,138,93,.16); --tint-2:rgba(240,138,93,.28);
   --bad-ink:#ff6961; --doubt-ink:#ffd60a; --doubt:rgba(255,214,10,.16);
   --side:#1c1c1e; --field:#2c2c2e;
-  --glass:rgba(22,22,24,.72); --glass-dark:rgba(58,58,60,.9);
+  --glass:rgba(28,28,30,.85); --glass-bar:rgba(28,28,30,.98); --glass-dark:rgba(58,58,60,.96);
   --pop:0 12px 40px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.1);
   color-scheme:dark;
 }}
@@ -80,11 +82,11 @@ a:hover,.link:hover{text-decoration:underline}
 
 /* ---------- 右边内容 ---------- */
 .main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
-.scroll{flex:1;min-height:0;overflow:auto;background:var(--bg-group);position:relative}
+.scroll{flex:1;min-height:0;overflow:auto;background:var(--bg-group);position:relative;scroll-padding:88px 0 80px}
 .scroll.col{display:flex;flex-direction:column}
-.scroll.col>.page{flex:1 0 auto;width:100%}
+.scroll.col>.page{flex:1 0 auto;width:100%;padding-bottom:64px}   /* 底栏在文档流里，最后一张卡下面再空出 64，滚到底不贴着底栏 */
 p,.help,.grp-f{text-wrap:pretty}
-.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;min-height:72px;padding:16px 32px 12px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line);flex:none}
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;min-height:72px;padding:16px 32px 12px;background:var(--glass-bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line);flex:none}
 .bar-t{flex:1;min-width:0}
 .bar h1{margin:0;font-size:28px;line-height:1.15;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar p{margin:4px 0 0;font-size:13px;color:var(--fg-2)}
@@ -247,7 +249,7 @@ textarea.in{height:auto;min-height:96px;padding:8px 12px;line-height:1.5;resize:
 .pop .val b{color:var(--fg)}
 .pop-row{display:flex;gap:8px;justify-content:flex-end}
 .pop-note{margin:0;font-size:12px;color:var(--fg-2);line-height:1.5}
-.menu{border-radius:var(--r-btn);padding:4px;display:grid;max-height:320px;overflow:auto}
+.menu{border-radius:var(--r-btn);padding:4px;display:grid;max-height:320px;overflow:auto;background:var(--glass-bar)}   /* 菜单常压在弹窗的按钮上：跟顶栏一样压实 */
 .menu button{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 8px;border-radius:var(--r-chip);text-align:left;font-size:15px}
 .menu button:hover{background:var(--accent);color:var(--on-accent)}
 .menu button svg,.menu button i{width:16px;height:16px;flex:none}
@@ -303,7 +305,7 @@ textarea.in{height:auto;min-height:96px;padding:8px 12px;line-height:1.5;resize:
 @media (prefers-color-scheme:dark){.rec-f{background:var(--card-2)}}
 .rec-fw{display:flex;align-items:center;gap:12px;padding-top:8px;border-top:1px solid var(--line)}
 .rec-fw>span{font-size:13px;color:var(--fg-2);flex:none}
-.dock{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;gap:16px;padding:12px 32px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--line)}
+.dock{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;gap:16px;padding:12px 32px;background:var(--glass-bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--line)}
 .dock span{flex:1;font-size:13px;color:var(--fg-2)}
 
 /* ---------- 规则页 ---------- */
