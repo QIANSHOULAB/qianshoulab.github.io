@@ -1,0 +1,94 @@
+/* 代笔僧侧栏：一列分组卡片，底部固定一个主按钮 */
+body{min-height:100vh;padding-bottom:150px}
+.top{display:flex;align-items:center;gap:10px;padding:16px 16px 14px}
+.logo{width:34px;height:34px;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.top h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.01em}
+.top p{margin:1px 0 0;color:var(--fg2);font-size:12px}
+
+/* 表格 */
+.drop{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;padding:20px 16px 16px;border-radius:var(--r);outline:1.5px dashed transparent;outline-offset:-7px;transition:background-color .15s,outline-color .15s}
+.drop svg{width:34px;height:34px;color:var(--accent);margin-bottom:6px}
+.drop b{font-size:14px;font-weight:600}
+.drop span{color:var(--fg2);font-size:12px}
+.drop.over{background:var(--accent-tint);outline-color:var(--accent)}
+.drop-a{display:flex;gap:8px;margin-top:12px}
+.paste{padding:10px}
+.paste textarea{width:100%;height:120px;resize:vertical;border:0;border-radius:10px;background:var(--fill);padding:8px 10px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--fg)}
+.paste textarea:focus{outline:2px solid var(--accent);outline-offset:0}
+.paste-a{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.tinfo{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px}
+.tinfo-i svg{width:28px;height:28px;color:var(--good-mark);display:block}
+.tinfo-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.tinfo-t b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tinfo-t span{color:var(--fg2);font-size:12px}
+.qs-btn.sm{height:26px;padding:0 10px;font-size:12px}
+#sheetSel{max-width:90px}
+
+/* 字段 */
+.fempty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;text-align:center;color:var(--fg2)}
+.fempty p{margin:0;font-size:12px}
+.flist{display:flex;flex-direction:column}
+.frow{display:grid;grid-template-columns:8px 1fr auto;align-items:center;gap:10px;padding:8px 8px 8px 12px;min-height:46px}
+.frow+.frow{border-top:.5px solid var(--sep)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--fill2)}
+.frow.sure .dot,.frow.manual .dot{background:var(--good-mark)}
+.frow.maybe .dot{background:var(--warn-mark)}
+.frow.away .dot{background:transparent;box-shadow:inset 0 0 0 1.5px var(--fg3)}
+.fmain{min-width:0;display:flex;flex-direction:column;gap:1px}
+.fcol{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fto{color:var(--fg2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.fto.on{cursor:pointer}
+.fto.on:hover{color:var(--accent)}
+.fto em{font-style:normal;color:var(--fg3)}
+.frow.maybe .fto b{color:var(--warn)}
+.frow.none .fto{color:var(--fg3)}
+.fto b{font-weight:500;color:var(--fg)}
+.fact{display:flex;align-items:center;gap:2px}
+.fbtn{height:26px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-tint)}
+.fbtn.picking{background:var(--accent);color:var(--on-accent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.7}}
+.fx{width:24px;height:24px;border-radius:50%;color:var(--fg3);display:grid;place-items:center}
+.fx:hover{background:var(--fill);color:var(--fg2)}
+.fx svg{width:10px;height:10px}
+.frow.btnrow{background:color-mix(in srgb,var(--fill) 40%,transparent)}
+.frow.btnrow .fcol{font-weight:500;color:var(--fg2)}
+.note{margin:6px 4px 0;color:var(--fg2);font-size:12px}
+.note.bad{color:var(--bad)}
+
+/* 进度 */
+.prog{padding:12px 12px 10px}
+.bar{display:flex;height:6px;border-radius:999px;background:var(--fill);overflow:hidden}
+.bar i{display:block;height:100%;transition:width .3s ease}
+#barDone{background:var(--good-mark)}
+#barErr{background:var(--bad-mark)}
+.prog-t{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;color:var(--fg2);font-size:12px;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;background:var(--fill);border-radius:8px;padding:2px}
+.seg button{height:22px;padding:0 9px;border-radius:6px;font-size:11px;font-weight:500;color:var(--fg2)}
+.seg button[aria-selected=true]{background:var(--card);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.rlist{position:relative;list-style:none;margin:0;padding:0 0 4px;max-height:44vh;overflow:auto;border-top:.5px solid var(--sep)}
+.ri{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:7px 12px 7px 8px;cursor:pointer;position:relative}
+.ri+.ri{border-top:.5px solid var(--sep)}
+.ri:hover{background:var(--fill)}
+.ri.cur{background:var(--accent-tint)}
+.ri.cur::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.rn{color:var(--fg3);font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
+.rt{min-width:0}
+.rt b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt small{display:block;color:var(--bad);font-size:11px;line-height:1.35;margin-top:1px}
+.pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--fill);color:var(--fg2);white-space:nowrap}
+.pill.done{background:var(--good-tint);color:var(--good)}
+.pill.error{background:var(--bad-tint);color:var(--bad)}
+.pill.filled{background:var(--warn-tint);color:var(--warn)}
+.rmore{padding:8px 12px;color:var(--fg3);font-size:11px;text-align:center}
+
+/* 底部 */
+.dock{position:fixed;left:0;right:0;bottom:0;padding:10px 12px 12px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--sep);display:flex;flex-direction:column;gap:10px;z-index:5}
+.dock .qs-card{box-shadow:none}
+.dock-b{display:flex;flex-direction:column;gap:8px}
+.qs-btn.retry{height:30px;color:var(--bad)}
+.toast{position:fixed;left:50%;bottom:150px;transform:translate(-50%,8px);max-width:calc(100% - 32px);width:max-content;background:rgba(29,29,31,.92);color:#F5F5F7;padding:9px 14px;border-radius:12px;font-size:12px;line-height:1.4;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:9;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-color-scheme: dark){.toast{background:rgba(58,58,60,.96)}}
+.frow.fsum .dot{background:var(--good-mark)}
+.frow.fsum .fcol{font-weight:500}
+.frow.fsum .qs-link{font-size:12px;padding:4px 6px}
