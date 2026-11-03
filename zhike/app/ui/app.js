@@ -255,7 +255,8 @@ function openPop(m, s, e, rect, name) {
     }
     await safe(call("learn", rid, fname, m.key, s, e));
     toast(t("toast_field", { f: fname }));
-    await loadMails();
+    // 规则也要重新拿：界面手里那份旧规则没有刚学的字段，接着改名/加条件会把它存回去、把新字段冲掉
+    await reloadAll();
     render();
   };
   $("#padd", pop).onclick = go;
