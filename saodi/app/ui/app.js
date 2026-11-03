@@ -55,6 +55,8 @@ const RULE_DEFAULTS = {
   insert: () => ({ type: "insert", text: "", where: "start" }),
   remove: () => ({ type: "remove", first: 1, last: 0 }),
   ext: () => ({ type: "ext", mode: "lower", to: "" }),
+  music: () => ({ type: "tpl", tpl: "{歌手} - {标题}", where: "name", sep: " " }),
+  attr: () => ({ type: "tpl", tpl: "{原名}_{宽}x{高}", where: "name", sep: " " }),
 };
 const S = {
   view: "rename", hello: null, folder: null, rules: [], ropts: { recursive: false, ext: "", kw: "", sort: "name" },
@@ -115,7 +117,7 @@ function picker() {
 /* ---------------- 改名 ---------------- */
 function viewRename() {
   if (!S.folder) return head(t("r_title")) + picker();
-  const q = [["number", "q_number"], ["replace", "q_replace"], ["date", "q_date"], ["taken", "q_taken"], ["case", "q_case"], ["trim", "q_trim"], ["insert", "q_insert"], ["remove", "q_remove"], ["ext", "q_ext"]];
+  const q = [["number", "q_number"], ["replace", "q_replace"], ["date", "q_date"], ["taken", "q_taken"], ["case", "q_case"], ["trim", "q_trim"], ["insert", "q_insert"], ["remove", "q_remove"], ["ext", "q_ext"], ["music", "q_music"], ["attr", "q_attr"]];
   const presets = S.hello?.cfg?.rename_presets || [];
   return head(t("r_title"), true) + `<div class="body">
     <div class="pane-l"><div class="scroll">
@@ -152,7 +154,7 @@ function rulesHtml() {
   if (!S.rules.length) return `<div class="hint">${t("rules_empty")}</div>`;
   return S.rules.map((r, i) => {
     let body = "";
-    const ti = { number: "rule_number", replace: "rule_replace", date: "rule_date", case: "rule_case", trim: "rule_trim", insert: "rule_insert", remove: "rule_remove", ext: "rule_ext" }[r.type];
+    const ti = { number: "rule_number", replace: "rule_replace", date: "rule_date", case: "rule_case", trim: "rule_trim", insert: "rule_insert", remove: "rule_remove", ext: "rule_ext", tpl: "rule_tpl" }[r.type];
     if (r.type === "replace") body = `<div class="row"><span class="k">${t("f_find")}</span>${fin(i, "find")}</div><div class="row"><span class="k">${t("f_to")}</span>${fin(i, "to")}</div>
       <div class="row" style="gap:16px;margin-top:8px">${fchk(i, "regex", t("f_regex"))}${fchk(i, "case", t("f_matchcase"))}</div>`;
     if (r.type === "number") body = `<div class="row"><span class="k">${t("f_start")}</span>${fin(i, "start", "", "num")}<span class="k">${t("f_step")}</span>${fin(i, "step", "", "num")}<span class="k">${t("f_digits")}</span>${fin(i, "digits", "", "num")}</div>
@@ -164,6 +166,9 @@ function rulesHtml() {
     if (r.type === "case") body = `<div class="row">${fsel(i, "mode", [["lower", t("c_lower")], ["upper", t("c_upper")], ["title", t("c_title")], ["sentence", t("c_sentence")]])}</div>`;
     if (r.type === "insert") body = `<div class="row"><span class="k">${t("f_text")}</span>${fin(i, "text")}</div><div class="row"><span class="k">${t("f_where")}</span>${seg("where", r.where, WHERE(), i)}</div>`;
     if (r.type === "remove") body = `<div class="row"><span class="k">${t("f_first")}</span>${fin(i, "first", "", "num")}<span class="k">${t("f_chars")}</span></div><div class="row"><span class="k">${t("f_last")}</span>${fin(i, "last", "", "num")}<span class="k">${t("f_chars")}</span></div>`;
+    if (r.type === "tpl") body = `<div class="row">${fin(i, "tpl", "{歌手} - {标题}")}</div>
+      <div class="vars">${TPL_VARS.map(v => `<button type="button" data-act="tplvar" data-i="${i}" data-v="${v}">${v}</button>`).join("")}</div>
+      <div class="row"><span class="k">${t("f_where")}</span>${seg("where", r.where, [["name", t("at_name")], ...WHERE()], i)}</div>`;
     if (r.type === "ext") body = `<div class="row">${seg("mode", r.mode, [["lower", t("e_lower")], ["upper", t("e_upper")], ["set", t("e_set")]], i)}${r.mode === "set" ? fin(i, "to", ".jpg", "num") : ""}</div>`;
     return `<div class="rule ${r.off ? "off" : ""}"><div class="rule-h"><span class="n">${i + 1}</span><b>${t(ti)}</b><span class="sp"></span>
       <button type="button" class="ib" data-act="toggle" data-i="${i}" title="开/关">${r.off ? I.eyeOff : I.eye}</button>
@@ -184,7 +189,8 @@ const refreshPreview = debounce(async () => {
   if (S.view === "rename") renderPreview();
 }, 120);
 
-const NOTE_TAG = { fixed: ["amber", "n_fixed"], notaken: ["amber", "n_notaken"], empty: ["bad", "n_empty"], badregex: ["bad", "n_badregex"] };
+const TPL_VARS = ["原名", "文件夹", "大小", "修改日期", "拍摄日期", "相机", "宽", "高", "歌手", "标题", "专辑", "音轨", "年份", "序号"];
+const NOTE_TAG = { nometa: ["amber", "n_nometa"], fixed: ["amber", "n_fixed"], notaken: ["amber", "n_notaken"], empty: ["bad", "n_empty"], badregex: ["bad", "n_badregex"] };
 function renderPreview() {
   const p = S.preview, st = $("#stat"), tb = $("#tbl"), btn = $("#runBtn");
   if (!st) return;
@@ -225,6 +231,10 @@ function viewSort() {
   return head(t("s_title"), true) + `<div class="body">
     <div class="pane-l"><div class="scroll">
       <div class="schemes">${cards}</div>
+      <div class="lbl">${t("act_lbl")}</div>
+      ${seg("action", S.scheme.action === "copy" ? "copy" : "move", [["move", t("act_move")], ["copy", t("act_copy")]])}
+      <div style="margin-top:10px"><label class="tog"><input type="checkbox" id="unzip" ${S.scheme.unzip ? "checked" : ""}>${t("act_unzip")}</label></div>
+      <div style="height:16px"></div>
       ${S.schemeKey === "custom" || S.schemeKey.startsWith("s:") ? schemeEditor() : ""}
     </div></div>
     <div class="pane-r"><div class="stat" id="ostat"></div><div class="tbl" id="otbl"></div>
@@ -236,17 +246,18 @@ function viewSort() {
 
 function schemeEditor() {
   const s = S.scheme;
-  const byOpts = [["kw", t("by_kw")], ["ext", t("by_ext")], ["type", t("by_type")], ["date", t("by_date")], ["size", t("by_size")]];
+  const byOpts = [["kw", t("by_kw")], ["content", t("by_content")], ["ext", t("by_ext")], ["type", t("by_type")], ["date", t("by_date")], ["size", t("by_size")]];
   const rules = s.rules.map((r, i) => {
     const sel = `<select class="sel-in" style="width:96px" data-si="${i}" data-sk="by">${byOpts.map(([v, l]) => `<option value="${v}" ${r.by === v ? "selected" : ""}>${l}</option>`).join("")}</select>`;
     const inp = (k, ph, w) => `<input class="in" style="${w ? "width:" + w : ""}" data-si="${i}" data-sk="${k}" value="${esc(r[k] ?? "")}" placeholder="${esc(ph)}" spellcheck="false">`;
     let mid = "";
     if (r.by === "kw") mid = inp("kw", "发票,invoice");
+    if (r.by === "content") mid = inp("kw", "合同,发票");
     if (r.by === "ext") mid = inp("ext", "pdf,docx");
     if (r.by === "size") mid = `${inp("mb", "100", "60px")}<span class="k">${t("mb")}</span>`;
     if (r.by === "date") mid = `<select class="sel-in" data-si="${i}" data-sk="source"><option value="modified" ${r.source !== "taken" ? "selected" : ""}>${t("s_modified")}</option><option value="taken" ${r.source === "taken" ? "selected" : ""}>${t("s_taken")}</option></select>
        <select class="sel-in" data-si="${i}" data-sk="fmt">${(S.hello.dir_formats || []).map(f => `<option ${r.fmt === f ? "selected" : ""}>${f}</option>`).join("")}</select>`;
-    const to = (r.by === "kw" || r.by === "ext" || r.by === "size") ? `<div class="row"><span class="k">${t("to_folder")}</span>${inp("to", r.by === "size" ? "大文件" : "文件夹名")}</div>` : "";
+    const to = (r.by === "kw" || r.by === "content" || r.by === "ext" || r.by === "size") ? `<div class="row"><span class="k">${t("to_folder")}</span>${inp("to", r.by === "size" ? "大文件" : "文件夹名")}</div>` : "";
     return `<div class="rule"><div class="row" style="margin-top:0">${sel}${mid}<button type="button" class="ib" data-act="sdel" data-i="${i}">${I.x}</button></div>${to}</div>`;
   }).join("");
   const restOn = !!s.rest;
@@ -270,19 +281,21 @@ function renderOPreview() {
   if (!st) return;
   if (!p) { st.innerHTML = '<span class="spin"></span>'; tb.innerHTML = ""; return; }
   const groups = {};
-  for (const it of p.items) (groups[it.status === "same" ? "\u0000" : it.to || "."] ||= []).push(it);
+  for (const it of p.items) (groups[it.op === "extract" ? "\u0001" : it.status === "same" ? "\u0000" : it.to || "."] ||= []).push(it);
+  const unz = groups["\u0001"] || []; delete groups["\u0001"];
   const keys = Object.keys(groups).filter(k => k !== "\u0000").sort((a, b) => groups[b].length - groups[a].length);
   const stay = groups["\u0000"] || [];
-  st.innerHTML = `<span>${t("stat", { total: `<b>${fmtN(p.total)}</b>`, changed: `<b>${fmtN(p.changed)}</b>` }).replace("要改", "要挪")} · ${t("groups", { n: keys.length })}${p.bumped ? `<span class="warn">${t("stat_bump", { n: p.bumped })}</span>` : ""}</span>`;
+  st.innerHTML = `<span>${t("stat", { total: `<b>${fmtN(p.total)}</b>`, changed: `<b>${fmtN(p.changed)}</b>` }).replace("要改", p.action === "copy" ? "要复制" : "要挪")} · ${t("groups", { n: keys.length })}${unz.length ? " · " + t("unz_n", { n: unz.length }) : ""}${p.bumped ? `<span class="warn">${t("stat_bump", { n: p.bumped })}</span>` : ""}</span>`;
   const grp = (k, list, isStay) => {
-    const name = isStay ? t("stay_n", { n: list.length }) : (k === "." ? "（原地改名）" : k);
+    const name = isStay ? t("stay_n", { n: list.length }) : k === "\u0001" ? t("unz_grp") : (k === "." ? "（原地改名）" : k);
     const open = S.open[k] ? "open" : "";
     return `<div class="grp ${open}"><button type="button" class="grp-h" data-act="grp" data-v="${esc(k)}">${I.chev}<svg class="f" viewBox="0 0 24 24" fill="${isStay ? "var(--fg3)" : "currentColor"}"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h3.6c.6 0 1.2.2 1.6.7L12 6h6.5A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5Z"/></svg><b>${esc(name)}</b><span class="c">${fmtN(list.length)}</span></button>
       <div class="grp-b">${list.slice(0, 300).map(it => `<div class="${it.status === "bumped" ? "bump" : ""} sel">${esc(it.old)}${it.new !== it.old ? " → " + esc(it.new) : ""}</div>`).join("")}${list.length > 300 ? `<div>… +${list.length - 300}</div>` : ""}</div></div>`;
   };
-  tb.innerHTML = keys.map(k => grp(k, groups[k], false)).join("") + (stay.length ? grp("\u0000", stay, true) : "") || `<div class="nil">${t("nothing")}</div>`;
-  btn.disabled = !p.changed || S.busy;
-  btn.innerHTML = S.busy ? '<span class="spin"></span>' : p.changed ? t("run_sort", { n: fmtN(p.changed) }) : t("nothing");
+  tb.innerHTML = (unz.length ? grp("\u0001", unz, false) : "") + keys.map(k => grp(k, groups[k], false)).join("") + (stay.length ? grp("\u0000", stay, true) : "") || `<div class="nil">${t("nothing")}</div>`;
+  const n = p.changed + (p.extract || 0);
+  btn.disabled = !n || S.busy;
+  btn.innerHTML = S.busy ? '<span class="spin"></span>' : n ? t(p.action === "copy" ? "run_copy" : "run_sort", { n: fmtN(n) }) : t("nothing");
 }
 
 /* ---------------- 盯着 ---------------- */
@@ -291,7 +304,7 @@ function viewWatch() {
       <span class="m">${esc(w.scheme.name || "")} · ${t("w_count", { n: w.count })}</span><span class="sp"></span>
       <button type="button" class="lnk" data-act="openpath" data-v="${esc(w.folder)}">${t("open_folder")}</button>
       <button type="button" class="btn" data-act="wstop" data-v="${esc(w.folder)}">${t("w_stop")}</button></div>
-      <div class="log">${w.log.length ? w.log.map(r => `<div><span class="tm">${esc(r.time)}</span><span class="nm sel">${esc(r.old || r.err || "")}</span>${r.ok ? `<span class="to">→ ${esc(r.to || r.new)}</span>` : `<span class="tag bad">${t("err_busy")}</span>`}</div>`).join("") : `<div>${t("w_log_empty")}</div>`}</div></div>`).join("");
+      <div class="log">${w.log.length ? w.log.map(r => `<div><span class="tm">${esc(r.time)}</span><span class="nm sel">${esc(r.old || r.err || "")}</span>${r.ok ? `<span class="to">${r.op === "extract" ? t("w_unz") : r.op === "copy" ? t("w_copy") : ""}→ ${esc(r.to || r.new)}</span>` : `<span class="tag bad">${t("err_busy")}</span>`}</div>`).join("") : `<div>${t("w_log_empty")}</div>`}</div></div>`).join("");
   const opts = (S._wScheme ? `<option value="cur" ${S.wKey === "cur" ? "selected" : ""}>${esc(S._wScheme.name)}</option>` : "")
     + schemeList().map(([k, s]) => `<option value="${esc(k)}" ${S.wKey === k ? "selected" : ""}>${esc(s.name)}</option>`).join("");
   const dlf = S.hello?.downloads;
@@ -380,7 +393,9 @@ function afterChange() {
 }
 async function loadHist() { S.hist = await api.history(); if (S.view === "hist") render(); }
 function doneToast(r, key) {
-  let msg = t(key, { n: fmtN(r.done) });
+  let msg = t(key, { n: fmtN(r.done - (r.extracted || 0)) });
+  if (r.copied) msg = t("done_copy", { n: fmtN(r.copied) });
+  if (r.extracted) msg += " · " + t("done_unz", { n: r.extracted });
   if (r.failed.length) msg += " · " + t("done_failed", { n: r.failed.length }) + "（" + t("err_" + r.failed[0].err) + "）";
   toast(msg, r.done ? { label: t("undo"), fn: () => doUndo(r.batch) } : null);
 }
@@ -409,6 +424,15 @@ const ACT = {
     if (key === "ropt-sort") { S.ropts.sort = v; render(); refreshPreview(); }
     if (key === "rest") { S.scheme.rest = v === "to" ? (S.scheme.rest || "其他") : ""; render(); refreshOPreview(); }
     if (key === "naming") { S.naming.mode = v; render(); }
+    if (key === "action") { S.scheme.action = v; render(); refreshOPreview(); }
+  },
+  tplvar: (v, el) => {
+    const i = +el.dataset.i, inp = document.querySelector(`input[data-i="${i}"][data-k="tpl"]`);
+    const r = S.rules[i], tok = "{" + v + "}";
+    const pos = inp && document.activeElement === inp ? inp.selectionStart : (inp ? inp.value.length : r.tpl.length);
+    r.tpl = (r.tpl || "").slice(0, pos) + tok + (r.tpl || "").slice(pos);
+    if (inp) { inp.value = r.tpl; inp.focus(); inp.selectionStart = inp.selectionEnd = pos + tok.length; }
+    refreshPreview();
   },
   runrename: async () => {
     S.busy = true; renderPreview();
@@ -501,6 +525,8 @@ document.addEventListener("change", e => {
   if (el.dataset.i !== undefined && el.dataset.k) {
     S.rules[+el.dataset.i][el.dataset.k] = el.type === "checkbox" ? el.checked : el.value;
     if (el.tagName === "SELECT" || el.type === "checkbox") { render(); refreshPreview(); }
+  } else if (el.id === "unzip") {
+    S.scheme.unzip = el.checked; refreshOPreview();
   } else if (el.dataset.opt === "recursive") {
     S.ropts.recursive = el.checked; refreshPreview();
   } else if (el.dataset.sk && el.tagName === "SELECT") {

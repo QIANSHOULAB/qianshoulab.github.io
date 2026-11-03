@@ -147,3 +147,48 @@ def test_full_flow(env):
         assert not errors, errors
         b.close()
     srv.shutdown()
+
+
+def test_v02_flow(env, tmp_path):
+    from test_v02 import make_mp3
+    import zipfile
+    music = env["tmp"] / "歌"
+    music.mkdir()
+    make_mp3(music / "track01.mp3", {"title": "稻香", "artist": "周杰伦", "track": "1"})
+    make_mp3(music / "x.mp3", {})
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_page(viewport={"width": 1120, "height": 760})
+        errors = []
+        page.on("pageerror", lambda e: errors.append(str(e)))
+        page.goto(env["url"])
+        page.wait_for_selector("html[data-ready='1']")
+        page.fill("#pathIn", str(music))
+        page.press("#pathIn", "Enter")
+        page.click(".quick button:has-text('音乐标签')")
+        page.click(".vars button:has-text('音轨')")   # 光标不在框里：加到末尾
+        page.wait_for_function("document.querySelector('#tbl').textContent.includes('周杰伦 - 稻香01.mp3')")
+        page.fill("input[data-k='tpl']", "{音轨} {歌手} - {标题}")
+        page.wait_for_function("document.querySelector('#tbl').textContent.includes('01 周杰伦 - 稻香.mp3')")
+        assert "有的信息读不到" in page.text_content("#tbl")
+        _shot(page, "e2e-music")
+        page.click("#runBtn")
+        page.wait_for_selector(".toast.show")
+        assert sorted(os.listdir(music)) == ["01 周杰伦 - 稻香.mp3", "x.mp3"]
+        # 复制 + 解压
+        box = env["tmp"] / "收件"
+        box.mkdir()
+        (box / "合同.pdf").write_text("x")
+        with zipfile.ZipFile(box / "照片.zip", "w") as z:
+            z.writestr("1.jpg", "x")
+        page.evaluate(f"setFolder({str(box)!r})")
+        page.click("#nav button[data-v='sort']")
+        page.click(".seg button:has-text('复制一份')")
+        page.check("#unzip")
+        page.wait_for_function("document.querySelector('#orunBtn').textContent.includes('复制 3')")
+        _shot(page, "e2e-copy-unzip")
+        page.click("#orunBtn")
+        page.wait_for_selector(".toast.show")
+        assert sorted(os.listdir(box)) == sorted(["合同.pdf", "照片.zip", "照片", "文档", "压缩包"])
+        assert not errors, errors
+        b.close()

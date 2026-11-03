@@ -77,7 +77,7 @@ class Watcher:
             if it["status"] == "same":
                 self._seen[it["old"]] = (snap[it["old"]]["size"], snap[it["old"]]["mtime"])
                 continue
-            rec = {"time": now, "old": it["old"], "to": it["to"], "new": it["new"],
+            rec = {"time": now, "old": it["old"], "to": it["to"], "new": it["new"], "op": it.get("op", "move"),
                    "ok": it["old"] not in failed, "batch": res["batch"] if res else None}
             if not rec["ok"]:
                 # 没挪动（多半被占用）：不记成见过，下一轮再试；同一个文件只报一次
@@ -87,10 +87,12 @@ class Watcher:
             else:
                 self._failed.discard(it["old"])
             done.append(rec)
-        # 原地改名后的新名字也算见过，免得被当成新文件再处理一遍
+        # 原地改名后的新名字、复制/解压后还留在原地的原件，都算见过，免得再处理一遍
         for r in done:
-            if r["ok"] and not r["to"]:
+            if r["ok"] and not r["to"] and r["op"] == "move":
                 self._seen[r["new"]] = None
+            if r["ok"] and r["op"] in ("copy", "extract"):
+                self._seen[r["old"]] = None
         for name in list(self._seen):
             if self._seen[name] is None:
                 f = self._snapshot().get(name)

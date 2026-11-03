@@ -14,9 +14,9 @@ window.STR = {
     /* 改名 */
     r_title: "批量改名", r_quick: "一点就加",
     q_number: "加序号", q_replace: "替换文字", q_date: "加日期", q_taken: "按拍摄时间", q_case: "大小写", q_trim: "去多余空格",
-    q_insert: "加前后缀", q_remove: "删前后几个字", q_ext: "扩展名",
+    q_insert: "加前后缀", q_remove: "删前后几个字", q_ext: "扩展名", q_music: "音乐标签", q_attr: "文件属性",
     rule_number: "序号", rule_replace: "替换", rule_date: "日期", rule_case: "大小写", rule_trim: "去多余空格",
-    rule_insert: "加文字", rule_remove: "删字", rule_ext: "扩展名",
+    rule_insert: "加文字", rule_remove: "删字", rule_ext: "扩展名", rule_tpl: "模板",
     f_find: "找", f_to: "换成", f_regex: "正则", f_matchcase: "分大小写", f_start: "从", f_step: "每次加", f_digits: "位数",
     f_where: "放在", at_start: "前面", at_end: "后面", at_name: "替换整个名字", f_sep: "连接符",
     f_source: "用哪个时间", s_modified: "修改时间", s_created: "创建时间", s_taken: "拍摄时间", s_today: "今天",
@@ -30,7 +30,7 @@ window.STR = {
     col_old: "现在", col_new: "改成",
     stat: "{total} 个文件 · {changed} 个要改", stat_bump: " · {n} 个撞名，自动加了 (2)", stat_err: " · {n} 个改不了",
     n_bumped: "撞名，自动避让", n_fixed: "有 Windows 不认的字符，换成了全角", n_notaken: "没拍摄时间，用了修改时间",
-    n_empty: "名字会变成空的，跳过", n_badregex: "正则写错了",
+    n_empty: "名字会变成空的，跳过", n_nometa: "有的信息读不到，留空了", n_badregex: "正则写错了",
     more_rows: "还有 {n} 个没列出来，改名时一起改",
     run_rename: "改名 {n} 个", nothing: "没有要改的",
     done_rename: "改好了 {n} 个", done_failed: "{n} 个没动成", undo: "撤销", undone: "已撤销，{n} 个回到原样",
@@ -39,11 +39,13 @@ window.STR = {
     /* 分文件夹 */
     s_title: "分文件夹", s_sub: "只动这个文件夹第一层的文件，子文件夹里的不碰",
     scheme_custom: "自己定", scheme_save: "存方案", scheme_del: "删掉方案", scheme_name_ph: "方案名字",
-    by_type: "按类型", by_date: "按日期", by_kw: "名字里有", by_ext: "扩展名是", by_size: "大于",
+    by_type: "按类型", by_content: "内容里有", by_date: "按日期", by_kw: "名字里有", by_ext: "扩展名是", by_size: "大于",
     to_folder: "放进", rest: "其余的", rest_stay: "留在原地", rest_to: "放进",
     add_rule: "加一条", mb: "MB", only_photo: "只管照片",
     groups: "分成 {n} 堆", stay_n: "{n} 个不动",
-    run_sort: "分好 {n} 个文件", done_sort: "分好了 {n} 个", watch_this: "以后自动分",
+    run_sort: "分好 {n} 个文件", run_copy: "复制 {n} 个文件", done_copy: "复制好了 {n} 个",
+    act_lbl: "怎么分", act_move: "挪过去", act_copy: "复制一份", act_unzip: "压缩包顺手解压（zip、tar）",
+    unz_grp: "解压出来", unz_n: "{n} 个压缩包要解", done_unz: "解了 {n} 个包", w_unz: "解压 ", w_copy: "复制 ", done_sort: "分好了 {n} 个", watch_this: "以后自动分",
 
     /* 盯着 */
     w_title: "盯着文件夹", w_sub: "新文件一进来，按方案自动分好。开着扫地僧就一直盯。",
@@ -68,7 +70,8 @@ window.STR = {
     h_line: "{n} 个文件", h_undone: "已撤销",
 
     /* 错误代号 */
-    err_busy: "被别的程序占着", err_gone: "文件不见了", err_exists: "名字被占了", err_toolong: "路径太长", err_oserror: "系统不让动",
+    err_busy: "被别的程序占着", err_password: "压缩包有密码", err_badarchive: "压缩包坏了", err_toobig: "压缩包太大",
+    err_changed: "复制品被改过，没动", err_diskfull: "硬盘满了", err_notarchive: "不是压缩包", err_gone: "文件不见了", err_exists: "名字被占了", err_toolong: "路径太长", err_oserror: "系统不让动",
     err_nothing: "没有能撤销的", err_already: "这批早撤销过了",
   },
 };

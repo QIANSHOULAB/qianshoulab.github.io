@@ -10,6 +10,8 @@
   {"type": "trim"}                         去掉首尾空格、连续空格并一个
   {"type": "remove",  "first": 0, "last": 0}   砍掉开头/结尾 N 个字
   {"type": "ext",     "mode": "lower"|"upper"|"set", "to": ".jpg"}
+  {"type": "tpl",     "tpl": "{歌手} - {标题}", "where": "name"|"start"|"end", "sep": " "}
+      模板变量见 TPL_VARS：文件属性、照片信息、音乐标签。读不到的变量留空并提示。
 """
 from __future__ import annotations
 
@@ -88,6 +90,67 @@ def _taken(f: dict):
 PHOTO_EXT = {".jpg", ".jpeg", ".heic", ".heif", ".tif", ".tiff", ".dng", ".cr2", ".cr3", ".nef", ".arw", ".orf", ".rw2", ".raf"}
 
 
+TPL_VARS = ["原名", "文件夹", "大小", "修改日期", "拍摄日期", "相机", "宽", "高",
+            "歌手", "标题", "专辑", "音轨", "年份", "序号"]
+_TPL_RE = re.compile(r"\{([^{}]+)\}")
+
+
+def _meta(f: dict) -> dict:
+    if "_meta" not in f:
+        from . import meta
+        m = {}
+        m.update({{"title": "标题", "artist": "歌手", "album": "专辑", "track": "音轨", "year": "年份"}[k]: v
+                  for k, v in meta.audio_tags(f["path"]).items()})
+        wh = meta.image_size(f["path"])
+        if wh:
+            m["宽"], m["高"] = str(wh[0]), str(wh[1])
+        ext = fs.split_ext(f["name"])[1].lower()
+        if ext in PHOTO_EXT:
+            ex = fs.exif_info(f["path"])
+            if ex.get("model"):
+                model, make = ex["model"], ex.get("make", "")
+                m["相机"] = model if not make or model.lower().startswith(make.split()[0].lower()) else f"{make} {model}"
+            if ex.get("taken"):
+                m["拍摄日期"] = ex["taken"].strftime("%Y-%m-%d")
+                f["_taken"] = ex["taken"]
+        f["_meta"] = m
+    return f["_meta"]
+
+
+def render_tpl(f: dict, idx: int, tpl: str, total: int = 0) -> tuple[str, list[str]]:
+    stem = fs.split_ext(f["name"])[0]
+    missing: list[str] = []
+
+    def val(name: str) -> str:
+        name = name.strip()
+        if name == "原名":
+            return stem
+        if name == "文件夹":
+            return os.path.basename(f["dir"].rstrip("\\/"))
+        if name == "大小":
+            from .meta import human_size
+            return human_size(f["size"])
+        if name == "修改日期":
+            return _dt.datetime.fromtimestamp(f["mtime"]).strftime("%Y-%m-%d")
+        if name == "序号":
+            return str(idx + 1).zfill(max(2, len(str(total))))
+        v = _meta(f).get(name)
+        if v is None:
+            if name in TPL_VARS:
+                missing.append(name)
+            else:
+                return "{" + name + "}"
+            return ""
+        return v
+
+    out = _TPL_RE.sub(lambda m: val(m.group(1)), tpl)
+    # 变量空了留下的孤零零的连接符收拾掉："- 标题" -> "标题"
+    out = re.sub(r"^[\s\-_.·,，]+|[\s\-_.·,，]+$", "", out)
+    out = re.sub(r"(\s*[-_·]\s*){2,}", " - ", out)
+    out = re.sub(r"\s{2,}", " ", out)
+    return out, missing
+
+
 def _place(stem: str, piece: str, where: str, sep: str) -> str:
     if where == "name":
         return piece
@@ -155,6 +218,12 @@ def apply_rules(f: dict, idx: int, rules: list[dict], today: _dt.datetime | None
         elif t == "remove":
             a, b = max(0, int(r.get("first", 0))), max(0, int(r.get("last", 0)))
             stem = stem[a:len(stem) - b if b else None]
+        elif t == "tpl":
+            piece, missing = render_tpl(f, idx, r.get("tpl", ""), r.get("_total", 0))
+            if missing:
+                notes.append("nometa")
+            if piece:
+                stem = _place(stem, piece, r.get("where", "name"), r.get("sep", " "))
         elif t == "ext":
             m = r.get("mode", "lower")
             if m == "lower":
@@ -173,6 +242,7 @@ def plan(folder: str, rules: list[dict], recursive: bool = False, filt: dict | N
     files = sort_files(files if files is not None else list_files(folder, recursive, filt), sort_by)
     by_dir: dict[str, list[int]] = {}
     items = []
+    rules = [dict(r, _total=len(files)) if r.get("type") == "tpl" else r for r in rules]
     for i, f in enumerate(files):
         raw, notes = apply_rules(f, i, rules)
         new = fs.sanitize(raw)

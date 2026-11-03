@@ -206,11 +206,16 @@ def _trash_xdg(path: str) -> None:
 # ---------------------------------------------------------------- 照片拍摄时间
 def photo_taken(path: str) -> _dt.datetime | None:
     """读 EXIF DateTimeOriginal（JPEG / HEIC / TIFF / 多数 RAW 都能找到 Exif 块）。读不到返回 None。"""
+    return exif_info(path).get("taken")
+
+
+def exif_info(path: str) -> dict:
+    """{"taken": datetime|None, "make": str, "model": str}，读不到的键不给。"""
     try:
         with open(lp(path), "rb") as f:
             head = f.read(512 * 1024)
     except OSError:
-        return None
+        return {}
     tiff = None
     if head[:4] in (b"II*\x00", b"MM\x00*"):
         tiff = head
@@ -223,14 +228,14 @@ def photo_taken(path: str) -> _dt.datetime | None:
                 break
             i = head.find(b"Exif\x00\x00", i + 1)
     if tiff is None:
-        return None
+        return {}
     try:
-        return _parse_tiff_date(tiff)
+        return _parse_tiff(tiff)
     except (struct.error, ValueError, IndexError):
-        return None
+        return {}
 
 
-def _parse_tiff_date(t: bytes):
+def _parse_tiff(t: bytes) -> dict:
     e = "<" if t[:2] == b"II" else ">"
 
     def ifd(off):
@@ -248,9 +253,18 @@ def _parse_tiff_date(t: bytes):
         else:
             o = struct.unpack(e + "I", val)[0]
             raw = t[o:o + cnt]
-        return raw.split(b"\x00")[0].decode("ascii", "ignore").strip()
+        return raw.split(b"\x00")[0].decode("utf-8", "ignore").strip()
 
+    out: dict = {}
     ifd0 = ifd(struct.unpack_from(e + "I", t, 4)[0])
+    for tag, key in ((0x010F, "make"), (0x0110, "model")):
+        if tag in ifd0:
+            try:
+                v = ascii_val(ifd0[tag])
+                if v:
+                    out[key] = v
+            except (struct.error, IndexError):
+                pass
     s = None
     if 0x8769 in ifd0:
         sub = ifd(struct.unpack(e + "I", ifd0[0x8769][2])[0])
@@ -261,20 +275,35 @@ def _parse_tiff_date(t: bytes):
                     break
     if not s and 0x0132 in ifd0:
         s = ascii_val(ifd0[0x0132])
-    if not s or s.startswith("0000"):
-        return None
-    return _dt.datetime.strptime(s[:19], "%Y:%m:%d %H:%M:%S")
+    if s and not s.startswith("0000"):
+        try:
+            out["taken"] = _dt.datetime.strptime(s[:19], "%Y:%m:%d %H:%M:%S")
+        except ValueError:
+            pass
+    return out
 
 
-def make_jpeg_with_exif(path: str, when: _dt.datetime) -> None:
-    """测试/自检用：造一张带拍摄时间的最小 JPEG（不需要能显示，只要 EXIF 合规）。"""
+def make_jpeg_with_exif(path: str, when: _dt.datetime, model: str = "", size: tuple[int, int] | None = None) -> None:
+    """测试/自检用：造一张带拍摄时间（可选相机型号、像素尺寸）的最小 JPEG。"""
     ds = when.strftime("%Y:%m:%d %H:%M:%S").encode() + b"\x00"  # 20 字节
-    # TIFF 头(8) + IFD0(2+12+4=18) -> 26 ；ExifIFD 在 26：2+12+4=18 -> 44 ；字符串在 44
-    tiff = b"II*\x00" + struct.pack("<I", 8)
-    tiff += struct.pack("<H", 1) + struct.pack("<HHII", 0x8769, 4, 1, 26) + struct.pack("<I", 0)
-    tiff += struct.pack("<H", 1) + struct.pack("<HHII", 0x9003, 2, 20, 44) + struct.pack("<I", 0)
-    tiff += ds
+    mb = model.encode() + b"\x00" if model else b""
+    n0 = 2 if model else 1
+    ifd0_len = 2 + 12 * n0 + 4
+    exif_off = 8 + ifd0_len
+    str_off = exif_off + 18
+    model_off = str_off + 20
+    tiff = b"II*\x00" + struct.pack("<I", 8) + struct.pack("<H", n0)
+    if model:
+        tiff += struct.pack("<HHII", 0x0110, 2, len(mb), model_off)
+    tiff += struct.pack("<HHII", 0x8769, 4, 1, exif_off) + struct.pack("<I", 0)
+    tiff += struct.pack("<H", 1) + struct.pack("<HHII", 0x9003, 2, 20, str_off) + struct.pack("<I", 0)
+    tiff += ds + mb
     app1 = b"Exif\x00\x00" + tiff
-    data = b"\xff\xd8" + b"\xff\xe1" + struct.pack(">H", len(app1) + 2) + app1 + b"\xff\xd9"
+    data = b"\xff\xd8" + b"\xff\xe1" + struct.pack(">H", len(app1) + 2) + app1
+    if size:
+        w, h = size
+        sof = struct.pack(">BHHB", 8, h, w, 3) + b"\x01\x11\x00\x02\x11\x01\x03\x11\x01"
+        data += b"\xff\xc0" + struct.pack(">H", len(sof) + 2) + sof
+    data += b"\xff\xd9"
     with open(path, "wb") as f:
         f.write(data)

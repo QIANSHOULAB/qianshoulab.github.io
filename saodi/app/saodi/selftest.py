@@ -164,9 +164,39 @@ def run(out_path: str | None = None) -> int:
         with open(os.path.join(d, "文件.bin"), "rb") as f:
             assert f.read() == body
 
+    def t_v02():
+        import zipfile
+        from . import meta, content
+        d = os.path.join(root, "v02")
+        os.makedirs(d)
+        # MP3 ID3v2.3 UTF-16 标签
+        def fr(fid, txt):
+            body = b"\x01" + txt.encode("utf-16")
+            return fid.encode() + len(body).to_bytes(4, "big") + b"\x00\x00" + body
+        frames = fr("TIT2", "稻香") + fr("TPE1", "周杰伦")
+        n = len(frames)
+        tag = b"ID3\x03\x00\x00" + bytes([(n >> 21) & 0x7F, (n >> 14) & 0x7F, (n >> 7) & 0x7F, n & 0x7F]) + frames
+        with open(os.path.join(d, "t.mp3"), "wb") as f:
+            f.write(tag + b"\xff\xfb" + b"\x00" * 200)
+        assert meta.audio_tags(os.path.join(d, "t.mp3")) == {"title": "稻香", "artist": "周杰伦"}
+        with zipfile.ZipFile(os.path.join(d, "包.zip"), "w") as z:
+            z.writestr("里面.txt", "采购合同")
+            z.writestr("x.docx", "")
+        with zipfile.ZipFile(os.path.join(d, "合同.docx"), "w") as z:
+            z.writestr("word/document.xml", "<w:p><w:t>租赁合同</w:t></w:p>")
+        assert content.contains(os.path.join(d, "合同.docx"), ["租赁"])
+        sch = {"rules": [{"by": "content", "kw": "租赁", "to": "租赁"}, {"by": "type"}], "action": "copy", "unzip": True}
+        r = ops.execute(organize.to_ops(organize.plan(d, sch)), "organize")
+        assert r["extracted"] == 1 and r["copied"] == 3 and not r["failed"], r
+        assert os.path.exists(os.path.join(d, "包", "里面.txt")) and os.path.exists(os.path.join(d, "租赁", "合同.docx"))
+        u = ops.undo()
+        assert u["restored"] == 4 and not u["skipped"], u
+        assert _ls(d) == sorted(["t.mp3", "包.zip", "合同.docx"]), _ls(d)
+
     for name, fn in [("speed_1000", t_speed), ("case_swap", t_case_and_swap), ("long_path", t_long_path),
                      ("busy_file", t_busy), ("bad_chars", t_bad_chars), ("exif_organize", t_exif_organize),
-                     ("recycle_bin", t_trash), ("watch", t_watch), ("download_resume", t_download)]:
+                     ("recycle_bin", t_trash), ("watch", t_watch), ("download_resume", t_download),
+                     ("tags_copy_unzip_content", t_v02)]:
         check(name, fn)
     ok = all(v == "ok" for v in res["checks"].values())
     res["ok"] = ok

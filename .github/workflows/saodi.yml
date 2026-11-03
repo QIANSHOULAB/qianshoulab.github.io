@@ -40,7 +40,7 @@ jobs:
         run: python -m pip install -r requirements.txt pytest pyinstaller==6.16.0
 
       - name: 核心测试（真 NTFS、真回收站）
-        run: python -m pytest -q tests/test_core.py
+        run: python -m pytest -q tests/test_core.py tests/test_v02.py
 
       - name: 打包 exe
         run: |
@@ -50,7 +50,7 @@ jobs:
             --add-data "ui;ui" --collect-submodules webview main.py
           Get-Item dist/SaodiSeng.exe | Select-Object Name, Length
 
-      - name: exe 自检（1000 个文件计时、占用、超长路径、回收站、续传）
+      - name: exe 自检（1000 个文件计时、占用、超长路径、回收站、续传、标签、复制、解压）
         run: |
           $out = Join-Path $pwd "selftest.json"
           $p = Start-Process -FilePath dist/SaodiSeng.exe -ArgumentList "--selftest", "`"$out`"" -Wait -PassThru
