@@ -537,7 +537,10 @@ function renderRule() {
 function curRule() { return S.rules.find((x) => x.id === S.ruleSel); }
 function setPath(o, path, v) { const ks = path.split("."); let x = o; for (const k of ks.slice(0, -1)) x = x[k]; x[ks[ks.length - 1]] = v; }
 function getPath(o, path) { return path.split(".").reduce((x, k) => x[k], o); }
+/* 正在改规则名、模板：先别让心跳把手里这份规则换成后台那份（不然刚打的字还没存，下一下改动会把它冲掉——0.2 就有这个坑） */
+let editingUntil = 0;
 const saveRuleSoon = debounce(async (r) => { await safe(call("save_rule", r)); S.hits[r.id] = null; loadMails(); }, 450);
+function editing() { editingUntil = Date.now() + 1500; }
 function syncForward(r) { r.forward.enabled = r.forward.to.length > 0; }
 
 /* ---------- 表格 ---------- */
@@ -765,12 +768,13 @@ document.addEventListener("input", (ev) => {
   const el = ev.target;
   if (el.dataset.recname) { recState(S.recs.find((r) => r.id === el.dataset.recname)).name = el.value; return; }
   const r = curRule();
-  if (el.id === "rname" && r) { r.name = el.value.trim() || r.name; saveRuleSoon(r); const li = $(`.ri[data-rule="${r.id}"] b`); if (li) li.textContent = r.name; return; }
-  if (el.dataset.text && r) { setPath(r, el.dataset.text, el.value); saveRuleSoon(r); }
+  if (el.id === "rname" && r) { editing(); r.name = el.value.trim() || r.name; saveRuleSoon(r); const li = $(`.ri[data-rule="${r.id}"] b`); if (li) li.textContent = r.name; return; }
+  if (el.dataset.text && r) { editing(); setPath(r, el.dataset.text, el.value); saveRuleSoon(r); }
 });
 
 /* ---------- 心跳 ---------- */
 async function heartbeat() {
+  if (Date.now() < editingUntil) return;      // 改着呢，等存完再对一遍
   try {
     const tk = await call("tick");
     const changed = tk.rev !== S.rev;

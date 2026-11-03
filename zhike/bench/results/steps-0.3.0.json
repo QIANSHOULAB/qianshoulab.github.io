@@ -1,0 +1,156 @@
+{
+ "version": "0.3.0",
+ "first": [
+  {
+   "n": 1,
+   "kind": "开",
+   "what": "双击 Zhike.exe（头一回）"
+  },
+  {
+   "n": 2,
+   "kind": "打字",
+   "what": "邮箱地址"
+  },
+  {
+   "n": 3,
+   "kind": "打字",
+   "what": "应用专用密码"
+  },
+  {
+   "n": 4,
+   "kind": "打字",
+   "what": "收信服务器"
+  },
+  {
+   "n": 5,
+   "kind": "打字",
+   "what": "收信端口"
+  },
+  {
+   "n": 6,
+   "kind": "点",
+   "what": "收信加密方式"
+  },
+  {
+   "n": 7,
+   "kind": "打字",
+   "what": "发信服务器"
+  },
+  {
+   "n": 8,
+   "kind": "打字",
+   "what": "发信端口"
+  },
+  {
+   "n": 9,
+   "kind": "点",
+   "what": "发信加密方式"
+  },
+  {
+   "n": 10,
+   "kind": "点",
+   "what": "连上"
+  },
+  {
+   "n": 11,
+   "kind": "打字",
+   "what": "「发票」转给 finance@ourco.example"
+  },
+  {
+   "n": 12,
+   "kind": "打字",
+   "what": "「询价」转给 sales@ourco.example"
+  },
+  {
+   "n": 13,
+   "kind": "点",
+   "what": "收下 4 条"
+  },
+  {
+   "n": 14,
+   "kind": "点",
+   "what": "去「表格」"
+  },
+  {
+   "n": 15,
+   "kind": "点",
+   "what": "打开 Excel（看结果）"
+  }
+ ],
+ "second": [
+  {
+   "n": 1,
+   "kind": "点",
+   "what": "托盘图标（打开窗口）"
+  },
+  {
+   "n": 2,
+   "kind": "点",
+   "what": "收下 1 条（归进「发票」）"
+  },
+  {
+   "n": 3,
+   "kind": "点",
+   "what": "去「表格」"
+  },
+  {
+   "n": 4,
+   "kind": "点",
+   "what": "打开 Excel（看结果）"
+  }
+ ],
+ "check": {
+  "recs_shown": [
+   "发票",
+   "物流",
+   "订单",
+   "询价"
+  ],
+  "first": {
+   "订单": 1,
+   "发票": 1,
+   "物流": 1,
+   "询价": 1
+  },
+  "first_forwards": [
+   "finance@ourco.example",
+   "sales@ourco.example"
+  ],
+  "first_rules": [
+   "发票",
+   "物流",
+   "订单",
+   "询价"
+  ],
+  "engine_running_after_boot": true,
+  "second_recs_shown": "归进「发票」\n新来的一家，字段对得上",
+  "second_toast": "收下 1 条，刚才那 1 封也照办了。",
+  "second_baita_rows": [
+   "BT-2026-118"
+  ],
+  "second_forwards": [
+   "finance@ourco.example"
+  ],
+  "second_all_rows": {
+   "订单": 2,
+   "发票": 2,
+   "物流": 2,
+   "询价": 1
+  }
+ },
+ "errors": [],
+ "count_first": {
+  "steps": 15,
+  "点": 6,
+  "打字": 8,
+  "拖选": 0,
+  "开": 1
+ },
+ "count_second": {
+  "steps": 4,
+  "点": 4,
+  "打字": 0,
+  "拖选": 0,
+  "开": 0
+ }
+}

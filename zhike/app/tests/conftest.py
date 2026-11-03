@@ -34,7 +34,20 @@ def smtp():
 def home(tmp_path, monkeypatch):
     monkeypatch.setenv("ZHIKE_HOME", str(tmp_path / "home"))
     monkeypatch.setenv("ZHIKE_NO_KEYRING", "1")
-    return tmp_path
+    # Windows 上开机自启写在注册表里（全用户共用，不跟着 ZHIKE_HOME 走）：每个测试从「没开」起，测完放回原样
+    snap = None
+    if sys.platform == "win32":
+        from zhike import platform as P
+        snap = P.autostart_command()
+        P.set_autostart(False)
+    yield tmp_path
+    if sys.platform == "win32":
+        from zhike import platform as P
+        P.set_autostart(False)
+        if snap:
+            import winreg
+            with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, P.RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
+                winreg.SetValueEx(k, P.NAME, 0, winreg.REG_SZ, snap)
 
 
 class FakeGemini:
