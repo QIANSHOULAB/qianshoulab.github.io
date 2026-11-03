@@ -1,15 +1,27 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>抄经僧</title>
-<meta name="description" content="批量出文档：Word 模板配一张表，一行抄一份证书、发票、合同，打包 Word / PDF。全在浏览器里干，不上传。">
+<title>Chaojing · Doc Batcher</title>
+<meta name="description" content="Mail merge in your browser. A Word template plus a spreadsheet becomes one certificate, invoice or contract per row, as Word or PDF. Nothing gets uploaded.">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="抄经僧">
+<meta name="apple-mobile-web-app-title" content="Chaojing">
+<script src="strings.js?v=0.4.0"></script>
+<script>
+/* 挑语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage）> 默认英文。不跟浏览器语言走（Song 11-03 22:19）。标题、简介、<html lang> 在画页面之前就换好 */
+(function(){
+  var q=(location.search.match(/[?&]lang=(zh|en)\b/)||[])[1], s=null;
+  try{s=localStorage.getItem("chaojing.lang")}catch(e){}
+  var L=q||(s==="zh"||s==="en"?s:CJ_DEFAULT_LANG), t=CJ_STRINGS[L];
+  window.CJ_LANG=L; document.documentElement.lang=t.htmlLang; document.title=t.docTitle;
+  document.querySelector('meta[name="description"]').content=t.metaDesc;
+  document.querySelector('meta[name="apple-mobile-web-app-title"]').content=t.appleTitle;
+})();
+</script>
 <style>
 /* 千手院设计规范（_ops/设计规范.md）：一个主色（抄经僧红），其余全是灰。
    布局：没文件时一屏一件事（丢文件）；有了文件，电脑左栏 文件 / 对号入座 / 出货，右栏预览纸；手机单列，下载钮贴底 */
@@ -65,22 +77,38 @@ a{color:var(--accent);text-decoration:none}
 .bar-in{max-width:1120px;margin:0 auto;height:52px;padding:0 max(16px,env(safe-area-inset-left)) 0 max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:16px}
 .brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600;color:var(--fg)}
 .brand img{width:28px;height:28px;display:block}
+.brand-x{font-weight:400;color:var(--fg-2)}
+@media (max-width:520px){.brand-x{display:none}}
 .privacy{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--fg-2)}
 .privacy svg{width:14px;height:14px}
+.privacy .ps{display:none}
+@media (max-width:520px){.privacy .pl{display:none}.privacy .ps{display:inline}}
+.bar-r{display:flex;align-items:center;gap:12px;min-width:0}
+/* 右上角 EN / 中文：小号分段控件，点的范围撑到 44 高 */
+.lang-seg{display:flex;gap:2px;padding:2px;border-radius:var(--r-chip);background:var(--fill);flex:none}
+.lang-seg button{position:relative;min-width:40px;height:26px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:600;color:var(--fg-2);transition:background var(--t) var(--ease),color var(--t) var(--ease)}
+.lang-seg button::after{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
+.lang-seg button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px var(--line)}
+:root[data-theme="dark"] .lang-seg button[aria-pressed="true"]{background:#636366}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lang-seg button[aria-pressed="true"]{background:#636366}}
 
 .wrap{max-width:1120px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) 48px max(16px,env(safe-area-inset-right))}
 
 /* 空状态：一句大标题、一句副标题、丢文件 */
 .hero{max-width:980px;margin:0 auto;padding:72px 0 32px;text-align:center}
-.hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.01em}
-.hero p{margin:16px auto 0;max-width:620px;font-size:21px;line-height:1.4;color:var(--fg-2)}
+.hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.hero p{margin:16px auto 0;max-width:620px;font-size:21px;line-height:1.4;color:var(--fg-2);text-wrap:balance;white-space:pre-line}
+html[lang="en"] .hero h1{letter-spacing:-.02em}
+/* 中文只在标点处折行，词不拆开（「一行｜抄一份」这种） */
+html[lang^="zh"] .hero p,html[lang^="zh"] .dropzone>b,html[lang^="zh"] .dropzone .ds{word-break:keep-all;overflow-wrap:anywhere}
 .dropzone{max-width:640px;margin:0 auto;background:var(--dz);border-radius:var(--r-card);padding:48px 24px;text-align:center;transition:background var(--t) var(--ease),box-shadow var(--t) var(--ease)}
 .dropzone .di{width:56px;height:56px;margin:0 auto 16px;color:var(--accent)}
-.dropzone>b{display:block;font-size:22px;font-weight:600;line-height:1.25}
-.dropzone .ds{margin:8px 0 24px;color:var(--fg-2);font-size:15px}
+.dropzone>b{display:block;font-size:22px;font-weight:600;line-height:1.25;text-wrap:balance}
+.dropzone .ds{margin:8px 0 24px;color:var(--fg-2);font-size:15px;text-wrap:balance}
 .dropzone .acts{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}
 .dropzone .err{margin:24px auto 0;font-size:15px}
-.samples-line{margin-top:24px;font-size:13px;color:var(--fg-3)}
+.samples-line{margin:24px 0 0;font-size:13px;color:var(--fg-3);display:flex;flex-wrap:wrap;justify-content:center;column-gap:24px}
+.samples-line .sl{white-space:nowrap}
 .samples-line button{color:var(--accent);font-size:13px;padding:12px 4px}
 body.dragging .dropzone{background:var(--accent-tint);box-shadow:inset 0 0 0 2px var(--accent)}
 @media (max-width:640px){.hero{padding:48px 0 24px}.hero p{font-size:17px}.dropzone{padding:32px 16px}}
@@ -279,8 +307,9 @@ textarea.paste{flex:1;min-height:260px;margin:16px;border-radius:var(--r-field);
 </head>
 <body class="empty">
 <header class="bar-top"><div class="bar-in">
-  <a class="brand" href="./"><img src="icon.svg" alt="" width="28" height="28"><span data-t="title"></span></a>
-  <span class="privacy"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span data-t="privacy"></span></span>
+  <a class="brand" href="./"><img src="icon.svg" alt="" width="28" height="28"><span><span data-t="brand"></span><span class="brand-x" data-t="brandX"></span></span></a>
+  <div class="bar-r"><span class="privacy"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="pl" data-t="privacy"></span><span class="ps" data-t="privacyShort"></span></span>
+  <div class="lang-seg" id="langSeg" role="group"></div></div>
 </div></header>
 
 <div class="wrap">
@@ -295,7 +324,7 @@ textarea.paste{flex:1;min-height:260px;margin:16px;border-radius:var(--r-field);
         <button class="btn" id="bTry" data-t="tryIt"></button>
       </div>
       <div class="err" id="err0" hidden></div>
-      <p class="samples-line"><span data-t="noTpl"></span><button id="bEdit0" data-t="editOne"></button> · <span data-t="haveClip"></span><button id="bPaste0" data-t="pasteOne"></button></p>
+      <p class="samples-line"><span class="sl"><span data-t="noTpl"></span><button id="bEdit0" data-t="editOne"></button></span><span class="sl"><span data-t="haveClip"></span><button id="bPaste0" data-t="pasteOne"></button></span></p>
     </div>
   </section>
 
@@ -364,7 +393,7 @@ textarea.paste{flex:1;min-height:260px;margin:16px;border-radius:var(--r-field);
 </div>
 
 <footer>
-  <span><a href="https://qianshoulab.github.io/" data-t="home"></a> · <span data-t="title"></span> <span id="ver" class="num"></span></span>
+  <span><a href="https://qianshoulab.github.io/" data-t="home"></a> · <span data-t="brand"></span> <span id="ver" class="num"></span></span>
   <span><span data-t="findAbbot"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
 </footer>
 
@@ -378,117 +407,12 @@ textarea.paste{flex:1;min-height:260px;margin:16px;border-radius:var(--r-field);
 <script src="lib/docxtemplater.min.js"></script>
 <script>
 "use strict";
-/* ============ 界面文字：全在这儿，以后加英文就再抄一份 ============ */
-const T = {
-  title:"抄经僧",
-  privacy:"文件不出这台电脑",
-  heroT:"名单丢来，你去喝茶",
-  heroS:"Word 模板配一张表，一行抄一份证书、发票、合同。500 份 PDF 几秒抄完。",
-  dropT:"模板和表格一起丢进来",
-  dropS:"Word 里写 {{姓名}} 这样的空位，贫僧自己认、自己对。",
-  pick:"选文件", tryIt:"用示例试试",
-  noTpl:"没模板？", editOne:"在线写一个", haveClip:"表在剪贴板里？", pasteOne:"粘贴",
-  filesTitle:"文件", repick:"换文件", edit:"编辑", paste:"粘贴", dlTpl:"下载模板", forget:"清掉",
-  mapTitle:"对号入座", outTitle:"出货",
-  fmt:"格式", both:"都要", nameRule:"文件名",
-  go:(n,f)=>`下载 ${n} 份${f==="pdf"?" PDF":f==="both"?" Word + PDF":" Word"}`, goNone:"表里没东西", goNoData:"还差一张表", goNoTpl:"还差 Word 模板",
-  stop:"停", again:"再下一次",
-  oneDocx:"只下这份 Word", onePdf:"只下这份 PDF",
-  prev:"上一份", next:"下一份",
-  home:"千手院", findAbbot:"找方丈：",
-  samples:{cert:"结业证书", invoice:"发票", offer:"录用通知"},
-  tplSubTags:n=>`认出 ${n} 个空位`,
-  tplSubNone:"一个 {{空位}} 都没找到",
-  needTpl:"还差 Word 模板", needTplSub:"丢进来，或者点「编辑」在线写一个",
-  needData:"还差一张表", needDataSub:"Excel / CSV 丢进来，或者粘贴",
-  fromEditor:"在线写的", fromWord:"Word", fromExample:"示例",
-  dataSub:(r,c)=>`${r} 行 · ${c} 列`,
-  moreRows:n=>`还有 ${n} 行没列出来，下载时一行不落。`,
-  mapAllOk:n=>`${n} 个全对上了`,
-  mapBad:n=>`${n} 个没对上`,
-  mapNone:"模板里没有空位",
-  mapOpen:"改",
-  mapWait:"表来了自动对",
-  optUnmapped:"没对上（原样留着）", optBlank:"留空",
-  unused:list=>`表里没用上的列：${list}`,
-  rowOf:(i,n)=>`第 ${i} / ${n} 份`,
-  tplOnly:"模板原样，表来了就填上",
-  progress:(i,n,s)=>`已抄 ${i} / ${n} 份 · ${s} 秒`,
-  packing:"正在打包…",
-  doneMsg:(n,s)=>`${n} 份抄完，${s} 秒`,
-  stopped:n=>`停了，抄好的 ${n} 份照样给你`,
-  memoNew:"格式、文件名、对号，下回都记着。",
-  memoUsed:"格式和文件名按上回的，改了也记着。",
-  restored:"接着上回的",
-  forgot:"上回的文件清掉了", undo:"撤销",
-  errTpl:["这个 Word 打不开。","换一份 .docx 试试；.doc 老格式先在 Word 里另存为 .docx。"],
-  errTplSyntax:m=>["模板里的花括号没配对。",`${m}。在 Word 里把它改成 {{名字}} 这样再丢一次。`],
-  errData:["这张表读不出来。","换成 .xlsx 或 .csv 再丢一次。"],
-  errEmpty:["表里一行数据都没有。","第一行是表头，下面每行出一份。"],
-  errWhat:n=>[`「${n}」不认识。`,"只认 .docx 模板和 Excel / CSV 表格。"],
-  errGen:m=>["没抄完。",`${m}。再点一次试试；还不行就换成 Word 格式。`],
-  pvFail:"这份预览不出来，下载的 Word 照样能打开",
-  pvWait:"等 Word 模板",
-  edTitle:"在线编辑", cancel:"取消", use:"用这个",
-  edField:"插入空位", edNewField:"新空位", edAdd:"加", edHr:"分隔线",
-  edH1:"大标题", edH2:"标题", edH3:"小标题", edP:"正文", edSmall:"小字",
-  edPortrait:"竖版", edLandscape:"横版", edBorder:"花边",
-  pasteTitle:"粘贴表格", pasteHint:"从 Excel、WPS、飞书表格里整块复制过来，第一行是表头。", pasteOk:"用这个",
-  editorName:"在线写的模板",
-  pasted:"粘贴的表格",
-  noHeaderCol:i=>`第${i}列`,
-  pdfNote:"头一回出 PDF，先搬一套中文字体，就这一次",
-  grouped:(col,n,m)=>`「${col}」相同的行并成一份：${n} 行 → ${m} 份`,
-  groupOff:col=>`同一个「${col}」的几行，可以并成一份`,
-  split:"拆开", merge:"并起来",
-  ver:v=>`v${v}`,
-};
-
-/* ============ 示例：模板（编辑器 HTML）+ 表格 ============ */
+/* ============ 界面文字：全在 strings.js（中文一套、英文一套），这里只挑一套用 ============ */
+const LANG_KEY="chaojing.lang";
+let LANG=window.CJ_LANG||"zh", T=CJ_STRINGS[LANG], EXAMPLES=T.examples;
 const GOLD="#8B6A2F", INK="#1D1D1F";
-const EXAMPLES = {
-  cert:{
-    orient:"landscape", border:GOLD, file:"结业证书", rule:"{{姓名}}-结业证书",
-    html:`<p><br></p><p><br></p><h6 style="text-align:center;color:${GOLD}">CERTIFICATE OF COMPLETION</h6><h1 style="text-align:center"><span style="font-size:48px">结 业 证 书</span></h1><p style="text-align:center"><br></p><p style="text-align:center"><span style="font-size:18.7px;color:#6E6E73">兹证明</span></p><h1 style="text-align:center"><span style="color:${GOLD};font-size:53px">{{姓名}}</span></h1><p style="text-align:center"><span style="font-size:18.7px">于 {{结业日期}} 完成「{{课程}}」全部课程，共计 {{学时}} 学时，考核合格，特发此证。</span></p><p style="text-align:center"><br></p><p style="text-align:right"><span style="font-size:18.7px"><b>千手书院 · 教务处</b></span></p><h6 style="text-align:right">证书编号 {{证书编号}}</h6>`,
-    headers:["姓名","课程","学时","结业日期","证书编号","手机"],
-    rows:[
-      ["林小满","Excel 从入门到装懂","32","2026年11月2日","QS-2026-0001","138 0000 0001"],
-      ["周不凡","PPT 一页讲完年终总结","16","2026年11月2日","QS-2026-0002","138 0000 0002"],
-      ["陈一鸣","会议纪要速记术","12","2026年11月3日","QS-2026-0003","138 0000 0003"],
-      ["赵晚晴","邮件礼仪与甩锅艺术","8","2026年11月3日","QS-2026-0004","138 0000 0004"],
-      ["孙浩然","Excel 从入门到装懂","32","2026年11月4日","QS-2026-0005","138 0000 0005"],
-      ["吴可可","数据透视表七十二变","24","2026年11月4日","QS-2026-0006","138 0000 0006"],
-      ["郑大白","PPT 一页讲完年终总结","16","2026年11月5日","QS-2026-0007","138 0000 0007"],
-      ["王知秋","会议纪要速记术","12","2026年11月5日","QS-2026-0008","138 0000 0008"],
-    ]},
-  invoice:{
-    orient:"portrait", file:"发票", rule:"{{发票号}}-{{客户}}",
-    html:`<h6 style="color:${GOLD}">INVOICE</h6><h1>发票</h1><p><span style="color:#6E6E73">发票号</span>　{{发票号}}　　<span style="color:#6E6E73">开票日期</span>　{{开票日期}}</p><hr><h3>开给</h3><p>{{客户}}<br>{{地址}}</p><p><br></p><table><tbody><tr><th>项目</th><th style="text-align:right">数量</th><th style="text-align:right">单价（元）</th><th style="text-align:right">金额（元）</th></tr><tr><td>{{项目}}</td><td style="text-align:right">{{数量}}</td><td style="text-align:right">{{单价}}</td><td style="text-align:right">{{金额}}</td></tr></tbody></table><h2 style="text-align:right">合计 ¥{{合计}}</h2><p><br></p><h6>请于 {{付款期限}} 前转账至：千手文具有限公司 · 账号见合同</h6>`,
-    headers:["发票号","客户","地址","开票日期","付款期限","项目","数量","单价","金额","合计"],
-    rows:[
-      ["INV-1101","青柠咖啡（静安店）","上海市静安区梧桐路 18 号","2026-11-02","2026-11-30","A4 复印纸（箱）","12","168.00","2,016.00","2,751.00"],
-      ["INV-1101","青柠咖啡（静安店）","上海市静安区梧桐路 18 号","2026-11-02","2026-11-30","中性笔（盒）","30","24.50","735.00","2,751.00"],
-      ["INV-1102","大鹅物流","成都市武侯区天府大道 99 号","2026-11-03","2026-12-03","文件柜","2","1,280.00","2,560.00","4,156.00"],
-      ["INV-1102","大鹅物流","成都市武侯区天府大道 99 号","2026-11-03","2026-12-03","白板 1.2 米","4","399.00","1,596.00","4,156.00"],
-      ["INV-1103","晚风书店","广州市越秀区北京路 3 号","2026-11-03","2026-12-03","便利贴（包）","100","6.80","680.00","680.00"],
-      ["INV-1104","橘子幼儿园","南京市鼓楼区中山路 12 号","2026-11-04","2026-12-04","彩色卡纸（包）","50","15.00","750.00","1,302.00"],
-      ["INV-1104","橘子幼儿园","南京市鼓楼区中山路 12 号","2026-11-04","2026-12-04","安全剪刀（把）","24","8.50","204.00","1,302.00"],
-      ["INV-1104","橘子幼儿园","南京市鼓楼区中山路 12 号","2026-11-04","2026-12-04","水彩笔（套）","12","29.00","348.00","1,302.00"],
-    ]},
-  offer:{
-    orient:"portrait", file:"录用通知", rule:"录用通知-{{姓名}}",
-    html:`<h6 style="color:${GOLD}">OFFER LETTER</h6><h1>录用通知书</h1><p><br></p><p><b>{{姓名}}</b>：</p><p>你好！感谢你对山海星辰科技的信任。经过几轮面试，我们很高兴地通知你：你已被录用为 <b>{{部门}}</b> 的 <b>{{岗位}}</b>。</p><table><tbody><tr><th>入职日期</th><td>{{入职日期}}</td></tr><tr><th>税前月薪</th><td>{{月薪}} 元</td></tr><tr><th>试用期</th><td>{{试用期}}</td></tr><tr><th>工作地点</th><td>{{工作地点}}</td></tr></tbody></table><p>请在入职当天上午 9:30 带上身份证件到前台报到。如有疑问，随时找 HR。期待与你共事。</p><p><br></p><p style="text-align:right">山海星辰科技有限公司 · 人力资源部</p><p style="text-align:right">{{发出日期}}</p>`,
-    headers:["姓名","部门","岗位","入职日期","月薪","试用期","工作地点","发出日期"],
-    rows:[
-      ["林小满","产品部","产品经理","2026年12月1日","22,000","3 个月","上海","2026年11月2日"],
-      ["周不凡","研发部","前端工程师","2026年12月1日","25,000","3 个月","上海","2026年11月2日"],
-      ["陈一鸣","市场部","品牌策划","2026年12月8日","16,000","2 个月","杭州","2026年11月2日"],
-      ["赵晚晴","财务部","会计","2026年12月8日","14,000","2 个月","杭州","2026年11月2日"],
-      ["孙浩然","研发部","后端工程师","2026年12月15日","26,000","3 个月","深圳","2026年11月3日"],
-    ]},
-};
 
-const VER="0.3.0";
+const VER="0.4.0";
 /* ============ 小工具 ============ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -616,7 +540,7 @@ function groupBuf(){
 function tplSyntaxError(buf){
   try{makeDoc(buf);return null}catch(e){
     const errs=(e.properties&&e.properties.errors)||[e];
-    return errs.slice(0,2).map(x=>(x.properties&&(x.properties.xtag||x.properties.context))||x.message).join("、");
+    return errs.slice(0,2).map(x=>(x.properties&&(x.properties.xtag||x.properties.context))||x.message).join(T.sep);
   }
 }
 
@@ -713,8 +637,8 @@ function htmlToDocx(html,orient,border){
   const files={
     "[Content_Types].xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
     "_rels/.rels":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`,
-    "docProps/core.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>抄经僧</dc:creator></cp:coreProperties>`,
-    "docProps/app.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>抄经僧</Application></Properties>`,
+    "docProps/core.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>${xe(T.brand)}</dc:creator></cp:coreProperties>`,
+    "docProps/app.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>${xe(T.brand)}</Application></Properties>`,
     "word/_rels/document.xml.rels":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>`,
     "word/settings.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings ${W}><w:defaultTabStop w:val="420"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`,
     "word/styles.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Microsoft YaHei" w:cs="Arial"/><w:color w:val="1D1D1F"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US" w:eastAsia="zh-CN"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="360" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`,
@@ -765,7 +689,7 @@ function loadExample(key){
   const e=EXAMPLES[key]; S.restored=false;
   S.data=null; S.tpl=null;
   const ok=setTemplate({name:e.file+".docx",buf:htmlToDocx(e.html,e.orient,e.border),source:"example",html:e.html,orient:e.orient,border:e.border||null,sample:key,rule:e.rule});
-  if(ok)setData({name:e.file+"名单.xlsx",headers:[...e.headers],rows:e.rows.map(r=>[...r]),source:"example"});
+  if(ok)setData({name:e.data,headers:[...e.headers],rows:e.rows.map(r=>[...r]),source:"example"});
 }
 function autoMap(){
   if(!S.tpl||!S.data){S.map={};computeUnits();return}
@@ -834,6 +758,22 @@ function parseText(text,fname){
 function applyT(){
   document.querySelectorAll("[data-t]").forEach(el=>{const v=T[el.dataset.t];if(typeof v==="string"){const sp=el.querySelector("span[data-t]");if(!sp)el.textContent=v}});
   $("#bPrev").setAttribute("aria-label",T.prev); $("#bNext").setAttribute("aria-label",T.next);
+  const ls=$("#langSeg"); ls.setAttribute("aria-label",T.langLabel);
+  ls.innerHTML=CJ_LANGS.map(x=>`<button data-l="${x.code}" lang="${CJ_STRINGS[x.code].htmlLang}" aria-pressed="${x.code===LANG}">${x.label}</button>`).join("");
+  $("#ver").textContent=T.ver(VER);
+}
+/* 换语言（右上角 EN / 中文）：界面字全换；正在看示例就换成这门语言的示例；用户自己的模板和表格一个字不动 */
+function setLang(l){
+  if(!CJ_STRINGS[l]||l===LANG)return;
+  LANG=l; T=CJ_STRINGS[l]; EXAMPLES=T.examples; window.CJ_LANG=l;
+  try{localStorage.setItem(LANG_KEY,l)}catch(e){}
+  const h=document.documentElement; h.lang=T.htmlLang; document.title=T.docTitle;
+  document.querySelector('meta[name="description"]').content=T.metaDesc;
+  document.querySelector('meta[name="apple-mobile-web-app-title"]').content=T.appleTitle;
+  $("#layer").innerHTML=""; document.querySelectorAll(".toast,.menu").forEach(x=>x.remove());
+  applyT(); if(S.err)showErr(null);
+  if(S.tpl&&S.tpl.source==="example"){const k=S.tpl.sample;S.restored=false;loadExample(k)}
+  else{renderAll();preview()}
 }
 const ERR_ICON='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.8v3.6M8 11.1v.1"/></svg>';
 function showErr(e){ // 出错：一句人话 + 怎么办，放在丢文件的地方
@@ -850,7 +790,7 @@ function renderAll(){
 function renderSamples(){
   const box=$("#samples"), on=S.tpl&&S.tpl.source==="example"; $("#samplesBox").hidden=!on; box.innerHTML="";
   if(!on)return;
-  for(const k in EXAMPLES){const b=document.createElement("button");b.textContent=T.samples[k];b.setAttribute("aria-pressed",String(S.tpl.sample===k));b.onclick=()=>loadExample(k);box.appendChild(b)}
+  for(const k in EXAMPLES){const b=document.createElement("button");b.textContent=T.samples[k];b.dataset.k=k;b.setAttribute("aria-pressed",String(S.tpl.sample===k));b.onclick=()=>loadExample(k);box.appendChild(b)}
 }
 function renderTpl(){
   const t=S.tpl; renderSamples();
@@ -879,7 +819,7 @@ function tblFade(){const w=$("#tblWrap");if(!w)return;w.style.setProperty("--fr"
 function renderRestore(){
   const r=$("#restore"), mine=S.tpl&&S.tpl.source!=="example";
   r.hidden=!(S.restored||S.tpl&&S.tpl.source==="editor");
-  $("#restoreT").textContent=S.restored?T.restored+(S.restoredAt?" · "+new Date(S.restoredAt).toLocaleDateString("zh-CN",{month:"long",day:"numeric"}):""):"";
+  $("#restoreT").textContent=S.restored?T.restored+(S.restoredAt?" · "+T.date(S.restoredAt):""):"";
   $("#bForget").hidden=!S.restored; $("#bDlTpl").hidden=!S.tpl||S.tpl.source==="word";
 }
 function markRow(){
@@ -897,7 +837,7 @@ function renderMap(){
   if(!S.data||!tags.length){list.innerHTML=`<div class="mapnone">${!tags.length?T.mapNone:T.mapWait}</div>`;sum.textContent="";$("#grp").hidden=true;$("#unused").hidden=true;return}
   const H=S.data.headers; const bad=tags.filter(t=>S.map[t]===-1).length;
   if(!bad&&!S.mapOpen){ // 全对上了就收起来：一行说清对了啥，点「改」展开
-    const line=tags.map(t=>S.map[t]===-2?`{{${t}}} 留空`:norm(H[S.map[t]])===norm(t)?t:`${t} ← ${H[S.map[t]]}`).join("、");
+    const line=tags.map(t=>S.map[t]===-2?T.blankTag(t):norm(H[S.map[t]])===norm(t)?t:`${t} ← ${H[S.map[t]]}`).join(T.sep);
     list.innerHTML=`<div class="mrow fold"><span class="mline">${esc(line)}</span><button class="btn text sm" id="bMapOpen">${T.mapOpen}</button></div>`;
     $("#bMapOpen").onclick=()=>{S.mapOpen=true;renderMap()};
   }
@@ -914,7 +854,7 @@ function renderMap(){
   if(bad){sum.textContent=T.mapBad(bad);sum.className="meta warn"}
   else{sum.textContent=T.mapAllOk(tags.length);sum.className="meta"}
   const used=new Set(Object.values(S.map)); const un=H.filter((_,i)=>!used.has(i));
-  const u=$("#unused"); u.hidden=!un.length; u.textContent=T.unused(un.join("、"));
+  const u=$("#unused"); u.hidden=!un.length; u.textContent=T.unused(un.join(T.sep));
   const g=S.group, gb=$("#grp"); gb.hidden=!g;
   if(g){$("#grpT").textContent=g.off?T.groupOff(g.col):T.grouped(g.col,g.rows,g.units);$("#bGrp").textContent=g.off?T.merge:T.split}
 }
@@ -947,9 +887,9 @@ function fileBase(u){
   if(!S.data)return ""; const r=S.data.rows[i]||[]; const H=S.data.headers; let tags=0, filled=0;
   const val=k=>{k=k.trim();let c=S.map[k];if(c==null||c<0)c=H.indexOf(k);if(c<0){const nk=norm(k);c=H.findIndex(h=>norm(h)===nk)}const v=c>=0?String(r[c]??"").trim():"";tags++;if(v)filled++;return v};
   let s=(S.rule||"").replace(TAG_RE,(m,k)=>val(k));
-  if(tags&&!filled){let first=true;s=(S.rule||"").replace(TAG_RE,()=>first?(first=false,`第${u+1}份`):"")} // 命名的列全空：退成「第 N 份」
+  if(tags&&!filled){let first=true;s=(S.rule||"").replace(TAG_RE,()=>first?(first=false,T.fileN(u+1)):"")} // 命名的列全空：退成「第 N 份」
   s=s.replace(/[\\/:*?"<>|\u0000-\u001F]/g,"_").replace(/\s+/g," ").trim().replace(/^[.\s_\-－—·,，]+|[.\s_\-－—·,，]+$/g,"");
-  if(!s)s=`第${u+1}份`;
+  if(!s)s=T.fileN(u+1);
   return s.slice(0,90);
 }
 
@@ -1638,7 +1578,7 @@ function pdfJob(sess,list,title){
   return (async()=>{
     for(const {fam,w:wt,id} of sess.fonts)await FAMS[fam].sfnt[wt][id]; // 字体先到，活儿后到（同一个线程里消息按顺序）
     while(w.imgs<IMGS.length){w.postMessage({type:"img",id:w.imgs,img:IMGS[w.imgs]});w.imgs++}
-    const id=++POOL.seq; list.title=title; list.producer=`${T.title} ${VER}`;
+    const id=++POOL.seq; list.title=title; list.producer=`${T.brand} ${VER}`;
     return new Promise((ok,no)=>{w.q.set(id,{ok,no});w.postMessage({type:"job",id,pdf:list})});
   })();
 }
@@ -1682,7 +1622,7 @@ async function generate(){
       pt.textContent=T.packing; $("#bStop").hidden=true; await tick();
       const blob=await zip.generateAsync({type:"blob",compression:"STORE"});
       const tname=S.tpl.name.replace(/\.docx$/i,"");
-      const zname=`${tname}-${made}份.zip`;
+      const zname=T.zipName(tname,made);
       S.lastZip={blob,name:zname};
       download(blob,zname);
       $("#doneT").textContent=S.stop?T.stopped(made):T.doneMsg(made,sec()); $("#done").hidden=false; S.lastSig=sig();
@@ -1773,7 +1713,7 @@ $("#bOnePdf").onclick=()=>downloadOne("pdf");
 /* ============ 粘贴表格 ============ */
 function openPaste(){
   const L=$("#layer");
-  L.innerHTML=`<div class="scrim"><div class="sheet small" role="dialog" aria-label="${T.pasteTitle}"><div class="sh-h"><button class="btn text l" id="pX">${T.cancel}</button><b>${T.pasteTitle}</b><button class="btn primary sm r" id="pOk">${T.pasteOk}</button></div><textarea class="paste" id="pTa" spellcheck="false" placeholder="姓名\t课程\t日期&#10;林小满\tExcel 入门\t2026-11-02"></textarea><div class="sh-foot">${T.pasteHint}</div></div></div>`;
+  L.innerHTML=`<div class="scrim"><div class="sheet small" role="dialog" aria-label="${T.pasteTitle}"><div class="sh-h"><button class="btn text l" id="pX">${T.cancel}</button><b>${T.pasteTitle}</b><button class="btn primary sm r" id="pOk">${T.pasteOk}</button></div><textarea class="paste" id="pTa" spellcheck="false" placeholder="${esc(T.pastePh).replace(/\n/g,"&#10;")}"></textarea><div class="sh-foot">${T.pasteHint}</div></div></div>`;
   const close=()=>L.innerHTML=""; $("#pX").onclick=close; L.querySelector(".scrim").onclick=e=>{if(e.target.classList.contains("scrim"))close()};
   $("#pTa").focus();
   $("#pOk").onclick=()=>{const v=$("#pTa").value;if(!v.trim()){close();return}const d=parseText(v.replace(/^﻿/,""),T.pasted);d.source="paste";close();S.restored=false;setData(d)};
@@ -1789,7 +1729,7 @@ const ICON={
 };
 function openEditor(){
   const t=S.tpl; const L=$("#layer");
-  const startHtml=t&&t.html?t.html:`<h1>标题</h1><p>{{姓名}}：</p><p>正文写在这里。</p>`;
+  const startHtml=t&&t.html?t.html:T.edStart;
   let orient=t&&t.html?(t.orient||"portrait"):"portrait"; let border=t&&t.html?t.border||null:null;
   const sw=c=>`<button class="tb" data-color="${c}" title="${c}"><span class="sw" style="background:${c}"></span></button>`;
   L.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-label="${T.edTitle}" style="height:100%">
@@ -1852,11 +1792,11 @@ function openEditor(){
 $("#bEdit").onclick=openEditor; $("#bEdit0").onclick=openEditor;
 
 /* ============ 开机：上回的文件和选过的格式自己接上；第一次来就是空的，丢文件或点示例 ============ */
-applyT(); $("#ver").textContent=T.ver(VER);
+applyT(); $("#langSeg").onclick=e=>{const b=e.target.closest("button[data-l]");if(b)setLang(b.dataset.l)};
 if(M.fmt&&/^(docx|pdf|both)$/.test(M.fmt)){S.fmt=M.fmt;S.fmtFromMem=true}
 renderAll();
 restoreLast().then(ok=>{S.booted=true;if(!ok)renderAll()});
-window.__S=S; window.__M=M; window.__api={htmlToDocx,extractTags,fillDocx,docxToPdf,setData,generate,computeUnits,pdfSession,loadExample,takeFiles};
+window.__S=S; window.__M=M; window.__api={setLang,htmlToDocx,extractTags,fillDocx,docxToPdf,setData,generate,computeUnits,pdfSession,loadExample,takeFiles};
 </script>
 </body>
 </html>

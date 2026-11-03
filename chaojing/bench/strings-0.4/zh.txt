@@ -1,0 +1,181 @@
+htmlLang	zh-CN
+docTitle	抄经僧
+metaDesc	Word 模板配一张表，一行抄一份证书、发票、合同，打包成 Word 或 PDF。全在浏览器里干，文件不上传。
+appleTitle	抄经僧
+brand	抄经僧
+brandX	
+langLabel	语言
+privacy	文件不出本机
+privacyShort	文件不出本机
+heroT	名单丢来，你去喝茶
+heroS	Word 模板配一张表，一行抄一份证书、发票、合同。 ⏎ 500 份 PDF，十秒内抄完。
+dropT	模板和表格一起丢进来
+dropS	Word 里写 {{姓名}} 这样的空位，贫僧自己认、自己对。
+pick	选文件
+tryIt	用示例试试
+noTpl	没模板？
+editOne	在线写一个
+haveClip	表在剪贴板里？
+pasteOne	粘贴
+filesTitle	文件
+repick	换文件
+edit	编辑
+paste	粘贴
+dlTpl	下载模板
+forget	清掉
+mapTitle	对号入座
+outTitle	出货
+fmt	格式
+both	都要
+nameRule	文件名
+go	下载 8 份 Word
+go	下载 8 份 PDF
+go	下载 8 份 Word + PDF
+go	下载 1 份 PDF
+goNone	表里没东西
+goNoData	还差一张表
+goNoTpl	还差 Word 模板
+stop	停
+again	再下一次
+oneDocx	只下这份 Word
+onePdf	只下这份 PDF
+prev	上一份
+next	下一份
+home	千手院
+findAbbot	找方丈飞鸽传书：
+samples.cert	结业证书
+samples.invoice	发票
+samples.offer	录用通知
+tplSubTags	认出 5 个空位
+tplSubNone	一个 {{空位}} 都没找到
+needTpl	还差 Word 模板
+needTplSub	丢进来，或者点「编辑」在线写一个
+needData	还差一张表
+needDataSub	Excel / CSV 丢进来，或者粘贴
+fromEditor	在线写的
+fromWord	Word
+fromExample	示例
+dataSub	8 行 · 6 列
+moreRows	还有 200 行没列出来，下载时一行不落。
+mapAllOk	5 个全对上了
+mapBad	2 个没对上
+mapNone	模板里没有空位
+mapOpen	改
+mapWait	表来了自动对
+optUnmapped	没对上（原样留着）
+optBlank	留空
+blankTag	{{手机}} 留空
+sep	、
+unused	表里没用上的列：手机、备注
+rowOf	第 1 / 8 份
+tplOnly	模板原样，表来了就填上
+progress	已抄 120 / 500 份 · 3.1 秒
+packing	打包中…
+doneMsg	500 份抄完，7.2 秒
+stopped	停了，抄好的 120 份照样给你
+memoNew	格式、文件名、对号，下回都记着。
+memoUsed	格式和文件名按上回的，改了也记着。
+restored	接着上回的
+date	11月3日
+forgot	上回的文件清掉了
+undo	撤销
+errTpl	这个 Word 打不开。 换一份 .docx 试试；.doc 老格式先在 Word 里另存为 .docx。
+errTplSyntax	模板里的花括号没配对。 {{姓名。在 Word 里把它改成 {{名字}} 这样再丢一次。
+errData	这张表读不出来。 换成 .xlsx 或 .csv 再丢一次。
+errEmpty	表里一行数据都没有。 第一行是表头，下面每行出一份。
+errWhat	「报价单.pdf」贫僧不认得。 只认 .docx 模板和 Excel / CSV 表格。
+errGen	没抄完。 字体没搬过来，网断了？再点一次试试；还不行就换成 Word 格式。
+fontFail	字体没搬过来，网断了？
+pvFail	这份预览不出来，下载的 Word 照样能打开
+pvWait	等 Word 模板
+edTitle	在线编辑
+cancel	取消
+use	用这个
+edField	插入空位
+edNewField	新空位
+edAdd	加
+edHr	分隔线
+edH1	大标题
+edH2	标题
+edH3	小标题
+edP	正文
+edSmall	小字
+edPortrait	竖版
+edLandscape	横版
+edBorder	花边
+edStart	<h1>标题</h1><p>{{姓名}}：</p><p>正文写在这里。</p>
+pasteTitle	粘贴表格
+pasteHint	从 Excel、WPS、飞书表格里整块复制过来，第一行是表头。
+pasteOk	用这个
+pastePh	姓名 ⇥ 课程 ⇥ 日期 ⏎ 林小满 ⇥ Excel 入门 ⇥ 2026-11-02
+editorName	在线写的模板
+pasted	粘贴的表格
+noHeaderCol	第 3 列
+fileN	第 7 份
+zipName	结业证书-8份.zip
+pdfNote	头一回出 PDF，先搬一套中文字体，就这一次
+grouped	「发票号」相同的行并成一份：8 行 → 4 份
+groupOff	同一个「发票号」的几行，可以并成一份
+split	拆开
+merge	并起来
+ver	v0.4.0
+examples.cert.file	结业证书.docx
+examples.cert.data	结业证书名单.xlsx
+examples.cert.rule	{{姓名}}-结业证书
+examples.cert.text1	CERTIFICATE OF COMPLETION
+examples.cert.text2	结 业 证 书
+examples.cert.text3	兹证明
+examples.cert.text4	{{姓名}}
+examples.cert.text5	于 {{结业日期}} 完成「{{课程}}」全部课程，共计 {{学时}} 学时，考核合格，特发此证。
+examples.cert.text6	千手书院 · 教务处
+examples.cert.text7	证书编号 {{证书编号}}
+examples.cert.headers	姓名 | 课程 | 学时 | 结业日期 | 证书编号 | 手机
+examples.cert.row1	林小满 | Excel 从入门到装懂 | 32 | 2026年11月2日 | QS-2026-0001 | 138 0000 0001
+examples.cert.row2	周不凡 | PPT 一页讲完年终总结 | 16 | 2026年11月2日 | QS-2026-0002 | 138 0000 0002
+examples.cert.row3	陈一鸣 | 会议纪要速记术 | 12 | 2026年11月3日 | QS-2026-0003 | 138 0000 0003
+examples.cert.row4	赵晚晴 | 邮件礼仪与甩锅艺术 | 8 | 2026年11月3日 | QS-2026-0004 | 138 0000 0004
+examples.cert.row5	孙浩然 | Excel 从入门到装懂 | 32 | 2026年11月4日 | QS-2026-0005 | 138 0000 0005
+examples.cert.row6	吴可可 | 数据透视表七十二变 | 24 | 2026年11月4日 | QS-2026-0006 | 138 0000 0006
+examples.cert.row7	郑大白 | PPT 一页讲完年终总结 | 16 | 2026年11月5日 | QS-2026-0007 | 138 0000 0007
+examples.cert.row8	王知秋 | 会议纪要速记术 | 12 | 2026年11月5日 | QS-2026-0008 | 138 0000 0008
+examples.invoice.file	发票.docx
+examples.invoice.data	发票明细.xlsx
+examples.invoice.rule	{{发票号}}-{{客户}}
+examples.invoice.text1	INVOICE
+examples.invoice.text2	发票
+examples.invoice.text3	发票号　{{发票号}}　　开票日期　{{开票日期}}
+examples.invoice.text4	开给
+examples.invoice.text5	{{客户}} / {{地址}}
+examples.invoice.text6	项目 | 数量 | 单价（元） | 金额（元）
+examples.invoice.text7	{{项目}} | {{数量}} | {{单价}} | {{金额}}
+examples.invoice.text8	合计 ¥{{合计}}
+examples.invoice.text9	请于 {{付款期限}} 前转账至：千手文具有限公司 · 账号见合同
+examples.invoice.headers	发票号 | 客户 | 地址 | 开票日期 | 付款期限 | 项目 | 数量 | 单价 | 金额 | 合计
+examples.invoice.row1	INV-1101 | 青柠咖啡（静安店） | 上海市静安区梧桐路 18 号 | 2026-11-02 | 2026-11-30 | A4 复印纸（箱） | 12 | 168.00 | 2,016.00 | 2,751.00
+examples.invoice.row2	INV-1101 | 青柠咖啡（静安店） | 上海市静安区梧桐路 18 号 | 2026-11-02 | 2026-11-30 | 中性笔（盒） | 30 | 24.50 | 735.00 | 2,751.00
+examples.invoice.row3	INV-1102 | 大鹅物流 | 成都市武侯区天府大道 99 号 | 2026-11-03 | 2026-12-03 | 文件柜 | 2 | 1,280.00 | 2,560.00 | 4,156.00
+examples.invoice.row4	INV-1102 | 大鹅物流 | 成都市武侯区天府大道 99 号 | 2026-11-03 | 2026-12-03 | 白板 1.2 米 | 4 | 399.00 | 1,596.00 | 4,156.00
+examples.invoice.row5	INV-1103 | 晚风书店 | 广州市越秀区北京路 3 号 | 2026-11-03 | 2026-12-03 | 便利贴（包） | 100 | 6.80 | 680.00 | 680.00
+examples.invoice.row6	INV-1104 | 橘子幼儿园 | 南京市鼓楼区中山路 12 号 | 2026-11-04 | 2026-12-04 | 彩色卡纸（包） | 50 | 15.00 | 750.00 | 1,302.00
+examples.invoice.row7	INV-1104 | 橘子幼儿园 | 南京市鼓楼区中山路 12 号 | 2026-11-04 | 2026-12-04 | 安全剪刀（把） | 24 | 8.50 | 204.00 | 1,302.00
+examples.invoice.row8	INV-1104 | 橘子幼儿园 | 南京市鼓楼区中山路 12 号 | 2026-11-04 | 2026-12-04 | 水彩笔（套） | 12 | 29.00 | 348.00 | 1,302.00
+examples.offer.file	录用通知.docx
+examples.offer.data	录用名单.xlsx
+examples.offer.rule	录用通知-{{姓名}}
+examples.offer.text1	OFFER LETTER
+examples.offer.text2	录用通知书
+examples.offer.text3	{{姓名}}：
+examples.offer.text4	你好！几轮面试聊下来，我们想请你加入 {{部门}}，担任 {{岗位}}。
+examples.offer.text5	入职日期 | {{入职日期}}
+examples.offer.text6	税前月薪 | {{月薪}} 元
+examples.offer.text7	试用期 | {{试用期}}
+examples.offer.text8	工作地点 | {{工作地点}}
+examples.offer.text9	入职当天上午 9:30，带上身份证件到前台报到就行。有问题随时找 HR。
+examples.offer.text10	山海星辰科技有限公司 · 人力资源部
+examples.offer.text11	{{发出日期}}
+examples.offer.headers	姓名 | 部门 | 岗位 | 入职日期 | 月薪 | 试用期 | 工作地点 | 发出日期
+examples.offer.row1	林小满 | 产品部 | 产品经理 | 2026年12月1日 | 22,000 | 3 个月 | 上海 | 2026年11月2日
+examples.offer.row2	周不凡 | 研发部 | 前端工程师 | 2026年12月1日 | 25,000 | 3 个月 | 上海 | 2026年11月2日
+examples.offer.row3	陈一鸣 | 市场部 | 品牌策划 | 2026年12月8日 | 16,000 | 2 个月 | 杭州 | 2026年11月2日
+examples.offer.row4	赵晚晴 | 财务部 | 会计 | 2026年12月8日 | 14,000 | 2 个月 | 杭州 | 2026年11月2日
+examples.offer.row5	孙浩然 | 研发部 | 后端工程师 | 2026年12月15日 | 26,000 | 3 个月 | 深圳 | 2026年11月3日

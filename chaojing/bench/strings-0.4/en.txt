@@ -1,0 +1,187 @@
+htmlLang	en
+docTitle	Chaojing · Doc Batcher
+metaDesc	Mail merge in your browser. A Word template plus a spreadsheet becomes one certificate, invoice or contract per row, as Word or PDF. Nothing gets uploaded.
+appleTitle	Chaojing
+brand	Chaojing
+brandX	 · Doc Batcher
+langLabel	Language
+privacy	Files stay on your device
+privacyShort	On-device
+heroT	Leave the copying to the monk.
+heroS	Mail merge for Word and PDF: one certificate, invoice or contract per row. ⏎ 500 PDFs in under ten seconds.
+dropT	Drop your template and spreadsheet
+dropS	Type fields like {{Name}} in Word. We find them and match the columns.
+pick	Choose files
+tryIt	Try a sample
+noTpl	No template? 
+editOne	Write one
+haveClip	Data on your clipboard? 
+pasteOne	Paste it
+filesTitle	Files
+repick	Swap files
+edit	Edit
+paste	Paste
+dlTpl	Get .docx
+forget	Clear
+mapTitle	Matchmaking
+outTitle	Ship it
+fmt	Format
+both	Both
+nameRule	File name
+go	Download 8 Word docs
+go	Download 8 PDFs
+go	Download 8 as Word + PDF
+go	Download 1 PDF
+go	Download 1 Word doc
+goNone	Sheet is empty
+goNoData	Needs a spreadsheet
+goNoTpl	Needs a Word template
+stop	Stop
+again	Download again
+oneDocx	This one as Word
+onePdf	This one as PDF
+prev	Previous
+next	Next
+home	Qianshou Lab
+findAbbot	Write to the abbot: 
+samples.cert	Certificate
+samples.invoice	Invoice
+samples.offer	Offer letter
+tplSubTags	5 fields
+tplSubTags	1 field
+tplSubNone	No {{fields}} found
+needTpl	Needs a Word template
+needTplSub	Drop one in, or hit Edit to write one
+needData	Needs a spreadsheet
+needDataSub	Drop in Excel or CSV, or paste
+fromEditor	Made here
+fromWord	Word
+fromExample	Sample
+dataSub	8 rows · 6 columns
+dataSub	1 row · 1 column
+moreRows	Plus 200 more rows. All of them go in the download.
+mapAllOk	All 5 matched
+mapAllOk	Matched
+mapBad	2 unmatched
+mapNone	No fields in this template
+mapOpen	Edit
+mapWait	We'll match these once the data arrives
+optUnmapped	Unmatched (left as is)
+optBlank	Leave blank
+blankTag	{{Phone}} blank
+sep	, 
+unused	Unused columns: Phone, Notes
+rowOf	1 of 8
+tplOnly	The template as is. Add data to fill it in.
+progress	Copied 120 of 500 · 3.1 s
+packing	Zipping…
+doneMsg	500 documents in 7.2 s
+doneMsg	1 document in 0.4 s
+stopped	Stopped. You still get the 120 that finished.
+memoNew	Format, file name and matches are remembered.
+memoUsed	Format and file name from last time. Changes stick.
+restored	From last time
+date	Nov 3
+forgot	Last session's files cleared
+undo	Undo
+errTpl	Can't open this Word file. Try another .docx. Got an old .doc? Save it as .docx in Word first.
+errTplSyntax	Some curly braces don't pair up. {{Name. Make it look like {{Name}} in Word, then drop it in again.
+errData	Can't read this spreadsheet. Save it as .xlsx or .csv and drop it in again.
+errEmpty	This sheet is empty. Very zen, not very useful. Headers go in row 1. Each row below becomes a document.
+errWhat	Not sure what to do with “quote.pdf”. Templates are .docx. Data is Excel or CSV.
+errGen	That didn't finish. Couldn't fetch the fonts. Offline? Try again. If it still fails, switch to Word.
+fontFail	Couldn't fetch the fonts. Offline?
+pvFail	Can't preview this one. The Word file still opens fine.
+pvWait	Waiting for a Word template
+edTitle	Editor
+cancel	Cancel
+use	Done
+edField	Field
+edNewField	New field
+edAdd	Add
+edHr	Divider
+edH1	Title
+edH2	Heading
+edH3	Subhead
+edP	Body
+edSmall	Small print
+edPortrait	Portrait
+edLandscape	Landscape
+edBorder	Border
+edStart	<h1>Title</h1><p>Dear {{Name}},</p><p>Your text goes here.</p>
+pasteTitle	Paste a table
+pasteHint	Copy a block from Excel, Google Sheets or Numbers. First row is the header.
+pasteOk	Use
+pastePh	Name ⇥ Course ⇥ Date ⏎ Ava Chen ⇥ Excel basics ⇥ 2026-11-02
+editorName	Untitled template
+pasted	Pasted table
+noHeaderCol	Column 3
+fileN	Doc 7
+zipName	Certificate - 8 docs.zip
+zipName	Certificate - 1 doc.zip
+pdfNote	First PDF: fetching fonts. Just this once.
+grouped	Rows with the same “Invoice No” are merged: 8 rows → 4 docs
+groupOff	Rows with the same “Invoice No” can be merged into one
+split	Split
+merge	Merge
+ver	v0.4.0
+examples.cert.file	Certificate.docx
+examples.cert.data	Graduates.xlsx
+examples.cert.rule	{{Name}} - Certificate
+examples.cert.text1	QIANSHOU ACADEMY
+examples.cert.text2	Certificate of Completion
+examples.cert.text3	This certifies that
+examples.cert.text4	{{Name}}
+examples.cert.text5	completed all {{Hours}} hours of "{{Course}}" on {{Date}} and passed the final assessment.
+examples.cert.text6	Qianshou Academy, Office of the Registrar
+examples.cert.text7	CERTIFICATE NO. {{Certificate No}}
+examples.cert.headers	Name | Course | Hours | Date | Certificate No | Phone
+examples.cert.row1	Ava Chen | Excel: Fake It Till You Make It | 32 | November 2, 2026 | QS-2026-0001 | 555-0101
+examples.cert.row2	Leo Park | The One-Slide Year in Review | 16 | November 2, 2026 | QS-2026-0002 | 555-0102
+examples.cert.row3	Nora Quinn | Meeting Notes Nobody Reads | 12 | November 3, 2026 | QS-2026-0003 | 555-0103
+examples.cert.row4	Sam Patel | Email Etiquette and Strategic Cc'ing | 8 | November 3, 2026 | QS-2026-0004 | 555-0104
+examples.cert.row5	Iris Novak | Excel: Fake It Till You Make It | 32 | November 4, 2026 | QS-2026-0005 | 555-0105
+examples.cert.row6	Theo Brooks | Pivot Tables Without Tears | 24 | November 4, 2026 | QS-2026-0006 | 555-0106
+examples.cert.row7	Mia Torres | The One-Slide Year in Review | 16 | November 5, 2026 | QS-2026-0007 | 555-0107
+examples.cert.row8	Owen Hart | Meeting Notes Nobody Reads | 12 | November 5, 2026 | QS-2026-0008 | 555-0108
+examples.invoice.file	Invoice.docx
+examples.invoice.data	Invoice lines.xlsx
+examples.invoice.rule	{{Invoice No}} - {{Client}}
+examples.invoice.text1	INVOICE
+examples.invoice.text2	Invoice
+examples.invoice.text3	Invoice no. {{Invoice No}}  Date {{Date}}
+examples.invoice.text4	Bill to
+examples.invoice.text5	{{Client}} / {{Address}}
+examples.invoice.text6	Item | Qty | Unit price | Amount
+examples.invoice.text7	{{Item}} | {{Qty}} | {{Unit price}} | {{Amount}}
+examples.invoice.text8	Total ${{Total}}
+examples.invoice.text9	Due by {{Due}}. Pay to Qianshou Stationery Co., bank details in your contract.
+examples.invoice.headers	Invoice No | Client | Address | Date | Due | Item | Qty | Unit price | Amount | Total
+examples.invoice.row1	INV-1101 | Lime Tree Coffee (Downtown) | 18 Elm St, Portland, OR 97204 | Nov 2, 2026 | Nov 30, 2026 | Copy paper, Letter (case) | 12 | 42.00 | 504.00 | 789.00
+examples.invoice.row2	INV-1101 | Lime Tree Coffee (Downtown) | 18 Elm St, Portland, OR 97204 | Nov 2, 2026 | Nov 30, 2026 | Gel pens (box of 12) | 30 | 9.50 | 285.00 | 789.00
+examples.invoice.row3	INV-1102 | Big Goose Freight | 99 Harbor Blvd, Oakland, CA 94607 | Nov 3, 2026 | Dec 3, 2026 | Filing cabinet | 2 | 189.00 | 378.00 | 694.00
+examples.invoice.row4	INV-1102 | Big Goose Freight | 99 Harbor Blvd, Oakland, CA 94607 | Nov 3, 2026 | Dec 3, 2026 | Whiteboard, 4 ft | 4 | 79.00 | 316.00 | 694.00
+examples.invoice.row5	INV-1103 | Night Owl Books | 3 Mill Ln, Burlington, VT 05401 | Nov 3, 2026 | Dec 3, 2026 | Sticky notes (pack) | 100 | 1.80 | 180.00 | 180.00
+examples.invoice.row6	INV-1104 | Little Orange Preschool | 12 Park Ave, Madison, WI 53703 | Nov 4, 2026 | Dec 4, 2026 | Construction paper (pack) | 50 | 3.20 | 160.00 | 301.00
+examples.invoice.row7	INV-1104 | Little Orange Preschool | 12 Park Ave, Madison, WI 53703 | Nov 4, 2026 | Dec 4, 2026 | Safety scissors | 24 | 2.50 | 60.00 | 301.00
+examples.invoice.row8	INV-1104 | Little Orange Preschool | 12 Park Ave, Madison, WI 53703 | Nov 4, 2026 | Dec 4, 2026 | Washable markers (set) | 12 | 6.75 | 81.00 | 301.00
+examples.offer.file	Offer Letter.docx
+examples.offer.data	New hires.xlsx
+examples.offer.rule	Offer Letter - {{Name}}
+examples.offer.text1	OFFER LETTER
+examples.offer.text2	Welcome aboard
+examples.offer.text3	Dear {{Name}},
+examples.offer.text4	After more interview rounds than anyone enjoyed, we're delighted to offer you the role of {{Role}} on our {{Team}} team.
+examples.offer.text5	Start date | {{Start date}}
+examples.offer.text6	Base salary | ${{Salary}} a year
+examples.offer.text7	Probation | {{Probation}}
+examples.offer.text8	Location | {{Location}}
+examples.offer.text9	On day one, bring a photo ID to reception by 9:30 a.m. Questions before then? HR is one email away.
+examples.offer.text10	People Team, Hill & Harbor Technologies, Inc.
+examples.offer.text11	{{Date}}
+examples.offer.headers	Name | Team | Role | Start date | Salary | Probation | Location | Date
+examples.offer.row1	Ava Chen | Product | Product Manager | December 1, 2026 | 132,000 | 90 days | San Francisco | November 2, 2026
+examples.offer.row2	Leo Park | Engineering | Frontend Engineer | December 1, 2026 | 145,000 | 90 days | San Francisco | November 2, 2026
+examples.offer.row3	Nora Quinn | Marketing | Brand Strategist | December 8, 2026 | 98,000 | 60 days | Austin | November 2, 2026
+examples.offer.row4	Sam Patel | Finance | Accountant | December 8, 2026 | 88,000 | 60 days | Austin | November 2, 2026
+examples.offer.row5	Iris Novak | Engineering | Backend Engineer | December 15, 2026 | 150,000 | 90 days | Seattle | November 3, 2026
