@@ -1,0 +1,249 @@
+{
+  "problems": [],
+  "results": [
+    {
+      "tag": "a-en-390",
+      "errors": 0,
+      "hscroll": 0,
+      "toggle": {
+        "top": 14,
+        "right": 16,
+        "w": 108,
+        "h": 38
+      },
+      "ring": "237.9px",
+      "noto": true,
+      "canvas": "780x1688",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\"",
+      "fbBody": "What’s not working:⏎⏎What you want:⏎⏎Anything else:⏎⏎⏎——⏎QIANSHOU LAB homepage · Linux · Chrome"
+    },
+    {
+      "tag": "a-en-1280",
+      "errors": 0,
+      "hscroll": 0,
+      "toggle": {
+        "top": 14,
+        "right": 16,
+        "w": 108,
+        "h": 38
+      },
+      "ring": "368.0px",
+      "noto": true,
+      "canvas": "2560x1600",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\"",
+      "fbBody": "What’s not working:⏎⏎What you want:⏎⏎Anything else:⏎⏎⏎——⏎QIANSHOU LAB homepage · Linux · Chrome"
+    },
+    {
+      "tag": "a-zh-390",
+      "errors": 0,
+      "hscroll": 0,
+      "toggle": {
+        "top": 14,
+        "right": 16,
+        "w": 108,
+        "h": 38
+      },
+      "ring": "237.9px",
+      "noto": true,
+      "canvas": "780x1688",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"PingFang SC\"",
+      "fbBody": "哪里不好用：⏎⏎想要什么：⏎⏎别的：⏎⏎⏎——⏎总舵 · Linux · Chrome"
+    },
+    {
+      "tag": "a-zh-1280",
+      "errors": 0,
+      "hscroll": 0,
+      "toggle": {
+        "top": 14,
+        "right": 16,
+        "w": 108,
+        "h": 38
+      },
+      "ring": "368.0px",
+      "noto": true,
+      "canvas": "2560x1600",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"PingFang SC\"",
+      "fbBody": "哪里不好用：⏎⏎想要什么：⏎⏎别的：⏎⏎⏎——⏎总舵 · Linux · Chrome"
+    },
+    {
+      "tag": "b-en-390",
+      "errors": 0,
+      "hscroll": 0,
+      "toggle": {
+        "top": 14,
+        "right": 16,
+        "w": 108,
+        "h": 38
+      },
+      "ring": "",
+      "noto": true,
+      "canvas": "780x1688",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\"",
+      "fbBody": "What’s not working:⏎⏎What you want:⏎⏎Anything else:⏎⏎⏎——⏎QIANSHOU LAB homepage · Linux · Chrome"
+    },
+    {
+      "tag": "b-en-1280",
+      "errors": 0,
+      "hscroll": 0,
+      "toggle": {
+        "top": 14,
+        "right": 16,
+        "w": 108,
+        "h": 38
+      },
+      "ring": "",
+      "noto": true,
+      "canvas": "2560x1600",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\"",
+      "fbBody": "What’s not working:⏎⏎What you want:⏎⏎Anything else:⏎⏎⏎——⏎QIANSHOU LAB homepage · Linux · Chrome"
+    },
+    {
+      "tag": "b-zh-390",
+      "errors": 0,
+      "hscroll": 0,
+      "toggle": {
+        "top": 14,
+        "right": 16,
+        "w": 108,
+        "h": 38
+      },
+      "ring": "",
+      "noto": true,
+      "canvas": "780x1688",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"PingFang SC\"",
+      "fbBody": "哪里不好用：⏎⏎想要什么：⏎⏎别的：⏎⏎⏎——⏎总舵 · Linux · Chrome"
+    },
+    {
+      "tag": "b-zh-1280",
+      "errors": 0,
+      "hscroll": 0,
+      "toggle": {
+        "top": 14,
+        "right": 16,
+        "w": 108,
+        "h": 38
+      },
+      "ring": "",
+      "noto": true,
+      "canvas": "2560x1600",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"PingFang SC\"",
+      "fbBody": "哪里不好用：⏎⏎想要什么：⏎⏎别的：⏎⏎⏎——⏎总舵 · Linux · Chrome"
+    },
+    {
+      "tag": "toggle",
+      "steps": [
+        "打开 → en / Monks on Duty / QIANSHOU LAB · Cyber Zen, Hardcore Tools",
+        "点中文 → zh-CN / 在岗罗汉 / 千手院 · QIANSHOU LAB",
+        "刷新 → zh-CN / 在岗罗汉 / 千手院 · QIANSHOU LAB",
+        "点 EN → en / Monks on Duty / QIANSHOU LAB · Cyber Zen, Hardcore Tools",
+        "刷新 → en / Monks on Duty / QIANSHOU LAB · Cyber Zen, Hardcore Tools",
+        "?lang=zh → zh-CN / 在岗罗汉 / 千手院 · QIANSHOU LAB",
+        "再开（不带参数） → en / Monks on Duty / QIANSHOU LAB · Cyber Zen, Hardcore Tools"
+      ]
+    },
+    {
+      "tag": "links",
+      "links": [
+        {
+          "href": "/luruseng/",
+          "url": "/luruseng/",
+          "local": 404,
+          "live": 200,
+          "title": "录入僧 · 施主去玩，贫僧填表"
+        },
+        {
+          "href": "/pabiao/",
+          "url": "/pabiao/",
+          "local": 404,
+          "live": 200,
+          "title": "渡表僧 · 表丢来，你去玩，贫僧超度"
+        },
+        {
+          "href": "/xibiao/",
+          "url": "/xibiao/",
+          "local": 404,
+          "live": 200,
+          "title": "洗表僧"
+        },
+        {
+          "href": "/yijing/",
+          "url": "/yijing/",
+          "local": 200,
+          "live": null,
+          "title": "Yijing · Data Mover — data migration, minus the suffering"
+        },
+        {
+          "href": "/chaojing/",
+          "url": "/chaojing/",
+          "local": 200,
+          "live": null,
+          "title": "Chaojing · Doc Batcher"
+        },
+        {
+          "href": "/baozuseng/",
+          "url": "/baozuseng/",
+          "local": 200,
+          "live": null,
+          "title": "Baozu · Rent Splitter"
+        },
+        {
+          "href": "/huayuan/",
+          "url": "/huayuan/",
+          "local": 200,
+          "live": null,
+          "title": "Huayuan · List Grabber — any web list, straight into Excel"
+        },
+        {
+          "href": "/xunshan/",
+          "url": "/xunshan/",
+          "local": 200,
+          "live": null,
+          "title": "Xunshan · Price Watch"
+        },
+        {
+          "href": "/daibi/",
+          "url": "/daibi/",
+          "local": 200,
+          "live": null,
+          "title": "Daibi · Form Filler"
+        },
+        {
+          "href": "/zhike/",
+          "url": "/zhike/",
+          "local": 200,
+          "live": null,
+          "title": "Zhike · Inbox Sorter — orders and invoices, straight into Excel"
+        },
+        {
+          "href": "/saodi/",
+          "url": "/saodi/",
+          "local": 200,
+          "live": null,
+          "title": "Jiechi · File Sweeper"
+        },
+        {
+          "href": "/gongshi/",
+          "url": "/gongshi/",
+          "local": 404,
+          "live": 200,
+          "title": "工时榨汁机"
+        },
+        {
+          "href": "/qianye/",
+          "url": "/qianye/",
+          "local": 404,
+          "live": 200,
+          "title": "一叶笺 · 随手成画"
+        }
+      ]
+    },
+    {
+      "tag": "strings-en",
+      "count": 102
+    },
+    {
+      "tag": "strings-zh",
+      "count": 102
+    }
+  ]
+}

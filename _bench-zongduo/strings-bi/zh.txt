@@ -1,0 +1,103 @@
+# 千手院总舵首页中文（从 index.html 里的 QS_STRINGS 导出）。一行一条：key<Tab>文字。
+htmlLang	zh-CN
+ogLocale	zh_CN
+docTitle	千手院 · QIANSHOU LAB
+metaDesc	千手院（QIANSHOU LAB）：赛博禅宗 · 硬核造物所。不求香火，不超亡魂，专渡世间苦命打工人。
+ogTitle	千手院 · QIANSHOU LAB
+ogDesc	赛博禅宗 · 硬核造物所。入我千手院，凡事尽释手；千僧替牛马，施主自风流。
+langLabel	语言
+tag	赛博禅宗 · 硬核造物所
+gatha1	「 入我千手院，凡事尽释手；
+gatha2	千僧替牛马，施主自风流。 」
+hint	▼ 往下滑 · 进山门
+about.h	🛕 寺院简介
+about.p1	众生皆苦于填表、核对、录入与内耗，朝九晚九，沦为牛马。
+about.p2	本院不求香火，不超亡魂，专渡世间苦命打工人。院内千百尊赛博罗汉，昼夜不休、各显神通，替凡间施主挡下一切烂表、废字与人间苦役。
+rules.h	本院规矩
+rules.r1	不用注册，推门就用。
+rules.r2	你的文件，不出你的电脑。
+rules.r3	全部免费。
+rules.r4	用着顺手可以随喜，不随也照渡。
+rules.r5	有意见点「提意见」，贫僧照改。
+secMonks	在岗罗汉
+secTools	小工具
+cards.luruseng.name	录入僧
+cards.luruseng.sub	施主去玩，贫僧填表
+cards.luruseng.what	照片往文件夹里一丢，Excel 表自己长出来。专治车间刀单、流水杂表。
+cards.luruseng.note	（Windows 电脑版）
+cards.luruseng.go	请他干活 ›
+cards.pabiao.name	渡表僧
+cards.pabiao.sub	表丢来，你去玩，贫僧超度
+cards.pabiao.what	PDF 扔进去，Excel 自己掉出来，扫描件也照扒。专治别人甩来、一个数都改不动的 PDF 报表。
+cards.pabiao.note	（打开就能用，文件不上传）
+cards.pabiao.go	请他超度 ›
+cards.xibiao.name	净坛僧
+cards.xibiao.sub	烂表千行，一扫而光
+cards.xibiao.what	别人搞烂的数据老衲来接盘，脏乱差变白月光，疑难杂症直接挂黄牌。
+cards.xibiao.note	（打开就能用，文件不上传）
+cards.xibiao.go	请他净坛 ›
+cards.yijing.name	译经僧
+cards.yijing.sub	凡表皆可转，万物皆可通
+cards.yijing.what	跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。
+cards.yijing.note	（打开就能用，文件不上传）
+cards.yijing.go	请他译经 ›
+cards.chaojing.name	抄经僧
+cards.chaojing.sub	名单丢来，贫僧一行抄一份
+cards.chaojing.what	Word 模板配一张 Excel，一行抄一份证书、发票、合同，500 份 PDF 四秒抄完。专治月底批量出单。
+cards.chaojing.note	（打开就能用，文件不上传）
+cards.chaojing.go	请他抄经 ›
+cards.baozuseng.name	包租僧
+cards.baozuseng.sub	施主收租，贫僧掰账
+cards.baozuseng.what	租客名单一贴，电费总数一填，房租电费按人头按天自己摊，谁欠钱一眼看穿。专治二房东月底那顿算盘。
+cards.baozuseng.note	（手机打开就能用，账只存你手机）
+cards.baozuseng.go	请他掰账 ›
+cards.huayuan.name	化缘僧
+cards.huayuan.sub	过路留名，见网扒皮
+cards.huayuan.what	专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。
+cards.huayuan.note	（Chrome / Edge 插件）
+cards.huayuan.go	请他化缘 ›
+cards.xunshan.name	巡山僧
+cards.xunshan.sub	替你盯梢
+cards.xunshan.what	网页降价、补货、上新，贫僧 24 小时蹲守，风吹草动立刻通报。
+cards.xunshan.note	（Chrome / Edge 插件）
+cards.xunshan.go	请他巡山 ›
+cards.daibi.name	代笔僧
+cards.daibi.sub	施主喝茶，贫僧代笔
+cards.daibi.what	Excel 一行一行替你写进网页表单，下拉、日历、套娃表单都认，744 格一格不错。专治往系统里录单录到眼瞎。
+cards.daibi.note	（Chrome / Edge 插件）
+cards.daibi.go	请他代笔 ›
+cards.zhike.name	知客僧
+cards.zhike.sub	收发室那点活，贫僧包了
+cards.zhike.what	邮件里的订单号、金额、日期自己落进 Excel，该转的转，回信先打草稿等你点头，推销挡在门外。专治收件箱里淘金。
+cards.zhike.note	（Windows 电脑版）
+cards.zhike.go	请他迎客 ›
+cards.saodi.name	戒尺僧
+cards.saodi.sub	凡尘乱档，统统归位
+cards.saodi.what	专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。
+cards.saodi.note	（Windows 电脑版）
+cards.saodi.go	请他归位 ›
+cards.gongshi.name	工时榨汁机
+cards.gongshi.sub	水分榨干，只剩真工时
+cards.gongshi.what	开始、结束两个时间一填，茶歇饭点自动扣光，真工时当场出汁。专治换型单上那格 CO 时间。
+cards.gongshi.note	（手机打开就能用）
+cards.gongshi.go	请他算账 ›
+cards.qianye.name	一叶笺
+cards.qianye.sub	随手成画
+cards.qianye.what	手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。
+cards.qianye.note	（手机打开就能用）
+cards.qianye.go	请他装裱 ›
+abbot.h	🧘 方丈法号：释手
+abbot.p1	世人苦修，难在“放不下”；本院坐禅，赢在“早撒手”。
+abbot.p2	老衲毕生参禅，只为顿悟“解放双手”之无上大法。今神功大成，特将一身修为化作院内众赛博罗汉，尽数赠予诸位施主，替你们当牛做马。脏活累活尽可“释手”，施主且安心下山风流。
+company.h	🏭 零肉身造物 | Zero-Flesh Creation
+company.p1	一家彻底摒弃了碳基雇员的纯硅基作坊
+company.motto	——把折磨肉体的活交给代码，把肉身还给生活。
+company.addr	公司地址：可观测宇宙 · 拉尼亚凯亚超星系团 · 银河系郊区猎户座支臂 · 距银心约 2.6 万光年处 · 绕行一颗 G2V 型黄矮星的第三颗蓝色水球表面（导航请搜：地球）
+foot.brand	千手院 · QIANSHOU LAB
+foot.mailLead	有烂活找方丈：
+foot.mail	飞鸽传书（发邮件）
+foot.fb	提意见
+mailSubject	千手院
+fbSubject	[千手院反馈] 总舵
+fbBody	哪里不好用： /  / 想要什么： /  / 别的：
+fbTag	总舵

@@ -1,18 +1,231 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>千手院 · QIANSHOU LAB</title>
-<meta name="description" content="千手院（QIANSHOU LAB）：赛博禅宗 · 硬核造物所。不求香火，不超亡魂，专渡世间苦命打工人。">
-<meta property="og:title" content="千手院 · QIANSHOU LAB">
-<meta property="og:description" content="赛博禅宗 · 硬核造物所。入我千手院，凡事尽释手；千僧替牛马，施主自风流。">
+<title>QIANSHOU LAB · Cyber Zen, Hardcore Tools</title>
+<meta name="description" content="QIANSHOU LAB is a cyber-zen workshop of free tools for the grunt work: PDFs to Excel, messy spreadsheets, web forms, inboxes, files. No sign-up. Your files never leave your device.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="QIANSHOU LAB">
+<meta property="og:description" content="Cyber Zen · Hardcore Tools. Step in, let go of the grind; a thousand monks toil while you unwind.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#04050d" id="theme">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFB547'/%3E%3Cstop offset='1' stop-color='%23EF6A1A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23s)'/%3E%3Cpath d='M37.5 17A16 16 0 1 0 47.5 27.9' fill='none' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&text=%E5%8D%83%E6%89%8B%E9%99%A2%E5%AF%BA%E7%AE%80%E4%BB%8B%E6%96%B9%E4%B8%88%E6%B3%95%E5%8F%B7%EF%BC%9A%E9%87%8A%E9%9B%B6%E8%82%89%E8%BA%AB%E9%80%A0%E7%89%A9%7CZero-FlshCatin%E5%9C%A8%E5%B2%97%E7%BD%97%E6%B1%89%E5%BD%95%E5%85%A5%E5%83%A7%E5%B7%A5%E6%97%B6%E6%A6%A8%E6%B1%81%E6%9C%BA%E6%B8%A1%E8%A1%A8%E5%8F%B6%E5%B0%8F%E5%85%B7&display=swap" rel="stylesheet">
+<script>
+/* 首页所有给人看的字都在这一处：en 是门面（默认），zh 是第二语言。
+   改字只改这里；页面上带 data-i18n 的地方照 key 填。字里允许少量标签（<span class="nw"> 不断行、<a class="fb"> 提意见）。
+   挑语言：网址 ?lang=zh|en（只管这一次）> 右上角选过的（localStorage「qianshou.lang」）> 英文。不跟浏览器语言走（Song 11-03 22:19）。 */
+window.QS_STRINGS = {
+  en: {
+    htmlLang: 'en',
+    ogLocale: 'en_US',
+    docTitle: 'QIANSHOU LAB · Cyber Zen, Hardcore Tools',
+    metaDesc: 'QIANSHOU LAB is a cyber-zen workshop of free tools for the grunt work: PDFs to Excel, messy spreadsheets, web forms, inboxes, files. No sign-up. Your files never leave your device.',
+    ogTitle: 'QIANSHOU LAB',
+    ogDesc: 'Cyber Zen · Hardcore Tools. Step in, let go of the grind; a thousand monks toil while you unwind.',
+    langLabel: 'Language',
+    tag: 'Cyber Zen · Hardcore Tools',
+    gatha1: '“Step in, let go of the grind;',
+    gatha2: 'a thousand monks toil while you unwind.”',
+    hint: '▼ Scroll · Enter the gate',
+    about: {
+      h: '🛕 About the Temple',
+      p1: 'All beings suffer, mostly from paperwork. Forms, cross-checks, retyping, nine to nine.',
+      p2: 'This temple asks for no offerings. It exists for one cause: overworked humans. Hundreds of cyber monks, permanently in monk mode, each with a specialty, take the broken spreadsheets, junk text and busywork off your hands.'
+    },
+    rules: {
+      h: 'House Rules',
+      r1: 'No sign-up. Open it and go.',
+      r2: 'Your files never leave your device.',
+      r3: 'Everything is free.',
+      r4: 'Like it? <span class="tip">Tips</span> welcome. No tip, no guilt.',
+      r5: 'Something off? Hit <a class="fb" href="#">Feedback</a> and we’ll fix it.'
+    },
+    secMonks: 'Monks on Duty',
+    secTools: 'Odd Jobs',
+    cards: {
+      luruseng: { name: 'Luru · Photo Typist', sub: 'Go play. The monk keys it in.',
+        what: 'Drop photos of paper sheets into a folder and the Excel table fills itself in. Made for shop-floor tool tickets and scribbled daily logs.',
+        note: '(Windows\u00a0app)', go: 'Put to work ›' },
+      pabiao: { name: 'Dubiao · PDF to Excel', sub: 'Liberates tables trapped in PDFs.',
+        what: 'Drop in a PDF and an Excel file drops out. Scans too. Made for those PDF reports where you can’t edit a single number.',
+        note: '(Runs in your\u00a0browser. No\u00a0uploads.)', go: 'Free the tables ›' },
+      xibiao: { name: 'Jingtan · Clean Sheet', sub: 'Messy data in. Inner peace out.',
+        what: 'Someone else wrecked the data; the monk takes it from here. Mess comes out spotless, and anything truly cursed gets a yellow flag.',
+        note: '(Runs in your\u00a0browser. No\u00a0uploads.)', go: 'Clean up ›' },
+      yijing: { name: 'Yijing · Data Mover', sub: 'Data migration, minus the suffering.',
+        what: 'Moving data between systems is torture. Hand it over: any cursed export format gets lined up with the import on the other side.',
+        note: '(Runs in your\u00a0browser. No\u00a0uploads.)', go: 'Move data ›' },
+      chaojing: { name: 'Chaojing · Doc Batcher', sub: 'Leave the copying to the monk.',
+        what: 'One Word template plus one spreadsheet: a certificate, invoice or contract for every row. 500 PDFs in about four seconds. Made for month-end paperwork.',
+        note: '(Runs in your\u00a0browser. No\u00a0uploads.)', go: 'Batch docs ›' },
+      baozuseng: { name: 'Baozu · Rent Splitter', sub: 'Power bill, split to the cent. Drama not included.',
+        what: 'Paste the tenant list, enter the power bill. Rent and power split by head and by day, and who owes what is obvious at a glance. Made for month-end sublet math.',
+        note: '(Runs on your\u00a0phone. The books stay\u00a0there.)', go: 'Split rent ›' },
+      huayuan: { name: 'Huayuan · List Grabber', sub: 'Any web list, straight into Excel.',
+        what: 'Made for pages that won’t let you copy. Customer directories, product listings: one scoop and it’s all in a spreadsheet.',
+        note: '(Chrome\u00a0/ Edge\u00a0extension)', go: 'Grab lists ›' },
+      xunshan: { name: 'Xunshan · Price Watch', sub: 'Stares at the page so you don’t have to.',
+        what: 'Price drops, restocks, new arrivals. It watches 24/7 and tells you the moment anything moves.',
+        note: '(Chrome\u00a0/ Edge\u00a0extension)', go: 'Start watching ›' },
+      daibi: { name: 'Daibi · Form Filler', sub: 'You sip tea. The monk types.',
+        what: 'Types your spreadsheet into web forms, row by row. Dropdowns, date pickers, forms inside forms: 744 cells, zero mistakes. For anyone keying orders into a system until their eyes give out.',
+        note: '(Chrome\u00a0/ Edge\u00a0extension)', go: 'Fill forms ›' },
+      zhike: { name: 'Zhike · Inbox Sorter', sub: 'Orders, invoices and tracking numbers file themselves into Excel.',
+        what: 'Order numbers, amounts and dates land in the sheet. What needs forwarding gets forwarded, replies wait as drafts for your nod, and sales pitches stay outside the gate.',
+        note: '(Windows\u00a0app)', go: 'Sort mail ›' },
+      saodi: { name: 'Jiechi · File Sweeper', sub: 'Your files, disciplined.',
+        what: 'For desktops that look like a starry night. Batch downloads, renames, and every file walked to the folder it belongs in.',
+        note: '(Windows\u00a0app)', go: 'Tidy up ›' },
+      gongshi: { name: 'Gongshi · Net Hours', sub: 'Squeeze out the breaks. Keep the real hours.',
+        what: 'Enter a start and an end time. Tea breaks and meals get squeezed out, and the real hours come out fresh-pressed. Made for the changeover time box on your CO sheet.',
+        note: '(Runs on your\u00a0phone)', go: 'Squeeze ›' },
+      qianye: { name: 'Yiye · Note Framer', sub: 'Any scribble, frame-worthy.',
+        what: 'Snap your handwriting or paste some text. It comes back mounted as a handsome image, ready to share and show off.',
+        note: '(Runs on your\u00a0phone)', go: 'Frame it ›' }
+    },
+    abbot: {
+      h: '🧘 The Abbot: Master Hands-Off',
+      p1: 'The hardest part of practice is letting go. We start there.',
+      p2: 'The abbot spent his life on one koan: how do you free both hands? Enlightenment arrived. He poured everything he learned into a temple full of cyber monks and gave them all to you. Hand them the dirty work and go enjoy the view.'
+    },
+    company: {
+      h: '🏭 Zero-Flesh Creation',
+      p1: 'A workshop that let every carbon-based employee go. Pure silicon.',
+      motto: '— Give the grind to the code. Give your body back to your life.',
+      addr: 'Address: Observable Universe · Laniakea Supercluster · Milky Way, Orion Arm (the quiet suburbs) · about 26,000 light-years from the galactic center · third rock from a G2V yellow dwarf. For directions, search “Earth”.'
+    },
+    foot: { brand: 'QIANSHOU LAB', mailLead: 'Got a nasty job? ', mail: 'Send the abbot a pigeon (email)', fb: 'Feedback' },
+    mailSubject: 'QIANSHOU LAB',
+    fbSubject: '[QIANSHOU feedback] Homepage',
+    fbBody: ['What’s not working:', '', 'What you want:', '', 'Anything else:'],
+    fbTag: 'QIANSHOU LAB homepage'
+  },
+
+  zh: {
+    htmlLang: 'zh-CN',
+    ogLocale: 'zh_CN',
+    docTitle: '千手院 · QIANSHOU LAB',
+    metaDesc: '千手院（QIANSHOU LAB）：赛博禅宗 · 硬核造物所。不求香火，不超亡魂，专渡世间苦命打工人。',
+    ogTitle: '千手院 · QIANSHOU LAB',
+    ogDesc: '赛博禅宗 · 硬核造物所。入我千手院，凡事尽释手；千僧替牛马，施主自风流。',
+    langLabel: '语言',
+    tag: '赛博禅宗 · 硬核造物所',
+    gatha1: '「 入我千手院，凡事尽释手；',
+    gatha2: '千僧替牛马，施主自风流。 」',
+    hint: '▼ 往下滑 · 进山门',
+    about: {
+      h: '🛕 寺院简介',
+      p1: '众生皆苦于填表、核对、录入与内耗，朝九晚九，沦为牛马。',
+      p2: '本院不求香火，不超亡魂，专渡世间苦命打工人。院内千百尊赛博罗汉，昼夜不休、各显神通，替凡间施主挡下一切烂表、废字与人间苦役。'
+    },
+    rules: {
+      h: '本院规矩',
+      r1: '不用注册，推门就用。',
+      r2: '你的文件，不出你的电脑。',
+      r3: '全部免费。',
+      r4: '用着顺手可以<span class="tip">随喜</span>，不随也照渡。',
+      r5: '有意见点「<a class="fb" href="#">提意见</a>」，贫僧照改。'
+    },
+    secMonks: '在岗罗汉',
+    secTools: '小工具',
+    cards: {
+      luruseng: { name: '录入僧', sub: '施主去玩，贫僧填表',
+        what: '照片往文件夹里一丢，Excel 表自己长出来。专治车间刀单、流水杂表。',
+        note: '（Windows 电脑版）', go: '请他干活 ›' },
+      pabiao: { name: '渡表僧', sub: '表丢来，你去玩，贫僧超度',
+        what: 'PDF 扔进去，Excel 自己掉出来，扫描件也照扒。专治别人甩来、一个数都改不动的 PDF 报表。',
+        note: '（打开就能用，文件不上传）', go: '请他超度 ›' },
+      xibiao: { name: '净坛僧', sub: '烂表千行，一扫而光',
+        what: '别人搞烂的数据老衲来接盘，脏乱差变白月光，疑难杂症直接挂黄牌。',
+        note: '（打开就能用，文件不上传）', go: '请他净坛 ›' },
+      yijing: { name: '译经僧', sub: '凡表皆可转，万物皆可通',
+        what: '跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。',
+        note: '（打开就能用，文件不上传）', go: '请他译经 ›' },
+      chaojing: { name: '抄经僧', sub: '名单丢来，贫僧一行抄一份',
+        what: 'Word 模板配一张 Excel，一行抄一份证书、发票、合同，500 份 PDF 四秒抄完。专治月底批量出单。',
+        note: '（打开就能用，文件不上传）', go: '请他抄经 ›' },
+      baozuseng: { name: '包租僧', sub: '施主收租，贫僧掰账',
+        what: '租客名单一贴，电费总数一填，房租电费按人头按天自己摊，谁欠钱一眼看穿。专治二房东月底那顿算盘。',
+        note: '（手机打开就能用，账只存你手机）', go: '请他掰账 ›' },
+      huayuan: { name: '化缘僧', sub: '过路留名，见网扒皮',
+        what: '专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。',
+        note: '（Chrome / Edge 插件）', go: '请他化缘 ›' },
+      xunshan: { name: '巡山僧', sub: '替你盯梢',
+        what: '网页降价、补货、上新，贫僧 24 小时蹲守，风吹草动立刻通报。',
+        note: '（Chrome / Edge 插件）', go: '请他巡山 ›' },
+      daibi: { name: '代笔僧', sub: '施主喝茶，贫僧代笔',
+        what: 'Excel 一行一行替你写进网页表单，下拉、日历、套娃表单都认，744 格一格不错。专治往系统里录单录到眼瞎。',
+        note: '（Chrome / Edge 插件）', go: '请他代笔 ›' },
+      zhike: { name: '知客僧', sub: '收发室那点活，贫僧包了',
+        what: '邮件里的订单号、金额、日期自己落进 Excel，该转的转，回信先打草稿等你点头，推销挡在门外。专治收件箱里淘金。',
+        note: '（Windows 电脑版）', go: '请他迎客 ›' },
+      saodi: { name: '戒尺僧', sub: '凡尘乱档，统统归位',
+        what: '专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。',
+        note: '（Windows 电脑版）', go: '请他归位 ›' },
+      gongshi: { name: '工时榨汁机', sub: '水分榨干，只剩真工时',
+        what: '开始、结束两个时间一填，茶歇饭点自动扣光，真工时当场出汁。专治换型单上那格 <span class="nw">CO 时间</span>。',
+        note: '（手机打开就能用）', go: '请他算账 ›' },
+      qianye: { name: '一叶笺', sub: '随手成画',
+        what: '手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。',
+        note: '（手机打开就能用）', go: '请他装裱 ›' }
+    },
+    abbot: {
+      h: '🧘 方丈法号：释手',
+      p1: '世人苦修，难在“放不下”；本院坐禅，赢在“早撒手”。',
+      p2: '老衲毕生参禅，只为顿悟“解放双手”之无上大法。今神功大成，特将一身修为化作院内众赛博罗汉，尽数赠予诸位施主，替你们当牛做马。脏活累活尽可“释手”，施主且安心下山风流。'
+    },
+    company: {
+      h: '🏭 零肉身造物 | <span class="nw">Zero-Flesh Creation</span>',
+      p1: '一家彻底摒弃了碳基雇员的纯硅基作坊',
+      motto: '——把折磨肉体的活交给代码，把肉身还给生活。',
+      addr: '公司地址：可观测宇宙 · 拉尼亚凯亚超星系团 · 银河系郊区猎户座支臂 · 距银心约 2.6 万光年处 · 绕行一颗 G2V 型黄矮星的第三颗蓝色水球表面（导航请搜：地球）'
+    },
+    foot: { brand: '千手院 · QIANSHOU LAB', mailLead: '有烂活找方丈：', mail: '飞鸽传书（发邮件）', fb: '提意见' },
+    mailSubject: '千手院',
+    fbSubject: '[千手院反馈] 总舵',
+    fbBody: ['哪里不好用：', '', '想要什么：', '', '别的：'],
+    fbTag: '总舵'
+  }
+};
+/* 打赏页：Song 开好收款页后把网址填这里，规矩里「随喜 / Tips」两个字就变成链接。没填就是普通字，不放假链接。 */
+window.QS_TIP_URL = '';
+
+(function () {
+  var S = window.QS_STRINGS, KEY = 'qianshou.lang', q = /[?&]lang=(zh|en)(?:&|$)/.exec(location.search), saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  var QS = window.QS = {
+    key: KEY,
+    lang: q ? q[1] : (saved === 'zh' || saved === 'en' ? saved : 'en'),
+    // <html lang>、<title>、简介、og 跟着语言
+    head: function () {
+      var T = S[QS.lang], d = document;
+      d.documentElement.lang = T.htmlLang;
+      d.title = T.docTitle;
+      d.querySelector('meta[name="description"]').content = T.metaDesc;
+      d.querySelector('meta[property="og:locale"]').content = T.ogLocale;
+      d.querySelector('meta[property="og:title"]').content = T.ogTitle;
+      d.querySelector('meta[property="og:description"]').content = T.ogDesc;
+    }
+  };
+  QS.head();
+  // 标题用的宋体只要用到的那几个字：从上面两套字里挑出来（「千手院」、山门那几个飘的字也带上），改了字不用再手抄
+  var serif = '千手院禅渡空表录算释' + ['en', 'zh'].map(function (l) {
+    var T = S[l], a = [T.about.h, T.rules.h, T.secMonks, T.secTools, T.abbot.h, T.company.h];
+    for (var k in T.cards) a.push(T.cards[k].name);
+    return a.join('');
+  }).join('').replace(/<[^>]*>/g, '');
+  var seen = {}, text = '';
+  Array.from(serif).forEach(function (c) { if (!seen[c] && c.charCodeAt(0) < 0xD800 && !/\s/.test(c)) { seen[c] = 1; text += c; } });
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&text=' + encodeURIComponent(text) + '&display=swap';
+  document.head.appendChild(link);
+})();
+</script>
 <style id="css-a">
   :root {
     --ink: #04050d;
@@ -77,6 +290,13 @@
   .card p:last-child { margin-bottom: 0; }
   .card .motto { color: var(--gold); }
   .card .addr { color: var(--muted); font-size: 15px; }
+  /* 本院规矩：寺院简介底下一小段 */
+  .rules { margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(255, 196, 107, .16); }
+  .rules h3 { font-family: var(--serif); font-weight: 900; font-size: 19px; letter-spacing: .06em; margin: 0 0 8px; color: var(--gold); }
+  .rules ul { list-style: none; margin: 0; padding: 0; }
+  .rules li { position: relative; padding-left: 18px; font-size: 16px; line-height: 1.75; }
+  .rules li::before { content: ""; position: absolute; left: 2px; top: .72em; width: 6px; height: 6px; border-radius: 50%; background: var(--saffron); }
+  .rules a { color: var(--gold); border-bottom: 1px solid rgba(255, 196, 107, .45); }
 
   .monk { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; color: var(--text);
           transition: transform .2s, border-color .2s, box-shadow .2s; }
@@ -187,6 +407,15 @@
   .card p:last-child { margin-bottom: 0; }
   .card .motto { color: #FF9CC8; }
   .card .addr { color: var(--muted); font-size: 14px; font-family: var(--mono); }
+  /* 本院规矩：寺院简介底下一小段 */
+  .rules { margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(0, 240, 255, .22); }
+  .rules h3 { font-family: var(--serif); font-weight: 900; font-size: 19px; letter-spacing: .08em; margin: 0 0 8px; color: #fff;
+              text-shadow: 0 0 10px rgba(0, 240, 255, .8); }
+  .rules ul { list-style: none; margin: 0; padding: 0; }
+  .rules li { position: relative; padding-left: 18px; font-size: 16px; line-height: 1.75; }
+  .rules li::before { content: ""; position: absolute; left: 2px; top: .72em; width: 6px; height: 6px; background: var(--pink);
+                      box-shadow: 0 0 8px var(--pink); }
+  .rules a { color: var(--cyan); border-bottom: 1px solid rgba(0, 240, 255, .45); }
 
   .monk { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; color: var(--text);
           transition: transform .2s, box-shadow .2s; }
@@ -221,6 +450,56 @@
   @media (prefers-reduced-motion: reduce) { .title::before, .title::after, .hint { animation: none; } }
   .hero-a, .shade { display: none; }
 </style>
+<style id="css-both">
+  /* 两套皮都用的：右上角 EN / 中文、不断行的小片段、英文排版 */
+  .nw, footer a { white-space: nowrap; }
+  html[lang^="zh"] .note { white-space: nowrap; }
+  html[lang^="zh"] .gap { display: none; }
+
+  /* 右上角 EN / 中文：小号分段控件，毛玻璃底 98% 不透明（底下是几千只眼睛，透了字就花），点的范围撑到 44 高 */
+  .lang { position: absolute; z-index: 5; top: max(14px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right));
+          display: flex; gap: 2px; padding: 3px; border-radius: 999px;
+          background: rgba(6, 7, 16, .98); border: 1px solid rgba(255, 196, 107, .22);
+          -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+  .lang button { position: relative; min-width: 48px; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer;
+                 font: 600 13px/30px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui,
+                       "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+                 color: rgba(241, 228, 204, .62); background: transparent; white-space: nowrap;
+                 transition: background .24s cubic-bezier(.2, .8, .2, 1), color .24s cubic-bezier(.2, .8, .2, 1); }
+  .lang button::after { content: ""; position: absolute; left: 0; right: 0; top: -7px; bottom: -7px; }
+  .lang button:hover { color: #F1E4CC; }
+  .lang button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: #FFC46B; }
+  .lang button:focus-visible { outline: 2px solid #FFC46B; outline-offset: 2px; }
+  html[data-skin="b"] .lang { border-radius: 6px; background: rgba(11, 2, 33, .98); border-color: rgba(0, 240, 255, .35); }
+  html[data-skin="b"] .lang button { border-radius: 4px; color: rgba(242, 233, 255, .6);
+                                     font-family: ui-monospace, "SF Mono", Consolas, "Courier New", "PingFang SC", "Microsoft YaHei", monospace; }
+  html[data-skin="b"] .lang button:hover { color: #F2E9FF; }
+  html[data-skin="b"] .lang button[aria-pressed="true"] { background: rgba(0, 240, 255, .16); color: #00F0FF; text-shadow: 0 0 8px rgba(0, 240, 255, .6); }
+  html[data-skin="b"] .lang button:focus-visible { outline-color: #00F0FF; }
+
+  /* 英文：西文字体排前面（中文那套不变）；标题宋体照旧用 Noto Serif SC（只取用到的字），万一没载到就落到西文衬线 */
+  html[lang="en"] body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui,
+                                      "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+                         line-height: 1.6; }
+  html[lang="en"] { --serif: "Noto Serif SC", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Han Serif SC", serif; }
+  html[lang="en"] .title { font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif; }
+  html[lang="en"] h2, html[lang="en"] .sec-title, html[lang="en"] .monk .name, html[lang="en"] .rules h3 { letter-spacing: 0; }
+  html[lang="en"] .card p { line-height: 1.6; }
+  html[lang="en"] .monk .sub { margin-top: 2px; }
+  html[lang="en"] .tag { letter-spacing: .06em; padding: 6px 20px; }
+  html[lang="en"][data-skin="b"] .tag { letter-spacing: .1em; padding: 0 0 0 .1em; }
+  html[lang="en"] .gatha { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; font-style: italic;
+                           letter-spacing: .01em; line-height: 1.6; }
+  html[lang="en"] .gatha span + span { margin-left: .3em; }
+  html:not([data-skin="b"])[lang="en"] .gatha { padding: 6px 18px; }
+  html[lang="en"][data-skin="b"] .g-bot { padding: 5px 18px; }
+  html[lang="en"][data-skin="b"] .hint { letter-spacing: .18em; padding-left: .18em; }
+  @media (max-width: 560px) {
+    html[lang="en"] .tag { letter-spacing: .04em; }
+    html[lang="en"] .gatha { letter-spacing: 0; }
+    html[lang="en"] .monk .name { font-size: 20px; line-height: 1.3; }
+  }
+</style>
 <script>
   // 每次打开随机一套皮：A 千手法相 / B 赛博山门。网址后面加 ?a 或 ?b 可以指定。
   (function () {
@@ -238,21 +517,25 @@
 <body>
 <canvas id="scene" aria-hidden="true"></canvas>
 <div class="shade" aria-hidden="true"></div>
+<div class="lang" role="group" data-i18n-attr="aria-label:langLabel">
+  <button type="button" data-l="en" lang="en" aria-pressed="true">EN</button>
+  <button type="button" data-l="zh" lang="zh-CN" aria-pressed="false">中文</button>
+</div>
 <main>
   <header class="hero hero-a">
     <div>
-      <div class="title">千手院</div>
-      <div class="en">QIANSHOU LAB</div>
+      <div class="title" lang="zh-CN" translate="no">千手院</div>
+      <div class="en" translate="no">QIANSHOU LAB</div>
     </div>
     <div class="foot-a">
-      <div class="tag">赛博禅宗 · 硬核造物所</div>
-      <div class="gatha"><span>「 入我千手院，凡事尽释手；</span><span>千僧替牛马，施主自风流。 」</span></div>
+      <div class="tag" data-i18n="tag"></div>
+      <div class="gatha"><span data-i18n="gatha1"></span><span data-i18n="gatha2"></span></div>
     </div>
     <div class="hint" aria-hidden="true"></div>
   </header>
   <script>
     // A 皮的禅圈占屏幕高的几成：手机竖着照旧；横着尽量大（最多 46%），圈底给「赛博禅宗」那块留 16 像素。
-    // 在这里先算好，字一出来就是对的大小；scene-a.js 再照着这个数摆镜头。
+    // 在这里先算好，字一出来就是对的大小；scene-a.js 再照着这个数摆镜头。（字填好、换语言以后底下会再算一遍）
     window.qsRing = function () {
       var w = window.innerWidth, h = window.innerHeight, foot = document.querySelector('.foot-a');
       var f = w / h < 0.8 ? 0.2819
@@ -267,26 +550,37 @@
   </script>
   <header class="hero hero-b" id="hero">
     <div class="hero-in">
-      <div class="title" data-t="千手院">千手院</div>
-      <div class="en">QIANSHOU LAB</div>
-      <div class="tag">赛博禅宗 · 硬核造物所</div>
-      <div class="gatha g-top"><span>「 入我千手院，凡事尽释手；</span><span>千僧替牛马，施主自风流。 」</span></div>
+      <div class="title" data-t="千手院" lang="zh-CN" translate="no">千手院</div>
+      <div class="en" translate="no">QIANSHOU LAB</div>
+      <div class="tag" data-i18n="tag"></div>
+      <div class="gatha g-top"><span data-i18n="gatha1"></span><span data-i18n="gatha2"></span></div>
     </div>
-    <div class="gatha g-bot"><span>「 入我千手院，凡事尽释手；</span><span>千僧替牛马，施主自风流。 」</span></div>
-    <div class="hint" aria-hidden="true">▼ 往下滑 · 进山门</div>
+    <div class="gatha g-bot"><span data-i18n="gatha1"></span><span data-i18n="gatha2"></span></div>
+    <div class="hint" aria-hidden="true" data-i18n="hint"></div>
   </header>
 
   <section>
     <div class="card">
       <div class="label">// TEMPLE.INFO</div>
-      <h2>🛕 寺院简介</h2>
-      <p>众生皆苦于填表、核对、录入与内耗，朝九晚九，沦为牛马。</p>
-      <p>本院不求香火，不超亡魂，专渡世间苦命打工人。院内千百尊赛博罗汉，昼夜不休、各显神通，专替凡间施主挡下一切烂表、废字与人间苦役。</p>
+      <h2 data-i18n="about.h"></h2>
+      <p data-i18n="about.p1"></p>
+      <p data-i18n="about.p2"></p>
+      <div class="rules">
+        <div class="label">// HOUSE.RULES</div>
+        <h3 data-i18n="rules.h"></h3>
+        <ul>
+          <li data-i18n="rules.r1"></li>
+          <li data-i18n="rules.r2"></li>
+          <li data-i18n="rules.r3"></li>
+          <li data-i18n="rules.r4"></li>
+          <li data-i18n="rules.r5"></li>
+        </ul>
+      </div>
     </div>
   </section>
 
   <section>
-    <div class="sec-title">在岗罗汉</div>
+    <div class="sec-title" data-i18n="secMonks"></div>
     <a class="card monk" href="/luruseng/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
         <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
@@ -298,11 +592,11 @@
         <rect x="24" y="38" width="9" height="3" rx="1.5" fill="#2F8BF5"/>
       </svg>
       <div>
-        <div class="name">录入僧</div>
-        <div class="sub">施主去玩，贫僧填表</div>
-        <div class="what">照片往文件夹里一丢，Excel 表自己长出来。专治车间刀单、流水杂表。<span style="white-space:nowrap">（Windows 电脑版）</span></div>
+        <div class="name" data-i18n="cards.luruseng.name"></div>
+        <div class="sub" data-i18n="cards.luruseng.sub"></div>
+        <div class="what"><span data-i18n="cards.luruseng.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.luruseng.note"></span></div>
       </div>
-      <span class="go">请他干活 ›</span>
+      <span class="go" data-i18n="cards.luruseng.go"></span>
     </a>
     <a class="card monk" href="/pabiao/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -313,11 +607,11 @@
         <path d="M14 27h36M14 37h36M26 16v32M38 16v32" stroke="#189A55" stroke-width="2.4"/>
       </svg>
       <div>
-        <div class="name">渡表僧</div>
-        <div class="sub">表丢来，你去玩，贫僧超度</div>
-        <div class="what">PDF 扔进去，Excel 自己掉出来，扫描件也照扒。专治别人甩来、一个数都改不动的 PDF 报表。<span style="white-space:nowrap">（打开就能用，文件不上传）</span></div>
+        <div class="name" data-i18n="cards.pabiao.name"></div>
+        <div class="sub" data-i18n="cards.pabiao.sub"></div>
+        <div class="what"><span data-i18n="cards.pabiao.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.pabiao.note"></span></div>
       </div>
-      <span class="go">请他超度 ›</span>
+      <span class="go" data-i18n="cards.pabiao.go"></span>
     </a>
     <a class="card monk" href="/xibiao/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -330,11 +624,11 @@
         <circle cx="53" cy="27" r="3.4" fill="none" stroke="#fff" stroke-width="2.2"/>
       </svg>
       <div>
-        <div class="name">净坛僧</div>
-        <div class="sub">烂表千行，一扫而光</div>
-        <div class="what">别人搞烂的数据老衲来接盘，脏乱差变白月光，疑难杂症直接挂黄牌。<span style="white-space:nowrap">（打开就能用，文件不上传）</span></div>
+        <div class="name" data-i18n="cards.xibiao.name"></div>
+        <div class="sub" data-i18n="cards.xibiao.sub"></div>
+        <div class="what"><span data-i18n="cards.xibiao.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.xibiao.note"></span></div>
       </div>
-      <span class="go">请他净坛 ›</span>
+      <span class="go" data-i18n="cards.xibiao.go"></span>
     </a>
     <a class="card monk" href="/yijing/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -344,11 +638,11 @@
         <path d="M16 24h30M38 16.5l8 7.5-8 7.5M48 40H18M26 32.5L18 40l8 7.5" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       </svg>
       <div>
-        <div class="name">译经僧</div>
-        <div class="sub">凡表皆可转，万物皆可通</div>
-        <div class="what">跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。<span style="white-space:nowrap">（打开就能用，文件不上传）</span></div>
+        <div class="name" data-i18n="cards.yijing.name"></div>
+        <div class="sub" data-i18n="cards.yijing.sub"></div>
+        <div class="what"><span data-i18n="cards.yijing.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.yijing.note"></span></div>
       </div>
-      <span class="go">请他译经 ›</span>
+      <span class="go" data-i18n="cards.yijing.go"></span>
     </a>
     <a class="card monk" href="/chaojing/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -360,11 +654,11 @@
         <path d="M20.5 28h15M20.5 35h15M20.5 42h9" stroke="#E5484D" stroke-width="3" stroke-linecap="round"/>
       </svg>
       <div>
-        <div class="name">抄经僧</div>
-        <div class="sub">名单丢来，贫僧一行抄一份</div>
-        <div class="what">Word 模板配一张 Excel，一行抄一份证书、发票、合同，500 份 PDF 三秒抄完。专治月底批量出单。<span style="white-space:nowrap">（打开就能用，文件不上传）</span></div>
+        <div class="name" data-i18n="cards.chaojing.name"></div>
+        <div class="sub" data-i18n="cards.chaojing.sub"></div>
+        <div class="what"><span data-i18n="cards.chaojing.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.chaojing.note"></span></div>
       </div>
-      <span class="go">请他抄经 ›</span>
+      <span class="go" data-i18n="cards.chaojing.go"></span>
     </a>
     <a class="card monk" href="/baozuseng/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -376,11 +670,11 @@
         <path d="M32 34.5v7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
       </svg>
       <div>
-        <div class="name">包租僧</div>
-        <div class="sub">施主收租，贫僧掰账</div>
-        <div class="what">租客名单一贴，电费总数一填，房租电费按人头按天自己摊，谁欠钱一眼看穿。专治二房东月底那顿算盘。<span style="white-space:nowrap">（手机打开就能用，账只存你手机）</span></div>
+        <div class="name" data-i18n="cards.baozuseng.name"></div>
+        <div class="sub" data-i18n="cards.baozuseng.sub"></div>
+        <div class="what"><span data-i18n="cards.baozuseng.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.baozuseng.note"></span></div>
       </div>
-      <span class="go">请他掰账 ›</span>
+      <span class="go" data-i18n="cards.baozuseng.go"></span>
     </a>
     <a class="card monk" href="/huayuan/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -391,11 +685,11 @@
         <path d="M12 31h40a20 20 0 0 1-40 0z" fill="#fff"/>
       </svg>
       <div>
-        <div class="name">化缘僧</div>
-        <div class="sub">过路留名，见网扒皮</div>
-        <div class="what">专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。<span style="white-space:nowrap">（Chrome / Edge 插件）</span></div>
+        <div class="name" data-i18n="cards.huayuan.name"></div>
+        <div class="sub" data-i18n="cards.huayuan.sub"></div>
+        <div class="what"><span data-i18n="cards.huayuan.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.huayuan.note"></span></div>
       </div>
-      <span class="go">请他化缘 ›</span>
+      <span class="go" data-i18n="cards.huayuan.go"></span>
     </a>
     <a class="card monk" href="/xunshan/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -406,11 +700,11 @@
         <circle cx="46" cy="17" r="5" fill="#fff"/>
       </svg>
       <div>
-        <div class="name">巡山僧</div>
-        <div class="sub">替你盯梢</div>
-        <div class="what">网页降价、补货、上新，贫僧 24 小时蹲守，风吹草动立刻通报。<span style="white-space:nowrap">（Chrome / Edge 插件）</span></div>
+        <div class="name" data-i18n="cards.xunshan.name"></div>
+        <div class="sub" data-i18n="cards.xunshan.sub"></div>
+        <div class="what"><span data-i18n="cards.xunshan.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.xunshan.note"></span></div>
       </div>
-      <span class="go">请他巡山 ›</span>
+      <span class="go" data-i18n="cards.xunshan.go"></span>
     </a>
     <a class="card monk" href="/daibi/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -422,11 +716,11 @@
         <path d="M51 21l-14 18-4 6 6.5-3L53.5 24z" fill="#fff"/>
       </svg>
       <div>
-        <div class="name">代笔僧</div>
-        <div class="sub">施主喝茶，贫僧代笔</div>
-        <div class="what">Excel 一行一行替你写进网页表单，下拉、日历、套娃表单都认，744 格一格不错。专治往系统里录单录到眼瞎。<span style="white-space:nowrap">（Chrome / Edge 插件）</span></div>
+        <div class="name" data-i18n="cards.daibi.name"></div>
+        <div class="sub" data-i18n="cards.daibi.sub"></div>
+        <div class="what"><span data-i18n="cards.daibi.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.daibi.note"></span></div>
       </div>
-      <span class="go">请他代笔 ›</span>
+      <span class="go" data-i18n="cards.daibi.go"></span>
     </a>
     <a class="card monk" href="/zhike/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -437,11 +731,11 @@
         <path d="M13.5 22.5L32 35.5l18.5-13" stroke="#C2552A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       </svg>
       <div>
-        <div class="name">知客僧</div>
-        <div class="sub">收发室那点活，贫僧包了</div>
-        <div class="what">邮件里的订单号、金额、日期自己落进 Excel，该转的转，回信先打草稿等你点头，推销挡在门外。专治收件箱里淘金。<span style="white-space:nowrap">（Windows 电脑版）</span></div>
+        <div class="name" data-i18n="cards.zhike.name"></div>
+        <div class="sub" data-i18n="cards.zhike.sub"></div>
+        <div class="what"><span data-i18n="cards.zhike.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.zhike.note"></span></div>
       </div>
-      <span class="go">请他迎客 ›</span>
+      <span class="go" data-i18n="cards.zhike.go"></span>
     </a>
     <a class="card monk" href="/saodi/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -453,16 +747,16 @@
         <path d="M20 44.5l-1.6 5M26 46.5l-1.6 5.2M32 48.5l-1.4 4.4" stroke="#6E9A24" stroke-width="2.2" stroke-linecap="round"/>
       </svg>
       <div>
-        <div class="name">戒尺僧</div>
-        <div class="sub">凡尘乱档，统统归位</div>
-        <div class="what">专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。<span style="white-space:nowrap">（Windows 电脑版）</span></div>
+        <div class="name" data-i18n="cards.saodi.name"></div>
+        <div class="sub" data-i18n="cards.saodi.sub"></div>
+        <div class="what"><span data-i18n="cards.saodi.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.saodi.note"></span></div>
       </div>
-      <span class="go">请他归位 ›</span>
+      <span class="go" data-i18n="cards.saodi.go"></span>
     </a>
   </section>
 
   <section>
-    <div class="sec-title">小工具</div>
+    <div class="sec-title" data-i18n="secTools"></div>
     <a class="card monk" href="/gongshi/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
         <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
@@ -475,11 +769,11 @@
         <path d="M48 11.5s-5 5.8-5 9a5 5 0 0 0 10 0c0-3.2-5-9-5-9z" fill="#fff"/>
       </svg>
       <div>
-        <div class="name">工时榨汁机</div>
-        <div class="sub">水分榨干，只剩真工时</div>
-        <div class="what">开始、结束两个时间一填，茶歇饭点自动扣光，真工时当场出汁。专治换型单上那格 <span style="white-space:nowrap">CO 时间</span>。<span style="white-space:nowrap">（手机打开就能用）</span></div>
+        <div class="name" data-i18n="cards.gongshi.name"></div>
+        <div class="sub" data-i18n="cards.gongshi.sub"></div>
+        <div class="what"><span data-i18n="cards.gongshi.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.gongshi.note"></span></div>
       </div>
-      <span class="go">请他算账 ›</span>
+      <span class="go" data-i18n="cards.gongshi.go"></span>
     </a>
     <a class="card monk" href="/qianye/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -488,45 +782,96 @@
         <circle cx="46" cy="40" r="4" fill="#C2410C"/>
       </svg>
       <div>
-        <div class="name">一叶笺</div>
-        <div class="sub">随手成画</div>
-        <div class="what">手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。<span style="white-space:nowrap">（手机打开就能用）</span></div>
+        <div class="name" data-i18n="cards.qianye.name"></div>
+        <div class="sub" data-i18n="cards.qianye.sub"></div>
+        <div class="what"><span data-i18n="cards.qianye.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.qianye.note"></span></div>
       </div>
-      <span class="go">请他装裱 ›</span>
+      <span class="go" data-i18n="cards.qianye.go"></span>
     </a>
   </section>
 
   <section>
     <div class="card">
       <div class="label">// ABBOT.ID</div>
-      <h2>🧘 方丈法号：释手</h2>
-      <p>世人苦修，难在“放不下”；本院坐禅，赢在“早撒手”。</p>
-      <p>老衲毕生参禅，只为顿悟“解放双手”之无上大法。今神功大成，特将毕生修行所得化作院内众赛博罗汉，尽数赠予诸位施主替你当牛做马。脏活累活尽可“释手”，施主且安心下山风流。</p>
+      <h2 data-i18n="abbot.h"></h2>
+      <p data-i18n="abbot.p1"></p>
+      <p data-i18n="abbot.p2"></p>
     </div>
   </section>
 
   <section>
     <div class="card">
       <div class="label">// COMPANY.INFO</div>
-      <h2>🏭 零肉身造物 | <span style="white-space:nowrap">Zero-Flesh Creation</span></h2>
-      <p>一家彻底摒弃了碳基雇员的纯硅基作坊</p>
-      <p class="motto">——把折磨肉体的活交给代码，把肉身还给生活。</p>
-      <p class="addr">公司地址：可观测宇宙 · 拉尼亚凯亚超星系团 · 银河系郊区猎户座支臂 · 距银心约 2.6 万光年处 · 绕行一颗 G2V 型黄矮星的第三颗蓝色水球表面（导航请搜：地球）</p>
+      <h2 data-i18n="company.h"></h2>
+      <p data-i18n="company.p1"></p>
+      <p class="motto" data-i18n="company.motto"></p>
+      <p class="addr" data-i18n="company.addr"></p>
     </div>
   </section>
 
   <footer>
-    <span>千手院 · QIANSHOU LAB</span>
-    <span>有烂活找方丈：<a id="mail" href="#">飞鸽传书（发邮件）</a></span>
+    <span data-i18n="foot.brand"></span>
+    <span><span data-i18n="foot.mailLead"></span><a id="mail" href="#" data-i18n="foot.mail"></a></span>
+    <a class="fb" href="#" data-i18n="foot.fb"></a>
   </footer>
 </main>
 
 <script>
   (function () {
-    var mail = document.getElementById('mail');
+    var S = window.QS_STRINGS, QS = window.QS;
     var addr = ['oilsongchengmin', 'gmail.com'].join('@');       // 拼起来写，少招点垃圾邮件
-    mail.href = 'mailto:' + addr + '?subject=' + encodeURIComponent('千手院');
-    mail.title = addr;
+    function pick(o, path) { return path.split('.').reduce(function (x, k) { return x == null ? x : x[k]; }, o); }
+    // 提意见那封信最后一行带上系统和浏览器（简写），人不用自己打
+    function device() {
+      var u = navigator.userAgent;
+      var os = /Windows/.test(u) ? 'Windows' : /iPhone|iPad|iPod/.test(u) ? 'iOS' : /Android/.test(u) ? 'Android'
+        : /Mac OS X/.test(u) ? 'macOS' : /CrOS/.test(u) ? 'ChromeOS' : /Linux/.test(u) ? 'Linux' : 'other';
+      var br = /Edg\//.test(u) ? 'Edge' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : 'other';
+      return os + ' · ' + br;
+    }
+    function fill() {
+      var T = S[QS.lang];
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        var v = pick(T, el.getAttribute('data-i18n'));
+        if (typeof v === 'string') el.innerHTML = v;
+      });
+      document.querySelectorAll('[data-i18n-attr]').forEach(function (el) {
+        el.getAttribute('data-i18n-attr').split(';').forEach(function (pair) {
+          var i = pair.indexOf(':'), v = pick(T, pair.slice(i + 1));
+          if (typeof v === 'string') el.setAttribute(pair.slice(0, i), v);
+        });
+      });
+      // 随喜 / Tips：收款页开好（QS_TIP_URL 有值）才变成链接
+      if (window.QS_TIP_URL) document.querySelectorAll('.tip').forEach(function (el) {
+        var a = document.createElement('a'); a.href = window.QS_TIP_URL; a.target = '_blank'; a.rel = 'noopener'; a.textContent = el.textContent;
+        el.replaceWith(a);
+      });
+      var mail = document.getElementById('mail');
+      mail.href = 'mailto:' + addr + '?subject=' + encodeURIComponent(T.mailSubject);
+      mail.title = addr;
+      var fb = 'mailto:' + addr + '?subject=' + encodeURIComponent(T.fbSubject)
+        + '&body=' + encodeURIComponent(T.fbBody.join('\n') + '\n\n\n——\n' + T.fbTag + ' · ' + device());
+      document.querySelectorAll('a.fb').forEach(function (a) { a.href = fb; });
+      document.querySelectorAll('.lang button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.getAttribute('data-l') === QS.lang));
+      });
+    }
+    function relayout() {
+      if (document.documentElement.getAttribute('data-skin') !== 'b') window.qsRing();
+      window.dispatchEvent(new Event('resize'));      // 两个 3D 场景都听 resize：禅圈跟着字重新摆
+    }
+    QS.fill = fill;
+    QS.setLang = function (l) {
+      if (!S[l] || l === QS.lang) return;
+      QS.lang = l;
+      try { localStorage.setItem(QS.key, l); } catch (e) {}
+      QS.head(); fill(); relayout();
+    };
+    document.querySelectorAll('.lang button').forEach(function (b) {
+      b.addEventListener('click', function () { QS.setLang(b.getAttribute('data-l')); });
+    });
+    fill();
+    if (document.documentElement.getAttribute('data-skin') !== 'b') window.qsRing();
   })();
 </script>
 <script type="module">

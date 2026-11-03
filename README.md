@@ -1,11 +1,53 @@
+# QIANSHOU LAB · 千手院
+
+*English below first · 中文在下面*
+
+Homepage of QIANSHOU LAB: https://qianshoulab.github.io/
+
+Cyber Zen · Hardcore Tools.
+“Step in, let go of the grind; a thousand monks toil while you unwind.”
+
+- English by default; Chinese is one click away (top right, **EN / 中文**). Your pick is remembered. Add `?lang=zh` or `?lang=en` to the URL to force one for a single visit.
+- Two skins, picked at random on each visit: A “Thousand Hands” (a halo of hands and eyes) or B “Cyber Gate” (neon gate and pagoda). Add `?a` or `?b` to the URL to pick one.
+- The 3D is drawn live with three.js, no images: `scene-a.js`, `scene-b.js`.
+- All homepage copy, both languages, lives in one place: `QS_STRINGS` near the top of `index.html`.
+- Served by GitHub Pages from the root of `main`.
+
+House rules: no sign-up, just open it. Your files never leave your device. Everything is free. Like it? Tips welcome; no tip, no guilt. Something off? Hit Feedback and we’ll fix it.
+
+Monks on duty:
+
+- [Luru · Photo Typist](https://qianshoulab.github.io/luruseng/): Go play. The monk keys it in. (Photos of paper sheets into Excel, Windows app)
+- [Dubiao · PDF to Excel](https://qianshoulab.github.io/pabiao/): Liberates tables trapped in PDFs. (Scans too, runs in your browser, no uploads)
+- [Jingtan · Clean Sheet](https://qianshoulab.github.io/xibiao/): Messy data in. Inner peace out. (Spreadsheet cleanup, no uploads)
+- [Yijing · Data Mover](https://qianshoulab.github.io/yijing/): Data migration, minus the suffering. (System A export to system B import, web)
+- [Chaojing · Doc Batcher](https://qianshoulab.github.io/chaojing/): Leave the copying to the monk. (Word template + spreadsheet: certificates, invoices, contracts in bulk, web)
+- [Baozu · Rent Splitter](https://qianshoulab.github.io/baozuseng/): Power bill, split to the cent. Drama not included. (Sublet bookkeeping, phone web app, data stays on the phone)
+- [Huayuan · List Grabber](https://qianshoulab.github.io/huayuan/): Any web list, straight into Excel. (Chrome / Edge extension)
+- [Xunshan · Price Watch](https://qianshoulab.github.io/xunshan/): Stares at the page so you don’t have to. (Price drop and restock alerts, Chrome / Edge extension)
+- [Daibi · Form Filler](https://qianshoulab.github.io/daibi/): You sip tea. The monk types. (Spreadsheet rows into web forms, Chrome / Edge extension)
+- [Zhike · Inbox Sorter](https://qianshoulab.github.io/zhike/): Orders, invoices and tracking numbers file themselves into Excel. (Windows app)
+- [Jiechi · File Sweeper](https://qianshoulab.github.io/saodi/): Your files, disciplined. (Batch file chores, Windows app)
+
+Odd jobs:
+
+- [Gongshi · Net Hours](https://qianshoulab.github.io/gongshi/): Squeeze out the breaks. Keep the real hours. (Changeover time minus breaks and meals)
+- [Yiye · Note Framer](https://qianshoulab.github.io/qianye/): Any scribble, frame-worthy. (Handwriting photo or pasted text into a shareable image)
+
+---
+
 # 千手院 · QIANSHOU LAB
 
 千手院总舵主页，网址：https://qianshoulab.github.io/ （仓库得叫 qianshoulab.github.io 才挂在根上）
 
+- 默认英文，第二语言中文：右上角 **EN / 中文** 切换，选过就记住。网址后面加 `?lang=zh` 或 `?lang=en` 只管这一次。
 - 每次打开随机换一套皮：A「千手法相」（千手千眼的光环）或 B「赛博山门」（霓虹牌坊和五层宝塔）。
   想指定就在网址后面加 `?a` 或 `?b`。
 - 3D 是网页自己用 three.js 现画的，没有图片：`scene-a.js`、`scene-b.js`。
+- 首页中英两套字全在一处：`index.html` 顶上的 `QS_STRINGS`。
 - GitHub Pages 从 `main` 分支根目录发布。
+
+本院规矩：不用注册，推门就用。你的文件，不出你的电脑。全部免费。用着顺手可以随喜，不随也照渡。有意见点「提意见」，贫僧照改。
 
 在岗罗汉：
 

@@ -1,0 +1,103 @@
+# QIANSHOU LAB homepage, English copy (exported from QS_STRINGS in index.html). One per line: key<Tab>text.
+htmlLang	en
+ogLocale	en_US
+docTitle	QIANSHOU LAB · Cyber Zen, Hardcore Tools
+metaDesc	QIANSHOU LAB is a cyber-zen workshop of free tools for the grunt work: PDFs to Excel, messy spreadsheets, web forms, inboxes, files. No sign-up. Your files never leave your device.
+ogTitle	QIANSHOU LAB
+ogDesc	Cyber Zen · Hardcore Tools. Step in, let go of the grind; a thousand monks toil while you unwind.
+langLabel	Language
+tag	Cyber Zen · Hardcore Tools
+gatha1	“Step in, let go of the grind;
+gatha2	a thousand monks toil while you unwind.”
+hint	▼ Scroll · Enter the gate
+about.h	🛕 About the Temple
+about.p1	All beings suffer, mostly from paperwork. Forms, cross-checks, retyping, nine to nine.
+about.p2	This temple asks for no offerings. It exists for one cause: overworked humans. Hundreds of cyber monks, permanently in monk mode, each with a specialty, take the broken spreadsheets, junk text and busywork off your hands.
+rules.h	House Rules
+rules.r1	No sign-up. Open it and go.
+rules.r2	Your files never leave your device.
+rules.r3	Everything is free.
+rules.r4	Like it? Tips welcome. No tip, no guilt.
+rules.r5	Something off? Hit Feedback and we’ll fix it.
+secMonks	Monks on Duty
+secTools	Odd Jobs
+cards.luruseng.name	Luru · Photo Typist
+cards.luruseng.sub	Go play. The monk keys it in.
+cards.luruseng.what	Drop photos of paper sheets into a folder and the Excel table fills itself in. Made for shop-floor tool tickets and scribbled daily logs.
+cards.luruseng.note	(Windows app)
+cards.luruseng.go	Put to work ›
+cards.pabiao.name	Dubiao · PDF to Excel
+cards.pabiao.sub	Liberates tables trapped in PDFs.
+cards.pabiao.what	Drop in a PDF and an Excel file drops out. Scans too. Made for those PDF reports where you can’t edit a single number.
+cards.pabiao.note	(Runs in your browser. No uploads.)
+cards.pabiao.go	Free the tables ›
+cards.xibiao.name	Jingtan · Clean Sheet
+cards.xibiao.sub	Messy data in. Inner peace out.
+cards.xibiao.what	Someone else wrecked the data; the monk takes it from here. Mess comes out spotless, and anything truly cursed gets a yellow flag.
+cards.xibiao.note	(Runs in your browser. No uploads.)
+cards.xibiao.go	Clean up ›
+cards.yijing.name	Yijing · Data Mover
+cards.yijing.sub	Data migration, minus the suffering.
+cards.yijing.what	Moving data between systems is torture. Hand it over: any cursed export format gets lined up with the import on the other side.
+cards.yijing.note	(Runs in your browser. No uploads.)
+cards.yijing.go	Move data ›
+cards.chaojing.name	Chaojing · Doc Batcher
+cards.chaojing.sub	Leave the copying to the monk.
+cards.chaojing.what	One Word template plus one spreadsheet: a certificate, invoice or contract for every row. 500 PDFs in about four seconds. Made for month-end paperwork.
+cards.chaojing.note	(Runs in your browser. No uploads.)
+cards.chaojing.go	Batch docs ›
+cards.baozuseng.name	Baozu · Rent Splitter
+cards.baozuseng.sub	Power bill, split to the cent. Drama not included.
+cards.baozuseng.what	Paste the tenant list, enter the power bill. Rent and power split by head and by day, and who owes what is obvious at a glance. Made for month-end sublet math.
+cards.baozuseng.note	(Runs on your phone. The books stay there.)
+cards.baozuseng.go	Split rent ›
+cards.huayuan.name	Huayuan · List Grabber
+cards.huayuan.sub	Any web list, straight into Excel.
+cards.huayuan.what	Made for pages that won’t let you copy. Customer directories, product listings: one scoop and it’s all in a spreadsheet.
+cards.huayuan.note	(Chrome / Edge extension)
+cards.huayuan.go	Grab lists ›
+cards.xunshan.name	Xunshan · Price Watch
+cards.xunshan.sub	Stares at the page so you don’t have to.
+cards.xunshan.what	Price drops, restocks, new arrivals. It watches 24/7 and tells you the moment anything moves.
+cards.xunshan.note	(Chrome / Edge extension)
+cards.xunshan.go	Start watching ›
+cards.daibi.name	Daibi · Form Filler
+cards.daibi.sub	You sip tea. The monk types.
+cards.daibi.what	Types your spreadsheet into web forms, row by row. Dropdowns, date pickers, forms inside forms: 744 cells, zero mistakes. For anyone keying orders into a system until their eyes give out.
+cards.daibi.note	(Chrome / Edge extension)
+cards.daibi.go	Fill forms ›
+cards.zhike.name	Zhike · Inbox Sorter
+cards.zhike.sub	Orders, invoices and tracking numbers file themselves into Excel.
+cards.zhike.what	Order numbers, amounts and dates land in the sheet. What needs forwarding gets forwarded, replies wait as drafts for your nod, and sales pitches stay outside the gate.
+cards.zhike.note	(Windows app)
+cards.zhike.go	Sort mail ›
+cards.saodi.name	Jiechi · File Sweeper
+cards.saodi.sub	Your files, disciplined.
+cards.saodi.what	For desktops that look like a starry night. Batch downloads, renames, and every file walked to the folder it belongs in.
+cards.saodi.note	(Windows app)
+cards.saodi.go	Tidy up ›
+cards.gongshi.name	Gongshi · Net Hours
+cards.gongshi.sub	Squeeze out the breaks. Keep the real hours.
+cards.gongshi.what	Enter a start and an end time. Tea breaks and meals get squeezed out, and the real hours come out fresh-pressed. Made for the changeover time box on your CO sheet.
+cards.gongshi.note	(Runs on your phone)
+cards.gongshi.go	Squeeze ›
+cards.qianye.name	Yiye · Note Framer
+cards.qianye.sub	Any scribble, frame-worthy.
+cards.qianye.what	Snap your handwriting or paste some text. It comes back mounted as a handsome image, ready to share and show off.
+cards.qianye.note	(Runs on your phone)
+cards.qianye.go	Frame it ›
+abbot.h	🧘 The Abbot: Master Hands-Off
+abbot.p1	The hardest part of practice is letting go. We start there.
+abbot.p2	The abbot spent his life on one koan: how do you free both hands? Enlightenment arrived. He poured everything he learned into a temple full of cyber monks and gave them all to you. Hand them the dirty work and go enjoy the view.
+company.h	🏭 Zero-Flesh Creation
+company.p1	A workshop that let every carbon-based employee go. Pure silicon.
+company.motto	— Give the grind to the code. Give your body back to your life.
+company.addr	Address: Observable Universe · Laniakea Supercluster · Milky Way, Orion Arm (the quiet suburbs) · about 26,000 light-years from the galactic center · third rock from a G2V yellow dwarf. For directions, search “Earth”.
+foot.brand	QIANSHOU LAB
+foot.mailLead	Got a nasty job? 
+foot.mail	Send the abbot a pigeon (email)
+foot.fb	Feedback
+mailSubject	QIANSHOU LAB
+fbSubject	[QIANSHOU feedback] Homepage
+fbBody	What’s not working: /  / What you want: /  / Anything else:
+fbTag	QIANSHOU LAB homepage
