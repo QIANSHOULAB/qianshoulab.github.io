@@ -3,7 +3,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 const [MAT, OUT] = process.argv.slice(2);
-const URL = 'http://localhost:8765/chaojing/';
+const URL = process.env.CHAOJING_URL || 'http://localhost:8765/chaojing/';
 const exp = JSON.parse(fs.readFileSync(path.join(MAT, 'expected.json'), 'utf8'));
 const only = process.env.ONLY ? process.env.ONLY.split(',') : Object.keys(exp);
 fs.mkdirSync(OUT, { recursive: true });

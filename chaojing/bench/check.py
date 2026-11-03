@@ -42,6 +42,8 @@ def docx_text(p):
 
 def pdf_text(p):
     t = subprocess.run(["pdftotext", "-layout", p, "-"], capture_output=True, text=True).stdout
+    # 0.2.0 复赛起：再按阅读顺序抽一遍并起来。-layout 会把表格里折行的字（大写金额）和隔壁格子交错，冤枉所有家
+    t += "\n" + subprocess.run(["pdftotext", p, "-"], capture_output=True, text=True).stdout
     if t.strip() and not FORCE: return t, "text"
     if not OCR: return "", "image"
     d = tempfile.mkdtemp(); subprocess.run(["pdftoppm", "-r", "200", "-png", p, os.path.join(d, "pg")], check=True)

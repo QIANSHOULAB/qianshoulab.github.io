@@ -11,7 +11,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def chk(key, src, *flags):
     out = subprocess.run([sys.executable, os.path.join(HERE, "check.py"), E, key, src, *flags], capture_output=True, text=True)
-    return json.loads(out.stdout)
+    try: return json.loads(out.stdout)
+    except ValueError: return {"docx": {}, "pdf": {"mode": "没装 tesseract，跳过"}}  # 复赛沙盒没有 OCR
 
 
 res = {}

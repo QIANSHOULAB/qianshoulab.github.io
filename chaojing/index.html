@@ -136,6 +136,9 @@ table.data tbody tr.sel td.n{color:var(--accent);font-weight:700}
 .mapsum{font-size:13px;font-weight:600}
 .mapsum.ok{color:var(--good)}.mapsum.bad{color:var(--bad)}
 .unused{margin-top:10px;font-size:12.5px;color:var(--fg2)}
+.grp{margin-top:10px;padding:8px 6px 8px 12px;border-radius:12px;background:var(--accent-tint);color:var(--accent);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.grp.off{background:var(--fill);color:var(--fg2)}
+.grp .btn{height:28px;font-size:13px;flex:none}
 
 /* output */
 .field{margin-bottom:14px}
@@ -223,7 +226,7 @@ textarea.paste{flex:1;min-height:260px;margin:14px;border-radius:12px;border:0;b
 .drop{position:fixed;inset:0;z-index:70;background:rgba(0,113,227,.12);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:grid;place-items:center;pointer-events:none}
 .drop div{background:var(--card);padding:22px 30px;border-radius:18px;font-size:19px;font-weight:700;box-shadow:0 20px 60px rgba(0,0,0,.2);border:2px dashed var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-fg);padding:11px 18px;border-radius:999px;font-size:14px;font-weight:500;z-index:80;max-width:calc(100% - 32px);text-align:center;animation:rise .25s}
-#renderer{position:fixed;left:-20000px;top:0;width:1400px;height:1200px;border:0;pointer-events:none}
+#renderer{position:fixed;left:-30000px;top:0;width:2400px;height:1600px;border:0;pointer-events:none}
 </style>
 </head>
 <body>
@@ -267,6 +270,7 @@ textarea.paste{flex:1;min-height:260px;margin:14px;border-radius:12px;border:0;b
       <div class="card-h"><h2><span class="step">3</span><span data-t="mapTitle"></span></h2><span class="mapsum" id="mapSum"></span></div>
       <div class="maplist" id="mapList"></div>
       <p class="unused" id="unused" hidden></p>
+      <div class="grp" id="grp" hidden><span id="grpT"></span><button class="btn ghost" id="bGrp"></button></div>
     </section>
 
     <section class="card" id="cOut">
@@ -299,7 +303,7 @@ textarea.paste{flex:1;min-height:260px;margin:14px;border-radius:12px;border:0;b
 
   <footer>
     <span><a href="https://qianshoulab.github.io/" data-t="home"></a> · <span data-t="title"></span></span>
-    <span><span data-t="findAbbot"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
+    <span><span data-t="findAbbot"></span><span class="mail">oilsongchengmin@gmail.com</span> · <span id="ver"></span></span>
   </footer>
 </div>
 
@@ -339,7 +343,7 @@ const T = {
   mapNone:"模板里没有空位",
   optUnmapped:"— 没对上 —", optBlank:"留空",
   unused:list=>`表里没用上的列：${list}`,
-  rowOf:(i,n)=>`第 ${i} / ${n} 行`,
+  rowOf:(i,n)=>`第 ${i} / ${n} 份`,
   progress:(i,n,s)=>`已抄 ${i} / ${n} 份 · ${s} 秒`,
   packing:"正在打包…",
   doneMsg:(n,s)=>`${n} 份抄完，用时 ${s} 秒`,
@@ -359,7 +363,12 @@ const T = {
   editorName:"在线编辑的模板",
   pasted:"粘贴的表格",
   noHeaderCol:i=>`第${i}列`,
-  pdfNote:"PDF 首次要多加载 0.5 MB 工具，稍等",
+  pdfNote:"头一回出 PDF，先搬一套中文字体，就这一次",
+  fontFail:"字体没搬来，网通了再点一次",
+  grouped:(col,n,m)=>`「${col}」相同的行并成一份：${n} 行 → ${m} 份`,
+  groupOff:col=>`同一个「${col}」的几行，可以并成一份`,
+  split:"拆开", merge:"并起来",
+  ver:v=>`v${v}`,
 };
 
 /* ============ 示例：模板（编辑器 HTML）+ 表格 ============ */
@@ -381,15 +390,17 @@ const EXAMPLES = {
     ]},
   invoice:{
     orient:"portrait", file:"发票", rule:"{{发票号}}-{{客户}}",
-    html:`<h6 style="color:${GOLD}">INVOICE</h6><h1>发票</h1><p><span style="color:#6E6E73">发票号</span>　{{发票号}}　　<span style="color:#6E6E73">开票日期</span>　{{开票日期}}</p><hr><h3>开给</h3><p>{{客户}}<br>{{地址}}</p><p><br></p><table><tbody><tr><th>项目</th><th style="text-align:right">数量</th><th style="text-align:right">单价（元）</th><th style="text-align:right">金额（元）</th></tr><tr><td>{{项目}}</td><td style="text-align:right">{{数量}}</td><td style="text-align:right">{{单价}}</td><td style="text-align:right">{{金额}}</td></tr></tbody></table><h2 style="text-align:right">合计 ¥{{金额}}</h2><p><br></p><h6>请于 {{付款期限}} 前转账至：千手文具有限公司 · 账号见合同</h6>`,
-    headers:["发票号","客户","地址","项目","数量","单价","金额","开票日期","付款期限"],
+    html:`<h6 style="color:${GOLD}">INVOICE</h6><h1>发票</h1><p><span style="color:#6E6E73">发票号</span>　{{发票号}}　　<span style="color:#6E6E73">开票日期</span>　{{开票日期}}</p><hr><h3>开给</h3><p>{{客户}}<br>{{地址}}</p><p><br></p><table><tbody><tr><th>项目</th><th style="text-align:right">数量</th><th style="text-align:right">单价（元）</th><th style="text-align:right">金额（元）</th></tr><tr><td>{{项目}}</td><td style="text-align:right">{{数量}}</td><td style="text-align:right">{{单价}}</td><td style="text-align:right">{{金额}}</td></tr></tbody></table><h2 style="text-align:right">合计 ¥{{合计}}</h2><p><br></p><h6>请于 {{付款期限}} 前转账至：千手文具有限公司 · 账号见合同</h6>`,
+    headers:["发票号","客户","地址","开票日期","付款期限","项目","数量","单价","金额","合计"],
     rows:[
-      ["INV-1101","青柠咖啡（静安店）","上海市静安区梧桐路 18 号","A4 复印纸（箱）","12","168.00","2,016.00","2026-11-02","2026-11-30"],
-      ["INV-1102","木星设计工作室","杭州市西湖区云栖路 7 号","中性笔（盒）","30","24.50","735.00","2026-11-02","2026-11-30"],
-      ["INV-1103","大鹅物流","成都市武侯区天府大道 99 号","文件柜","2","1,280.00","2,560.00","2026-11-03","2026-12-03"],
-      ["INV-1104","晚风书店","广州市越秀区北京路 3 号","便利贴（包）","100","6.80","680.00","2026-11-03","2026-12-03"],
-      ["INV-1105","星河健身","深圳市南山区科技园 66 号","白板 1.2 米","4","399.00","1,596.00","2026-11-04","2026-12-04"],
-      ["INV-1106","橘子幼儿园","南京市鼓楼区中山路 12 号","彩色卡纸（包）","50","15.00","750.00","2026-11-04","2026-12-04"],
+      ["INV-1101","青柠咖啡（静安店）","上海市静安区梧桐路 18 号","2026-11-02","2026-11-30","A4 复印纸（箱）","12","168.00","2,016.00","2,751.00"],
+      ["INV-1101","青柠咖啡（静安店）","上海市静安区梧桐路 18 号","2026-11-02","2026-11-30","中性笔（盒）","30","24.50","735.00","2,751.00"],
+      ["INV-1102","大鹅物流","成都市武侯区天府大道 99 号","2026-11-03","2026-12-03","文件柜","2","1,280.00","2,560.00","4,156.00"],
+      ["INV-1102","大鹅物流","成都市武侯区天府大道 99 号","2026-11-03","2026-12-03","白板 1.2 米","4","399.00","1,596.00","4,156.00"],
+      ["INV-1103","晚风书店","广州市越秀区北京路 3 号","2026-11-03","2026-12-03","便利贴（包）","100","6.80","680.00","680.00"],
+      ["INV-1104","橘子幼儿园","南京市鼓楼区中山路 12 号","2026-11-04","2026-12-04","彩色卡纸（包）","50","15.00","750.00","1,302.00"],
+      ["INV-1104","橘子幼儿园","南京市鼓楼区中山路 12 号","2026-11-04","2026-12-04","安全剪刀（把）","24","8.50","204.00","1,302.00"],
+      ["INV-1104","橘子幼儿园","南京市鼓楼区中山路 12 号","2026-11-04","2026-12-04","水彩笔（套）","12","29.00","348.00","1,302.00"],
     ]},
   offer:{
     orient:"portrait", file:"录用通知", rule:"录用通知-{{姓名}}",
@@ -404,6 +415,7 @@ const EXAMPLES = {
     ]},
 };
 
+const VER="0.2.0";
 /* ============ 小工具 ============ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -460,19 +472,73 @@ function pageSize(buf){
 /* ============ 填一份 ============ */
 function rowValues(i){
   const r=S.data.rows[i]||[]; const o={};
-  for(const t of S.tpl.tags){const c=S.map[t]; o[t]= c>=0 ? (r[c]??"") : c===-2 ? "" : `{{${t}}}`}
+  for(const t of S.tpl.tags){const c=S.map[t]; o[t]= c>=0 ? String(r[c]??"") : c===-2 ? "" : `{{${t}}}`}
+  return o;
+}
+function unitValues(u){
+  const rows=S.units[u]||[u]; const o=rowValues(rows[0]);
+  if(grouping()){const lt=loopTags();o.__g=rows.map(i=>{const v=rowValues(i),x={};for(const t of lt)x[t]=v[t];return x})}
   return o;
 }
 function makeDoc(buf){
   return new docxtemplater(new PizZip(buf),{
     delimiters:{start:"{{",end:"}}"}, paragraphLoop:true, linebreaks:true,
     nullGetter:()=> "",
-    parser:tag=>({get:scope=>{const k=tag.trim(); return k in scope ? scope[k] : ""}})
+    parser:tag=>{const k=tag.trim(); return {get:scope=>k==="."?scope:(scope&&typeof scope==="object"&&k in scope?scope[k]:undefined)}}
   });
 }
-function fillDocx(i,compress){
-  const doc=makeDoc(S.tpl.buf); doc.render(rowValues(i));
+function fillDocx(u,compress){
+  const doc=makeDoc(groupBuf()); doc.render(unitValues(u));
   return doc.getZip().generate({type:"uint8array",compression:compress?"DEFLATE":"STORE"});
+}
+
+/* ============ 一张发票多行商品：哪几行表头一样、模板里又有表格行，就自动并成一份 ============ */
+function textOfXml(x){return (x.match(/<w:p[ >][\s\S]*?<\/w:p>/g)||[]).map(p=>(p.match(/<w:t(?:\s[^>]*)?>[^<]*<\/w:t>/g)||[]).map(t=>decodeXml(t.replace(/<[^>]+>/g,""))).join("")).join("\n")}
+const TR_RE=/<w:tr[ >][\s\S]*?<\/w:tr>/g;
+function trTags(buf){
+  try{
+    const xml=new PizZip(buf).file("word/document.xml").asText(); const out=[];
+    for(const x of xml.match(TR_RE)||[]){const tags=[];textOfXml(x).replace(TAG_RE,(a,k)=>{k=k.trim();if(!/^[#^\/-]/.test(k)&&!tags.includes(k))tags.push(k)});out.push({tags,nested:/<w:tbl[ >]/.test(x.slice(5))})}
+    return out;
+  }catch(e){return []}
+}
+const grouping=()=>!!(S.group&&!S.group.off);
+function loopTags(){const g=S.group;if(!g)return [];const set=new Set();for(const i of g.loops)for(const t of S.tpl.trs[i].tags)set.add(t);return [...set]}
+function computeUnits(){
+  const n=S.data?S.data.rows.length:0; S.units=Array.from({length:n},(_,i)=>[i]); S.group=null;
+  if(!S.tpl||!n||!S.tpl.trs||!S.tpl.trs.length)return;
+  const inTr=new Set(S.tpl.trs.flatMap(r=>r.tags));
+  const head=S.tpl.tags.filter(t=>!inTr.has(t)&&S.map[t]>=0), line=[...inTr].filter(t=>S.map[t]>=0);
+  if(!head.length||!line.length)return;
+  const R=S.data.rows, cell=(i,t)=>String(R[i][S.map[t]]??"").trim();
+  const groups=[]; let prev=null;
+  for(let i=0;i<n;i++){
+    const vals=head.map(t=>cell(i,t)), key=vals.join("\u0001"), empty=vals.every(v=>v==="");
+    if(groups.length&&(key===prev||empty&&line.some(t=>cell(i,t)!=="")))groups[groups.length-1].push(i);
+    else{groups.push([i]);prev=key}
+  }
+  if(groups.length===n)return;
+  const vary=new Set(); for(const g of groups)if(g.length>1)for(const t of line)if(g.some(i=>cell(i,t)!==cell(g[0],t)))vary.add(t);
+  if(!vary.size)return;
+  const loops=S.tpl.trs.map((r,i)=>!r.nested&&r.tags.some(t=>vary.has(t))?i:-1).filter(i=>i>=0);
+  if(!loops.length)return;
+  // 得有一列像「单号」：每一份一个值、互不重复、不空。工资条这种「月份相同」的不算
+  const best=head.find(t=>{const v=groups.map(g=>cell(g[0],t));return v.every(x=>x!=="")&&new Set(v).size===groups.length});
+  if(!best)return;
+  S.group={loops,col:S.data.headers[S.map[best]],rows:n,units:groups.length,off:!!S.noGroup};
+  if(!S.noGroup)S.units=groups;
+}
+function groupBuf(){
+  const g=S.group; if(!g||g.off)return S.tpl.buf;
+  const key=g.loops.join(","); if(S.tpl.gb&&S.tpl.gb.key===key)return S.tpl.gb.buf;
+  const zip=new PizZip(S.tpl.buf); let k=-1;
+  const xml=zip.file("word/document.xml").asText().replace(TR_RE,tr=>{
+    k++; if(!g.loops.includes(k))return tr;
+    tr=tr.replace(/<w:t(?:\s[^>]*)?>/,m=>m+"{{-w:tr __g}}");
+    const i=tr.lastIndexOf("</w:t>"); return tr.slice(0,i)+"{{/__g}}"+tr.slice(i);
+  });
+  zip.file("word/document.xml",xml); const buf=zip.generate({type:"arraybuffer",compression:"DEFLATE"});
+  S.tpl.gb={key,buf}; return buf;
 }
 function tplSyntaxError(buf){
   try{makeDoc(buf);return null}catch(e){
@@ -589,7 +655,7 @@ function htmlToDocx(html,orient,border){
 function setTemplate(t){
   const err=tplSyntaxError(t.buf);
   if(err){toast(T.badTplSyntax(err),4200);return false}
-  t.tags=extractTags(t.buf); t.page=pageSize(t.buf); t.pgb=pageBorder(t.buf);
+  t.tags=extractTags(t.buf); t.page=pageSize(t.buf); t.pgb=pageBorder(t.buf); t.trs=trTags(t.buf);
   S.tpl=t; autoMap(); applyBorderCss(document); if(rendererWin)applyBorderCss(rendererWin.document);
   if(!S.ruleTouched||t.source==="example")resetRule();
   renderTpl(); renderMap(); renderOut(); preview();
@@ -600,7 +666,7 @@ function setData(d){
   const seen={};
   d.headers=d.headers.map((h,i)=>{let s=String(h??"").trim()||T.noHeaderCol(i+1);if(seen[s]){seen[s]++;s=s+seen[s]}else seen[s]=1;return s});
   d.rows=d.rows.filter(r=>r.some(c=>String(c??"").trim()!=="")).map(r=>d.headers.map((_,i)=>String(r[i]??"")));
-  S.data=d; S.row=0; autoMap(); renderData(); renderMap(); renderOut(); preview();
+  S.data=d; S.row=0; S.noGroup=false; autoMap(); renderData(); renderMap(); renderOut(); preview();
 }
 function loadExample(key){
   const e=EXAMPLES[key];
@@ -616,6 +682,7 @@ function autoMap(){
     if(c<0&&old[t]!=null&&old[t]<S.data.headers.length)c=old[t];
     S.map[t]=c>=0?c:-1;
   }
+  computeUnits();
 }
 function resetRule(){
   const t=S.tpl; if(!t)return;
@@ -689,13 +756,15 @@ function renderData(){
   if(d.sheets&&d.sheets.length>1){sw.hidden=false;$("#sheetSel").innerHTML=d.sheets.map(n=>`<option${n===d.sheet?" selected":""}>${esc(n)}</option>`).join("")}else sw.hidden=true;
   const n=Math.min(d.rows.length,MAXSHOW);
   let h=`<table class="data"><thead><tr><th class="n">#</th>${d.headers.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>`;
-  for(let i=0;i<n;i++)h+=`<tr data-i="${i}"${i===S.row?' class="sel"':""}><td class="n">${i+1}</td>${d.rows[i].map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`;
+  for(let i=0;i<n;i++)h+=`<tr data-i="${i}"><td class="n">${i+1}</td>${d.rows[i].map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`;
   h+="</tbody></table>"; if(d.rows.length>MAXSHOW)h+=`<div class="more">${T.moreRows(d.rows.length-MAXSHOW)}</div>`;
   const tw=$("#tblWrap"); tw.innerHTML=h; tw.scrollLeft=0; tw.scrollTop=0;
 }
 function markRow(){
   document.querySelectorAll("#tblWrap tr.sel").forEach(r=>r.classList.remove("sel"));
-  const tr=document.querySelector(`#tblWrap tr[data-i="${S.row}"]`); if(tr){tr.classList.add("sel");const w=$("#tblWrap");const top=tr.offsetTop-30;if(top<w.scrollTop||top>w.scrollTop+w.clientHeight-60)w.scrollTop=Math.max(0,top-60)}
+  const rows=(S.units&&S.units[S.row])||[S.row];
+  rows.forEach((ri,j)=>{if(j)document.querySelector(`#tblWrap tr[data-i="${ri}"]`)?.classList.add("sel")});
+  const tr=document.querySelector(`#tblWrap tr[data-i="${rows[0]}"]`); if(tr){tr.classList.add("sel");const w=$("#tblWrap");const top=tr.offsetTop-30;if(top<w.scrollTop||top>w.scrollTop+w.clientHeight-60)w.scrollTop=Math.max(0,top-60)}
 }
 function renderMap(){
   if(!S.tpl||!S.data)return;
@@ -706,7 +775,7 @@ function renderMap(){
     const row=document.createElement("div"); row.className="mrow"+(c===-1?" bad":c===-2?" blank":"");
     row.innerHTML=`<span class="tagname" title="{{${esc(t)}}}">{{${esc(t)}}}</span><svg class="arrow" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 7h10M8.5 3.5 12 7l-3.5 3.5"/></svg><span class="sel-wrap"><select aria-label="${esc(t)}"><option value="-1">${T.optUnmapped}</option><option value="-2">${T.optBlank}</option>${H.map((h,i)=>`<option value="${i}">${esc(h)}</option>`).join("")}</select></span><span class="dot"></span>`;
     const sel=row.querySelector("select"); sel.value=String(c);
-    sel.onchange=()=>{S.map[t]=+sel.value;renderMap();renderOut();preview()};
+    sel.onchange=()=>{S.map[t]=+sel.value;computeUnits();S.row=Math.min(S.row,S.units.length-1);renderMap();renderOut();preview()};
     list.appendChild(row);
   }
   const sum=$("#mapSum");
@@ -715,11 +784,13 @@ function renderMap(){
   else{sum.textContent=T.mapAllOk(tags.length);sum.className="mapsum ok"}
   const used=new Set(Object.values(S.map)); const un=H.filter((_,i)=>!used.has(i));
   const u=$("#unused"); u.hidden=!un.length||!tags.length; u.textContent=T.unused(un.join("、"));
+  const g=S.group, gb=$("#grp"); gb.hidden=!g;
+  if(g){gb.className="grp"+(g.off?" off":"");$("#grpT").textContent=g.off?T.groupOff(g.col):T.grouped(g.col,g.rows,g.units);$("#bGrp").textContent=g.off?T.merge:T.split}
 }
 function renderOut(){
   if(!S.busy&&S.lastSig!==sig()){$("#done").hidden=true}
   document.querySelectorAll("#fmtSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===S.fmt)));
-  const n=S.data?S.data.rows.length:0;
+  const n=S.units?S.units.length:0;
   const go=$("#bGo"); go.textContent=n?T.go(n):T.goNone; go.disabled=!n||S.busy;
   renderNamePv(); renderNav();
 }
@@ -729,19 +800,22 @@ function renderNamePv(){
   $("#namePv").textContent="→ "+fileBase(S.row)+ext;
 }
 function renderNav(){
-  const n=S.data?S.data.rows.length:0;
+  const n=S.units?S.units.length:0;
   $("#rnT").innerHTML=n?`${T.rowOf(S.row+1,n)}<span>${esc(fileBase(S.row))}</span>`:"";
   $("#bPrev").disabled=S.row<=0; $("#bNext").disabled=S.row>=n-1;
 }
 
-function sig(){return [S.tpl&&S.tpl.name,S.tpl&&S.tpl.tags.length,S.data&&S.data.name,S.data&&S.data.rows.length,S.fmt,JSON.stringify(S.map)].join("|")}
+function sig(){return [S.tpl&&S.tpl.name,S.tpl&&S.tpl.tags.length,S.data&&S.data.name,S.data&&S.data.rows.length,S.units&&S.units.length,S.fmt,JSON.stringify(S.map)].join("|")}
 
 /* ============ 文件名 ============ */
-function fileBase(i){
-  const r=S.data.rows[i]||[]; const H=S.data.headers;
-  let s=(S.rule||"").replace(TAG_RE,(m,k)=>{k=k.trim();let c=S.map[k];if(c==null||c<0)c=H.indexOf(k);if(c<0){const nk=norm(k);c=H.findIndex(h=>norm(h)===nk)}return c>=0?(r[c]??""):""});
-  s=s.replace(/[\\/:*?"<>|\u0000-\u001F]/g,"_").replace(/\s+/g," ").trim().replace(/^[.\s]+|[.\s]+$/g,"");
-  if(!s||/^[-_ ]+$/.test(s))s=`第${i+1}份`;
+function fileBase(u){
+  const i=S.units&&S.units[u]?S.units[u][0]:u;
+  const r=S.data.rows[i]||[]; const H=S.data.headers; let tags=0, filled=0;
+  const val=k=>{k=k.trim();let c=S.map[k];if(c==null||c<0)c=H.indexOf(k);if(c<0){const nk=norm(k);c=H.findIndex(h=>norm(h)===nk)}const v=c>=0?String(r[c]??"").trim():"";tags++;if(v)filled++;return v};
+  let s=(S.rule||"").replace(TAG_RE,(m,k)=>val(k));
+  if(tags&&!filled){let first=true;s=(S.rule||"").replace(TAG_RE,()=>first?(first=false,`第${u+1}份`):"")} // 命名的列全空：退成「第 N 份」
+  s=s.replace(/[\\/:*?"<>|\u0000-\u001F]/g,"_").replace(/\s+/g," ").trim().replace(/^[.\s_\-－—·,，]+|[.\s_\-－—·,，]+$/g,"");
+  if(!s)s=`第${u+1}份`;
   return s.slice(0,90);
 }
 
@@ -749,7 +823,7 @@ function fileBase(i){
 let pvToken=0;
 const PV_OPTS={className:"docx",inWrapper:false,ignoreWidth:false,ignoreHeight:false,breakPages:true,ignoreLastRenderedPageBreak:true,experimental:true,renderHeaders:true,renderFooters:true,renderFootnotes:true,useBase64URL:true};
 async function preview(){
-  if(!S.tpl||!S.data)return; const my=++pvToken;
+  if(!S.tpl||!S.data)return; const my=++pvToken; S.row=Math.max(0,Math.min(S.row,(S.units||[]).length-1));
   renderNav(); renderNamePv(); markRow();
   const scale=$("#pvScale");
   scale.classList.add("pv-loading");
@@ -757,7 +831,7 @@ async function preview(){
   try{
     const bytes=fillDocx(S.row,false);
     const tmp=document.createElement("div");
-    await docx.renderAsync(bytes,tmp,null,PV_OPTS);
+    await docx.renderAsync(bytes,tmp,null,PV_OPTS); fixLH(tmp);
     if(my!==pvToken)return;
     scale.replaceChildren(...tmp.childNodes);
   }catch(e){console.warn(e);scale.innerHTML=`<div class="pv-err">${T.pvFail}</div>`}
@@ -775,66 +849,486 @@ function fitPreview(){
 }
 window.addEventListener("resize",()=>{clearTimeout(fitPreview.t);fitPreview.t=setTimeout(fitPreview,80)});
 
-/* ============ PDF：在隐藏 iframe 里画 ============ */
+/* ============ PDF：字是真字（能选能搜）。版面在隐藏 iframe 里排一次，每份只换字；PDF 在后台线程里并行写 ============ */
+const LH=1.32; // Word 的「单倍行距」≈ 字号 × 1.32（雅黑），docx-preview 按 1.0 算，偏紧
+function fixLH(root){
+  root.querySelectorAll('[style*="line-height"]').forEach(el=>{const v=el.style.lineHeight;if(/^[\d.]+$/.test(v))el.style.lineHeight=String(Math.round(+v*LH*1000)/1000)});
+  root.querySelectorAll("style").forEach(st=>{const t=st.textContent;if(/line-height:\s*[\d.]+\s*[;}]/.test(t))st.textContent=t.replace(/line-height:\s*([\d.]+)(\s*[;}])/g,(m,v,e)=>`line-height: ${Math.round(+v*LH*1000)/1000}${e}`)});
+}
+const FB_FAMILY='"Noto Sans CJK SC","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei","WenQuanYi Zen Hei",sans-serif';
+const RCSS=`html,body{margin:0;background:#fff}#host{width:max-content}section.docx{margin:0!important;box-shadow:none!important;background:#fff}
+section.docx,section.docx *{font-family:QSans,${FB_FAMILY}!important;font-kerning:none!important;font-variant-ligatures:none!important;text-rendering:optimizeSpeed}
+.docx p{line-height:${LH}}`;
 let rendererReady=null, rendererWin=null;
 function ensureRenderer(){
   if(rendererReady)return rendererReady;
   rendererReady=(async()=>{
-    await loadScript("lib/jspdf.umd.min.js");
     const ifr=$("#renderer");
-    await new Promise(ok=>{ifr.onload=ok;ifr.srcdoc=`<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#fff}#host{width:max-content}section.docx{margin:0!important;box-shadow:none!important}</style><script src="lib/jszip.min.js"><\/script><script src="lib/docx-preview.min.js"><\/script><script src="lib/html2canvas.min.js"><\/script></head><body><div id="host"></div></body></html>`});
-    const w=ifr.contentWindow; if(!w.html2canvas||!w.docx)throw new Error("renderer"); rendererWin=w; applyBorderCss(w.document);
+    await new Promise(ok=>{ifr.onload=ok;ifr.srcdoc=`<!doctype html><html><head><meta charset="utf-8"><style>${RCSS}</style><script src="lib/jszip.min.js"><\/script><script src="lib/docx-preview.min.js"><\/script></head><body><div id="host"></div></body></html>`});
+    const w=ifr.contentWindow; if(!w.docx)throw new Error("renderer"); rendererWin=w; applyBorderCss(w.document); FACES.clear(); ASC=0;
     return w;
   })();
   rendererReady.catch(()=>{rendererReady=null});
   return rendererReady;
 }
-async function docxToPdf(bytes){
-  const w=await ensureRenderer(); const host=w.document.getElementById("host");
-  host.innerHTML="";
-  await w.docx.renderAsync(new w.Uint8Array(bytes),host,null,PV_OPTS); // 跨 iframe 要换成它自己的 Uint8Array，不然 JSZip 不认
-  const imgs=[...host.querySelectorAll("img")]; await Promise.all(imgs.map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
-  if(w.document.fonts&&w.document.fonts.ready)await w.document.fonts.ready;
-  const secs=[...host.querySelectorAll("section.docx")];
-  const pg=S.tpl.page; const land=pg.w>pg.h;
-  const pdf=new window.jspdf.jsPDF({orientation:land?"landscape":"portrait",unit:"pt",format:[pg.w,pg.h],compress:true});
-  let first=true;
-  for(const sec of secs){
-    const cv=await w.html2canvas(sec,{scale:2,backgroundColor:"#ffffff",logging:false,useCORS:true,windowWidth:host.scrollWidth});
-    const pagePx=cv.width*pg.h/pg.w;
-    const n=Math.max(1,Math.ceil(cv.height/pagePx-0.03));
-    for(let p=0;p<n;p++){
-      let src=cv;
-      if(n>1){src=document.createElement("canvas");src.width=cv.width;src.height=Math.round(pagePx);const c=src.getContext("2d");c.fillStyle="#fff";c.fillRect(0,0,src.width,src.height);c.drawImage(cv,0,-Math.round(p*pagePx))}
-      if(!first)pdf.addPage([pg.w,pg.h],land?"landscape":"portrait"); first=false;
-      pdf.addImage(src.toDataURL("image/jpeg",0.88),"JPEG",0,0,pg.w,pg.h,undefined,"FAST");
+
+/* ---- 字体：Noto Sans SC（OFL），按字切成小块，只搬用得上的块，搬过的存进浏览器缓存 ---- */
+const FONT={idx:null,cov:null,files:null,ranges:null,sfnt:{400:{},700:{}}};
+const FONT_CACHE="chaojing-font-1", FACES=new Set(); let ASC=0;
+async function cachedFetch(url){
+  let c=null; try{c=await caches.open(FONT_CACHE)}catch(e){}
+  if(c){try{const r=await c.match(url);if(r)return r}catch(e){}}
+  const r=await fetch(url); if(!r.ok)throw new Error(T.fontFail);
+  if(c){try{await c.put(url,r.clone())}catch(e){}}
+  return r;
+}
+function fontIndex(){
+  if(!FONT.idx){
+    FONT.idx=(async()=>{
+      const j=await (await cachedFetch("fonts/index.json")).json();
+      const cov=new Map(), ranges=j.files.map(()=>[]); let p=0;
+      for(let i=0;i<j.r.length;i+=3){const a=p+j.r[i],b=a+j.r[i+1],s=j.r[i+2];for(let c=a;c<=b;c++)cov.set(c,s);ranges[s].push(a===b?a.toString(16):a.toString(16)+"-"+b.toString(16));p=b}
+      FONT.cov=cov; FONT.files=j.files; FONT.ranges=ranges.map(r=>r.map(x=>"U+"+x).join(",")); FONT.raw=j.r;
+      return j;
+    })();
+    FONT.idx.catch(()=>{FONT.idx=null});
+  }
+  return FONT.idx;
+}
+async function inflate(u8){return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer())}
+async function woffToSfnt(buf){ // WOFF 1.0 → 原始 TTF
+  const dv=new DataView(buf); if(dv.getUint32(0)!==0x774F4646)return buf;
+  const n=dv.getUint16(12), ents=[]; let size=12+16*n;
+  for(let i=0;i<n;i++){const o=44+i*20;ents.push({tag:dv.getUint32(o),off:dv.getUint32(o+4),cl:dv.getUint32(o+8),ol:dv.getUint32(o+12),ck:dv.getUint32(o+16)});size+=(dv.getUint32(o+12)+3)&~3}
+  const out=new Uint8Array(size), od=new DataView(out.buffer);
+  od.setUint32(0,dv.getUint32(4)); od.setUint16(4,n); let es=1,lg=0; while(es*2<=n){es*=2;lg++} od.setUint16(6,es*16); od.setUint16(8,lg); od.setUint16(10,n*16-es*16);
+  let off=12+16*n;
+  const datas=await Promise.all(ents.map(e=>{const src=new Uint8Array(buf,e.off,e.cl);return e.cl<e.ol?inflate(src):src}));
+  ents.forEach((e,i)=>{const o=12+i*16;od.setUint32(o,e.tag);od.setUint32(o+4,e.ck);od.setUint32(o+8,off);od.setUint32(o+12,e.ol);out.set(datas[i].subarray(0,e.ol),off);off+=(e.ol+3)&~3});
+  return out.buffer;
+}
+function fontSlices(w,ids){
+  const st=FONT.sfnt[w];
+  return Promise.all([...ids].map(id=>{
+    if(!st[id]){st[id]=(async()=>woffToSfnt(await (await cachedFetch(`fonts/${w}/${FONT.files[id]}.woff`)).arrayBuffer()))();st[id].catch(()=>{delete st[id]})}
+    return st[id];
+  }));
+}
+async function installFaces(win,w,ids){
+  for(const id of ids){
+    const key=w+":"+id; if(FACES.has(key))continue;
+    const f=new win.FontFace("QSans",await FONT.sfnt[w][id],{weight:String(w),unicodeRange:FONT.ranges[id]});
+    await f.load(); win.document.fonts.add(f); FACES.add(key);
+  }
+}
+function measureAsc(win){
+  const d=win.document, s=d.createElement("div");
+  s.style.cssText="position:absolute;left:0;top:0;font:400 100px QSans;line-height:normal;white-space:nowrap";
+  s.innerHTML='国<span style="display:inline-block;width:1px;height:0"></span>'; d.body.appendChild(s);
+  const r=d.createRange(); r.setStart(s.firstChild,0); r.setEnd(s.firstChild,1); const cr=r.getBoundingClientRect(); const base=s.lastChild.getBoundingClientRect().bottom;
+  s.remove(); return cr.height?(base-cr.top)/cr.height:0.801;
+}
+
+/* ---- 版面 → 一张「画什么、画在哪」的清单（单位 px，原点在纸的左上角） ---- */
+let INFO=new WeakMap();
+function rgb(c){const m=c&&c.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);if(!m)return null;if(m[4]!=null&&+m[4]<0.05)return null;return [+m[1],+m[2],+m[3]]}
+function info(win,el){
+  let v=INFO.get(el); if(v)return v;
+  const cs=win.getComputedStyle(el); v={};
+  v.skip=cs.display==="none"||cs.visibility==="hidden";
+  v.z=el.closest("header")?1:el.closest("footer")?2:0;
+  const bg=rgb(cs.backgroundColor); v.bg=bg&&!(bg[0]>=254&&bg[1]>=254&&bg[2]>=254)&&el.tagName!=="SECTION"?bg:null;
+  const bd=[]; for(const s of ["Top","Right","Bottom","Left"]){const st=cs[`border${s}Style`],wd=parseFloat(cs[`border${s}Width`]);if(st!=="none"&&st!=="hidden"&&wd>0){const c=rgb(cs[`border${s}Color`]);if(c)bd.push({s,w:wd,st,c})}}
+  v.bd=bd.length?bd:null; v.col=/^T[DH]$/.test(el.tagName)&&cs.borderCollapse==="collapse";
+  v.c=rgb(cs.color)||[0,0,0]; v.size=parseFloat(cs.fontSize)||16; v.b=(parseInt(cs.fontWeight)||400)>=600; v.it=cs.fontStyle!=="normal";
+  const dl=cs.textDecorationLine||""; const par=el.parentElement&&/^(SPAN|A|B|I|U|S|STRONG|EM|SUB|SUP)$/.test(el.tagName)?info(win,el.parentElement):null;
+  v.u=dl.includes("underline")||!!(par&&par.u); v.st=dl.includes("line-through")||!!(par&&par.st);
+  v.tx=!v.skip&&!!v.c;
+  INFO.set(el,v); return v;
+}
+const IMGS=[], IMG_BY=new Map();
+function jpegInfo(b){let i=2;while(i<b.length-9){if(b[i]!==0xFF){i++;continue}const m=b[i+1];const L=(b[i+2]<<8)|b[i+3];if(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC)return{h:(b[i+5]<<8)|b[i+6],w:(b[i+7]<<8)|b[i+8],n:b[i+9]};i+=2+L}return null}
+function imgId(el){
+  const src=el.currentSrc||el.src; if(IMG_BY.has(src))return IMG_BY.get(src);
+  let img=null;
+  try{
+    const m=src.match(/^data:image\/jpe?g;base64,(.*)$/);
+    if(m){const bin=atob(m[1]),b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);const j=jpegInfo(b);if(j&&(j.n===3||j.n===1))img={kind:"jpeg",w:j.w,h:j.h,gray:j.n===1,bytes:b}}
+    if(!img){
+      let w=el.naturalWidth,h=el.naturalHeight; if(!w||!h)return null; const k=Math.min(1,1600/Math.max(w,h)); w=Math.max(1,Math.round(w*k)); h=Math.max(1,Math.round(h*k));
+      const cv=document.createElement("canvas"); cv.width=w; cv.height=h; const cx=cv.getContext("2d"); cx.drawImage(el,0,0,w,h);
+      const px=cx.getImageData(0,0,w,h).data, rgbA=new Uint8Array(w*h*3), a=new Uint8Array(w*h); let alpha=false;
+      for(let i=0,j=0,q=0;i<px.length;i+=4,j+=3,q++){rgbA[j]=px[i];rgbA[j+1]=px[i+1];rgbA[j+2]=px[i+2];a[q]=px[i+3];if(px[i+3]<255)alpha=true}
+      img={kind:"raw",w,h,rgb:rgbA,alpha:alpha?a:null};
+    }
+  }catch(e){console.warn(e);img=null}
+  const id=img?IMGS.push(img)-1:null; IMG_BY.set(src,id); return id;
+}
+function glyphImg(win,cp,ti,r){ // 字体里没有的生僻字：用系统字画成小图，文字层照样有这个字
+  const key=`g${cp}|${ti.b}|${ti.it}|${Math.round(ti.size*4)}|${ti.c}`; if(IMG_BY.has(key))return IMG_BY.get(key);
+  const S4=4, w=Math.max(1,Math.ceil(r.width*S4)), h=Math.max(1,Math.ceil(r.height*S4));
+  const cv=document.createElement("canvas"); cv.width=w; cv.height=h; const cx=cv.getContext("2d");
+  cx.font=`${ti.it?"italic ":""}${ti.b?700:400} ${ti.size*S4}px ${FB_FAMILY}`; const ch=String.fromCodePoint(cp); const m=cx.measureText(ch);
+  cx.fillStyle="#000"; cx.fillText(ch,Math.max(0,(w-m.width)/2),m.fontBoundingBoxAscent!=null?m.fontBoundingBoxAscent:h*0.8);
+  const px=cx.getImageData(0,0,w,h).data, a=new Uint8Array(w*h); for(let i=0;i<a.length;i++)a[i]=px[i*4+3];
+  const rgbA=new Uint8Array(w*h*3); for(let i=0;i<rgbA.length;i+=3){rgbA[i]=ti.c[0];rgbA[i+1]=ti.c[1];rgbA[i+2]=ti.c[2]}
+  const id=IMGS.push({kind:"raw",w,h,rgb:rgbA,alpha:a})-1; IMG_BY.set(key,id); return id;
+}
+function extractSection(win,sec){
+  const R=sec.getBoundingClientRect(), ox=R.left, oy=R.top, items=[], d=win.document;
+  for(const el of sec.getElementsByTagName("*")){
+    const inf=info(win,el); if(inf.skip)continue;
+    if(el.tagName==="IMG"){
+      const r=el.getBoundingClientRect(); if(r.width<1||r.height<1||!el.complete||!el.naturalWidth)continue;
+      const id=imgId(el); if(id!=null)items.push({t:"i",id,x:r.left-ox,y:r.top-oy,w:r.width,h:r.height,z:inf.z}); continue;
+    }
+    if(!inf.bg&&!inf.bd)continue;
+    const r=el.getBoundingClientRect(); if(r.width<0.5&&r.height<0.5)continue;
+    const x=r.left-ox, y=r.top-oy, z=inf.z;
+    if(inf.bg)items.push({t:"r",x,y,w:r.width,h:r.height,c:inf.bg,z});
+    if(inf.bd)for(const b of inf.bd){
+      const dash=b.st==="dashed"?[b.w*3,b.w*2]:b.st==="dotted"?[b.w,b.w]:null;
+      const c0=inf.col?-b.w/2:0; // 合并边框：格子的边缘就在线的正中
+      const lines=(b.st==="double"&&b.w>=2.5?[[b.w/6,b.w/3],[b.w*5/6,b.w/3]]:[[b.w/2,b.w]]).map(([o,lw])=>[o+c0,lw]);
+      for(const [o,lw] of lines){
+        if(b.s==="Top")items.push({t:"l",x1:x,y1:y+o,x2:x+r.width,y2:y+o,lw,c:b.c,d:dash,z});
+        else if(b.s==="Bottom")items.push({t:"l",x1:x,y1:y+r.height-o,x2:x+r.width,y2:y+r.height-o,lw,c:b.c,d:dash,z});
+        else if(b.s==="Left")items.push({t:"l",x1:x+o,y1:y,x2:x+o,y2:y+r.height,lw,c:b.c,d:dash,z});
+        else items.push({t:"l",x1:x+r.width-o,y1:y,x2:x+r.width-o,y2:y+r.height,lw,c:b.c,d:dash,z});
+      }
     }
   }
-  return pdf.output("arraybuffer");
+  const tw=d.createTreeWalker(sec,4), rg=d.createRange(), deco=[]; let node;
+  while((node=tw.nextNode())){
+    const s=node.nodeValue; if(!s||!/[^\s　​﻿]/.test(s))continue;
+    const el=node.parentElement; if(!el||el.tagName==="STYLE")continue; const ti=info(win,el); if(!ti.tx)continue;
+    let run=null;
+    for(let i=0;i<s.length;){
+      const cp=s.codePointAt(i), L=cp>0xffff?2:1;
+      if(cp<=32||cp===0xA0||cp===0x3000||cp===0x200B||cp===0xFEFF||cp===0xAD||(cp>=0xE000&&cp<=0xE002)){i+=L;continue}
+      rg.setStart(node,i); rg.setEnd(node,i+L); const r=rg.getBoundingClientRect(); i+=L;
+      if(r.width<0.01&&r.height<0.01)continue;
+      const x=r.left-ox, y=r.top-oy, fb=!FONT.cov.has(cp);
+      if(fb){
+        items.push({t:"t",w:ti.b?700:400,s:ti.size,c:ti.c,i:ti.it,top:y,h:r.height,y:y+r.height*0.8,ch:[cp],x:[x],r:x+r.width,z:ti.z,inv:1});
+        items.push({t:"g",id:glyphImg(win,cp,ti,r),x,y,w:r.width,h:r.height,z:ti.z});
+        if(run)run=null; if(ti.u||ti.st)deco.push(items[items.length-2]); continue;
+      }
+      if(!run||Math.abs(run.top-y)>0.5||Math.abs(run.h-r.height)>0.5){run={t:"t",w:ti.b?700:400,s:ti.size,c:ti.c,i:ti.it,top:y,h:r.height,y:y+r.height*ASC,ch:[],x:[],r:0,z:ti.z,u:ti.u,st:ti.st};items.push(run);if(ti.u||ti.st)deco.push(run)}
+      run.ch.push(cp); run.x.push(x); run.r=x+r.width;
+    }
+  }
+  for(const t of deco){const lw=Math.max(0.6,t.s*0.06);if(t.u)items.push({t:"l",x1:t.x[0],y1:t.y+t.s*0.12,x2:t.r,y2:t.y+t.s*0.12,lw,c:t.c,z:t.z});if(t.st)items.push({t:"l",x1:t.x[0],y1:t.y-t.s*0.3,x2:t.r,y2:t.y-t.s*0.3,lw,c:t.c,z:t.z})}
+  return {items,h:sec.offsetHeight};
+}
+const top_=it=>it.t==="t"?it.top:it.t==="l"?Math.min(it.y1,it.y2)-it.lw/2:it.y;
+const bot_=it=>it.t==="t"?it.top+it.h:it.t==="l"?Math.max(it.y1,it.y2)+it.lw/2:it.y+it.h;
+function mv(it,dy){if(!dy)return it;const o={...it};if(o.t==="l"){o.y1+=dy;o.y2+=dy}else{o.y+=dy;if(o.t==="t")o.top+=dy}return o}
+function paginate(items,H,PH,mt,mb){ // 内容超过一页：在行与行之间切开，页眉页脚每页都有
+  const fixed=[],foot=[],body=[];
+  for(const it of items)(it.z===1?fixed:it.z===2?foot:body).push(it);
+  if(H<=PH+1)return [{fixed:fixed.concat(foot),body,clip:null}];
+  const pages=[]; let start=0;
+  for(let g=0;g<400;g++){
+    const off=pages.length?start-mt:0, limit=off+PH-mb; let cut=Infinity;
+    for(const it of body)if(it.t!=="r"&&it.t!=="l"){const t=top_(it);if(t>=start-0.5&&bot_(it)>limit+0.5&&t<cut)cut=t}
+    const last=cut===Infinity; if(last)cut=H; else if(cut<=start+1)cut=limit;
+    const pb=[]; for(const it of body){const t=top_(it),b=bot_(it);const atom=it.t!=="r"&&it.t!=="l";if(atom?(t>=start-0.5&&t<cut):(b>start&&t<cut))pb.push(mv(it,-off))}
+    pages.push({fixed:fixed.concat(foot.map(it=>mv(it,PH-H))),body:pb,clip:[pages.length?mt:0,cut-off]});
+    if(last)break; start=cut;
+  }
+  return pages;
+}
+function extractDoc(win,host){
+  const pg=S.tpl.page, pages=[];
+  for(const sec of host.querySelectorAll("section.docx")){
+    const k=pg.w/sec.offsetWidth, cs=win.getComputedStyle(sec);
+    const {items,h}=extractSection(win,sec);
+    for(const p of paginate(items,h,pg.h/k,parseFloat(cs.paddingTop)||0,parseFloat(cs.paddingBottom)||0)){p.k=k;pages.push(p)}
+  }
+  return {pages,W:pg.w,H:pg.h,border:S.tpl.pgb};
+}
+async function renderInto(win,host,bytes){
+  host.innerHTML=""; INFO=new WeakMap();
+  await win.docx.renderAsync(new win.Uint8Array(bytes),host,null,PV_OPTS); // 跨 iframe 要换成它自己的 Uint8Array，不然 JSZip 不认
+  fixLH(host);
+  await Promise.all([...host.querySelectorAll("img")].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
+  await win.document.fonts.ready;
+}
+function setVal(sp,v){
+  v=v==null?"":String(v).replace(/\r\n?/g,"\n"); if(sp._v===v)return; sp._v=v;
+  if(!v.includes("\n")){sp.textContent=v;return}
+  const d=sp.ownerDocument; sp.textContent=""; v.split("\n").forEach((p,i)=>{if(i)sp.appendChild(d.createElement("br"));if(p)sp.appendChild(d.createTextNode(p))});
+}
+function wireProbe(win,host){ // 把排好的样张里的空位记号换成可改字的小格子
+  const d=win.document, tw=d.createTreeWalker(host,4), nodes=[]; let n;
+  while((n=tw.nextNode()))if(/[]/.test(n.nodeValue))nodes.push(n);
+  const spans=[];
+  for(const node of nodes){
+    const s=node.nodeValue, frag=d.createDocumentFragment(), re=/([])([0-9a-z]+)/g; let last=0,m;
+    while((m=re.exec(s))){if(m.index>last)frag.appendChild(d.createTextNode(s.slice(last,m.index)));const sp=d.createElement("q-v");sp.dataset.k=String(parseInt(m[2],36));if(m[1]==="")sp.dataset.l="1";frag.appendChild(sp);spans.push(sp);last=re.lastIndex}
+    const rest=s.slice(last); if(/[-]/.test(rest))return null; if(rest)frag.appendChild(d.createTextNode(rest));
+    node.replaceWith(frag);
+  }
+  const loops=[];
+  for(const sp of spans)if(sp.dataset.l){const tr=sp.closest("tr");if(!tr)return null;if(!loops.some(l=>l.tr===tr))loops.push({tr,clones:[]})}
+  return {spans:spans.filter(s=>!s.dataset.l),loops};
+}
+function applyUnit(P,u){
+  const rows=S.units[u], tags=S.tpl.tags, v0=rowValues(rows[0]);
+  for(const sp of P.spans)setVal(sp,v0[tags[+sp.dataset.k]]);
+  for(const L of P.loops){
+    L.clones.forEach(c=>c.remove()); L.clones=[]; let prev=L.tr;
+    rows.forEach((ri,j)=>{
+      const tr=j?L.tr.cloneNode(true):L.tr; if(j){prev.after(tr);L.clones.push(tr)} prev=tr;
+      const v=rowValues(ri); tr.querySelectorAll("q-v[data-l]").forEach(sp=>setVal(sp,v[tags[+sp.dataset.k]]));
+    });
+  }
+}
+function allXml(buf){const z=new PizZip(buf);return Object.keys(z.files).filter(f=>/^word\/(document|header\d*|footer\d*|styles|numbering)\.xml$/.test(f)).map(f=>z.file(f).asText()).join("")}
+async function pdfSession(units){
+  const win=await ensureRenderer(); await fontIndex();
+  const buf=groupBuf(), xml=allXml(buf), host=win.document.getElementById("host");
+  const cps=new Set(); const addS=s=>{for(const ch of String(s))cps.add(ch.codePointAt(0))};
+  addS(textOfXml(xml)); for(const u of units)for(const i of S.units[u])for(const t of S.tpl.tags){const c=S.map[t];addS(c>=0?S.data.rows[i][c]:c===-1?`{{${t}}}`:"")}
+  const ids=new Set([0]); for(const c of cps){const s=FONT.cov.get(c);if(s!=null)ids.add(s)}
+  const bold=/<w:b\/>|<w:b w:val="(?:1|true|on)"\s*\/>|<w:bCs\/>/.test(xml);
+  const weights=bold?[400,700]:[400];
+  await Promise.all(weights.map(w=>fontSlices(w,ids)));
+  for(const w of weights)await installFaces(win,w,ids);
+  await win.document.fonts.ready; if(!ASC)ASC=measureAsc(win);
+  let P=null;
+  if(!/\{\{\s*[#^\/]/.test(textOfXml(allXml(S.tpl.buf)))){ // 模板里没有自己写的循环/条件 → 只排一次
+    const vals={}; S.tpl.tags.forEach((t,i)=>vals[t]=""+i.toString(36)+"");
+    if(grouping())vals.__g=[Object.fromEntries(loopTags().map(t=>[t,""+S.tpl.tags.indexOf(t).toString(36)+""]))];
+    const doc=makeDoc(buf); doc.render(vals);
+    await renderInto(win,host,doc.getZip().generate({type:"uint8array"}));
+    P=wireProbe(win,host);
+  }
+  return {
+    fonts:weights.map(w=>[...ids].map(id=>({w,id}))).flat(),
+    fast:!!P,
+    async layout(u){
+      if(P)applyUnit(P,u); else await renderInto(win,host,fillDocx(u,false));
+      return extractDoc(win,host);
+    }
+  };
+}
+
+/* ---- 后台线程：拿清单写 PDF（字体按这一份用到的字现切子集） ---- */
+function pdfWorker(){
+  "use strict";
+  const F={400:{},700:{}}, IMG=[], IMGZ=[]; let COV=null; const te=new TextEncoder();
+  onmessage=async e=>{
+    const m=e.data;
+    if(m.type==="idx"){COV=new Map();let p=0;const r=m.r;for(let i=0;i<r.length;i+=3){const a=p+r[i],b=a+r[i+1],s=r[i+2];for(let c=a;c<=b;c++)COV.set(c,s);p=b}return}
+    if(m.type==="font"){F[m.w][m.id]=parseFont(m.buf);return}
+    if(m.type==="img"){IMG[m.id]=m.img;return}
+    if(m.type==="job"){try{const pdf=await buildPdf(m.pdf);postMessage({id:m.id,pdf},[pdf.buffer])}catch(err){postMessage({id:m.id,error:String(err&&err.stack||err)})}}
+  };
+  function parseFont(buf){
+    const dv=new DataView(buf),u8=new Uint8Array(buf),n=dv.getUint16(4),T={};
+    for(let i=0;i<n;i++){const o=12+i*16;T[String.fromCharCode(u8[o],u8[o+1],u8[o+2],u8[o+3])]={o:dv.getUint32(o+8),l:dv.getUint32(o+12)}}
+    return {dv,u8,T,upm:dv.getUint16(T.head.o+18),locf:dv.getInt16(T.head.o+50),nh:dv.getUint16(T.hhea.o+34),cmap:parseCmap(dv,T.cmap.o)};
+  }
+  function parseCmap(dv,o){
+    const n=dv.getUint16(o+2); let best=0,bs=-1;
+    for(let i=0;i<n;i++){const pid=dv.getUint16(o+4+i*8),eid=dv.getUint16(o+6+i*8),off=o+dv.getUint32(o+8+i*8),fmt=dv.getUint16(off);const sc=fmt===12?3:fmt===4?(pid===3&&eid===1||pid===0?2:1):0;if(sc>bs){bs=sc;best=off}}
+    const m=new Map(); if(bs<=0)return m; const fmt=dv.getUint16(best);
+    if(fmt===12){const ng=dv.getUint32(best+12);for(let i=0;i<ng;i++){const g=best+16+i*12,s=dv.getUint32(g),e=dv.getUint32(g+4),id=dv.getUint32(g+8);for(let c=s;c<=e;c++)m.set(c,id+c-s)}}
+    else{const sx2=dv.getUint16(best+6),seg=sx2/2,eo=best+14,so=eo+sx2+2,dO=so+sx2,rO=dO+sx2;
+      for(let i=0;i<seg;i++){const end=dv.getUint16(eo+i*2),st=dv.getUint16(so+i*2),dl=dv.getInt16(dO+i*2),rof=dv.getUint16(rO+i*2);
+        for(let c=st;c<=end&&c!==0xFFFF;c++){let g;if(!rof)g=(c+dl)&0xFFFF;else{g=dv.getUint16(rO+i*2+rof+(c-st)*2);if(g)g=(g+dl)&0xFFFF}if(g)m.set(c,g)}}}
+    return m;
+  }
+  const gRange=(f,g)=>{const lo=f.T.loca.o;return f.locf?[f.dv.getUint32(lo+g*4),f.dv.getUint32(lo+g*4+4)]:[f.dv.getUint16(lo+g*2)*2,f.dv.getUint16(lo+g*2+2)*2]};
+  const hm=(f,g)=>{const o=f.T.hmtx.o;return g<f.nh?[f.dv.getUint16(o+g*4),f.dv.getInt16(o+g*4+2)]:[f.dv.getUint16(o+(f.nh-1)*4),f.dv.getInt16(o+f.nh*4+(g-f.nh)*2)]};
+  function csum(d){let s=0;const n=d.length&~3;for(let i=0;i<n;i+=4)s=(s+((d[i]<<24)|(d[i+1]<<16)|(d[i+2]<<8)|d[i+3]))>>>0;if(n<d.length){let v=0;for(let i=n;i<n+4;i++)v=(v<<8)|(d[i]||0);s=(s+(v>>>0))>>>0}return s}
+  function sfnt(t){
+    const tags=Object.keys(t).sort(),n=tags.length; let size=12+16*n; for(const k of tags)size+=(t[k].length+3)&~3;
+    const out=new Uint8Array(size),dv=new DataView(out.buffer); dv.setUint32(0,0x00010000); dv.setUint16(4,n);
+    let es=1,lg=0; while(es*2<=n){es*=2;lg++} dv.setUint16(6,es*16); dv.setUint16(8,lg); dv.setUint16(10,n*16-es*16);
+    let off=12+16*n;
+    tags.forEach((k,i)=>{const d=t[k],o=12+i*16;for(let j=0;j<4;j++)out[o+j]=k.charCodeAt(j);dv.setUint32(o+4,csum(d));dv.setUint32(o+8,off);dv.setUint32(o+12,d.length);out.set(d,off);off+=(d.length+3)&~3});
+    return out;
+  }
+  function subset(w,cps){
+    const fonts=F[w], base=fonts[0]||Object.values(fonts)[0]; if(!base)return null;
+    const G=[{f:base,g:0,sid:0}], key=new Map(), gid=new Map();
+    const add=(f,sid,g)=>{const k=sid+":"+g;let n=key.get(k);if(n==null){n=G.length;G.push({f,g,sid});key.set(k,n)}return n};
+    for(const cp of cps){const sid=COV&&COV.get(cp),f=sid!=null?fonts[sid]:null,g=f?f.cmap.get(cp):null;gid.set(cp,g!=null?add(f,sid,g):G.push({empty:1})-1)}
+    const datas=[];
+    for(let i=0;i<G.length;i++){
+      const e=G[i]; if(e.empty){datas.push(null);continue}
+      const [a,b]=gRange(e.f,e.g); let d=e.f.u8.subarray(e.f.T.glyf.o+a,e.f.T.glyf.o+b);
+      if(d.length>=10&&(d[0]&0x80)){d=d.slice();const dv=new DataView(d.buffer);let p=10;for(let guard=0;guard<64&&p+4<=d.length;guard++){const fl=dv.getUint16(p);dv.setUint16(p+2,add(e.f,e.sid,dv.getUint16(p+2)));p+=4+((fl&1)?4:2)+((fl&8)?2:(fl&0x40)?4:(fl&0x80)?8:0);if(!(fl&0x20))break}}
+      datas.push(d);
+    }
+    const n=G.length, hmtx=new Uint8Array(n*4), hd=new DataView(hmtx.buffer), adv=new Uint16Array(n);
+    let glen=0; for(const d of datas)if(d)glen+=(d.length+3)&~3;
+    const glyf=new Uint8Array(glen), loca=new Uint8Array((n+1)*4), ld=new DataView(loca.buffer); let p=0;
+    for(let i=0;i<n;i++){const e=G[i];ld.setUint32(i*4,p);const [A,L]=e.empty?[base.upm,0]:hm(e.f,e.g);adv[i]=A;hd.setUint16(i*4,A);hd.setInt16(i*4+2,L);const d=datas[i];if(d){glyf.set(d,p);p+=(d.length+3)&~3}}
+    ld.setUint32(n*4,p);
+    const cp=(t,len)=>base.u8.slice(base.T[t].o,base.T[t].o+(len||base.T[t].l));
+    const head=cp("head",54); new DataView(head.buffer).setUint32(8,0); new DataView(head.buffer).setInt16(50,1);
+    const hhea=cp("hhea",36); new DataView(hhea.buffer).setUint16(34,n);
+    const maxp=cp("maxp"); new DataView(maxp.buffer).setUint16(4,n);
+    const post=new Uint8Array(32); new DataView(post.buffer).setUint32(0,0x00030000);
+    const tabs={glyf,head,hhea,hmtx,loca,maxp,post}; if(base.T["OS/2"])tabs["OS/2"]=cp("OS/2");
+    const hdv=new DataView(head.buffer), hh=new DataView(hhea.buffer);
+    const uni=[]; for(const [c,g] of gid)if(uni[g]==null)uni[g]=c;
+    return {bytes:sfnt(tabs),gid,adv,upm:base.upm,uni,bbox:[hdv.getInt16(36),hdv.getInt16(38),hdv.getInt16(40),hdv.getInt16(42)],asc:hh.getInt16(4),desc:hh.getInt16(6)};
+  }
+  async function z(u8){if(!self.CompressionStream)return null;return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream("deflate"))).arrayBuffer())}
+  const N=v=>{const r=Math.round(v*100)/100;return r===0?"0":String(r)};
+  const col=c=>`${N(c[0]/255)} ${N(c[1]/255)} ${N(c[2]/255)}`;
+  const hex4=g=>g.toString(16).padStart(4,"0");
+  const u16=s=>{let h="FEFF";for(let i=0;i<s.length;i++)h+=s.charCodeAt(i).toString(16).padStart(4,"0");return `<${h}>`};
+  const utf16hex=cp=>cp>0xFFFF?hex4(0xD800+((cp-0x10000)>>10))+hex4(0xDC00+((cp-0x10000)&0x3FF)):hex4(cp);
+  async function buildPdf(P){
+    const W=P.W,H=P.H, has7=Object.keys(F[700]).length>0;
+    const use={400:new Set(),700:new Set()};
+    for(const pg of P.pages)for(const it of pg.fixed.concat(pg.body))if(it.t==="t"){const w=it.w===700&&has7?700:400;if(it.w===700&&!has7)it.syn=1;it.fw=w;for(const c of it.ch)use[w].add(c)}
+    const fonts={}; for(const w of [400,700])if(use[w].size)fonts[w]=subset(w,[...use[w]]);
+    const objs=[]; const alloc=()=>{objs.push(null);return objs.length};
+    const put=(n,dict,stream)=>{objs[n-1]={dict,stream}};
+    const sput=async(n,dict,raw)=>{const c=await z(raw);put(n,`<< ${dict} /Length ${(c||raw).length}${c?" /Filter /FlateDecode":""} >>`,c||raw)};
+    const cat=alloc(),pages=alloc(),infoN=alloc();
+    const fontRef={};
+    for(const w in fonts){
+      const f=fonts[w]; const t0=alloc(),cid=alloc(),fd=alloc(),ff=alloc(),tu=alloc();
+      const tag=Array.from({length:6},()=>String.fromCharCode(65+Math.floor(Math.random()*26))).join("");
+      const name=`${tag}+NotoSansSC-${w==700?"Bold":"Regular"}`;
+      put(t0,`<< /Type /Font /Subtype /Type0 /BaseFont /${name} /Encoding /Identity-H /DescendantFonts [${cid} 0 R] /ToUnicode ${tu} 0 R >>`);
+      const ws=[]; for(let i=0;i<f.adv.length;i++)ws.push(Math.round(f.adv[i]*1000/f.upm));
+      put(cid,`<< /Type /Font /Subtype /CIDFontType2 /BaseFont /${name} /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor ${fd} 0 R /CIDToGIDMap /Identity /DW 1000 /W [0 [${ws.join(" ")}]] >>`);
+      const k=1000/f.upm;
+      put(fd,`<< /Type /FontDescriptor /FontName /${name} /Flags 4 /FontBBox [${f.bbox.map(v=>Math.round(v*k)).join(" ")}] /ItalicAngle 0 /Ascent ${Math.round(f.asc*k)} /Descent ${Math.round(f.desc*k)} /CapHeight 733 /StemV ${w==700?140:80} /FontFile2 ${ff} 0 R >>`);
+      const fc=await z(f.bytes); put(ff,`<< /Length ${(fc||f.bytes).length} /Length1 ${f.bytes.length}${fc?" /Filter /FlateDecode":""} >>`,fc||f.bytes);
+      let cm="/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n";
+      const pairs=[]; f.uni.forEach((c,g)=>{if(c!=null)pairs.push(`<${hex4(g)}> <${utf16hex(c)}>`)});
+      for(let i=0;i<pairs.length;i+=100){const ch=pairs.slice(i,i+100);cm+=`${ch.length} beginbfchar\n${ch.join("\n")}\nendbfchar\n`}
+      cm+="endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend";
+      await sput(tu,"",te.encode(cm));
+      fontRef[w]=t0;
+    }
+    const imgRef={};
+    const imgObj=async id=>{
+      if(imgRef[id])return imgRef[id]; const im=IMG[id]; const n=alloc(); imgRef[id]=n;
+      const cache=IMGZ[id]||(IMGZ[id]={});
+      if(im.kind==="jpeg"){put(n,`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /${im.gray?"DeviceGray":"DeviceRGB"} /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>`,im.bytes);return n}
+      let sm="";
+      if(im.alpha){const s=alloc();if(!cache.a)cache.a=(await z(im.alpha))||im.alpha;put(s,`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceGray /BitsPerComponent 8 /Length ${cache.a.length}${cache.a!==im.alpha?" /Filter /FlateDecode":""} >>`,cache.a);sm=` /SMask ${s} 0 R`}
+      if(im.kind==="mask"){const c=new Uint8Array(im.color);put(n,`<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB /BitsPerComponent 8${sm} /Length 3 >>`,c);return n}
+      if(!cache.c)cache.c=(await z(im.rgb))||im.rgb;
+      put(n,`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8${sm} /Length ${cache.c.length}${cache.c!==im.rgb?" /Filter /FlateDecode":""} >>`,cache.c);
+      return n;
+    };
+    const kids=[];
+    for(const pg of P.pages){
+      const k=pg.k, X=x=>N(x*k), Y=y=>N(H-y*k);
+      const emit=items=>{
+        let s="";
+        for(const it of items)if(it.t==="r")s+=`${col(it.c)} rg ${X(it.x)} ${Y(it.y+it.h)} ${N(it.w*k)} ${N(it.h*k)} re f\n`;
+        for(const it of items)if(it.t==="i"||it.t==="g")s+=`q ${N(it.w*k)} 0 0 ${N(it.h*k)} ${X(it.x)} ${Y(it.y+it.h)} cm /I${it.id} Do Q\n`;
+        for(const it of items)if(it.t==="l")s+=`${N(it.lw*k)} w ${col(it.c)} RG ${it.d?`[${it.d.map(v=>N(v*k)).join(" ")}] 0 d`:"[] 0 d"} ${X(it.x1)} ${Y(it.y1)} m ${X(it.x2)} ${Y(it.y2)} l S\n`;
+        for(const it of items)if(it.t==="t"){
+          const f=fonts[it.fw]; if(!f)continue; const sz=it.s*k;
+          s+=`${it.syn?"q ":""}BT /F${it.fw} ${N(sz)} Tf ${it.inv?"3 Tr ":it.syn?`2 Tr ${N(sz*0.03)} w ${col(it.c)} RG `:""}${col(it.c)} rg ${it.i?"1 0 0.2 1":"1 0 0 1"} ${X(it.x[0])} ${Y(it.y)} Tm [`;
+          let pen=it.x[0]*k, str="";
+          for(let j=0;j<it.ch.length;j++){
+            const g=f.gid.get(it.ch[j]), want=it.x[j]*k;
+            if(j&&Math.abs(pen-want)>0.04){const adj=Math.round((pen-want)*1000/sz);if(adj){if(str){s+=`<${str}>`;str=""}s+=` ${adj} `;pen-=adj*sz/1000}}
+            str+=hex4(g); pen+=f.adv[g]*sz/f.upm;
+          }
+          s+=`<${str}>] TJ ET${it.inv?" 0 Tr":""}${it.syn?" Q":""}\n`;
+        }
+        return s;
+      };
+      let s="";
+      if(P.border){const b=P.border,lw=b.style==="double"?Math.max(3,b.w):b.w,c=`${col(hexRgb(b.color))} RG`;
+        const dash=b.style==="dashed"?`[${N(lw*3)} ${N(lw*2)}] 0 d`:b.style==="dotted"?`[${N(lw)} ${N(lw)}] 0 d`:"[] 0 d";
+        const box=(o,w)=>`${N(w)} w ${N(b.inset+o)} ${N(b.inset+o)} ${N(W-2*(b.inset+o))} ${N(H-2*(b.inset+o))} re S\n`;
+        s+=`${c} ${dash}\n`+(b.style==="double"?box(lw/6,lw/3)+box(lw*5/6,lw/3):box(lw/2,lw));}
+      s+=emit(pg.fixed);
+      if(pg.clip)s+=`q 0 ${Y(pg.clip[1]+1)} ${N(W)} ${N((pg.clip[1]-pg.clip[0]+2)*k)} re W n\n${emit(pg.body)}Q\n`; else s+=emit(pg.body);
+      for(const it of pg.fixed.concat(pg.body))if(it.t==="i"||it.t==="g")await imgObj(it.id);
+      const cn=alloc(); await sput(cn,"",te.encode(s));
+      const pn=alloc(); kids.push(pn);
+      put(pn,`<< /Type /Page /Parent ${pages} 0 R /MediaBox [0 0 ${N(W)} ${N(H)}] /Resources RES /Contents ${cn} 0 R >>`);
+    }
+    const res=`<< /Font << ${Object.keys(fontRef).map(w=>`/F${w} ${fontRef[w]} 0 R`).join(" ")} >> /XObject << ${Object.keys(imgRef).map(id=>`/I${id} ${imgRef[id]} 0 R`).join(" ")} >> >>`;
+    put(cat,`<< /Type /Catalog /Pages ${pages} 0 R >>`);
+    put(pages,`<< /Type /Pages /Kids [${kids.map(k=>k+" 0 R").join(" ")}] /Count ${kids.length} >>`);
+    put(infoN,`<< /Producer ${u16(P.producer||"")} /Title ${u16(P.title||"")} >>`);
+    const chunks=[]; let len=0; const push=x=>{const u=typeof x==="string"?te.encode(x):x;chunks.push(u);len+=u.length};
+    push("%PDF-1.7\n%âãÏÓ\n"); const offs=[];
+    objs.forEach((o,i)=>{offs.push(len);push(`${i+1} 0 obj\n${o.dict.replace(" RES "," "+res+" ")}`);if(o.stream){push("\nstream\n");push(o.stream);push("\nendstream")}push("\nendobj\n")});
+    const xref=len; push(`xref\n0 ${objs.length+1}\n0000000000 65535 f \n${offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join("")}trailer\n<< /Size ${objs.length+1} /Root ${cat} 0 R /Info ${infoN} 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+    const out=new Uint8Array(len); let o=0; for(const c of chunks){out.set(c,o);o+=c.length} return out;
+  }
+  function hexRgb(h){h=String(h||"#000").replace("#","");if(h.length===3)h=h.split("").map(x=>x+x).join("");const n=parseInt(h,16)||0;return [(n>>16)&255,(n>>8)&255,n&255]}
+}
+const POOL={ws:[],seq:0};
+function pool(){
+  if(POOL.ws.length)return POOL.ws;
+  const url=URL.createObjectURL(new Blob([`(${pdfWorker.toString()})()`],{type:"text/javascript"}));
+  const n=Math.max(2,Math.min(6,(navigator.hardwareConcurrency||4)-1));
+  for(let i=0;i<n;i++){
+    const w=new Worker(url); w.q=new Map(); w.fonts=new Set(); w.imgs=0; w.idx=false;
+    w.onmessage=e=>{const m=e.data,p=w.q.get(m.id);if(!p)return;w.q.delete(m.id);m.error?p.no(new Error(m.error)):p.ok(m.pdf)};
+    w.onerror=e=>{for(const p of w.q.values())p.no(new Error(e.message||"worker"));w.q.clear()};
+    POOL.ws.push(w);
+  }
+  return POOL.ws;
+}
+function pdfJob(sess,list,title){
+  const ws=pool(); const w=ws.reduce((a,b)=>b.q.size<a.q.size?b:a);
+  if(!w.idx){w.postMessage({type:"idx",r:FONT.raw});w.idx=true}
+  for(const {w:wt,id} of sess.fonts){const key=wt+":"+id;if(!w.fonts.has(key)){w.fonts.add(key);FONT.sfnt[wt][id].then(buf=>w.postMessage({type:"font",w:wt,id,buf}))}}
+  return (async()=>{
+    for(const {w:wt,id} of sess.fonts)await FONT.sfnt[wt][id]; // 字体先到，活儿后到（同一个线程里消息按顺序）
+    while(w.imgs<IMGS.length){w.postMessage({type:"img",id:w.imgs,img:IMGS[w.imgs]});w.imgs++}
+    const id=++POOL.seq; list.title=title; list.producer=`${T.title} ${VER}`;
+    return new Promise((ok,no)=>{w.q.set(id,{ok,no});w.postMessage({type:"job",id,pdf:list})});
+  })();
+}
+const inflight=()=>POOL.ws.reduce((a,w)=>a+w.q.size,0);
+
+function prefetchFonts(){ // 选了 PDF 就先把常用字那一块搬过来，点生成时不用等
+  ensureRenderer().then(fontIndex).then(()=>Promise.all([fontSlices(400,[0]),fontSlices(700,[0])])).then(()=>pool()).catch(()=>{});
 }
 
 /* ============ 批量生成 ============ */
 async function generate(){
-  if(S.busy||!S.data||!S.data.rows.length)return;
+  if(S.busy||!S.data||!S.units.length)return;
   S.busy=true; S.stop=false; renderOut();
-  const n=S.data.rows.length, fmt=S.fmt, wantDocx=fmt!=="pdf", wantPdf=fmt!=="docx";
+  const units=S.units.map((_,i)=>i), n=units.length, fmt=S.fmt, wantDocx=fmt!=="pdf", wantPdf=fmt!=="docx";
   $("#done").hidden=true; $("#prog").hidden=false; $("#bStop").hidden=false;
   const bar=$("#barI"), pt=$("#progT"); const t0=performance.now();
   const sec=()=>((performance.now()-t0)/1000).toFixed(1);
   const zip=new JSZip(); const used={};
   const uniq=b=>{let k=b.toLowerCase();if(!used[k]){used[k]=1;return b}let j=++used[k];return `${b}(${j})`};
-  let made=0;
+  let made=0, err=null; const jobs=[];
+  const show=()=>{bar.style.width=(made/n*100)+"%";pt.textContent=T.progress(made,n,sec())};
   try{
-    if(wantPdf){pt.textContent=T.pdfNote;await ensureRenderer()}
-    for(let i=0;i<n;i++){
-      if(S.stop)break;
-      const base=uniq(fileBase(i));
-      const bytes=fillDocx(i,wantDocx);
-      if(wantDocx)zip.file((fmt==="both"?"Word/":"")+base+".docx",bytes);
-      if(wantPdf){const pdf=await docxToPdf(wantDocx?fillDocx(i,false):bytes);zip.file((fmt==="both"?"PDF/":"")+base+".pdf",pdf)}
-      made=i+1;
-      if(wantPdf||i%15===14||i===n-1){bar.style.width=(made/n*100)+"%";pt.textContent=T.progress(made,n,sec());await tick()}
+    let sess=null;
+    if(wantPdf){pt.textContent=T.pdfNote;sess=await pdfSession(units)}
+    let lastYield=performance.now();
+    for(const u of units){
+      if(S.stop||err)break;
+      const base=uniq(fileBase(u));
+      if(wantDocx)zip.file((fmt==="both"?"Word/":"")+base+".docx",fillDocx(u,true));
+      if(wantPdf){
+        const list=await sess.layout(u);
+        jobs.push(pdfJob(sess,list,base).then(pdf=>{zip.file((fmt==="both"?"PDF/":"")+base+".pdf",pdf);made++},e=>{err=err||e}));
+        while(inflight()>POOL.ws.length*6&&!err)await sleep(2);
+      }else made++;
+      if(performance.now()-lastYield>60){show();await tick();lastYield=performance.now()}
     }
+    while(jobs.length){await jobs.shift();show()}
+    if(err)throw err;
+    show();
     if(made){
       pt.textContent=T.packing; $("#bStop").hidden=true; await tick();
       const blob=await zip.generateAsync({type:"blob",compression:"STORE"});
@@ -843,7 +1337,7 @@ async function generate(){
       S.lastZip={blob,name:zname};
       download(blob,zname);
       $("#doneT").textContent=S.stop?T.stopped:T.doneMsg(made,sec()); $("#done").hidden=false; S.lastSig=sig();
-      window.__lastRun={n:made,seconds:+sec(),fmt,bytes:blob.size};
+      window.__lastRun={n:made,seconds:+sec(),fmt,bytes:blob.size,threads:POOL.ws.length,fast:sess?sess.fast:null};
     }
   }catch(e){console.error(e);toast(e.message||String(e),4000)}
   $("#prog").hidden=true; S.busy=false; renderOut();
@@ -851,13 +1345,18 @@ async function generate(){
 
 /* ============ 单份下载 ============ */
 async function downloadOne(kind){
-  if(!S.data||!S.data.rows.length)return;
-  const base=fileBase(S.row);
+  if(!S.data||!S.units.length)return;
+  const u=S.row, base=fileBase(u);
   try{
-    if(kind==="docx")download(new Blob([fillDocx(S.row,true)],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}),base+".docx");
-    else{toast(T.pdfNote,1500);const pdf=await docxToPdf(fillDocx(S.row,false));download(new Blob([pdf],{type:"application/pdf"}),base+".pdf")}
+    if(kind==="docx")download(new Blob([fillDocx(u,true)],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}),base+".docx");
+    else{
+      const slow=setTimeout(()=>toast(T.pdfNote,2200),400);
+      const sess=await pdfSession([u]); const pdf=await pdfJob(sess,await sess.layout(u),base); clearTimeout(slow);
+      download(new Blob([pdf],{type:"application/pdf"}),base+".pdf");
+    }
   }catch(e){console.error(e);toast(e.message||String(e),4000)}
 }
+async function docxToPdf(u){const sess=await pdfSession([u]);return pdfJob(sess,await sess.layout(u),fileBase(u))}
 
 /* ============ 上传 ============ */
 async function onTemplateFile(file){
@@ -889,11 +1388,12 @@ addEventListener("dragleave",()=>{if(--dragN<=0){dragN=0;$("#dropOv")?.remove()}
 addEventListener("drop",e=>{e.preventDefault();dragN=0;$("#dropOv")?.remove();[...(e.dataTransfer?.files||[])].forEach(routeFile)});
 
 /* ============ 交互 ============ */
-$("#tblWrap").addEventListener("click",e=>{const tr=e.target.closest("tr[data-i]");if(!tr)return;S.row=+tr.dataset.i;preview()});
+$("#tblWrap").addEventListener("click",e=>{const tr=e.target.closest("tr[data-i]");if(!tr)return;const i=+tr.dataset.i;S.row=Math.max(0,S.units.findIndex(u=>u.includes(i)));preview()});
 $("#bPrev").onclick=()=>{if(S.row>0){S.row--;preview()}};
-$("#bNext").onclick=()=>{if(S.row<S.data.rows.length-1){S.row++;preview()}};
+$("#bNext").onclick=()=>{if(S.row<S.units.length-1){S.row++;preview()}};
+$("#bGrp").onclick=()=>{S.noGroup=!S.noGroup;S.row=0;computeUnits();renderMap();renderOut();preview()};
 addEventListener("keydown",e=>{if($("#layer").childElementCount||/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==="ArrowLeft")$("#bPrev").click();if(e.key==="ArrowRight")$("#bNext").click()});
-$("#fmtSeg").onclick=e=>{const b=e.target.closest("button");if(!b||S.busy)return;S.fmt=b.dataset.v;renderOut();if(S.fmt!=="docx")ensureRenderer().catch(()=>{})};
+$("#fmtSeg").onclick=e=>{const b=e.target.closest("button");if(!b||S.busy)return;S.fmt=b.dataset.v;renderOut();if(S.fmt!=="docx")prefetchFonts()};
 $("#nameRule").oninput=e=>{S.rule=e.target.value;S.ruleTouched=true;renderNamePv();renderNav()};
 $("#bGo").onclick=generate;
 $("#bStop").onclick=()=>{S.stop=true};
@@ -980,9 +1480,9 @@ function openEditor(){
 $("#bEdit").onclick=openEditor;
 
 /* ============ 开机 ============ */
-applyT();
+applyT(); $("#ver").textContent=T.ver(VER);
 loadExample("cert");
-window.__S=S; window.__api={htmlToDocx,extractTags,fillDocx,docxToPdf,setData,generate};
+window.__S=S; window.__api={htmlToDocx,extractTags,fillDocx,docxToPdf,setData,generate,computeUnits,pdfSession};
 </script>
 </body>
 </html>
