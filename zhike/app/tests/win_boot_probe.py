@@ -27,7 +27,11 @@ from zhike.fakeservers import FakeImap, FakeSmtp, account_for  # noqa: E402
 from zhike.secrets import Secrets  # noqa: E402
 from zhike.store import Store  # noqa: E402
 
-TITLE = "知客僧"
+TITLE = {"Zhike", "知客僧"}      # 窗口标题跟着界面语言（0.4 起默认英文 Zhike）
+try:
+    sys.stdout.reconfigure(encoding="utf-8")   # CI 的控制台是 cp1252，打印中文出错信息别再把真错盖住
+except Exception:
+    pass
 
 
 def windows(visible_only=True):
@@ -41,7 +45,7 @@ def windows(visible_only=True):
         if n:
             buf = ctypes.create_unicode_buffer(n + 1)
             user32.GetWindowTextW(h, buf, n + 1)
-            if buf.value == TITLE and (user32.IsWindowVisible(h) or not visible_only):
+            if buf.value in TITLE and (user32.IsWindowVisible(h) or not visible_only):
                 out.append(int(h or 0))
         return True
 
