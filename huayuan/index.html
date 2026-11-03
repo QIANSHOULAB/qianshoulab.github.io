@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>化缘僧 · 过路留名，见网扒皮</title>
-<meta name="description" content="专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。Chrome / Edge 插件，点一下抓成 Excel，数据只在本机。">
+<title>Huayuan · List Grabber — any web list, straight into Excel</title>
+<meta name="description" content="A Chrome / Edge extension that turns any list or table on a web page into Excel or CSV. Pages through, scrolls to the end, names the columns. Data never leaves your browser.">
+<script src="extension/lib/strings.js?v=0.4.0"></script>
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="img/icon.svg" type="image/svg+xml">
@@ -104,85 +105,135 @@ h2{margin:0;font-size:clamp(28px,4.4vw,40px);font-weight:700;line-height:1.15;te
   .stage img,.shot img{border-radius:12px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.nav .lang{flex:none}
+/* 语言：右上角 EN / 中文，选过就记住（localStorage 的 huayuan.lang，示例页也认这个） */
+.lang{display:flex;background:var(--fill);border-radius:var(--r-field);padding:2px;gap:2px}
+.lang button{position:relative;height:28px;padding:0 10px;border:0;border-radius:var(--r-chip);background:none;color:var(--fg);font:400 13px/1 var(--font);cursor:pointer;transition:background-color var(--t) var(--ease)}
+.lang button::after{content:"";position:absolute;inset:-8px -1px}  /* 点得到的地方够 44 高 */
+.lang button[aria-pressed="true"]{background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1),0 0 0 .5px rgba(0,0,0,.04)}
+@media (prefers-color-scheme:dark){.lang button[aria-pressed="true"]{background:#636366}}
+[hidden]{display:none!important}
+.hero h1 .nb{white-space:nowrap}
+:lang(en) .hero h1,:lang(en) h2{letter-spacing:-.02em}
+.steps small:empty{display:none}
+@media (max-width:480px){
+  .nav .btn{display:none}  /* 手机上下插件没用，大按钮在首屏 */
+  .hero h1 .nb{display:block}
+  .hero h1 .dot{display:none}
+}
 </style>
 </head>
 <body>
 <nav class="nav"><div class="w">
-  <a class="home" href="../">千手院</a>
-  <b>化缘僧</b>
-  <a class="btn" href="dist/huayuan-0.3.0.zip" download>下载</a>
+  <a class="home" href="../" data-s="home"></a>
+  <b data-s="navName"></b>
+  <a class="btn" href="dist/huayuan-0.4.0.zip" download data-s="navDl"></a>
+  <div class="lang" role="group"><button type="button" data-lang="en" lang="en">EN</button><button type="button" data-lang="zh" lang="zh-CN">中文</button></div>
 </div></nav>
 
 <header class="hero">
   <img class="ico" src="img/icon.svg" alt="" width="96" height="96">
-  <h1>化缘僧</h1>
-  <p class="tag">过路留名，见网扒皮</p>
-  <p class="sub">专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。</p>
+  <h1><span data-s="nameA"></span><span class="nb"><span class="dot"> · </span><span data-s="nameB"></span></span></h1>
+  <p class="tag" data-s="tag"></p>
+  <p class="sub" data-s="sub"></p>
   <div class="cta">
-    <a class="btn" href="dist/huayuan-0.3.0.zip" download>下载插件</a>
-    <a class="lnk" href="#install">怎么装 ›</a>
-    <a class="lnk" href="demo/">示例页 ›</a>
+    <a class="btn" href="dist/huayuan-0.4.0.zip" download data-s="ctaDl"></a>
+    <a class="lnk" href="#install" data-s="ctaHow"></a>
+    <a class="lnk" href="demo/" data-s="ctaDemo"></a>
   </div>
-  <div class="ver">0.3.0 · Chrome / Edge · 免费</div>
+  <div class="ver" data-s="ver"></div>
 </header>
 
 <div class="stage">
   <picture>
-    <source srcset="img/side-table-dark.jpg" media="(prefers-color-scheme: dark)">
-    <img src="img/side-table.jpg" alt="左边网页的客户名单被金框圈出，右边侧栏里化缘僧已经认出 20 行 8 列" width="2562" height="1640" loading="eager">
+    <source data-img="side-table-dark" srcset="img/side-table-dark-en.jpg" media="(prefers-color-scheme: dark)">
+    <img data-img="side-table" data-alt="alt1" src="img/side-table-en.jpg" alt="" width="2562" height="1640" loading="eager">
   </picture>
 </div>
-<p class="cap w">金框是它认出的名单，虚框是它找到的「下一页」。都是它自己干的。</p>
+<p class="cap w" data-s="cap1"></p>
 
 <section class="w">
-  <h2>你只管扫一眼。</h2>
-  <p class="lead">拿不准的标黄。剩下的，贫僧自己来。</p>
+  <h2 data-s="h2a"></h2>
+  <p class="lead" data-s="leadA"></p>
   <ul class="feats">
-    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></svg><b>自己认名单</b><span>哪块最像名单先抓哪块。不对？点「换一块」。</span></li>
-    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13M6 11l6 6 6-6M5 20h14"/></svg><b>自己翻页、滚到底</b><span>「下一页」「加载更多」自己找，无限滚动替你滚完。</span></li>
-    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg><b>自己起列名</b><span>标题叫「名称」，划线价叫「原价」。猜的名字标黄。</span></li>
-    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>化完自己下</b><span>点了开始就去喝茶，回来 Excel 已经在「下载」里。</span></li>
-    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg><b>第二回照旧</b><span>同一个网站，上回改的列、删的列、排的顺序，自己办好。点「还原」就撤。</span></li>
-    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><b>数据不出门</b><span>只读你点它的那一页。不上传、不注册，浏览记录不收。</span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></svg><b data-s="f1t"></b><span data-s="f1s"></span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13M6 11l6 6 6-6M5 20h14"/></svg><b data-s="f2t"></b><span data-s="f2s"></span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg><b data-s="f3t"></b><span data-s="f3s"></span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b data-s="f4t"></b><span data-s="f4s"></span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg><b data-s="f5t"></b><span data-s="f5s"></span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><b data-s="f6t"></b><span data-s="f6s"></span></li>
   </ul>
 </section>
 
 <section class="w">
-  <h2>跟 Instant Data Scraper 比了一场。</h2>
-  <p class="lead">同一套 6 个测试页，表格、卡片、翻页、加载更多、无限滚动。</p>
+  <h2 data-s="h2b"></h2>
+  <p class="lead" data-s="leadB"></p>
   <div class="score">
-    <div><b class="num">1,724 行 0 错</b><span>对面漏 50 行、重 153 行，图片 730 格是占位图。</span></div>
-    <div><b class="num">48 / 48</b><span>列名叫对。对面一个没对，表头是一串 CSS。</span></div>
-    <div><b class="num">12 下</b><span>6 个页面从点图标到 Excel 到手，一共点这几下。对面 23 下，外加开户 4 下。</span></div>
+    <div><b class="num" data-s="s1b"></b><span data-s="s1s"></span></div>
+    <div><b class="num" data-s="s2b"></b><span data-s="s2s"></span></div>
+    <div><b class="num" data-s="s3b"></b><span data-s="s3s"></span></div>
   </div>
-  <p class="fine">测试页是我们自己出的题，数字来自比武报告。</p>
+  <p class="fine" data-s="fine"></p>
 </section>
 
 <section>
-  <div class="w"><h2>卡片、表格、无限滚动，都化得动。</h2>
-  <p class="lead">要登录的后台也行：用的就是你浏览器里已经登录的那一页。</p></div>
-  <div class="shot"><img src="img/side-scroll.jpg" alt="无限滚动的商品列表，化缘僧自己滚到底收了 120 件" width="2562" height="1640" loading="lazy"></div>
-  <p class="cap w">商品列表：没点开始，自己滚到底，120 件。</p>
-  <div class="shot"><img src="img/side-cards-dark.jpg" alt="深色模式下，卡片式销售线索翻 4 页收了 48 条，已经自己下载" width="2562" height="1640" loading="lazy"></div>
-  <p class="cap w">卡片线索翻 4 页：48 条，化完自己下好了。</p>
+  <div class="w"><h2 data-s="h2c"></h2>
+  <p class="lead" data-s="leadC"></p></div>
+  <div class="shot"><img data-img="side-scroll" data-alt="alt2" src="img/side-scroll-en.jpg" alt="" width="2562" height="1640" loading="lazy"></div>
+  <p class="cap w" data-s="cap2"></p>
+  <div class="shot"><img data-img="side-cards-dark" data-alt="alt3" src="img/side-cards-dark-en.jpg" alt="" width="2562" height="1640" loading="lazy"></div>
+  <p class="cap w" data-s="cap3"></p>
 </section>
 
 <section class="w" id="install">
-  <h2>怎么装</h2>
-  <p class="lead">还没上商店，先用开发者模式装，三分钟。</p>
+  <h2 data-s="h2d"></h2>
+  <p class="lead" data-s="leadD"></p>
   <ol class="steps">
-    <li><span><a href="dist/huayuan-0.3.0.zip" download>下载 huayuan-0.3.0.zip</a>，解压成一个文件夹</span><small>放个不会被误删的地方。</small></li>
-    <li><span>地址栏打开 <code>edge://extensions</code></span><small>Chrome 用 <code>chrome://extensions</code></small></li>
-    <li><span>打开「开发人员模式」</span><small>Edge 在左边栏下面，Chrome 在右上角。</small></li>
-    <li><span>点「加载解压缩的扩展」，选刚才的文件夹</span><small>Chrome 里叫「加载已解压的扩展程序」。</small></li>
-    <li><span>把化缘僧钉到工具栏</span><small>以后在有列表的网页上点它，右边出侧栏就开工。快捷键 Alt+Shift+H。</small></li>
+    <li><span data-sh="st1"></span><small data-sh="st1s"></small></li>
+    <li><span data-sh="st2"></span><small data-sh="st2s"></small></li>
+    <li><span data-sh="st3"></span><small data-sh="st3s"></small></li>
+    <li><span data-sh="st4"></span><small data-sh="st4s"></small></li>
+    <li><span data-sh="st5"></span><small data-sh="st5s"></small></li>
   </ol>
 </section>
 
 <footer class="foot"><div class="w">
-  <span>千手院 · 化缘僧</span>
-  <span>要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：<span class="mail">oilsongchengmin@gmail.com</span></span>
-  <a href="https://qianshoulab.github.io/">千手院总舵</a>
+  <span data-s="footName"></span>
+  <span><span data-s="footMail"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
+  <a href="https://qianshoulab.github.io/" data-s="footHome"></a>
 </div></footer>
+<script>
+// 字全在 extension/lib/strings.js 的 site 里。默认英文；右上角 EN / 中文，选过就记住；网址带 ?lang=zh|en 先听网址
+(() => {
+  const SITE = QSStrings.site, LK = 'huayuan.lang';
+  const save = (l) => { try { localStorage.setItem(LK, l); } catch (e) {} };
+  let lang = null;
+  try { lang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+  if (SITE[lang]) save(lang);
+  else { try { lang = localStorage.getItem(LK); } catch (e) {} if (!SITE[lang]) lang = 'en'; }
+  function apply() {
+    const s = SITE[lang], suf = lang === 'en' ? '-en' : '';
+    document.documentElement.lang = s.htmlLang;
+    document.title = s.title;
+    document.querySelector('meta[name=description]').content = s.desc;
+    for (const el of document.querySelectorAll('[data-s]')) el.textContent = s[el.dataset.s];
+    for (const el of document.querySelectorAll('[data-sh]')) el.innerHTML = s[el.dataset.sh];
+    for (const el of document.querySelectorAll('[data-alt]')) el.alt = s[el.dataset.alt];
+    for (const el of document.querySelectorAll('[data-img]')) el[el.tagName === 'IMG' ? 'src' : 'srcset'] = 'img/' + el.dataset.img + suf + '.jpg';
+    document.querySelector('.hero .nb').hidden = !s.nameB;
+    const g = document.querySelector('.lang');
+    g.setAttribute('aria-label', s.langLabel);
+    for (const b of g.children) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+  }
+  document.querySelector('.lang').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-lang]');
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang; save(lang);
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash);
+    apply();
+  });
+  apply();
+})();
+</script>
 </body>
 </html>

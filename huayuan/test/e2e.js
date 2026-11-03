@@ -1,5 +1,7 @@
-// 化缘僧端到端测试：真把插件装进 Chromium，在本地示例站上从头点到尾。
-// 用法：LANG=C.UTF-8 PW_CHANNEL=chromium node huayuan/test/e2e.js [截图目录]
+// 化缘僧端到端测试：真把插件装进 Chromium，在本地示例站上从头点到尾。中文、英文各跑一遍（HY_LANG=zh|en，默认 zh）。
+// 用法：LANG=C.UTF-8 PW_CHANNEL=chromium HY_LANG=en node huayuan/test/e2e.js [截图目录]
+//   zh：浏览器 locale zh-CN，第一次打开侧栏照样是英文（默认英文，不跟浏览器），点右上角「中文」，后面一直中文（记住了）；示例站 ?lang=zh
+//   en：浏览器 locale en-US，不点切换，全程英文；示例站 ?lang=en
 //       （LANG 要是 UTF-8：沙盒默认 C 语言环境下 Chromium 把中文下载文件名换成 download，真电脑上没这事）
 // 说明：Playwright 点不了工具栏图标，所以测试版 manifest 额外给了 localhost 的读取权限，
 //       再从后台直接调用 openPanel(tab)（跟点图标走同一个函数）。正式包只有 activeTab。
@@ -13,6 +15,19 @@ fs.mkdirSync(SHOTS, { recursive: true });
 const PORT = Number(process.env.PORT) || 8765, BASE = `http://127.0.0.1:${PORT}`;
 const errors = [];
 const ok = (c, m) => { if (!c) throw new Error('✗ ' + m); console.log('  ✓ ' + m); };
+const LANG = process.env.HY_LANG === 'en' ? 'en' : 'zh';
+// 两种语言下各自该看到的东西（示例站的表头、插件起的列名、状态字）
+const X = {
+  zh: { locale: 'zh-CN', q: '?lang=zh', table: ['编号', '公司', '联系人', '电话', '邮箱', '城市'], id: '编号', contact: '联系人', renamed: '对接人', email: '邮箱',
+    cardHeads: ['电话', '邮箱', '城市'], phone: /^138-0000-\d{4}$/, image: '图片', price: '价格', file: /^化缘_127\.0\.0\.1_\d{8}-\d{4}\.(xlsx|csv)$/,
+    pagerNext: '.pager a:has-text("下一页")', hintNext: '下一页', page2: /第 2 页/, units: ['名称', '价格', '原价', '评分', '地区', '邮箱', '链接', '图片'], weak: 'foo:1,字段1:1,公司:0',
+    noAccess: '进不去', remembered: /照上次的改法/, undo: '还原', gone: /网页关了/, dlWord: /已下载/, extName: '化缘僧 · 过路留名，见网扒皮', demoFile: /^化缘_示例_/ },
+  en: { locale: 'en-US', q: '?lang=en', table: ['ID', 'Company', 'Contact', 'Phone', 'Email', 'City'], id: 'ID', contact: 'Contact', renamed: 'Point of contact', email: 'Email',
+    cardHeads: ['Phone', 'Email', 'City'], phone: /^\+1 555-01\d{2}$/, image: 'Image', price: 'Price', file: /^Huayuan_127\.0\.0\.1_\d{8}-\d{4}\.(xlsx|csv)$/,
+    pagerNext: '.pager a:has-text("Next")', hintNext: 'Next', page2: /Page 2 /, units: ['Name', 'Price', 'Original price', '评分', 'Location', 'Email', 'Link', 'Image'], weak: 'foo:1,Field 1:1,公司:0',
+    noAccess: 'off-limits', remembered: /Same as last time/, undo: 'Undo', gone: /page closed/, dlWord: /downloaded/, extName: 'Huayuan · List Grabber', demoFile: /^Huayuan_Sample_/ },
+}[LANG];
+const DONE = () => ['end', 'stop', 'max'].includes(document.body.dataset.state);
 
 function serve() {
   const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml' };
@@ -42,7 +57,7 @@ async function main() {
   const ext = testBuild();
   const ctx = await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.tmpdir(), 'hy-prof-')), {
     headless: !process.env.HEADED, channel: process.env.PW_CHANNEL || undefined, acceptDownloads: true, viewport: { width: 1280, height: 860 }, deviceScaleFactor: 2,
-    args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
+    locale: X.locale, args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`, `--lang=${X.locale}`],
   });
   const watch = (p, tag) => {
     p.on('pageerror', (e) => errors.push(`${tag} pageerror: ${e.message}`));
@@ -51,7 +66,10 @@ async function main() {
   let [sw] = ctx.serviceWorkers();
   if (!sw) sw = await ctx.waitForEvent('serviceworker');
   const extId = sw.url().split('/')[2];
-  console.log('扩展已加载', extId);
+  console.log('扩展已加载', extId, '语言', LANG);
+  // 插件名、说明跟浏览器语言走（_locales，浏览器自己的规矩）
+  const extName = await sw.evaluate(() => chrome.i18n.getMessage('extName'));
+  ok(extName === X.extName, '浏览器 ' + X.locale + ' 下插件名：' + extName);
 
   async function openOn(url, tag) {
     const page = await ctx.newPage(); watch(page, tag);
@@ -71,10 +89,11 @@ async function main() {
   const rows = (panel) => panel.evaluate(() => document.querySelectorAll('#grid tbody tr').length);
   const heads = (panel) => panel.evaluate(() => [...document.querySelectorAll('#grid th[data-key] .nm')].map((e) => e.textContent));
   const status = (panel) => panel.locator('#status').textContent();
+  const waitDone = (panel, timeout = 90000) => panel.waitForFunction(DONE, null, { timeout });
   const blk = (panel) => panel.locator('#blkN').textContent();
   async function crawl(panel, timeout = 90000) {
     await panel.click('#go');
-    await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout });
+    await waitDone(panel, timeout);
   }
   async function download(panel, btn) {
     const [d] = await Promise.all([panel.waitForEvent('download'), panel.click(btn)]);
@@ -97,19 +116,30 @@ async function main() {
     await comp.close();
     await page.emulateMedia({ colorScheme: 'light' }); await panel.emulateMedia({ colorScheme: 'light' });
   }
-  const fresh = () => sw.evaluate(() => chrome.storage.local.clear()); // 当「第一次用」
+  // 当「第一次用」：记性全清，只留语言（语言是人选过的，换个场景不该忘）
+  const fresh = () => sw.evaluate(async () => { const { lang } = await chrome.storage.local.get('lang'); await chrome.storage.local.clear(); if (lang) await chrome.storage.local.set({ lang }); });
   const saveDl = async (d) => { const f = path.join(SHOTS, d.suggestedFilename()); await d.saveAs(f); return f; };
   const py = (code, f) => execFileSync('python3', ['-c', code, f], { encoding: 'utf8' }).trim();
 
   // ---------- 1. 表格 + 整页跳转翻页 ----------
   console.log('1. 客户名单（表格，5 页整页跳转）');
-  let { page, panel } = await openOn(`${BASE}/demo/table.html`, 'table');
+  let { page, panel } = await openOn(`${BASE}/demo/table.html${X.q}`, 'table');
   await panel.waitForSelector('#ctl:not([hidden])');
+  // 默认英文：浏览器是中文也一样，不自己切
+  ok(await panel.evaluate(() => document.documentElement.lang) === 'en' && (await panel.locator('#go').textContent()) === 'Start', `第一次打开是英文（浏览器 ${X.locale}，没选过）`);
+  if (LANG === 'zh') {
+    await panel.click('#lang [data-lang=zh]');
+    await panel.waitForFunction(() => document.documentElement.lang === 'zh-CN');
+    ok((await panel.locator('#go').textContent()) === '开始' && (await panel.locator('#seg [data-mode=next]').textContent()) === '翻页', '点右上角「中文」，整页换中文');
+    const st = await sw.evaluate(() => chrome.storage.local.get('lang'));
+    ok(st.lang === 'zh', '选的语言记在 chrome.storage.local：' + JSON.stringify(st));
+  }
+  ok(await panel.locator('#lang [aria-pressed=true]').getAttribute('data-lang') === LANG, '右上角切换标着当前语言');
   ok((await rows(panel)) === 20, '一打开就认出表格，20 行');
   let h = await heads(panel);
-  ok(['编号', '公司', '联系人', '电话', '邮箱', '城市'].every((x) => h.includes(x)), '列名直接用表头：' + h.join(' | '));
+  ok(X.table.every((x) => h.includes(x)), '列名直接用表头：' + h.join(' | '));
   ok(await panel.locator('#seg button[data-mode=next][aria-pressed=true]').count() === 1, '自动选了「翻页」');
-  ok((await panel.locator('#hint').textContent()).includes('下一页'), '自动找到下一页按钮');
+  ok((await panel.locator('#hint').textContent()).includes(X.hintNext), '自动找到下一页按钮：' + await panel.locator('#hint').textContent());
   ok(await page.locator('[data-qs-list]').count() === 1 && await page.locator('[data-qs-next]').count() === 1, '网页上高亮了名单和下一页');
   // 表横向放不下：右缘渐隐；滚到头渐隐去掉；一格不超过 176 宽（省略号），不切半个字
   ok(await panel.evaluate(() => document.getElementById('gridWrap').classList.contains('more-r')), '表横向放不下，右缘有渐隐');
@@ -131,31 +161,29 @@ async function main() {
   await crawl(panel);
   ok((await blk(panel)).startsWith('100'), '翻完 5 页，收 100 行：' + await status(panel));
   let f = await saveDl(await auto);
-  ok(/已下载/.test(await status(panel)) && /^化缘_127\.0\.0\.1_\d{8}-\d{4}\.xlsx$/.test(path.basename(f)), '点了开始、没标黄：化完自己下好了，不用再点导出：' + path.basename(f));
+  ok(await panel.evaluate(() => document.body.dataset.dl === '1') && X.dlWord.test(await status(panel)) && X.file.test(path.basename(f)) && f.endsWith('.xlsx'), '点了开始、没标黄：化完自己下好了，不用再点导出：' + path.basename(f));
   ok(py("import sys,openpyxl;print(openpyxl.load_workbook(sys.argv[1]).active.max_row-1)", f) === '100', '自己下的 xlsx 100 行');
   ok(page.url().includes('p=5'), '网页停在第 5 页');
   // 改列：删「操作」链接列、改名、拖顺序
-  const before = await heads(panel);
-  if (before.includes('操作')) { await panel.hover('#grid th[data-key] >> text=操作'); }
-  const idCol = panel.locator('#grid th[data-key]').filter({ hasText: '编号' });
+  const idCol = panel.locator('#grid th[data-key]').filter({ has: panel.locator('.nm', { hasText: new RegExp('^' + X.id + '$') }) });
   await idCol.hover(); await idCol.locator('.x').click();
-  ok(!(await heads(panel)).includes('编号'), '删掉一列');
-  await panel.locator('#grid th[data-key] .nm', { hasText: /^联系人$/ }).click();
-  await panel.keyboard.press('Control+A'); await panel.keyboard.type('对接人'); await panel.keyboard.press('Enter');
-  ok((await heads(panel)).includes('对接人'), '改列名');
+  ok(!(await heads(panel)).includes(X.id), '删掉一列');
+  await panel.locator('#grid th[data-key] .nm', { hasText: new RegExp('^' + X.contact + '$') }).click();
+  await panel.keyboard.press('Control+A'); await panel.keyboard.type(X.renamed); await panel.keyboard.press('Enter');
+  ok((await heads(panel)).includes(X.renamed), '改列名');
   await panel.setViewportSize({ width: 760, height: 820 }); // 侧栏拉宽了再拖（窄的时候第一列躲在序号列后面，拖不准）
-  const src = panel.locator('#grid th[data-key]').filter({ hasText: '邮箱' });
+  const src = panel.locator('#grid th[data-key]').filter({ has: panel.locator('.nm', { hasText: new RegExp('^' + X.email + '$') }) });
   const dst = panel.locator('#grid th[data-key]').first();
   const bb = await dst.boundingBox();
   await src.dragTo(dst, { targetPosition: { x: 4, y: bb.height / 2 } });
-  ok((await heads(panel))[0] === '邮箱', '拖到第一列：' + (await heads(panel)).slice(0, 3).join(' | '));
+  ok((await heads(panel))[0] === X.email, '拖到第一列：' + (await heads(panel)).slice(0, 3).join(' | '));
   await panel.screenshot({ path: path.join(SHOTS, 'panel-table-done.png') });
   await panel.setViewportSize({ width: 400, height: 820 });
   f = await download(panel, '#xlsx');
-  ok(/^化缘_127\.0\.0\.1_\d{8}-\d{4}\.xlsx$/.test(path.basename(f)), '下载文件名是中文：' + path.basename(f));
+  ok(X.file.test(path.basename(f)), '下载文件名（' + LANG + '）：' + path.basename(f));
   let out = py("import sys,openpyxl;ws=openpyxl.load_workbook(sys.argv[1]).active;r=list(ws.values);print(len(r)-1,'|'.join(str(x) for x in r[0]),'|'.join(str(x) for x in r[1]))", f);
   console.log('    xlsx:', out);
-  ok(out.startsWith('100 邮箱|') && out.includes('对接人') && !out.includes('编号'), 'xlsx 100 行，改名/删列/顺序都带上');
+  ok(out.startsWith('100 ' + X.email + '|') && out.includes(X.renamed) && !out.split(' ')[1].split('|').includes(X.id), 'xlsx 100 行，改名/删列/顺序都带上');
   f = await download(panel, '#csv');
   const csv = fs.readFileSync(f, 'utf8');
   ok(csv.charCodeAt(0) === 0xFEFF && csv.trim().split('\r\n').length === 101, 'csv 带 BOM，101 行（含表头）');
@@ -164,21 +192,22 @@ async function main() {
   await panel.close(); await page.close();
 
   console.log('1b. 同一个网站第二回：照上次的改法，自己翻、自己下');
-  ({ page, panel } = await openOn(`${BASE}/demo/table.html`, 'table-2'));
+  ({ page, panel } = await openOn(`${BASE}/demo/table.html${X.q}`, 'table-2'));
   auto = panel.waitForEvent('download', { timeout: 90000 });
+  ok(await panel.evaluate(() => document.documentElement.lang) === (LANG === 'zh' ? 'zh-CN' : 'en'), '再打开还是上回选的语言：' + LANG);
   h = await heads(panel);
-  ok(h[0] === '邮箱' && h.includes('对接人') && !h.includes('编号'), '列名、删列、顺序照上次：' + h.join(' | '));
-  ok(/照上次的改法/.test(await panel.locator('#meta').textContent()), '写明照上次办了啥：' + await panel.locator('#meta').textContent());
+  ok(h[0] === X.email && h.includes(X.renamed) && !h.includes(X.id), '列名、删列、顺序照上次：' + h.join(' | '));
+  ok(X.remembered.test(await panel.locator('#meta').textContent()), '写明照上次办了啥：' + await panel.locator('#meta').textContent());
   f = await saveDl(await auto);
   // 上回最后点的是 CSV，这回自己下的也是 CSV
   const lines = fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, '').trim().split('\r\n');
   out = (lines.length - 1) + ' ' + lines[0];
-  ok(f.endsWith('.csv') && out.startsWith('100 邮箱,') && out.includes('对接人') && !out.includes('编号'), '不点开始、不点下载，表到手（格式照上回的 CSV）：' + path.basename(f) + ' ' + out);
+  ok(f.endsWith('.csv') && out.startsWith('100 ' + X.email + ',') && out.includes(X.renamed) && !out.split(' ')[1].split(',').includes(X.id), '不点开始、不点下载，表到手（格式照上回的 CSV）：' + path.basename(f) + ' ' + out);
   await panel.screenshot({ path: path.join(SHOTS, 'panel-table-second.png') });
-  await panel.locator('#meta button', { hasText: '还原' }).click();
-  await panel.waitForFunction(() => !/照上次/.test(document.getElementById('meta').textContent));
+  await panel.locator('#meta button', { hasText: X.undo }).click();
+  await panel.waitForFunction((src) => !new RegExp(src).test(document.getElementById('meta').textContent), X.remembered.source);
   h = await heads(panel);
-  ok(h.includes('编号') && h.includes('联系人') && h[0] !== '邮箱', '点「还原」回到自己猜的样子：' + h.join(' | '));
+  ok(h.includes(X.id) && h.includes(X.contact) && h[0] !== X.email, '点「还原」回到自己猜的样子：' + h.join(' | '));
   const left = await sw.evaluate(() => chrome.storage.local.get('site:127.0.0.1'));
   ok(!left['site:127.0.0.1'], '还原后这个网站的记性忘干净');
   await panel.close(); await page.close();
@@ -186,13 +215,13 @@ async function main() {
   // ---------- 2. 卡片 + 不刷新翻页 ----------
   console.log('2. 销售线索（卡片，Ajax 翻页）');
   await fresh();
-  ({ page, panel } = await openOn(`${BASE}/demo/cards.html`, 'cards'));
+  ({ page, panel } = await openOn(`${BASE}/demo/cards.html${X.q}`, 'cards'));
   await panel.waitForSelector('#ctl:not([hidden])');
   ok((await rows(panel)) === 12, '认出卡片，12 张');
   h = await heads(panel);
-  ok(['电话', '邮箱', '城市'].every((x) => h.includes(x)), '「电话：」这种前缀变成列名：' + h.join(' | '));
-  const firstPhone = await panel.evaluate(() => { const i = [...document.querySelectorAll('#grid th[data-key]')].findIndex((t) => t.textContent.includes('电话')); return document.querySelector('#grid tbody tr').children[i + 1].textContent; });
-  ok(/^138-0000-\d{4}$/.test(firstPhone), '值里的前缀去掉了：' + firstPhone);
+  ok(X.cardHeads.every((x) => h.includes(x)), '「电话：」这种前缀变成列名：' + h.join(' | '));
+  const firstPhone = await panel.evaluate((nm) => { const i = [...document.querySelectorAll('#grid th[data-key]')].findIndex((t) => t.textContent === nm); return document.querySelector('#grid tbody tr').children[i + 1].textContent; }, X.cardHeads[0]);
+  ok(X.phone.test(firstPhone), '值里的前缀去掉了：' + firstPhone);
   auto = panel.waitForEvent('download', { timeout: 90000 });
   await crawl(panel);
   ok((await blk(panel)).startsWith('48'), '翻完 4 页，48 条：' + await status(panel));
@@ -208,14 +237,14 @@ async function main() {
   // ---------- 3. 无限滚动 ----------
   console.log('3. 商品列表（无限滚动）');
   await fresh();
-  ({ page, panel } = await openOn(`${BASE}/demo/scroll.html`, 'scroll'));
+  ({ page, panel } = await openOn(`${BASE}/demo/scroll.html${X.q}`, 'scroll'));
   ok(await panel.locator('#seg button[data-mode=scroll][aria-pressed=true]').count() === 1, '没有下一页，试滚一下出了新货，自动选「滚动」');
-  ok(/第 \d+ 屏/.test(await status(panel)) || /化完了/.test(await status(panel)), '不用点开始，自己接着滚：' + await status(panel));
+  ok(await panel.evaluate(() => ['running', 'end'].includes(document.body.dataset.state)), '不用点开始，自己接着滚：' + await status(panel));
   const t0 = Date.now();
-  await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: 90000 });
+  await waitDone(panel);
   ok((await blk(panel)).startsWith('120'), '滚到底，120 件：' + await status(panel) + `（收尾 ${((Date.now() - t0) / 1000).toFixed(1)} 秒）`);
   h = await heads(panel);
-  ok(h.includes('图片') && h.includes('价格') && h.indexOf('图片') === h.length - 1, '图片列放最后：' + h.join(' | '));
+  ok(h.includes(X.image) && h.includes(X.price) && h.indexOf(X.image) === h.length - 1, '图片列放最后：' + h.join(' | '));
   await panel.screenshot({ path: path.join(SHOTS, 'panel-scroll-done.png') });
   await duo(page, panel, 'duo-scroll-done', false);
   f = await download(panel, '#xlsx');
@@ -229,10 +258,10 @@ async function main() {
   await panel.close(); await page.close();
   // 慢吞吞的无限滚动：1.5 秒才来货、也不写「加载中」。试滚半秒看不出来，后面盯着的 5 秒要接住
   // 这一块上面刚下过一回（第二回用），所以滚完也自己下
-  ({ page, panel } = await openOn(`${BASE}/demo/scroll.html?slow=1`, 'scroll-slow'));
+  ({ page, panel } = await openOn(`${BASE}/demo/scroll.html${X.q}&slow=1`, 'scroll-slow'));
   auto = panel.waitForEvent('download', { timeout: 90000 });
   await panel.waitForFunction(() => document.querySelector('#seg [data-mode=scroll][aria-pressed=true]'), null, { timeout: 8000 });
-  await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: 90000 });
+  await waitDone(panel);
   ok((await blk(panel)).startsWith('120'), '慢加载的无限滚动：试滚没看出来，随后自己改成滚动收齐 120 件：' + await status(panel));
   f = await saveDl(await auto);
   ok(py("import sys,openpyxl;print(openpyxl.load_workbook(sys.argv[1]).active.max_row-1)", f) === '120', '第二回用：滚完自己下好 120 件');
@@ -241,18 +270,19 @@ async function main() {
   // ---------- 4. 手动指定下一页 + 中途停 ----------
   console.log('4. 手动指定下一页、中途停');
   await fresh();
-  ({ page, panel } = await openOn(`${BASE}/demo/table.html`, 'pick'));
+  ({ page, panel } = await openOn(`${BASE}/demo/table.html${X.q}`, 'pick'));
   await panel.waitForSelector('#ctl:not([hidden])');
   await panel.click('#pick');
   await page.waitForSelector('#qs-pick-tip');
+  ok(/Esc/.test(await page.locator('#qs-pick-tip').textContent()), '网页上的点选提示：' + await page.locator('#qs-pick-tip').textContent());
   await page.bringToFront();
-  await page.click('.pager a:has-text("下一页")');
-  await panel.waitForFunction(() => document.getElementById('hint').textContent.includes('下一页'));
-  ok(page.url().endsWith('table.html'), '点选时网页没跳走');
+  await page.click(X.pagerNext);
+  await panel.waitForFunction((w) => document.getElementById('hint').textContent.includes(w), X.hintNext);
+  ok(page.url().endsWith('table.html' + X.q), '点选时网页没跳走');
   await panel.click('#go');
-  await panel.waitForFunction(() => /第 2 页/.test(document.getElementById('status').textContent), null, { timeout: 20000 });
+  await panel.waitForFunction((src) => new RegExp(src).test(document.getElementById('status').textContent), X.page2.source, { timeout: 20000 });
   await panel.click('#go');
-  await panel.waitForFunction(() => /停了/.test(document.getElementById('status').textContent), null, { timeout: 20000 });
+  await panel.waitForFunction(() => document.body.dataset.state === 'stop', null, { timeout: 20000 });
   ok(true, '用指定的按钮翻页后喊停：' + await status(panel));
   await panel.close();
   await page.waitForTimeout(300);
@@ -261,7 +291,7 @@ async function main() {
 
   // ---------- 5. 列名、值清洗、xlsx 格式（直接喂数据） ----------
   console.log('5. 列名和值清洗');
-  ({ page, panel } = await openOn(`${BASE}/demo/table.html`, 'units'));
+  ({ page, panel } = await openOn(`${BASE}/demo/table.html${X.q}`, 'units'));
   const u = await panel.evaluate(() => {
     const s = new QSSheet();
     const w = new QSSheet();
@@ -279,8 +309,8 @@ async function main() {
     const blob = QSExport.xlsx(aoa, 't');
     return blob.arrayBuffer().then((b) => ({ weak, weak2, head: aoa[0], r1: aoa[1], b64: btoa(String.fromCharCode(...new Uint8Array(b))) }));
   });
-  ok(JSON.stringify(u.head) === JSON.stringify(['名称', '价格', '原价', '评分', '地区', '邮箱', '链接', '图片']), '列名：' + u.head.join(' | '));
-  ok(u.weak === 'foo:1,字段1:1,公司:0' && u.weak2 === 1, '拿不准的列名标出来（照抄英文、字段N），改了名就不黄：' + u.weak);
+  ok(JSON.stringify(u.head) === JSON.stringify(X.units), '列名：' + u.head.join(' | '));
+  ok(u.weak === X.weak && u.weak2 === 1, '拿不准的列名标出来（照抄英文、字段N），改了名就不黄：' + u.weak);
   ok(u.r1[3] === '4.0', '「评分 4.0」拆成列名，值留 4.0');
   const xf = path.join(SHOTS, 'units.xlsx'); fs.writeFileSync(xf, Buffer.from(u.b64, 'base64'));
   out = py("import sys,openpyxl;ws=openpyxl.load_workbook(sys.argv[1]).active;c=ws['D2'];print(c.value,c.number_format)", xf);
@@ -291,20 +321,29 @@ async function main() {
   console.log('6. 浏览器自带页面');
   ({ page, panel } = await openOn('chrome://version/', 'chrome'));
   await panel.waitForSelector('#empty:not([hidden])');
-  ok((await panel.locator('#emptyT').textContent()).includes('进不去') && await panel.locator('#tryDemo').isVisible(), '说清楚进不去，给「用示例试试」');
+  ok((await panel.locator('#emptyT').textContent()).includes(X.noAccess) && await panel.locator('#tryDemo').isVisible(), '说清楚进不去，给「用示例试试」：' + await panel.locator('#emptyT').textContent());
   ok(await panel.locator('#xlsx').isDisabled(), '还没表，下载是灰的');
   await panel.screenshot({ path: path.join(SHOTS, 'panel-noaccess.png') });
   await panel.click('#tryDemo');
-  ok((await rows(panel)) === 8 && !(await panel.locator('#xlsx').isDisabled()), '「用示例试试」一点就出示例表，能下来看看');
+  ok((await rows(panel)) === 8 && !(await panel.locator('#xlsx').isDisabled()), '「用示例试试」一点就出示例表，能下来看看：' + (await heads(panel)).join(' | '));
+  f = await download(panel, '#xlsx');
+  ok(X.demoFile.test(path.basename(f)), '示例表下下来的文件名：' + path.basename(f));
+  // 中途换语言：示例表、列名、按钮一起换，换回来也对
+  const other = LANG === 'zh' ? 'en' : 'zh';
+  await panel.click(`#lang [data-lang=${other}]`);
+  const h2 = await heads(panel);
+  ok(h2[0] === (other === 'en' ? 'Company' : '公司') && (await panel.locator('#emptyT').textContent()) === (other === 'en' ? 'This page is off-limits' : '这页贫僧进不去'), `中途切到 ${other}：` + h2.join(' | ') + ' / ' + await panel.locator('#emptyT').textContent());
+  await panel.click(`#lang [data-lang=${LANG}]`);
+  ok((await heads(panel))[0] === (LANG === 'en' ? 'Company' : '公司'), '再切回来：' + (await heads(panel)).join(' | '));
   await panel.close(); await page.close();
 
   // ---------- 7. 网页关了：表还在 ----------
   console.log('7. 化到一半网页关了');
   await fresh();
-  ({ page, panel } = await openOn(`${BASE}/demo/cards.html`, 'gone'));
+  ({ page, panel } = await openOn(`${BASE}/demo/cards.html${X.q}`, 'gone'));
   await page.close();
   await panel.waitForSelector('#perm:not([hidden])');
-  ok(/网页关了/.test(await panel.locator('#perm').textContent()) && (await rows(panel)) === 12 && !(await panel.locator('#xlsx').isDisabled()), '话放在出事的地方，已收的 12 行照样能下：' + await panel.locator('#perm').textContent());
+  ok(X.gone.test(await panel.locator('#perm').textContent()) && (await rows(panel)) === 12 && !(await panel.locator('#xlsx').isDisabled()), '话放在出事的地方，已收的 12 行照样能下：' + await panel.locator('#perm').textContent());
   await panel.close();
 
   await ctx.close(); server.close();

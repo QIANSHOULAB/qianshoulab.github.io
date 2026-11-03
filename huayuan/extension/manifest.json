@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "化缘僧：过路留名，见网扒皮",
-  "short_name": "化缘僧",
-  "version": "0.3.0",
-  "description": "专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。数据只在本机。",
+  "name": "__MSG_extName__",
+  "short_name": "__MSG_extShort__",
+  "version": "0.4.0",
+  "description": "__MSG_extDesc__",
+  "default_locale": "en",
   "homepage_url": "https://qianshoulab.github.io/huayuan/",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -19,7 +20,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "化缘僧：把这页的列表抓成表",
+    "default_title": "__MSG_actionTitle__",
     "default_icon": {
       "16": "icons/16.png",
       "32": "icons/32.png",
@@ -38,7 +39,7 @@
       "suggested_key": {
         "default": "Alt+Shift+H"
       },
-      "description": "专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。数据只在本机。"
+      "description": "__MSG_cmdDesc__"
     }
   }
 }

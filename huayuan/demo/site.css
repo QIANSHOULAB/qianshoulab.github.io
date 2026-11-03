@@ -30,3 +30,6 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px 14px;border-bottom:
 .loading{text-align:center;color:var(--fg2);padding:20px}
 .foot{text-align:center;color:var(--fg2);font-size:12px;padding:30px}
 .idx{display:grid;gap:12px;max-width:640px;margin:40px auto;padding:0 16px}.idx a{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;color:var(--fg)}.idx a span{display:block;color:var(--fg2);font-size:13px}
+/* 右上角 EN / 中文（跟介绍页同一个记性 huayuan.lang） */
+.topnav .lang{margin-left:auto;font-size:13px;color:var(--fg2)}.topnav .lang a.on,.idx-top .lang a.on{color:var(--fg);font-weight:600}
+.idx .idx-top{text-align:right;font-size:13px;color:var(--fg2)}.idx .idx-top a{display:inline;background:none;border:0;padding:0;color:var(--fg2)}.idx a b{font-weight:600}

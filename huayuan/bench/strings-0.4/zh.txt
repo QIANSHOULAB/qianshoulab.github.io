@@ -1,0 +1,199 @@
+# 化缘僧 0.4.0 中文文字（从 extension/lib/strings.js 导出）。一行一条：键<Tab>字。{n} 是填进去的数，{n:row|rows} 按数挑单复数。
+
+## 插件侧栏
+langLabel	语言
+footMail	找方丈：
+footHome	千手院总舵
+dlXlsx	下载 Excel
+dlCsv	下载 CSV
+fmtXlsx	Excel
+fmtCsv	CSV
+copy	复制
+copied	已复制 {n} 行，去表格里粘贴
+exported	{n} 行已进「下载」
+filePrefix	化缘
+cancel	取消
+settings	设置
+listSep	、
+hyName	化缘僧
+hyFoot	千手院 · 化缘僧
+looking	贫僧看看这页…
+block	第 {i}/{n} 块
+blockOnly	就这 1 块
+blockDoubt	还有一块也像
+switchBlock	换一块
+modeNext	翻页
+modeScroll	滚动
+modeOne	只这页
+nextFound	下一页：
+nextNone	没找到下一页
+nextEnd	到最后一页了
+nextPick	指给贫僧
+nextRepick	换一个
+pickHint	点一下网页上的「下一页」· Esc 取消
+pickWait	去网页上点「下一页」…
+scrollHint	往下滚到底，边滚边收
+oneHint	就这一页
+allHere	整页都在这了
+trying	看看下面还藏没藏货…
+rows	{n} 行
+cols	{n} 列
+start	开始
+stop	停
+again	接着化
+running	第 {p} 页 · 已收 {rows} 行
+runningScroll	第 {p} 屏 · 已收 {rows} 行
+finished	化完了：{p} {unit}，{rows} 行
+finishedDl	化完了，已下载：{p} {unit}，{rows} 行
+finishedStop	停了：{p} {unit}，{rows} 行
+unitPage	页
+unitScreen	屏
+doubts	{n} 处拿不准，标黄了
+doubtCol	名字是猜的，点一下改
+doubtMax	翻到 {n} 页上限停了，后面可能还有
+dupes	去掉重复 {n} 行
+hiddenCols	收起了 {n} 列
+restore	放出来
+remembered	照上次的改法：{what}
+remRename	改名 {n}
+remHide	删 {n} 列
+remOrder	调了顺序
+remBlock	认那一块
+remNext	认那个下一页
+remRun	自己开翻
+undo	还原
+autoDl	化完自己下好了
+autoDlOff	以后别自己下
+autoDlOffDone	好，以后化完等你点
+moreRows	这里先摆 {shown} 行，下载是全部 {rows} 行
+delCol	删掉这列
+dragTip	拖表头换位置，点名字改名
+noAccess	这页贫僧进不去
+noAccessSub	浏览器自家的页面和扩展商店，谢绝化缘。换个有列表的网页，再点一下化缘僧。
+noList	这页化不到缘
+noListSub	没找到像名单的东西。换个有列表、表格的网页，再点一下化缘僧。
+demoTry	用示例试试
+demoOpen	去示例网页化一回 ›
+demoBadge	示例
+demoNote	示例数据 · 在有列表的网页上点一下化缘僧，就是这样
+tabGone	网页关了，已收的 {rows} 行还在，照样能下
+needPerm	翻到下一页后，浏览器要你再点一下才让贫僧进门
+grant	放行
+settingAuto	化完自己下载
+settingDelay	每页多等几秒
+settingMax	最多翻几页
+colFieldN	字段{n}
+colLinkOf	{base}链接
+colImageOf	{base}图片
+colDup	{name}{n}
+colLink	链接
+colImage	图片
+colEmail	邮箱
+colPhone	电话
+colUrl	网址
+colPrice	价格
+colDate	日期
+colPercent	百分比
+colName	名称
+colOrig	原价
+colCompany	公司
+colContact	联系人
+colAddress	地址
+colRegion	地区
+colCity	城市
+colDesc	简介
+colTime	时间
+colRating	评分
+colReview	评论
+colAuthor	作者
+colStatus	状态
+colRole	职位
+colShop	店铺
+colAmount	金额
+colTag	标签
+colStock	库存
+colSold	销量
+colIndustry	行业
+colSource	来源
+colOwner	负责人
+colStage	阶段
+colBrand	品牌
+colId	编号
+
+## 插件商店 / 扩展页（_locales）
+extName	化缘僧 · 过路留名，见网扒皮
+extShort	化缘僧
+extDesc	专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。数据只在本机。
+actionTitle	化缘僧：把这页的列表抓成表
+cmdDesc	在这页打开化缘僧
+
+## 介绍页 huayuan/index.html
+title	化缘僧 · 过路留名，见网扒皮
+desc	专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。Chrome / Edge 插件，点一下抓成 Excel，数据只在本机。
+langLabel	语言
+home	千手院
+navName	化缘僧
+navDl	下载
+nameA	化缘僧
+nameB	
+tag	过路留名，见网扒皮
+sub	专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。
+ctaDl	下载插件
+ctaHow	怎么装 ›
+ctaDemo	示例页 ›
+ver	0.4.0 · Chrome / Edge · 免费
+alt1	左边网页的客户名单被金框圈出，右边侧栏里化缘僧已经认出 20 行 8 列
+cap1	金框是它认出的名单，虚框是它找到的「下一页」。没人教过它。
+h2a	你只管扫一眼。
+leadA	拿不准的标黄。剩下的，贫僧自己来。
+f1t	自己认名单
+f1s	哪块最像名单先抓哪块。不对？点「换一块」。
+f2t	自己翻页、滚到底
+f2s	「下一页」「加载更多」自己找，无限滚动替你滚完。
+f3t	自己起列名
+f3s	标题叫「名称」，划线价叫「原价」。猜的名字标黄。
+f4t	化完自己下
+f4s	点了开始就去摸鱼，回来 Excel 已经在「下载」里。
+f5t	第二回照旧
+f5s	同一个网站，上回改的列、删的列、排的顺序，自己办好。点「还原」就撤。
+f6t	数据不出门
+f6s	只读你点它的那一页。不上传、不注册，浏览记录不收。
+h2b	跟 Instant Data Scraper 比了一场。
+leadB	同一套 6 个测试页，表格、卡片、翻页、加载更多、无限滚动。
+s1b	1,724 行 0 错
+s1s	对面漏 50 行、重 153 行，图片 730 格是占位图。
+s2b	48 / 48
+s2s	列名叫对。对面一个没对，表头是一串 CSS。
+s3b	12 下
+s3s	6 个页面从点图标到 Excel 到手，一共点这几下。对面 23 下，外加开户 4 下。
+fine	题是我们自己出的，数字来自比武报告。
+h2c	卡片、表格、无限滚动，都化得动。
+leadC	要登录的后台也行：用的就是你浏览器里已经登录的那一页。
+alt2	无限滚动的商品列表，化缘僧自己滚到底收了 120 件
+cap2	商品列表：没点开始，自己滚到底，120 件。
+alt3	深色模式下，卡片式销售线索翻 4 页收了 48 条，已经自己下载
+cap3	卡片线索翻 4 页：48 条，化完自己下好了。
+h2d	怎么装
+leadD	还没上商店，先用开发者模式装，三分钟。
+st1	<a href="dist/huayuan-0.4.0.zip" download>下载 huayuan-0.4.0.zip</a>，解压成一个文件夹
+st1s	文件夹删了插件就没了，放个稳当的地方。
+st2	地址栏打开 <code>edge://extensions</code>
+st2s	Chrome 用 <code>chrome://extensions</code>
+st3	打开「开发人员模式」
+st3s	Edge 在左边栏下面，Chrome 在右上角。
+st4	点「加载解压缩的扩展」，选刚才的文件夹
+st4s	Chrome 里叫「加载已解压的扩展程序」。
+st5	把化缘僧钉到工具栏
+st5s	以后在有列表的网页上点它，右边出侧栏就开工。快捷键 Alt+Shift+H。
+footName	千手院 · 化缘僧
+footMail	要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：
+footHome	千手院总舵
+
+## 侧栏示例表的假数据
+co	青禾 / 远山 / 白鹭 / 银杏 / 北辰 / 南风 / 松石 / 云杉
+ind	科技 / 贸易 / 物流 / 文创 / 餐饮 / 建材 / 咨询 / 医疗器械
+company	{a}{b}（示例）
+person	张小一 / 王小二 / 李小三 / 陈小四 / 林小五 / 黄小六 / 周小七 / 吴小八
+phone	138-0000-1000 / 138-0000-1137 / 138-0000-1274 / 138-0000-1411 / 138-0000-1548 / 138-0000-1685 / 138-0000-1822 / 138-0000-1959
+city	上海 / 深圳 / 杭州 / 成都 / 新加坡 / 广州 / 苏州 / 北京
+stage	初次接触 / 已报价 / 谈判中 / 已成交

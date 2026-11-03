@@ -1,0 +1,17 @@
+{
+  "extName": {
+    "message": "Huayuan · List Grabber"
+  },
+  "extShort": {
+    "message": "Huayuan"
+  },
+  "extDesc": {
+    "message": "Any list or table on a web page, into Excel or CSV. Pages through, scrolls to the end, names the columns. Data stays local."
+  },
+  "actionTitle": {
+    "message": "Huayuan: grab the list on this page"
+  },
+  "cmdDesc": {
+    "message": "Open Huayuan on this page"
+  }
+}

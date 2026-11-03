@@ -1,0 +1,17 @@
+{
+  "extName": {
+    "message": "化缘僧 · 过路留名，见网扒皮"
+  },
+  "extShort": {
+    "message": "化缘僧"
+  },
+  "extDesc": {
+    "message": "专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。数据只在本机。"
+  },
+  "actionTitle": {
+    "message": "化缘僧：把这页的列表抓成表"
+  },
+  "cmdDesc": {
+    "message": "在这页打开化缘僧"
+  }
+}

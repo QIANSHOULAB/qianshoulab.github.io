@@ -1,0 +1,199 @@
+# 化缘僧 0.4.0 英文文字（从 extension/lib/strings.js 导出）。一行一条：键<Tab>字。{n} 是填进去的数，{n:row|rows} 按数挑单复数。
+
+## 插件侧栏
+langLabel	Language
+footMail	Write to the abbot: 
+footHome	QIANSHOU LAB home
+dlXlsx	Download Excel
+dlCsv	Download CSV
+fmtXlsx	Excel
+fmtCsv	CSV
+copy	Copy
+copied	{n} {n:row|rows} copied. Paste anywhere.
+exported	{n} {n:row|rows} saved to Downloads
+filePrefix	Huayuan
+cancel	Cancel
+settings	Settings
+listSep	, 
+hyName	Huayuan
+hyFoot	QIANSHOU LAB · Huayuan
+looking	Contemplating the page…
+block	List {i}/{n}
+blockOnly	Only list
+blockDoubt	Has a twin
+switchBlock	Switch
+modeNext	All pages
+modeScroll	Scroll
+modeOne	This page
+nextFound	Next button: 
+nextNone	No “Next” button found
+nextEnd	That was the last page
+nextPick	Show me
+nextRepick	Change
+pickHint	Click the page’s “Next” button · Esc to cancel
+pickWait	Click “Next” on the page…
+scrollHint	Scrolls to the bottom, grabbing as it goes
+oneHint	Just this page
+allHere	That’s everything on the page
+trying	Checking for more below…
+rows	{n} {n:row|rows}
+cols	{n} {n:column|columns}
+start	Start
+stop	Stop
+again	Keep going
+running	Page {p} · {rows} {rows:row|rows} so far
+runningScroll	Screen {p} · {rows} {rows:row|rows} so far
+finished	Done: {rows} {rows:row|rows} from {p} {unit}
+finishedDl	Done and downloaded: {rows} {rows:row|rows} from {p} {unit}
+finishedStop	Stopped: {rows} {rows:row|rows} from {p} {unit}
+unitPage	{p:page|pages}
+unitScreen	{p:screen|screens}
+doubts	{n} {n:guess|guesses} flagged in yellow
+doubtCol	Guessed name. Click to rename.
+doubtMax	Stopped at the {n}-page limit. There may be more.
+dupes	{n} {n:duplicate|duplicates} removed
+hiddenCols	{n} {n:column|columns} tucked away
+restore	Bring back
+remembered	Same as last time: {what}
+remRename	{n} {n:rename|renames}
+remHide	{n} {n:column|columns} removed
+remOrder	column order
+remBlock	same list
+remNext	same “Next” button
+remRun	auto-start
+undo	Undo
+autoDl	Downloaded it for you
+autoDlOff	Turn off
+autoDlOffDone	Got it. Next time it waits for you.
+moreRows	Showing {shown} here. The download has all {rows}.
+delCol	Remove column
+dragTip	Drag headers to reorder · click a name to rename
+noAccess	This page is off-limits
+noAccessSub	The browser’s own pages and extension stores keep everyone out. Open a page with a list and click Huayuan again.
+noList	Nothing list-shaped here
+noListSub	Try a page with a list or table, then click Huayuan again.
+demoTry	Try the sample
+demoOpen	Try it on a sample page ›
+demoBadge	Sample
+demoNote	Sample data · this is what any page with a list turns into
+tabGone	The page closed. Your {rows} {rows:row|rows} are still here, ready to download.
+needPerm	New page, new rules: the browser wants one more click to let Huayuan in.
+grant	Allow
+settingAuto	Auto-download when done
+settingDelay	Extra seconds per page
+settingMax	Max pages
+colFieldN	Field {n}
+colLinkOf	{base} link
+colImageOf	{base} image
+colDup	{name} {n}
+colLink	Link
+colImage	Image
+colEmail	Email
+colPhone	Phone
+colUrl	URL
+colPrice	Price
+colDate	Date
+colPercent	Percent
+colName	Name
+colOrig	Original price
+colCompany	Company
+colContact	Contact
+colAddress	Address
+colRegion	Location
+colCity	City
+colDesc	Description
+colTime	Date
+colRating	Rating
+colReview	Reviews
+colAuthor	Author
+colStatus	Status
+colRole	Role
+colShop	Store
+colAmount	Amount
+colTag	Tag
+colStock	Stock
+colSold	Units sold
+colIndustry	Industry
+colSource	Source
+colOwner	Owner
+colStage	Stage
+colBrand	Brand
+colId	ID
+
+## 插件商店 / 扩展页（_locales）
+extName	Huayuan · List Grabber
+extShort	Huayuan
+extDesc	Any list or table on a web page, into Excel or CSV. Pages through, scrolls to the end, names the columns. Data stays local.
+actionTitle	Huayuan: grab the list on this page
+cmdDesc	Open Huayuan on this page
+
+## 介绍页 huayuan/index.html
+title	Huayuan · List Grabber — any web list, straight into Excel
+desc	A Chrome / Edge extension that turns any list or table on a web page into Excel or CSV. Pages through, scrolls to the end, names the columns. Data never leaves your browser.
+langLabel	Language
+home	QIANSHOU LAB
+navName	Huayuan
+navDl	Download
+nameA	Huayuan
+nameB	List Grabber
+tag	Any web list, straight into Excel.
+sub	Copy-protected page? Cute. Client lists, product listings, every page of them, scooped into a spreadsheet.
+ctaDl	Download
+ctaHow	How to install ›
+ctaDemo	Sample pages ›
+ver	0.4.0 · Chrome / Edge · Free
+alt1	A client list on the left, outlined in gold; the Huayuan side panel on the right has already found 20 rows and 8 columns
+cap1	The gold box is the list it found. The dashed one is the “Next” button. Nobody told it.
+h2a	All you do is glance.
+leadA	Anything it isn’t sure about gets flagged yellow. The rest, it handles.
+f1t	Finds the list
+f1s	Grabs whatever looks most like a list. Wrong one? Hit “Switch.”
+f2t	Pages and scrolls
+f2s	Finds “Next” and “Load more” on its own. Infinite feeds get scrolled to the bottom.
+f3t	Names the columns
+f3s	Headlines become “Name”, struck-out prices become “Original price”. Guesses get flagged.
+f4t	Downloads itself
+f4s	Hit Start, go get a coffee. The spreadsheet is in Downloads when you’re back.
+f5t	Remembers your edits
+f5s	Same site next time: renamed, removed and reordered columns are already done. “Undo” takes it back.
+f6t	Data stays home
+f6s	Reads only the page you click it on. No uploads, no sign-up, no peeking at your history.
+h2b	We raced Instant Data Scraper.
+leadB	Same 6 test pages: tables, cards, paging, “Load more”, infinite scroll.
+s1b	0 errors
+s1s	Across 1,724 rows. They missed 50, doubled 153, and 730 of their image cells were placeholders.
+s2b	48 / 48
+s2s	Columns named right. Theirs: 0 of 48, with CSS class names for headers.
+s3b	12 clicks
+s3s	All 6 pages, toolbar to spreadsheet. They took 23, plus 4 to get through onboarding.
+fine	We set the test. The numbers are from our benchmark report.
+h2c	Cards, tables, infinite scroll. Handled.
+leadC	Works behind logins too: it reads the page you’re already signed into.
+alt2	An infinite-scroll product list; Huayuan scrolled to the end on its own and collected 120 items
+cap2	Product feed: no Start button, scrolled to the end by itself. 120 items.
+alt3	Dark mode: lead cards across 4 pages, 48 leads collected and already downloaded
+cap3	Lead cards, 4 pages: 48 leads, downloaded without being asked.
+h2d	Install
+leadD	Not in the stores yet. Developer mode takes three minutes.
+st1	<a href="dist/huayuan-0.4.0.zip" download>Download huayuan-0.4.0.zip</a> and unzip it
+st1s	Keep the folder somewhere safe. Delete it and the extension goes too.
+st2	Open <code>chrome://extensions</code>
+st2s	In Edge: <code>edge://extensions</code>
+st3	Turn on Developer mode
+st3s	Top right in Chrome, bottom of the left sidebar in Edge.
+st4	Click “Load unpacked” and pick the folder
+st4s	
+st5	Pin Huayuan to the toolbar
+st5s	Click it on any page with a list and the side panel takes over. Shortcut: Alt+Shift+H.
+footName	QIANSHOU LAB · Huayuan
+footMail	Feature ideas, feedback or business: write to the abbot at 
+footHome	QIANSHOU LAB home
+
+## 侧栏示例表的假数据
+co	Bluegrass / Copperleaf / Harbor / Pinecrest / Juniper / Stonebridge / Saltmarsh / Redwood
+ind	Labs / Trading / Logistics / Studio / Foods / Supply / Consulting / Medical
+company	{a} {b} (sample)
+person	Ava Chen / Leo Park / Mia Wong / Noah Tan / Zoe Lim / Ethan Ng / Ruby Lee / Owen Goh
+phone	+1 555-0142 / +1 555-0178 / +1 555-0113 / +1 555-0190 / +1 555-0125 / +1 555-0167 / +1 555-0104 / +1 555-0156
+city	Austin / London / Toronto / Sydney / Singapore / Berlin / Seattle / Dublin
+stage	First contact / Quoted / Negotiating / Won

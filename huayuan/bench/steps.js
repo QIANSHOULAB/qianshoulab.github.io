@@ -14,6 +14,9 @@ const EXT = path.resolve(process.argv[2] || path.join(ROOT, 'extension'));
 const OUT = path.resolve(process.argv[3] || path.join(os.tmpdir(), 'hy-steps.json'));
 const PORT = Number(process.env.PORT) || 8766, BASE = `http://127.0.0.1:${PORT}`;
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'hy-steps-'));
+// 0.4.0：插件默认英文、示例站默认英文。HY_LANG=zh（默认）跑中文（跟老版本比用这个），en 跑英文
+const HY_LANG = process.env.HY_LANG === 'en' ? 'en' : 'zh';
+const N = HY_LANG === 'en' ? { id: 'ID', contact: 'Contact', renamed: 'Point of contact', email: 'Email' } : { id: '编号', contact: '联系人', renamed: '对接人', email: '邮箱' };
 
 function serve() {
   const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
@@ -46,6 +49,7 @@ async function main() {
   });
   let [sw] = ctx.serviceWorkers();
   if (!sw) sw = await ctx.waitForEvent('serviceworker');
+  await sw.evaluate((l) => chrome.storage.local.set({ lang: l }), HY_LANG); // 侧栏语言（老版本不认这个键，没影响）
   const heads = (panel) => panel.evaluate(() => [...document.querySelectorAll('#grid th[data-key] .nm')].map((e) => e.textContent));
   const out = { version, runs: [] };
 
@@ -53,7 +57,7 @@ async function main() {
     const steps = [];
     const step = (what, kind = 'click') => steps.push({ what, kind });
     const page = await ctx.newPage();
-    await page.goto(`${BASE}/demo/${scene.file}`); await page.waitForLoadState('networkidle');
+    await page.goto(`${BASE}/demo/${scene.file}?lang=${HY_LANG}`); await page.waitForLoadState('networkidle');
     await page.bringToFront();
     const tabId = await sw.evaluate(async (u) => (await chrome.tabs.query({})).find((x) => x.url === u).id, page.url());
     const t0 = Date.now();
@@ -68,33 +72,33 @@ async function main() {
     step('扫一眼认出的表对不对', 'look');
     if (scene.edits) {
       let h = await heads(panel);
-      if (h.includes('编号')) {
-        const th = panel.locator('#grid th[data-key]').filter({ hasText: /^编号$/ });
-        await th.hover(); await th.locator('.x').click(); step('删「编号」列');
+      if (h.includes(N.id)) {
+        const th = panel.locator('#grid th[data-key]').filter({ has: panel.locator('.nm', { hasText: new RegExp('^' + N.id + '$') }) });
+        await th.hover(); await th.locator('.x').click(); step(`删「${N.id}」列`);
       }
       h = await heads(panel);
-      if (h.includes('联系人')) {
-        await panel.locator('#grid th[data-key] .nm', { hasText: /^联系人$/ }).click();
-        await panel.keyboard.press('Control+A'); await panel.keyboard.type('对接人'); await panel.keyboard.press('Enter');
-        step('「联系人」改名「对接人」（点、打字、回车）');
+      if (h.includes(N.contact)) {
+        await panel.locator('#grid th[data-key] .nm', { hasText: new RegExp('^' + N.contact + '$') }).click();
+        await panel.keyboard.press('Control+A'); await panel.keyboard.type(N.renamed); await panel.keyboard.press('Enter');
+        step(`「${N.contact}」改名「${N.renamed}」（点、打字、回车）`);
       }
       h = await heads(panel);
-      if (h[0] !== '邮箱') {
+      if (h[0] !== N.email) {
         await panel.setViewportSize({ width: 760, height: 820 });
-        const src = panel.locator('#grid th[data-key]').filter({ hasText: /^邮箱$/ });
+        const src = panel.locator('#grid th[data-key]').filter({ has: panel.locator('.nm', { hasText: new RegExp('^' + N.email + '$') }) });
         const dst = panel.locator('#grid th[data-key]').first();
         const bb = await dst.boundingBox();
         await src.dragTo(dst, { targetPosition: { x: 4, y: bb.height / 2 } });
         await panel.setViewportSize({ width: 400, height: 820 });
-        step('把「邮箱」拖到第一列');
+        step(`把「${N.email}」拖到第一列`);
       }
     }
-    const done = () => panel.evaluate(() => /化完了|停了/.test(document.getElementById('status').textContent));
+    const done = () => panel.evaluate((() => { const s = document.body.dataset.state; return s ? ['end', 'stop', 'max'].includes(s) : /化完了|停了/.test(document.getElementById('status').textContent); }));
     if (!(await done())) {
       // 已经自己滚起来了（状态写着「第 N 屏」）就等着，别去点「停」
-      const running = await panel.evaluate(() => /第 \d+ (页|屏)/.test(document.getElementById('status').textContent));
+      const running = await panel.evaluate(() => { const s = document.body.dataset.state; return s ? s === 'running' : /第 \d+ (页|屏)/.test(document.getElementById('status').textContent); });
       if (!running && await panel.locator('#go').isVisible()) { await panel.click('#go'); step('点「开始」'); }
-      await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: 120000 });
+      await panel.waitForFunction((() => { const s = document.body.dataset.state; return s ? ['end', 'stop', 'max'].includes(s) : /化完了|停了/.test(document.getElementById('status').textContent); }), null, { timeout: 120000 });
     }
     // 化完了：自己下了就不点；没下就点导出
     const tw = Date.now();

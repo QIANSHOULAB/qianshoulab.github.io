@@ -1,8 +1,14 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>化缘僧示例页</title><link rel="stylesheet" href="site.css"></head>
-<body><div class="idx"><h1>化缘僧示例页</h1><p style="color:var(--fg2);margin:0">打开任意一页，点浏览器右上角的化缘僧。数据全是随机拼的假数据。</p>
-<a href="table.html">客户名单<span>表格 · 5 页，点「下一页」整页跳转 · 100 行</span></a>
-<a href="cards.html">销售线索<span>卡片 · 4 页，不刷新换页 · 48 条</span></a>
-<a href="scroll.html">商品列表<span>无限滚动 · 往下滚自动加载 · 120 件</span></a>
-<p style="color:var(--fg2);font-size:13px"><a href="../">← 回化缘僧</a></p></div></body></html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Huayuan sample pages</title><link rel="stylesheet" href="site.css"><script src="data.js"></script></head>
+<body><div class="idx"><div class="idx-top" id="sw"></div><h1 id="h1"></h1><p style="color:var(--fg2);margin:0" id="lead"></p>
+<a href="table.html"><b></b><span></span></a>
+<a href="cards.html"><b></b><span></span></a>
+<a href="scroll.html"><b></b><span></span></a>
+<p style="color:var(--fg2);font-size:13px"><a href="../" id="back"></a></p></div>
+<script>
+const T=DEMO.T;document.documentElement.lang=T.html;document.title=T.idxTitle;
+document.getElementById('sw').innerHTML=DEMO.langSwitch;
+document.getElementById('h1').textContent=T.idxTitle;document.getElementById('lead').textContent=T.idxLead;document.getElementById('back').textContent=T.back;
+document.querySelectorAll('.idx>a').forEach((a,i)=>{a.querySelector('b').textContent=T.idx[i][0];a.querySelector('span').textContent=T.idx[i][1];});</script>
+</body></html>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """0.3.0 复赛汇总：vs-old.sh 跑出来的 r1..r3/{old,ours} 逐个打分，按场景取用时中位数，写 results/vs-old-0.3.0.json。
-用法：python3 huayuan/bench/vs-old-sum.py <vs-old.sh 的输出目录>
+用法：python3 huayuan/bench/vs-old-sum.py <vs-old.sh 的输出目录> [旧版号 新版号]（默认 0.2.1 0.3.0；0.4.0 复赛用 0.3.0 0.4.0）
 """
 import sys, os, json, statistics
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -8,6 +8,7 @@ sys.path.insert(0, HERE)
 from score import score  # noqa: E402
 
 base = sys.argv[1]
+OLD_V, NEW_V = (sys.argv[2], sys.argv[3]) if len(sys.argv) > 3 else ('0.2.1', '0.3.0')
 out = {}
 for ver in ('old', 'ours'):
     rows = {}
@@ -25,10 +26,10 @@ for ver in ('old', 'ours'):
         v[sc] = {'ms': [l['ms'] for l in lst], 'msMedian': statistics.median(l['ms'] for l in lst), 'clicks': lst[0]['clicks'], 'steps': lst[0]['steps'],
                  'rows': f"{s['rowsOut']}/{s['rowsWant']}", 'miss': s['miss'], 'dup': s['dup'], 'extra': s['extra'], 'wrongCols': s['wrongCols'],
                  'named': f"{s['namedOk']}/{s['colsWant']}", 'extraCols': s['extraCols'], 'sameEveryRound': same}
-    out['0.2.1' if ver == 'old' else '0.3.0'] = v
+    out[OLD_V if ver == 'old' else NEW_V] = v
 for ver, v in out.items():
     tot = sum(x['msMedian'] for x in v.values())
     print(ver, '合计中位数 %.1f 秒' % (tot / 1000), '点击', sum(x['clicks'] for x in v.values()))
     for sc, x in v.items():
         print('  %-11s %s 漏%d 重%d 多%d 错列%d 名%s 杂%d 点%d %s 秒 一致=%s' % (sc, x['rows'], x['miss'], x['dup'], x['extra'], x['wrongCols'], x['named'], x['extraCols'], x['clicks'], ['%.2f' % (m / 1000) for m in x['ms']], x['sameEveryRound']))
-json.dump(out, open(os.path.join(HERE, 'results', 'vs-old-0.3.0.json'), 'w'), ensure_ascii=False, indent=1)
+json.dump(out, open(os.path.join(HERE, 'results', f'vs-old-{NEW_V}.json'), 'w'), ensure_ascii=False, indent=1)

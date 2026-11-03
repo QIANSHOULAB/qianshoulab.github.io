@@ -26,9 +26,15 @@
     userStarted: false, ran: false, dlDone: false, demo: false, gone: false,
   };
 
-  // ---------- 文字 ----------
-  for (const el of document.querySelectorAll('[data-t]')) el.textContent = T(el.dataset.t);
-  for (const el of document.querySelectorAll('[data-t-aria]')) { el.setAttribute('aria-label', T(el.dataset.tAria)); el.title = T(el.dataset.tAria); }
+  // ---------- 文字：默认英文，右上角 EN / 中文 切换，选过就记住（QSStrings.load / use） ----------
+  function applyStatic() {
+    document.documentElement.lang = T('htmlLang');
+    for (const el of document.querySelectorAll('[data-t]')) el.textContent = T(el.dataset.t);
+    for (const el of document.querySelectorAll('[data-t-aria]')) { el.setAttribute('aria-label', T(el.dataset.tAria)); el.title = T(el.dataset.tAria); }
+    for (const b of $('lang').children) b.setAttribute('aria-pressed', String(b.dataset.lang === QSStrings.lang));
+    document.title = S.host ? T('hyName') + ' · ' + S.host : T('hyName');
+  }
+  const num = (n) => QSStrings.num(n);
 
   // ---------- 跟网页说话 ----------
   async function inject() {
@@ -87,7 +93,9 @@
 
   // ---------- 开场 ----------
   async function init() {
-    S.settings = await QSSettings.get(S.settings);
+    // 语言和设置一起读（分两回读，表晚出来几十毫秒）
+    await Promise.all([QSStrings.load(), QSSettings.get(S.settings).then((v) => { S.settings = v; })]);
+    applyStatic();
     $('setDelay').value = S.settings.delay;
     $('setMax').value = S.settings.maxPages;
     $('setAuto').checked = !!S.settings.auto;
@@ -123,12 +131,12 @@
       sheet.applyPrefs(S.site.prefs);
       if (S.site.next) S.nextSpec = S.site.next;
       const e = sheet.edits(), parts = [];
-      if (e.rename) parts.push(T('remRename', { n: e.rename }));
-      if (e.hide) parts.push(T('remHide', { n: e.hide }));
-      if (e.order) parts.push(T('remOrder'));
-      if (i > 0) parts.push(T('remBlock'));
-      if (S.site.next) parts.push(T('remNext'));
-      S.applied = parts;
+      if (e.rename) parts.push(['remRename', { n: e.rename }]);
+      if (e.hide) parts.push(['remHide', { n: e.hide }]);
+      if (e.order) parts.push(['remOrder']);
+      if (i > 0) parts.push(['remBlock']);
+      if (S.site.next) parts.push(['remNext']);
+      S.applied = parts; // 存键不存字：中途换语言也跟着换
     }
     await probe(true);
     S.complete = false; S.trying = false;
@@ -136,7 +144,7 @@
     if (S.next && S.next.found) {
       S.mode = 'next';
       // 上回在这个网站这一块翻完了全部页 → 这回不用再点「开始」
-      if (S.matched && first && S.site.run === 'next') { autoRun = true; S.applied.push(T('remRun')); }
+      if (S.matched && first && S.site.run === 'next') { autoRun = true; S.applied.push(['remRun']); }
     }
     else if (S.canScroll) { S.mode = 'scroll'; S.trying = true; tr = await trialStart(); } // 先滚出去，画表的工夫顺便等着
     else { S.mode = 'one'; S.complete = true; }
@@ -342,10 +350,15 @@
     document.body.dataset.ready = '1';
     show('empty');
     $('perm').hidden = true;
-    $('emptyT').textContent = T(kind === 'noList' ? 'noList' : 'noAccess');
-    $('emptyS').textContent = T(kind === 'noList' ? 'noListSub' : 'noAccessSub');
+    S.emptyKind = kind === 'noList' ? 'noList' : 'noAccess';
+    renderEmpty();
     $('meta').textContent = '';
     setExport(); updatePrimary();
+  }
+
+  function renderEmpty() {
+    $('emptyT').textContent = T(S.emptyKind);
+    $('emptyS').textContent = T(S.emptyKind + 'Sub');
   }
 
   // 网页关了：表还在，照样能下。话放在出事的地方
@@ -354,10 +367,13 @@
     S.gone = true; S.stopAsked = true; S.trying = false;
     document.body.dataset.ready = '1';
     if (!$('ctl').hidden || sheet.rows.length) { $('ctl').hidden = true; $('loading').hidden = true; $('gridWrap').hidden = false; }
-    const a = $('perm');
-    a.replaceChildren(Object.assign(document.createElement('span'), { textContent: T('tabGone', { rows: sheet.rows.length.toLocaleString() }) }));
-    a.hidden = false;
+    renderGone();
+    $('perm').hidden = false;
     renderMeta(); setExport(); updatePrimary();
+  }
+
+  function renderGone() {
+    $('perm').replaceChildren(Object.assign(document.createElement('span'), { textContent: T('tabGone', { rows: num(sheet.rows.length) }) }));
   }
 
   function svgOk() { return '<svg class="ok" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>'; }
@@ -366,7 +382,7 @@
     if (S.gone) { renderGrid(fresh); renderMeta(); setExport(); updatePrimary(); return; }
     const n = S.cands.length;
     const dz = doubts();
-    $('blkN').textContent = T('rows', { n: sheet.rows.length.toLocaleString() });
+    $('blkN').textContent = T('rows', { n: num(sheet.rows.length) });
     const bs = $('blkS'); bs.textContent = '';
     if (dz.block) { const c = document.createElement('span'); c.className = 'chip'; c.textContent = T('blockDoubt'); bs.append(c, ' '); }
     else bs.append((n > 1 ? T('block', { i: S.ci + 1, n }) : T('blockOnly')) + ' · ');
@@ -396,12 +412,12 @@
     $('bar').hidden = !S.running;
     // 状态
     const st = $('status'); st.textContent = '';
-    const rows = sheet.rows.length.toLocaleString();
+    const rows = num(sheet.rows.length);
     if (S.running) {
       st.innerHTML = '<span class="spin"></span>';
       st.append(T(S.mode === 'scroll' ? 'runningScroll' : 'running', { p: S.pages, rows }));
     } else if (S.ended) {
-      const unit = T(S.mode === 'scroll' ? 'unitScreen' : 'unitPage');
+      const unit = T(S.mode === 'scroll' ? 'unitScreen' : 'unitPage', { p: S.pages });
       const key = S.ended === 'stop' ? 'finishedStop' : S.dlDone ? 'finishedDl' : 'finished';
       if (S.ended !== 'stop') st.innerHTML = svgOk();
       const b = document.createElement('b'); b.textContent = T(key, { p: S.pages, rows, unit }); st.append(b);
@@ -416,6 +432,9 @@
     renderMeta();
     setExport();
     updatePrimary();
+    // 测试、跑分认状态用（不看字，中英都一样）：running / end / stop / max / trying / idle
+    document.body.dataset.state = S.running ? 'running' : S.trying ? 'trying' : (S.ended || 'idle');
+    document.body.dataset.dl = S.dlDone ? '1' : '';
   }
 
   function renderMeta() {
@@ -424,11 +443,11 @@
     const link = (s, text, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.onclick = fn; s.append(b); return b; };
     if (S.demo) { const s = add(''); const t = document.createElement('span'); t.className = 'tag'; t.textContent = T('demoBadge'); s.append(t, ' ' + T('demoNote')); return; }
     if (S.dlDone) { const s = add(T('autoDl') + ' · '); link(s, T('autoDlOff'), () => { S.settings.auto = false; $('setAuto').checked = false; QSSettings.set(S.settings); S.dlDone = false; toast(T('autoDlOffDone')); render(); }); }
-    if (S.applied) { const s = add(T('remembered', { what: S.applied.join('、') }) + ' · '); link(s, T('undo'), undoMemory); }
+    if (S.applied) { const s = add(T('remembered', { what: S.applied.map(([k, v]) => T(k, v)).join(T('listSep')) }) + ' · '); link(s, T('undo'), undoMemory); }
     if (sheet.dupes) add(T('dupes', { n: sheet.dupes }));
     const hid = sheet.columns().filter((c) => c.hidden).length;
     if (hid) { const s = add(T('hiddenCols', { n: hid }) + ' · '); link(s, T('restore'), () => { sheet.showAll(); remember(); render(); }); }
-    if (sheet.rows.length > PREVIEW) add(T('moreRows', { shown: PREVIEW, rows: sheet.rows.length.toLocaleString() }));
+    if (sheet.rows.length > PREVIEW) add(T('moreRows', { shown: PREVIEW, rows: num(sheet.rows.length) }));
     if (!S.applied && sheet.visible().length > 1 && !S.running) add(T('dragTip'));
   }
 
@@ -568,7 +587,7 @@
     render();
   };
   $('tryDemo').onclick = () => {
-    S.demo = true; sheet.reset(); sheet.add(DEMO);
+    S.demo = true; showDemo();
     $('tryDemo').hidden = true; $('gridWrap').hidden = false;
     render(true);
   };
@@ -613,7 +632,7 @@
     const aoa = sheet.toAOA();
     const blob = kind === 'xlsx' ? QSExport.xlsx(aoa, S.host || 'Sheet1') : QSExport.csv(aoa);
     QSExport.download(blob, fileBase() + '.' + kind);
-    toast(T('exported', { n: (aoa.length - 1).toLocaleString() }));
+    toast(T('exported', { n: num(aoa.length - 1) }));
     if (S.demo) return;
     // 下过了 = 人认过这一块；翻完全部页再下的，下回自己开翻
     const extra = { ok: true };
@@ -624,7 +643,7 @@
   }
   $('xlsx').onclick = () => save('xlsx');
   $('csv').onclick = () => save('csv');
-  $('copy').onclick = async () => { const aoa = sheet.toAOA(); await QSExport.copy(QSExport.tsv(aoa)); toast(T('copied', { n: aoa.length - 1 })); };
+  $('copy').onclick = async () => { const aoa = sheet.toAOA(); await QSExport.copy(QSExport.tsv(aoa)); toast(T('copied', { n: num(aoa.length - 1) })); };
 
   // 提示条浮在下载按钮上方：记下底栏有多高
   try { new ResizeObserver(() => document.documentElement.style.setProperty('--foot-h', $('bottom').offsetHeight + 'px')).observe($('bottom')); } catch {}
@@ -634,18 +653,29 @@
   chrome.tabs.onRemoved.addListener((id) => { if (id === tabId) tabClosed(); });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.running) S.stopAsked = true; });
 
-  // 示例数据（假的）：打不开网页时让人一眼看懂这尊是干嘛的
-  const DEMO = (() => {
+  // 示例数据（假的，字在 strings.js 的 demo 里）：打不开网页时让人一眼看懂这尊是干嘛的
+  function showDemo() {
+    const d = QSStrings.demo();
     const keys = ['a|t', 'b|t', 'c|t', 'd|t', 'e|t'];
-    const meta = { 'a|t': { type: 't', hint: '公司' }, 'b|t': { type: 't', hint: '联系人' }, 'c|t': { type: 't', hint: '电话' }, 'd|t': { type: 't', hint: '城市' }, 'e|t': { type: 't', hint: '阶段' } };
-    const co = ['青禾', '远山', '白鹭', '银杏', '北辰', '南风', '松石', '云杉'];
-    const ind = ['科技', '贸易', '物流', '文创', '餐饮', '建材', '咨询', '医疗器械'];
-    const city = ['上海', '深圳', '杭州', '成都', '新加坡', '广州', '苏州', '北京'];
-    const stage = ['初次接触', '已报价', '谈判中', '已成交'];
-    const fam = ['张', '王', '李', '陈', '林', '黄', '周', '吴'];
-    const rows = co.map((c, i) => ({ 'a|t': `${c}${ind[i]}（示例）`, 'b|t': `${fam[i]}小${'一二三四五六七八'[i]}`, 'c|t': `138-0000-${String(1000 + i * 137).slice(-4)}`, 'd|t': city[i], 'e|t': stage[i % 4] }));
-    return { keys, meta, rows };
-  })();
+    const names = ['colCompany', 'colContact', 'colPhone', 'colCity', 'colStage'];
+    const meta = Object.fromEntries(keys.map((k) => [k, { type: 't' }]));
+    const rows = d.co.map((c, i) => ({ 'a|t': QSStrings.fill(d.company, { a: c, b: d.ind[i] }), 'b|t': d.person[i], 'c|t': d.phone[i], 'd|t': d.city[i], 'e|t': d.stage[i % d.stage.length] }));
+    sheet.reset(); sheet.add({ keys, meta, rows });
+    keys.forEach((k, i) => sheet.rename(k, T(names[i])));
+  }
+
+  // 换语言：字全换，自己起的列名跟着换（人改过的不动），别的照旧
+  $('lang').onclick = async (e) => {
+    const b = e.target.closest('button[data-lang]');
+    if (!b || b.dataset.lang === QSStrings.lang) return;
+    await QSStrings.use(b.dataset.lang);
+    applyStatic(); setFormat();
+    sheet.relabel();
+    if (S.demo) showDemo();
+    if (S.emptyKind) renderEmpty();
+    if (S.gone) renderGone();
+    if (S.demo || S.gone || !$('ctl').hidden) render();
+  };
 
   init();
 })();

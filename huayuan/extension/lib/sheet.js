@@ -113,15 +113,15 @@
         const a = info[k], m = this.meta[k] || {};
         let base = a.name || this.guessName(m, a.vals);
         // 拿不准的名字：只能叫「字段N」，或者只能照抄网页里的英文 class
-        a.weak = !a.name && (!base || (base === (m.hint || '').trim() && !RE.cjk.test(base)));
-        if (!base) base = T('colField') + (++field);
+        a.weak = !a.name && (!base || (base === (m.hint || '').trim() && !m.head && !RE.cjk.test(base)));
+        if (!base) base = T('colFieldN', { n: ++field });
         a.name = base;
       }
       for (const k of keys) {
         const nm = (this.user[k] && this.user[k].name) || info[k].name;
         if (info[k].hide && !(this.user[k] && this.user[k].hidden === false)) continue;
         used[nm] = (used[nm] || 0) + 1;
-        if (used[nm] > 1 && !(this.user[k] && this.user[k].name)) info[k].name = nm + used[nm];
+        if (used[nm] > 1 && !(this.user[k] && this.user[k].name)) info[k].name = T('colDup', { name: nm, n: used[nm] });
       }
       this._auto = info;
       return info;
@@ -130,13 +130,13 @@
     guessName(m, vals) {
       const hint = (m.hint || '').trim();
       let base = null;
-      if (hint && RE.cjk.test(hint) && hint.length <= 12) base = hint;
+      if (hint && ((m.head && hint.length <= 40) || (RE.cjk.test(hint) && hint.length <= 12))) base = hint; // 表头（哪种语言都行）、中文提示直接当列名
       if (!base && hint) {
         const h = hint.toLowerCase();
-        for (const [re, nm] of globalThis.QSStrings.hintWords) if (re.test(h)) { base = nm; break; }
+        for (const [re, key] of globalThis.QSStrings.hintWords) if (re.test(h)) { base = T(key); break; }
       }
-      if (m.type === 'href') return base ? base + T('colLink') : T('colLink');
-      if (m.type === 'src') return base ? base + T('colImage') : T('colImage');
+      if (m.type === 'href') return base ? T('colLinkOf', { base }) : T('colLink');
+      if (m.type === 'src') return base ? T('colImageOf', { base }) : T('colImage');
       if (!base && vals.length) {
         const s = vals.slice(0, 50);
         const share = (re) => s.filter((v) => re.test(v)).length / s.length;
@@ -178,6 +178,8 @@
       return v;
     }
 
+    // 换了语言：自己起的列名重新起（人改过的名字不动）
+    relabel() { this._auto = null; }
     rename(key, name) { name = (name || '').trim(); (this.user[key] ||= {}).name = name || undefined; this._auto = null; }
     hide(key) { (this.user[key] ||= {}).hidden = true; }
     showAll() { for (const c of this.columns()) if (c.hidden) (this.user[c.key] ||= {}).hidden = false; }

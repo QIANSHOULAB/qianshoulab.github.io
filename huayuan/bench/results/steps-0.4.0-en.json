@@ -1,0 +1,137 @@
+{
+ "version": "0.4.0",
+ "runs": [
+  {
+   "scene": "客户名单（表格 5 页，改列）",
+   "use": "第一次",
+   "steps": [
+    {
+     "what": "点工具栏图标",
+     "kind": "click"
+    },
+    {
+     "what": "扫一眼认出的表对不对",
+     "kind": "look"
+    },
+    {
+     "what": "删「ID」列",
+     "kind": "click"
+    },
+    {
+     "what": "「Contact」改名「Point of contact」（点、打字、回车）",
+     "kind": "click"
+    },
+    {
+     "what": "把「Email」拖到第一列",
+     "kind": "click"
+    },
+    {
+     "what": "点「开始」",
+     "kind": "click"
+    }
+   ],
+   "clicks": 5,
+   "ms": 4712,
+   "xlsx": "100 Email|Company|Point of contact|Phone|City|Stage|Created",
+   "file": "Huayuan_127.0.0.1_20261103-1522.xlsx"
+  },
+  {
+   "scene": "客户名单（表格 5 页，改列）",
+   "use": "第二次",
+   "steps": [
+    {
+     "what": "点工具栏图标",
+     "kind": "click"
+    },
+    {
+     "what": "扫一眼认出的表对不对",
+     "kind": "look"
+    }
+   ],
+   "clicks": 1,
+   "ms": 3832,
+   "xlsx": "100 Email|Company|Point of contact|Phone|City|Stage|Created",
+   "file": "Huayuan_127.0.0.1_20261103-1522.xlsx"
+  },
+  {
+   "scene": "销售线索（卡片 Ajax 4 页）",
+   "use": "第一次",
+   "steps": [
+    {
+     "what": "点工具栏图标",
+     "kind": "click"
+    },
+    {
+     "what": "扫一眼认出的表对不对",
+     "kind": "look"
+    },
+    {
+     "what": "点「开始」",
+     "kind": "click"
+    }
+   ],
+   "clicks": 2,
+   "ms": 3626,
+   "xlsx": "48 Name|Role|Phone|Email|City|Tag|Score|Image",
+   "file": "Huayuan_127.0.0.1_20261103-1522.xlsx"
+  },
+  {
+   "scene": "销售线索（卡片 Ajax 4 页）",
+   "use": "第二次",
+   "steps": [
+    {
+     "what": "点工具栏图标",
+     "kind": "click"
+    },
+    {
+     "what": "扫一眼认出的表对不对",
+     "kind": "look"
+    }
+   ],
+   "clicks": 1,
+   "ms": 3503,
+   "xlsx": "48 Name|Role|Phone|Email|City|Tag|Score|Image",
+   "file": "Huayuan_127.0.0.1_20261103-1523.xlsx"
+  },
+  {
+   "scene": "商品（无限滚动）",
+   "use": "第一次",
+   "steps": [
+    {
+     "what": "点工具栏图标",
+     "kind": "click"
+    },
+    {
+     "what": "扫一眼认出的表对不对",
+     "kind": "look"
+    },
+    {
+     "what": "点「导出 Excel」",
+     "kind": "click"
+    }
+   ],
+   "clicks": 2,
+   "ms": 5452,
+   "xlsx": "120 Name|Price|Store|Units sold|ID|Rating|Image",
+   "file": "Huayuan_127.0.0.1_20261103-1523.xlsx"
+  },
+  {
+   "scene": "商品（无限滚动）",
+   "use": "第二次",
+   "steps": [
+    {
+     "what": "点工具栏图标",
+     "kind": "click"
+    },
+    {
+     "what": "扫一眼认出的表对不对",
+     "kind": "look"
+    }
+   ],
+   "clicks": 1,
+   "ms": 3845,
+   "xlsx": "120 Name|Price|Store|Units sold|ID|Rating|Image",
+   "file": "Huayuan_127.0.0.1_20261103-1523.xlsx"
+  }
+ ]
+}

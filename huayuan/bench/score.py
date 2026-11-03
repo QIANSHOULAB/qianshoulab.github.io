@@ -26,6 +26,9 @@ def same(out, want):
     return False
 
 SYN = {'城市': {'地区', '发货地'}, '链接': {'名称链接'}}
+# 0.4.0 英文界面：插件自己起的列名是英文（测试站的表头、值里的中文标签照旧是中文），英文名也算叫对
+EN = {'编号': {'ID'}, '公司': {'Company'}, '联系人': {'Contact'}, '电话': {'Phone'}, '邮箱': {'Email'}, '城市': {'City', 'Location'}, '状态': {'Status'},
+      '名称': {'Name'}, '品牌': {'Brand'}, '价格': {'Price'}, '原价': {'Original price'}, '评分': {'Rating'}, '链接': {'Link', 'Name link'}, '图片': {'Image'}}
 
 def score(ans, xlsx):
     wb = openpyxl.load_workbook(xlsx, read_only=True)
@@ -51,7 +54,7 @@ def score(ans, xlsx):
         rate = best / n if n else 0
         cols.append({'col': c, 'hit': best, 'of': n, 'rate': round(rate, 4), 'outCol': head[bi] if bi is not None and bi < len(head) else None, 'bad': n - best})
     wrong = [c for c in cols if c['rate'] < 0.98]
-    named = sum(1 for c in cols if c['outCol'] == c['col'] or c['outCol'] in SYN.get(c['col'], ()))
+    named = sum(1 for c in cols if c['outCol'] == c['col'] or c['outCol'] in SYN.get(c['col'], ()) or c['outCol'] in EN.get(c['col'], ()))
     used = {c['outCol'] for c in cols}
     return {'rowsOut': len(body), 'rowsWant': len(truth), 'miss': miss, 'dup': dup, 'extra': extra,
             'colsOut': len(head), 'colsWant': len(ans['cols']), 'wrongCols': len(wrong),

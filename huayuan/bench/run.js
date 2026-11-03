@@ -15,6 +15,8 @@ const ALL = ['a-table300', 'b-cards', 'c-paged', 'd-ajax', 'e-loadmore', 'f-infi
 const ONLY = (process.argv[5] || ALL.join(',')).split(',');
 const PORT = Number(process.env.PORT) || 8790, BASE = `http://127.0.0.1:${PORT}`;
 const START = { 'c-paged': 'c-paged-1.html' };
+// 0.4.0：插件默认英文，HY_LANG=zh 跑中文界面（跟 0.3.0 比用这个；测试站本身是中文的，不受影响）
+const HY_LANG = process.env.HY_LANG === 'en' ? 'en' : 'zh';
 // 每个场景的翻法：one 单页 / next 点下一页 / more 点「加载更多」 / scroll 无限滚动。next/more 时真人要点的那个按钮
 const KIND = { 'a-table300': 'one', 'b-cards': 'one', 'c-paged': 'next', 'd-ajax': 'next', 'e-loadmore': 'more', 'f-infinite': 'scroll' };
 const NEXT_SEL = { 'c-paged': '.pager a:has-text("下一页")', 'd-ajax': '.pager button.next', 'e-loadmore': '#more' };
@@ -84,7 +86,7 @@ async function main() {
     const tabId = await sw.evaluate(async (u) => (await chrome.tabs.query({})).find((x) => x.url === u).id, page.url());
     let panel;
     // 每个场景都当「第一次用」：清掉上一个场景记下的改法（同一个 127.0.0.1，不清会串）
-    if (TOOL === 'ours') await sw.evaluate(() => chrome.storage.local.clear());
+    if (TOOL === 'ours') await sw.evaluate(async (l) => { await chrome.storage.local.clear(); await chrome.storage.local.set({ lang: l }); }, HY_LANG);
     const click = async (where, sel, label) => { r.clicks++; r.steps.push(label); await where.locator(sel).first().click({ timeout: 15000 }); };
     const t0 = Date.now();
     try {
@@ -117,10 +119,10 @@ async function main() {
         } else {
         await panel.waitForSelector('body[data-ready]', { timeout: 20000 }); // 长页面先试滚一下，看完再算
         const mode = await panel.evaluate(() => document.querySelector('#seg [aria-pressed=true]')?.dataset.mode);
-        const auto = await panel.evaluate(() => /第 \d+ 屏|化完了/.test(document.getElementById('status').textContent));
+        const auto = await panel.evaluate(() => { const s = document.body.dataset.state; return s ? ['running', 'end'].includes(s) : /第 \d+ 屏|化完了/.test(document.getElementById('status').textContent); });
         r.note += `自动选了 ${mode}${auto ? '，自己滚起来了' : ''}；`;
         if (auto) {
-          await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: LIMIT });
+          await panel.waitForFunction((() => { const s = document.body.dataset.state; return s ? ['end', 'stop', 'max'].includes(s) : /化完了|停了/.test(document.getElementById('status').textContent); }), null, { timeout: LIMIT });
         } else if (kind !== 'one') {
           // 自动没选对 → 真人要多点：选模式 / 点选下一页
           if (kind === 'scroll' && mode !== 'scroll') await click(panel, '#seg [data-mode=scroll]', '选「滚动」');
@@ -128,12 +130,12 @@ async function main() {
           const found = await panel.evaluate(() => !document.getElementById('go').disabled);
           if ((kind === 'next' || kind === 'more') && !found) { await click(panel, '#pick', '点「自己点下一页」'); await sleep(300); await click(page, NEXT_SEL[sc], '在网页上点下一页'); await sleep(600); }
           await click(panel, '#go', '开始');
-          await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: LIMIT });
+          await panel.waitForFunction((() => { const s = document.body.dataset.state; return s ? ['end', 'stop', 'max'].includes(s) : /化完了|停了/.test(document.getElementById('status').textContent); }), null, { timeout: LIMIT });
         }
         r.rowsShown = await panel.evaluate(() => document.getElementById('blkN').textContent);
         // 0.3.0：人点过「开始」、化完没标黄，就自己下好了，不用再点导出
         // 状态写着「已下载」才等那份自己下的；没写就照旧点导出（不白等）
-        const autoSaid = await panel.evaluate(() => /已下载/.test(document.getElementById('status').textContent));
+        const autoSaid = await panel.evaluate(() => document.body.dataset.dl === '1' || /已下载/.test(document.getElementById('status').textContent));
         const tw = Date.now();
         while (autoSaid && !r.autoDl && Date.now() - tw < 5000) await sleep(20);
         if (r.autoDl) {

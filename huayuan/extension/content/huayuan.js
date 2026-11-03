@@ -9,7 +9,7 @@
   const BAD_ZONES = 'nav,header,footer,aside,[role=navigation],[role=menu],[role=menubar],[role=tablist],[role=banner],[role=contentinfo]';
   const MAX_ROWS = 5000;
   // 无限滚动到底的告示
-  const END_WORDS = /^[\s\-—–~·.。…!！]*(到底了|到底啦|已经到底了?|已到底部?|没有更多了?|没有更多(内容|数据|结果|商品)了?|暂无更多(内容|数据)?|已加载全部(内容|数据)?|全部加载完毕|已显示全部|没有了|no more( results| items| posts| data)?|end of (results|list|feed)|you'?ve reached the end|that'?s all( for now)?)[\s\-—–~·.。…!！]*$/i;
+  const END_WORDS = /^[\s\-—–~·.。…!！]*(到底了|到底啦|已经到底了?|已到底部?|没有更多了?|没有更多(内容|数据|结果|商品)了?|暂无更多(内容|数据)?|已加载全部(内容|数据)?|全部加载完毕|已显示全部|没有了|no more( results| items| posts| data)?|end of (results|list|feed)|you[’']?ve reached the end|that[’']?s all( for now)?)[\s\-—–~·.。…!！]*$/i;
 
   const LOADING_WORDS = /^[\s.…]*(加载中|正在加载|载入中|努力加载中|loading)[\s.…]*$/i;
 
@@ -118,7 +118,8 @@
     const rec = {}, meta = {};
     const put = (key, v, type, hint) => {
       if (!v) return;
-      if (rec[key] === undefined) { rec[key] = v; meta[key] = { type, hint }; }
+      // 表头来的名字记成 head：哪种语言的表头都照用（0.4.0 之前只信中文表头，英文表头被当成 class 去猜，Stage 猜成了「标签」）
+      if (rec[key] === undefined) { rec[key] = v; meta[key] = hint && typeof hint === 'object' ? { type, hint: hint.th, head: true } : { type, hint }; }
       else if (type === 't' && rec[key] !== v) rec[key] += ' ' + v;
     };
     const walk = (el, path, hint, depth) => {
@@ -133,7 +134,7 @@
         if (seen[step] > 1) step += '#' + seen[step];
         const p = path ? path + '>' + step : step;
         let h = hint;
-        if (headers && depth === 0 && (c.tagName === 'TD' || c.tagName === 'TH')) { h = headers[cellIdx] || h; cellIdx += c.colSpan || 1; }
+        if (headers && depth === 0 && (c.tagName === 'TD' || c.tagName === 'TH')) { h = headers[cellIdx] ? { th: headers[cellIdx] } : h; cellIdx += c.colSpan || 1; }
         h = fieldHint(c) || h;
         visit(c, p, h, depth + 1);
       }

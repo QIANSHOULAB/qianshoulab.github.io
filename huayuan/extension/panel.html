@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>化缘僧</title>
+<title>Huayuan</title>
 <link rel="stylesheet" href="lib/ui.css">
 <link rel="stylesheet" href="panel.css">
 </head>
@@ -15,8 +15,12 @@
       <b data-t="hyName"></b>
       <span id="host"></span>
     </div>
+    <div class="seg lang" id="lang" role="group" data-t-aria="langLabel">
+      <button type="button" data-lang="en" lang="en">EN</button>
+      <button type="button" data-lang="zh" lang="zh-CN">中文</button>
+    </div>
     <div class="top-r">
-      <button type="button" class="icon-btn" id="gear" data-t-aria="settings">
+      <button type="button" class="icon-btn" id="gear" data-t-aria="settings" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
       </button>
       <div class="pop" id="pop" hidden>

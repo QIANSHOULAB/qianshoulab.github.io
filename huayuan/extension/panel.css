@@ -8,10 +8,13 @@
 .ttl b{font-size:15px;font-weight:600;flex:none}
 .ttl span{color:var(--fg-2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top-r{position:relative}
+/* 语言：右上角 EN / 中文，选过就记住（chrome.storage.local 的 lang） */
+.lang{flex:none}
+.lang button{flex:none;padding:0 10px}
 .icon-btn{width:36px;height:36px;border-radius:var(--r-btn);display:grid;place-items:center;color:var(--fg-2);transition:background-color var(--t) var(--ease)}
 .icon-btn:hover,.icon-btn[aria-expanded="true"]{background:var(--fill)}
 .icon-btn svg{width:18px;height:18px}
-.pop{position:absolute;right:0;top:44px;width:272px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-radius:var(--r-btn);box-shadow:0 12px 40px rgba(0,0,0,.16),0 0 0 .5px var(--line);padding:0 0 0 16px}
+.pop{position:absolute;right:0;top:44px;width:300px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-radius:var(--r-btn);box-shadow:0 12px 40px rgba(0,0,0,.16),0 0 0 .5px var(--line);padding:0 0 0 16px}
 :root[data-theme="dark"] .pop{background:rgba(44,44,46,.86)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pop{background:rgba(44,44,46,.86)}}
 .pop .row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding-right:12px;font-size:15px}
