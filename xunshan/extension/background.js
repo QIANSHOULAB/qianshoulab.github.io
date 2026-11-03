@@ -96,11 +96,11 @@ async function runDue() {
 }
 
 /* ---------- 看不见的小窗：只对插件自己发起、只对用户加过的网站，去掉「不许被嵌」的响应头 ---------- */
-async function syncFrameRules() {
+async function syncFrameRules(extra) {
   try {
     const ws = await store.get(KEY, {});
     // 小窗要读、要拍照的网站：就是盯梢里的这些网站
-    const hosts = [...new Set(Object.values(ws).map(w => { try { return new URL(w.url).hostname; } catch (e) { return null; } }).filter(Boolean))];
+    const hosts = [...new Set(Object.values(ws).map(w => w.url).concat(extra || []).map(u => { try { return new URL(u).hostname; } catch (e) { return null; } }).filter(Boolean))];
     const old = (await chrome.declarativeNetRequest.getSessionRules()).map(r => r.id);
     const rules = hosts.length ? [{
       id: 1, priority: 1,
@@ -114,7 +114,7 @@ let frameScriptP = null;
 function ensureFrameScript() { return frameScriptP || (frameScriptP = registerFrameScript().finally(() => { frameScriptP = null; })); }
 async function registerFrameScript() {
   try {
-    const js = ['lib/page.js', 'lib/shot.js', 'content/frame.js'];
+    const js = ['lib/page.js', 'lib/detect.js', 'lib/shot.js', 'content/frame.js'];
     const has = await chrome.scripting.getRegisteredContentScripts({ ids: ['xs-frame'] });
     if (has.length && JSON.stringify(has[0].js) === JSON.stringify(js)) return;
     if (has.length) await chrome.scripting.unregisterContentScripts({ ids: ['xs-frame'] });
@@ -165,7 +165,7 @@ async function viaFetch(w, cache) {
 // 同一网址这一轮有几条，就一个小窗一次读齐；字变了的顺手拍照。
 const frameItem = (w, snap) => ({ k: w.id, spec: specOf(w), snap: snap || true, prev: w.lastText, lines: !w.selector && (!w.cond || w.cond.type === 'any') });
 async function render(url, items) {
-  await syncFrameRules();
+  await syncFrameRules([url]);
   await ensureOffscreen();
   return chrome.runtime.sendMessage({ target: 'offscreen', type: 'render', url, items, maxMs: 7000 });
 }
@@ -237,7 +237,7 @@ function check(id, cache) {
 const BROKEN_AFTER = 3; // 连着几回没看成，就发通知说这条坏了
 async function doCheck(id, cache) {
   const w = (await store.get(KEY, {}))[id];
-  if (!w) return;
+  if (!w || w.demo) return w;
   const now0 = Date.now();
   const pat = originPat(w.url);
   if (!(await chrome.permissions.contains({ origins: [pat] }))) return await fail(w, { err: 'perm' });
@@ -279,7 +279,7 @@ async function doCheck(id, cache) {
     }
   }
   const saved = await save(id, patch);
-  if (hit && saved) notify(saved, next, patch.lastNew);
+  if (hit && saved) notify(saved, next, patch.lastNew, { text: w.lastText, num: w.lastNum });
   // 记了一笔就配一张照：小窗读的时候已经拍了；直接抓的另排队拍
   if (logged && saved) { if (r.shot) await saveShot(id, now, r.shot); else if (mode === 'fetch' && r.html) snapLater(saved, now, r.html); }
   return saved;
@@ -308,11 +308,11 @@ async function pushHist(id, e) {
 }
 
 /* ---------- 叫人 ---------- */
-function notify(w, next, added) {
+function notify(w, next, added, prev) {
   chrome.notifications.create('w:' + w.id + ':' + Date.now(), {
     type: 'basic', iconUrl: 'icons/128.png', priority: 2,
     title: t(w.selector ? 'notifTitle' : 'notifTitleNew', w.label || w.title || hostOf(w.url)),
-    message: rules.alertBody(w, next, added),
+    message: rules.alertBody(w, next, added, prev),
     contextMessage: hostOf(w.url) + ' · ' + t('notifOpen')
   });
 }
@@ -333,6 +333,11 @@ async function openWatch(id, nid) {
   if (tab.windowId != null) chrome.windows.update(tab.windowId, { focused: true }).catch(() => {});
   return tab.id;
 }
+// 放行了某个网站：等着权限的那几条马上去看第一眼
+chrome.permissions.onAdded.addListener(async p => {
+  const ok = new Set(p.origins || []);
+  for (const w of Object.values(await store.get(KEY, {}))) if (w.lastText == null && (w.err === 'perm' || !w.err) && ok.has(originPat(w.url))) check(w.id);
+});
 chrome.notifications.onClicked.addListener(nid => {
   const [kind, id] = nid.split(':');
   if (kind === 'e') { chrome.notifications.clear(nid); chrome.tabs.create({ url: chrome.runtime.getURL('app.html#' + id) }); return; }
@@ -348,20 +353,81 @@ async function badge() {
 
 /* ---------- 消息 ---------- */
 const handlers = {
-  async add({ watch }) {
+  // 加一处。没给条件就按认出来的是啥定默认（价格降了叫、缺货等它没了叫……）；频率跟上回选的一样
+  async add({ watch, wait, hold }) {
     const set = await QS.settings.all();
     const id = uid();
+    const kind = watch.kind || (watch.selector ? 'pick' : 'page');
     const w = Object.assign({
-      id, url: watch.url, title: watch.title || hostOf(watch.url), label: watch.label || '',
+      id, url: watch.url, title: watch.title || hostOf(watch.url), label: watch.label || '', kind,
       selector: watch.selector || null, pickedText: watch.pickedText || null,
       alts: Array.isArray(watch.alts) ? watch.alts.slice(0, 6) : [], anchor: watch.anchor || null,
       numeric: !!watch.selector && page.parseNumber(watch.pickedText) != null, // 框的时候是数字（价格、名额），找的时候就认数字
-      interval: watch.interval || set.defaultInterval, cond: watch.cond || { type: 'any' },
-      mode: 'fetch', paused: false, created: Date.now(), nextCheck: Date.now(), lastText: null
+      interval: watch.interval || set.defaultInterval,
+      cond: watch.cond || (watch.selector ? rules.condFor(kind, watch.pickedText, page.parseNumber(watch.pickedText)) : { type: 'any' }),
+      mode: 'fetch', paused: false, created: Date.now(), nextCheck: Date.now() + (hold ? 60000 : 0), lastText: null
     });
     await store.update(KEY, ws => { ws[id] = w; return ws; }, {});
+    if (hold) return w; // 还在等人点「允许」：放行了再看（permissions.onAdded）
+    if (wait === false) { check(id); return w; }
     const done = await check(id);
     return done || w;
+  },
+  // 一次加一串网址：每个网址抓回来自己认价格、库存（同一网站以前盯过的那块优先），认不出的盯整页
+  async addMany({ urls, below }) {
+    const out = [];
+    const lim = page.parseNumber(below);
+    for (const url of urls) {
+      const ws = await store.get(KEY, {});
+      const known = rules.knownFor(ws, url);
+      let cands = [], title = '';
+      const res = await grab(url);
+      if (!res.err && res.ok && !page.detectWall(res.html, res.status)) {
+        await ensureOffscreen();
+        const r = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'detect', html: res.html, known }).catch(() => null);
+        if (r) { cands = r.cands || []; title = r.title || ''; }
+      }
+      if (!cands.length) {
+        // 靠脚本出字的页面：在看不见的小窗里认
+        const R = await render(url, [{ k: 'd', detect: true, known, spec: {} }]).catch(() => null);
+        const p = R && R.parts && R.parts.d;
+        if (p && p.cands) { cands = p.cands; title = R.title || title; }
+      }
+      const c = cands.find(x => x.kind === 'price' && lim != null) || cands[0];
+      const kindName = k => ({ price: t('kindPrice'), stock: t('kindStock'), seats: t('kindSeats') }[k] || '');
+      const base = (title || hostOf(url)).replace(/\s+/g, ' ').trim().slice(0, 50);
+      const watch = c ? {
+        url, title, kind: c.kind === 'known' ? 'pick' : c.kind, label: kindName(c.kind) ? base + ' · ' + kindName(c.kind) : (c.label || base),
+        selector: c.selector, alts: c.alts, anchor: c.anchor, pickedText: c.text,
+        cond: c.kind === 'price' && lim != null ? { type: 'below', value: lim } : undefined
+      } : { url, title, selector: null, label: base };
+      const w = await handlers.add({ watch, wait: false });
+      out.push({ url, id: w.id, kind: c ? c.kind : 'page', text: c ? c.text : '' });
+    }
+    syncFrameRules();
+    return { added: out };
+  },
+  // 示例：一条已经降了价的盯梢，一点就看到结果长啥样。不会真去看
+  async demo() {
+    const ws = await store.get(KEY, {});
+    const old = Object.values(ws).find(w => w.demo);
+    if (old) return old;
+    const id = uid(), now = Date.now();
+    const w = {
+      id, demo: true, url: 'https://qianshoulab.github.io/xunshan/', title: t('demoLabel'), label: t('demoLabel'), kind: 'price',
+      selector: '.price', alts: [], anchor: null, numeric: true, interval: 30, cond: { type: 'below', value: 1000 },
+      mode: 'fetch', paused: true, created: now - 3 * 3600e3, lastCheck: now - 60e3, lastText: '¥899.00', lastNum: 899,
+      lastChange: now - 60e3, lastHit: now - 60e3, unread: true
+    };
+    await store.update(KEY, x => { x[id] = w; return x; }, {});
+    await store.set(HKEY(id), [
+      { t: now - 3 * 3600e3, text: '¥1,299.00', num: 1299, first: true },
+      { t: now - 2 * 3600e3, text: '¥1,099.00', num: 1099, hit: false },
+      { t: now - 60e3, text: '¥899.00', num: 899, hit: true }
+    ]);
+    badge();
+    notify(w, { text: w.lastText, num: 899 }, null, { num: 1099 });
+    return w;
   },
   async checkNow({ id }) { await save(id, { checkingSince: Date.now() }); const r = await check(id); await save(id, { checkingSince: null }); return r; },
   async patch({ id, patch }) {
@@ -371,9 +437,26 @@ const handlers = {
       const w = (await store.get(KEY, {}))[id];
       if (w) p.nextCheck = (w.lastCheck || Date.now()) + (p.interval || w.interval) * MIN;
     }
+    if ('interval' in p) await QS.settings.set({ defaultInterval: p.interval }); // 记住：下回新加的也这么勤
     return save(id, p);
   },
-  async remove({ id }) { await store.update(KEY, ws => { delete ws[id]; return ws; }, {}); await store.remove([HKEY(id), SKEY(id)]); badge(); syncFrameRules(); return true; },
+  // 删：把删掉的整条（含记录、照片）交回去，界面上点「撤销」原样放回来
+  async remove({ id }) {
+    let gone = null;
+    await store.update(KEY, ws => { gone = ws[id] || null; delete ws[id]; return ws; }, {});
+    const keep = await store.getMany([HKEY(id), SKEY(id)]);
+    await store.remove([HKEY(id), SKEY(id)]); badge(); syncFrameRules();
+    return gone ? { w: gone, h: keep[HKEY(id)] || [], s: keep[SKEY(id)] || null } : true;
+  },
+  async restore({ snap }) {
+    if (!snap || !snap.w || !snap.w.id) return false;
+    const id = snap.w.id;
+    await store.update(KEY, ws => { ws[id] = snap.w; return ws; }, {});
+    await store.set(HKEY(id), snap.h || []);
+    if (snap.s) await store.set(SKEY(id), snap.s);
+    badge(); syncFrameRules();
+    return true;
+  },
   async markAllRead() { await store.update(KEY, ws => { for (const w of Object.values(ws)) { w.unread = false; w.fresh = false; } return ws; }, {}); badge(); return true; },
   async open({ id }) { return openWatch(id); },
   async import({ data }) {
@@ -386,7 +469,7 @@ const handlers = {
       if (!x || !/^https?:/.test(x.url) || seen.has(sig(x))) { skipped++; continue; }
       const id = uid();
       const w = {
-        id, url: x.url, title: x.title || hostOf(x.url), label: x.label || '', selector: x.selector || null, pickedText: null,
+        id, url: x.url, title: x.title || hostOf(x.url), label: x.label || '', kind: x.kind || (x.selector ? 'pick' : 'page'), selector: x.selector || null, pickedText: null,
         numeric: !!x.numeric, alts: Array.isArray(x.alts) ? x.alts.slice(0, 6) : [],
         anchor: x.anchor && typeof x.anchor === 'object' ? { shape: String(x.anchor.shape || ''), before: String(x.anchor.before || '') } : null,
         interval: rules.IV.includes(+x.interval) ? +x.interval : 30, cond: x.cond || { type: 'any' }, mode: x.mode === 'tab' || x.mode === 'frame' ? 'frame' : 'fetch',
@@ -404,6 +487,7 @@ const handlers = {
     const ws = await store.get(KEY, {});
     const list = [];
     for (const w of Object.values(ws)) {
+      if (w.demo) continue;
       const { id, checkingSince, unread, fresh, err, errCount, errDetail, errNotified, nextCheck, lastCheck, pickedText, ...keep } = w;
       keep.history = await store.get(HKEY(id), []);
       list.push(keep);

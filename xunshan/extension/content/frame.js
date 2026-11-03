@@ -15,6 +15,7 @@
       let r;
       try {
         if (out.wall) r = { found: false, text: '' };
+        else if (q.detect) r = { found: true, cands: globalThis.QS.detect.serialize(document, q.known || []) };
         else {
           r = P.readPart(document, q.spec, true);
           const el = r.el; delete r.el;

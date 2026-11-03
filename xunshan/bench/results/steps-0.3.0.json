@@ -1,0 +1,149 @@
+{
+ "version": "0.3.0",
+ "first": {
+  "steps": [
+   {
+    "n": 1,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 2,
+    "what": "点认出来的「价格 ¥…」那行（就盯上了）",
+    "kind": "click"
+   },
+   {
+    "n": 3,
+    "what": "浏览器问权限，点「允许」",
+    "kind": "perm"
+   },
+   {
+    "n": 4,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 5,
+    "what": "打 1000 回车",
+    "kind": "type"
+   },
+   {
+    "n": 6,
+    "what": "点「每 30 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 7,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 8,
+    "what": "弹了通知「降到 899」，点通知去看",
+    "kind": "notif"
+   }
+  ],
+  "total": 8,
+  "clicks": 7,
+  "typed": 1,
+  "result": {
+   "ok": true,
+   "cond": {
+    "type": "below",
+    "value": 1000
+   },
+   "interval": 5
+  }
+ },
+ "secondA": {
+  "steps": [
+   {
+    "n": 1,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 2,
+    "what": "点认出来的「价格 ¥…」那行（就盯上了）",
+    "kind": "click"
+   },
+   {
+    "n": 3,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 4,
+    "what": "打 420 回车",
+    "kind": "type"
+   }
+  ],
+  "total": 4,
+  "clicks": 3,
+  "typed": 1,
+  "result": {
+   "ok": true,
+   "cond": {
+    "type": "below",
+    "value": 420
+   },
+   "interval": 5
+  }
+ },
+ "secondB": {
+  "steps": [
+   {
+    "n": 1,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 2,
+    "what": "点「全部」",
+    "kind": "click"
+   },
+   {
+    "n": 3,
+    "what": "点「加一串」",
+    "kind": "click"
+   },
+   {
+    "n": 4,
+    "what": "贴 8 个网址",
+    "kind": "type"
+   },
+   {
+    "n": 5,
+    "what": "「低于多少叫」打 100",
+    "kind": "type"
+   },
+   {
+    "n": 6,
+    "what": "点「盯这 8 个」",
+    "kind": "click"
+   }
+  ],
+  "total": 6,
+  "clicks": 4,
+  "typed": 2,
+  "result": {
+   "ok": true,
+   "n": 8,
+   "cond": {
+    "type": "below",
+    "value": 100
+   },
+   "interval": 5,
+   "kinds": [
+    "价格",
+    "价格",
+    "价格",
+    "价格",
+    "价格",
+    "价格",
+    "价格",
+    "价格"
+   ]
+  }
+ }
+}

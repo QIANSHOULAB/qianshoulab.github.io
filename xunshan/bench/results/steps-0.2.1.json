@@ -1,0 +1,469 @@
+{
+ "version": "0.2.1",
+ "first": {
+  "steps": [
+   {
+    "n": 1,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 2,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 3,
+    "what": "浏览器问权限，点「允许」",
+    "kind": "perm"
+   },
+   {
+    "n": 4,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 5,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 6,
+    "what": "打 1000",
+    "kind": "type"
+   },
+   {
+    "n": 7,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 8,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 9,
+    "what": "点「开盯」",
+    "kind": "click"
+   },
+   {
+    "n": 10,
+    "what": "弹了通知「降到 899」，点通知去看",
+    "kind": "notif"
+   }
+  ],
+  "total": 10,
+  "clicks": 9,
+  "typed": 1,
+  "result": {
+   "ok": true,
+   "cond": {
+    "type": "below",
+    "value": 1000
+   },
+   "interval": 5
+  }
+ },
+ "secondA": {
+  "steps": [
+   {
+    "n": 1,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 2,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 3,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 4,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 5,
+    "what": "打 420",
+    "kind": "type"
+   },
+   {
+    "n": 6,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 7,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 8,
+    "what": "点「开盯」",
+    "kind": "click"
+   }
+  ],
+  "total": 8,
+  "clicks": 7,
+  "typed": 1,
+  "result": {
+   "ok": true,
+   "cond": {
+    "type": "below",
+    "value": 420
+   },
+   "interval": 5
+  }
+ },
+ "secondB": {
+  "steps": [
+   {
+    "n": 1,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 2,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 3,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 4,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 5,
+    "what": "打 100",
+    "kind": "type"
+   },
+   {
+    "n": 6,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 7,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 8,
+    "what": "点「开盯」",
+    "kind": "click"
+   },
+   {
+    "n": 9,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 10,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 11,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 12,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 13,
+    "what": "打 100",
+    "kind": "type"
+   },
+   {
+    "n": 14,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 15,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 16,
+    "what": "点「开盯」",
+    "kind": "click"
+   },
+   {
+    "n": 17,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 18,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 19,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 20,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 21,
+    "what": "打 100",
+    "kind": "type"
+   },
+   {
+    "n": 22,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 23,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 24,
+    "what": "点「开盯」",
+    "kind": "click"
+   },
+   {
+    "n": 25,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 26,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 27,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 28,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 29,
+    "what": "打 100",
+    "kind": "type"
+   },
+   {
+    "n": 30,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 31,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 32,
+    "what": "点「开盯」",
+    "kind": "click"
+   },
+   {
+    "n": 33,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 34,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 35,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 36,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 37,
+    "what": "打 100",
+    "kind": "type"
+   },
+   {
+    "n": 38,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 39,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 40,
+    "what": "点「开盯」",
+    "kind": "click"
+   },
+   {
+    "n": 41,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 42,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 43,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 44,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 45,
+    "what": "打 100",
+    "kind": "type"
+   },
+   {
+    "n": 46,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 47,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 48,
+    "what": "点「开盯」",
+    "kind": "click"
+   },
+   {
+    "n": 49,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 50,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 51,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 52,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 53,
+    "what": "打 100",
+    "kind": "type"
+   },
+   {
+    "n": 54,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 55,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 56,
+    "what": "点「开盯」",
+    "kind": "click"
+   },
+   {
+    "n": 57,
+    "what": "点工具栏里的巡山僧",
+    "kind": "click"
+   },
+   {
+    "n": 58,
+    "what": "点「框选一块」",
+    "kind": "click"
+   },
+   {
+    "n": 59,
+    "what": "在网页上点中价格",
+    "kind": "click"
+   },
+   {
+    "n": 60,
+    "what": "点「低于」",
+    "kind": "click"
+   },
+   {
+    "n": 61,
+    "what": "打 100",
+    "kind": "type"
+   },
+   {
+    "n": 62,
+    "what": "点频率下拉",
+    "kind": "click"
+   },
+   {
+    "n": 63,
+    "what": "选「每 5 分钟」",
+    "kind": "click"
+   },
+   {
+    "n": 64,
+    "what": "点「开盯」",
+    "kind": "click"
+   }
+  ],
+  "total": 64,
+  "clicks": 56,
+  "typed": 8,
+  "result": {
+   "ok": true,
+   "n": 8,
+   "cond": {
+    "type": "below",
+    "value": 100
+   },
+   "interval": 5,
+   "kinds": [
+    "价格",
+    "价格",
+    "价格",
+    "价格",
+    "价格",
+    "价格",
+    "价格",
+    "价格"
+   ]
+  }
+ }
+}

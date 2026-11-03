@@ -4,120 +4,132 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>巡山僧</title>
-<meta name="description" content="巡山僧 - 降价补货提醒。浏览器插件：框选网页任意一块，降价、补货、上新一变就弹通知。免费，数据只在你自己的浏览器里。">
-<meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+<meta name="description" content="巡山僧 - 降价补货提醒。浏览器插件：打开商品页点一下，价格、库存自己认，降价、补货、上新一变就弹通知。免费，数据只在你自己的浏览器里。">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="extension/icons/32.png">
+<link rel="icon" href="extension/icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="extension/icons/32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="extension/icons/128.png">
 <style>
-/* 布局：居中单栏（最宽 980），首屏大字 + 下载；三段图文交替；能力小格；安装步骤；页脚 */
+/* 照 _ops/设计规范.md：系统字、一个主色（巡山僧靛）、其余全灰；居中单栏最宽 980；首屏一句大标题、一句副标题、主操作 */
 :root{
-  --bg:#F5F5F7; --card:#FFFFFF; --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#A1A1A6; --sep:rgba(60,60,67,.14);
-  --fill:rgba(118,118,128,.12); --accent:#0071E3; --accent-h:#0077ED; --accent-tint:rgba(0,113,227,.10);
-  --shadow:0 2px 6px rgba(0,0,0,.04),0 18px 48px rgba(0,0,0,.08);
-  --f:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
-  --fn:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --bg:#ffffff; --bg-group:#f5f5f7; --card:#ffffff; --card-2:#fbfbfd;
+  --fg:#1d1d1f; --fg-2:#6e6e73; --fg-3:#86868b;
+  --line:rgba(0,0,0,.08); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.2);
+  --accent:#4e5bd6; --accent-press:#4350c4; --link:#4e5bd6; --on-accent:#ffffff;
+  --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
+  --glass:rgba(255,255,255,.72);
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#000000; --card:#1C1C1E; --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.55);
-  --fill:rgba(118,118,128,.24); --accent:#0A84FF; --accent-h:#409CFF; --accent-tint:rgba(10,132,255,.18);
-  --shadow:0 0 0 .5px rgba(255,255,255,.1); color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#000000; --card:#1C1C1E; --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.55);
-  --fill:rgba(118,118,128,.24); --accent:#0A84FF; --accent-h:#409CFF; --accent-tint:rgba(10,132,255,.18); --shadow:0 0 0 .5px rgba(255,255,255,.1); color-scheme:dark}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
+  --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
+  --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
+  --accent:#5562de; --accent-press:#6470ea; --link:#8c9aff;
+  --shadow:none; --glass:rgba(22,22,24,.72); color-scheme:dark;
+}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.5 var(--f);-webkit-font-smoothing:antialiased}
-a{color:var(--accent);text-decoration:none}
+body{margin:0;background:var(--bg-group);color:var(--fg);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
 img{display:block;max-width:100%;height:auto}
 .wrap{max-width:980px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left))}
-.nav{display:flex;align-items:center;justify-content:space-between;height:52px;font-size:13px;color:var(--fg2)}
-.nav a{color:var(--fg2)}
+.nav{position:sticky;top:0;z-index:10;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:48px;font-size:13px}
+.nav a{color:var(--fg-2);display:inline-flex;align-items:center;min-height:44px}
 .nav a:hover{color:var(--fg)}
-.hero{text-align:center;padding:56px 0 24px}
-.hero .ic{width:96px;height:96px;margin:0 auto 22px;border-radius:22px;box-shadow:0 10px 30px rgba(0,88,214,.28)}
-.hero h1{margin:0;font-size:clamp(44px,8vw,72px);line-height:1.05;font-weight:700;letter-spacing:-.01em}
-.hero .sl{margin:12px 0 0;font-size:clamp(22px,3.4vw,30px);font-weight:600;color:var(--fg)}
-.hero .tg{margin:10px 0 0;font-size:19px;color:var(--fg2)}
-.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
-.btn{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 24px;border-radius:999px;font-size:17px;font-weight:500;background:var(--fill);color:var(--accent)}
-.btn.pri{background:var(--accent);color:#fff}
-.btn.pri:hover{background:var(--accent-h)}
-.btn svg{width:18px;height:18px}
-.meta{margin-top:14px;font-size:13px;color:var(--fg3)}
-.shot{margin:44px auto 0;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
-.sec{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;padding:72px 0;border-top:1px solid var(--sep)}
-.sec:first-of-type{border-top:0}
+.nav b{display:inline-flex;align-items:center;gap:8px;color:var(--fg);font-weight:600;font-size:15px}
+.nav b img{width:24px;height:24px}
+.hero{text-align:center;padding:64px 0 32px}
+.hero .ic{width:96px;height:96px;margin:0 auto 24px}
+.hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.hero .sl{margin:12px 0 0;font-size:clamp(22px,3vw,28px);line-height:1.2;font-weight:600}
+.hero .tg{margin:12px auto 0;max-width:560px;font-size:17px;color:var(--fg-2)}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border-radius:14px;font-size:17px;font-weight:600;background:var(--fill);color:var(--fg);transition:background var(--t) var(--ease)}
+.btn:hover{background:var(--fill-2)}
+.btn.pri{background:var(--accent);color:var(--on-accent)}
+.btn.pri:hover{background:var(--accent-press)}
+.btn svg{width:20px;height:20px}
+.meta{margin-top:12px;font-size:13px;color:var(--fg-3);font-variant-numeric:tabular-nums}
+.shot{margin:48px auto 0;border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
+@media (prefers-color-scheme:dark){.shot,.pic{box-shadow:0 0 0 1px var(--line)}}
+.sec{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;padding:64px 0}
+.sec+.sec{border-top:1px solid var(--line)}
 .sec.flip .txt{order:2}
-.sec h2{margin:0;font-size:clamp(28px,4vw,40px);line-height:1.15;font-weight:700;letter-spacing:-.005em}
-.sec p{margin:14px 0 0;color:var(--fg2);font-size:18px}
-.sec .pic{border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
-.sec .pic.phone{max-width:340px;margin:0 auto}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:12px 0 72px}
-.g{background:var(--card);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
-.g b{display:block;font-size:17px}
-.g span{display:block;margin-top:4px;font-size:14px;color:var(--fg2)}
-.inst{background:var(--card);border-radius:22px;padding:40px clamp(20px,5vw,56px);box-shadow:var(--shadow)}
-.inst h2{margin:0;font-size:32px}
-.inst .sub{margin:6px 0 0;color:var(--fg2)}
-.inst ol{list-style:none;counter-reset:s;margin:28px 0 0;padding:0;display:grid;gap:16px}
-.inst li{counter-increment:s;display:flex;gap:14px;align-items:flex-start}
-.inst li::before{content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--accent-tint);color:var(--accent);font:600 14px var(--fn);margin-top:1px}
-code{font:500 15px ui-monospace,"SF Mono",Menlo,Consolas,monospace;background:var(--fill);padding:2px 7px;border-radius:6px;user-select:all}
-.inst .later{margin-top:24px;font-size:14px;color:var(--fg3)}
-.foot{margin:64px 0 0;padding:28px 0 calc(40px + env(safe-area-inset-bottom));border-top:1px solid var(--sep);text-align:center;font-size:13px;line-height:1.9;color:var(--fg2)}
+.sec h2{margin:0;font-size:clamp(28px,4vw,34px);line-height:1.2;font-weight:700}
+.sec p{margin:12px 0 0;color:var(--fg-2)}
+.pic{border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
+.pic.phone{max-width:380px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:32px 0 64px;border-radius:var(--r-card);overflow:hidden;background:var(--line);box-shadow:var(--shadow)}
+.g{background:var(--card);padding:24px}
+.g b{display:block;font-size:17px;font-weight:600}
+.g span{display:block;margin-top:4px;font-size:15px;color:var(--fg-2)}
+.inst{background:var(--card);border-radius:var(--r-card);padding:32px clamp(16px,5vw,48px);box-shadow:var(--shadow)}
+.inst h2{margin:0;font-size:28px;line-height:1.2}
+.inst .sub{margin:8px 0 0;color:var(--fg-2)}
+.inst ol{list-style:none;counter-reset:s;margin:24px 0 0;padding:0;display:grid;gap:16px}
+.inst li{counter-increment:s;display:flex;gap:12px;align-items:flex-start}
+.inst li::before{content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--fill);color:var(--fg);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+code{font:400 15px ui-monospace,"SF Mono",Menlo,Consolas,monospace;background:var(--fill);padding:2px 8px;border-radius:var(--r-chip);user-select:all;-webkit-user-select:all}
+.inst .later{margin-top:24px;font-size:15px;color:var(--fg-2)}
+.foot{margin:48px 0 0;padding:32px 0 calc(48px + env(safe-area-inset-bottom));border-top:1px solid var(--line);text-align:center;font-size:13px;line-height:1.9;color:var(--fg-2)}
 .foot .mail{user-select:all;-webkit-user-select:all;color:var(--fg)}
 @media (max-width:760px){
-  .hero{padding-top:28px}
+  .hero{padding-top:48px}
   .sec{grid-template-columns:1fr;gap:24px;padding:48px 0}
   .sec.flip .txt{order:0}
   .grid{grid-template-columns:1fr 1fr}
 }
-@media (max-width:420px){.grid{grid-template-columns:1fr}}
+@media (max-width:440px){.grid{grid-template-columns:1fr}.btn{width:100%}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
+<nav class="nav"><div class="wrap"><a href="https://qianshoulab.github.io/">千手院</a><b><img src="extension/icons/icon.svg" alt="">巡山僧</b><a href="#install">怎么装</a></div></nav>
 <div class="wrap">
-  <nav class="nav"><a href="https://qianshoulab.github.io/">千手院</a><a href="#install">怎么装</a></nav>
-
   <header class="hero">
-    <img class="ic" src="extension/icons/128.png" width="96" height="96" alt="">
-    <h1>巡山僧</h1>
-    <p class="sl">施主去睡，贫僧盯着。</p>
-    <p class="tg">降价、补货、上新、放名额，一变就叫你。</p>
+    <img class="ic" src="extension/icons/icon.svg" width="96" height="96" alt="">
+    <h1><span style="white-space:nowrap">施主去睡，</span><span style="white-space:nowrap">贫僧盯着。</span></h1>
+    <p class="sl">降价、补货、上新，一变就叫你。</p>
+    <p class="tg">打开商品页点一下贫僧，价格、库存自己认，点那行就盯上。</p>
     <div class="cta">
-      <a class="btn pri" href="dist/xunshan-0.2.1.zip" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>下载插件</a>
+      <a class="btn pri" href="dist/xunshan-0.3.0.zip" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>下载插件</a>
       <a class="btn" href="#install">怎么装</a>
     </div>
-    <div class="meta">0.2.1 · Chrome / Edge 120 起 · 免费 · 60 KB</div>
+    <div class="meta">0.3.0 · Chrome / Edge 120 起 · 免费</div>
     <div class="shot">
-      <picture><source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/app.webp" width="1600" height="1025" alt="巡山僧总览：价格从 1,099 降到 899，红绿对比显示改了哪"></picture>
+      <picture><source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/app.webp" width="1280" height="800" alt="巡山僧总览：价格从 1,099 降到 899，红绿对比显示改了哪"></picture>
     </div>
   </header>
 
   <section class="sec">
-    <div class="txt"><h2>点一下，<br>框一块。</h2><p>价格、库存、剩余名额，鼠标点中就算。认出数字就能设线：低于多少才叫，别的波动贫僧替你忍着。</p></div>
-    <div class="pic"><img src="img/pick.webp" width="850" height="740" alt="在商品页上框选价格，面板认出数字 1,299，设低于 1000 再叫"></div>
+    <div class="txt"><h2>点一下，就盯上。</h2><p>价格、库存、剩余名额，贫僧自己认，不用你框。盯上默认降价就叫、缺货的等到货再叫；要设线，点「低于」打个数。认不出的，自己框一块也行。</p></div>
+    <div class="pic phone"><picture><source srcset="img/popup-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/popup.webp" width="380" height="655" alt="巡山僧弹窗：认出价格 ¥1,299 和库存「缺货」，点价格那行就盯上了"></picture></div>
   </section>
 
   <section class="sec flip">
-    <div class="txt"><h2>变了就叫，<br>还留了照。</h2><p>弹系统通知，点一下直接打开那一页。变的那一刻顺手拍一张，之前、之后并排摆着，赖不掉。</p></div>
-    <div class="pic"><picture><source srcset="img/compare-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/compare.webp" width="1100" height="429" alt="变化记录：价格 1,099 降到 899，之前之后两张截图并排"></picture></div>
+    <div class="txt"><h2>一串网址，<br>一次贴。</h2><p>同一家店十个商品，贴进来，填一个「低于多少」，一下全盯上。同一个网站上回框过哪块，这回照着认。</p></div>
+    <div class="pic"><picture><source srcset="img/batch-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/batch.webp" width="1104" height="383" alt="一次贴 8 个网址，低于 100 就叫，点「盯这 8 个」"></picture></div>
   </section>
 
   <section class="sec">
-    <div class="txt"><h2>一眼看完<br>整座山。</h2><p>工具栏一点，在盯什么、谁变了，全在这儿。</p></div>
-    <div class="pic phone"><picture><source srcset="img/popup-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/popup.webp" width="720" height="1010" alt="巡山僧弹窗：当前页一键框选，下面是在盯的清单"></picture></div>
+    <div class="txt"><h2>变了就叫，<br>还留了照。</h2><p>弹系统通知，点一下直接打开那一页。变的那一刻顺手拍一张，之前、之后并排摆着，赖不掉。</p></div>
+    <div class="pic"><picture><source srcset="img/compare-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/compare.webp" width="732" height="297" alt="变化记录：价格 1,099 降到 899，之前之后两张截图并排"></picture></div>
   </section>
 
   <section class="grid" aria-label="还能干啥">
     <div class="g"><b>只叫好消息</b><span>到线叫、再降再叫，涨回去闭嘴</span></div>
     <div class="g"><b>整页不吵</b><span>只变时钟、人数的不算，有新内容才叫</span></div>
     <div class="g"><b>改版不丢</b><span>网页大改，自己把那块重新找回来</span></div>
-    <div class="g"><b>脚本页也行</b><span>看不见的小窗里读，同一网址几条只开一个</span></div>
+    <div class="g"><b>脚本页也行</b><span>看不见的小窗里读，不在你窗口里冒标签</span></div>
     <div class="g"><b>要登录的也行</b><span>用你浏览器里现成的登录</span></div>
-    <div class="g"><b>掐着点查</b><span>到点就去；同站八条一起到期，提前排好队，一条不晚</span></div>
+    <div class="g"><b>开浏览器就在岗</b><span>不用打开、不用点开始，有事才叫你</span></div>
     <div class="g"><b>坏了会说</b><span>连着几回看不成，发一条告诉你</span></div>
-    <div class="g"><b>清单能搬家</b><span>导出、导入一个文件</span></div>
+    <div class="g"><b>手滑能撤</b><span>盯错了、删错了，点「撤销」</span></div>
     <div class="g"><b>哪儿也不去</b><span>清单和记录只存在你自己的浏览器</span></div>
   </section>
 
@@ -125,13 +137,13 @@ code{font:500 15px ui-monospace,"SF Mono",Menlo,Consolas,monospace;background:va
     <h2>怎么装</h2>
     <p class="sub">还没上商店，先手动装，两分钟。</p>
     <ol>
-      <li><span>下载 <a href="dist/xunshan-0.2.1.zip" download>xunshan-0.2.1.zip</a>，解压成一个文件夹。</span></li>
+      <li><span>下载 <a href="dist/xunshan-0.3.0.zip" download>xunshan-0.3.0.zip</a>，解压成一个文件夹。</span></li>
       <li><span>地址栏打开 <code>chrome://extensions</code>；Edge 用 <code>edge://extensions</code>。</span></li>
-      <li><span>打开右上角（Edge 在左下）的「开发者模式」。</span></li>
+      <li><span>打开「开发者模式」（Chrome 在右上角，Edge 在左下）。</span></li>
       <li><span>点「加载已解压的扩展程序」（Edge：「加载解压缩的扩展」），选刚才那个文件夹。</span></li>
-      <li><span>点工具栏的拼图图标，把巡山僧钉出来。去想盯的网页，点它，「框选一块」。</span></li>
+      <li><span>点工具栏的拼图图标，把巡山僧钉出来。去想盯的商品页，点它。</span></li>
     </ol>
-    <p class="later">浏览器得开着贫僧才醒着。第一次盯某个网站，会问你要这个网站的权限，就这一个。</p>
+    <p class="later">浏览器开着贫僧就醒着。第一次盯某个网站，浏览器会问一次这个网站的权限。</p>
   </section>
 
   <footer class="foot">

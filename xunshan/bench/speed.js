@@ -16,15 +16,19 @@ const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
 (async () => {
   for (let i = 0; i <= 8; i++) await F(`${SITE}/_fast?i=${i}&v=300`);
-  // ---- changedetection.io ----
+  // ---- changedetection.io ----（NO_CDIO=1 只跑巡山僧：对手版本没变时用）
+  const NOCD = !!process.env.NO_CDIO;
+  let cd = null, chrome = null, api = async () => '{}';
+  if (!NOCD) {
   const cdData = fs.mkdtempSync(path.join(os.tmpdir(), 'cdspeed-'));
-  const chrome = spawn(chromium.executablePath(), ['--headless=new', '--remote-debugging-port=9334', '--no-sandbox', '--user-data-dir=' + fs.mkdtempSync(path.join(os.tmpdir(), 'chr-'))], { stdio: 'ignore' });
-  const cd = spawn('changedetection.io', ['-d', cdData, '-p', '5056', '-h', '127.0.0.1'], { env: Object.assign({}, process.env, { ALLOW_IANA_RESTRICTED_ADDRESSES: 'true', PLAYWRIGHT_DRIVER_URL: 'http://127.0.0.1:9334' }), stdio: 'ignore' });
+  chrome = spawn(chromium.executablePath(), ['--headless=new', '--remote-debugging-port=9334', '--no-sandbox', '--user-data-dir=' + fs.mkdtempSync(path.join(os.tmpdir(), 'chr-'))], { stdio: 'ignore' });
+  cd = spawn('changedetection.io', ['-d', cdData, '-p', '5056', '-h', '127.0.0.1'], { env: Object.assign({}, process.env, { ALLOW_IANA_RESTRICTED_ADDRESSES: 'true', PLAYWRIGHT_DRIVER_URL: 'http://127.0.0.1:9334' }), stdio: 'ignore' });
   for (let i = 0; i < 60; i++) { try { await F(CD + '/'); break; } catch (e) { await sleep(1000); } }
   const key = JSON.parse(fs.readFileSync(path.join(cdData, 'changedetection.json'))).settings.application.api_access_token;
-  const api = (m, p, b) => fetch(CD + '/api/v1' + p, { method: m, headers: { 'x-api-key': key, 'content-type': 'application/json' }, body: b ? JSON.stringify(b) : undefined }).then(r => r.text());
+  api = (m, p, b) => fetch(CD + '/api/v1' + p, { method: m, headers: { 'x-api-key': key, 'content-type': 'application/json' }, body: b ? JSON.stringify(b) : undefined }).then(r => r.text());
   for (const u of Object.keys(JSON.parse(await api('GET', '/watch')))) await api('DELETE', '/watch/' + u);
   for (let i = 0; i <= 8; i++) await api('POST', '/watch', { url: url(i), title: 'fast' + i, include_filters: ['.price'], time_between_check: { minutes: 5 }, time_between_check_use_default: false, notification_urls: [`json://localhost:8790/hook/cd-fast-${i}`] });
+  }
 
   // ---- 巡山僧 ----
   const ext = fs.mkdtempSync(path.join(os.tmpdir(), 'xs-ext-'));
@@ -56,7 +60,7 @@ const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
       ourHits[i] = h.filter(e => e.hit).map(e => e.t);
     }
     const hooks = JSON.parse(await F(SITE + '/_hooks')).filter(h => h.name.startsWith('cd-fast-') && h.body.includes('had a change'));
-    const done = Object.values(ourHits).every(a => a.length >= 2) && hooks.length >= 18;
+    const done = Object.values(ourHits).every(a => a.length >= 2) && (NOCD || hooks.length >= 18);
     if (done) break;
     await sleep(5000);
   }
@@ -69,7 +73,7 @@ const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
     out.cdio[i] = events.map((e, k) => lat(cdt, e, events[k + 1]));
   }
   log(JSON.stringify(out));
-  fs.writeFileSync(path.join(__dirname, 'results', 'speed.json'), JSON.stringify(out, null, 1));
-  await ctx.close(); cd.kill(); chrome.kill();
+  fs.writeFileSync(path.join(__dirname, 'results', process.env.OUT || 'speed.json'), JSON.stringify(out, null, 1));
+  await ctx.close(); if (cd) cd.kill(); if (chrome) chrome.kill();
   process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

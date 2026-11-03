@@ -1,37 +1,42 @@
-body{width:360px;min-height:200px;padding:14px 14px 12px;background:var(--bg)}
-.hd{display:flex;align-items:center;gap:10px;margin:0 2px 12px}
-.logo{width:30px;height:30px;border-radius:8px}
-.hd-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
-.hd-t b{font-size:15px;font-weight:600;letter-spacing:.01em}
-.hd-t span{font-size:12px;color:var(--fg2)}
-.all{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;background:var(--fill);color:var(--accent);font-size:13px;font-weight:500}
-.all:hover{background:var(--fill2)}
-.all .n{color:var(--fg2);font-variant-numeric:tabular-nums}
-.here{padding:12px}
-.here-top{display:flex;gap:10px;align-items:center;min-width:0}
-.here-txt{min-width:0;flex:1}
-.here-title{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.here-host{font-size:12px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.acts{display:grid;grid-template-columns:1.35fr 1fr;gap:8px;margin-top:12px}
-.acts .btn{width:100%}
-.here-note{margin-top:10px;font-size:12px;color:var(--fg2)}
-.here.cant .acts{display:none}
-.list{margin-top:12px;display:flex;flex-direction:column;background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
-.list:empty{display:none}
-.it{display:flex;align-items:center;gap:10px;padding:10px 12px;text-align:left;width:100%;position:relative}
-.it+.it::before{content:"";position:absolute;top:0;left:50px;right:0;height:1px;background:var(--sep)}
-.it:hover{background:var(--fill)}
-.it-m{flex:1;min-width:0}
-.it-t{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.it-s{font-size:12px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.it-s .num{color:var(--fg);font-weight:600}
-.it-r{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none;font-size:11px;color:var(--fg3)}
-.pill{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:999px;font-size:11px;font-weight:600}
-.pill.hit{background:var(--bad-tint);color:var(--bad)}
-.pill.err{background:var(--warn-tint);color:var(--warn)}
-.pill.off{background:var(--fill);color:var(--fg2)}
-.empty{text-align:center;padding:22px 18px 8px;color:var(--fg2)}
-.empty-art{color:var(--accent);width:120px;margin:0 auto 10px}
-.empty b{display:block;color:var(--fg);font-size:14px;margin-bottom:4px}
-.empty p{margin:0;font-size:12px;line-height:1.55}
-.more{display:block;text-align:center;padding:9px;font-size:12px;color:var(--accent);border-top:1px solid var(--sep)}
+/* 巡山僧弹窗：顶部名字 + 在岗状态；中间「这页认出了啥」，点一下就盯上；下面是在盯的。 */
+body{width:380px;min-height:220px;padding:16px 16px 16px;background:var(--bg-group)}
+.hd{display:flex;align-items:center;gap:12px;margin:0 4px 16px}
+.logo{width:32px;height:32px}
+.hd-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.hd-t b{font-size:17px;font-weight:600}
+.duty{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-2)}
+.duty .dot{width:6px;height:6px}
+.all{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 12px;border-radius:var(--r-chip);color:var(--link);font-size:15px}
+.all:hover{background:var(--accent-tint)}
+.all .n{color:var(--fg-3)}
+.blk{margin-bottom:24px}
+.blk:last-of-type{margin-bottom:8px}
+.sec-h #hereHost::before{content:" · "}
+.sec-h #hereHost:empty::before{content:""}
+.group{--inset:60px}
+.row .ic{width:32px;height:32px}
+.row .end .go{color:var(--link);font-weight:600;font-size:15px;padding:4px 8px;border-radius:var(--r-chip)}
+.row .v{font-variant-numeric:tabular-nums}
+.row.cand .t{font-size:13px;color:var(--fg-2)}
+.row.cand .v{font-size:17px;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.on .v{font-size:15px}
+.row .s.ok{color:var(--link)}
+.row .s.warn{color:var(--warn-fg);white-space:normal}
+.row.muted{color:var(--fg-2)}
+.row.note{min-height:44px;color:var(--fg-2);font-size:13px}
+/* 刚盯上那条：就地改条件、改频率、撤销 */
+.sub{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 16px 12px 60px}
+.sub.anim{animation:open var(--t) var(--ease)}
+.sub .inp{width:96px}
+.sub-l{flex-basis:100%}
+.sub .fix{display:flex;align-items:center;gap:8px;width:100%;font-size:13px;color:var(--warn-fg)}
+@keyframes open{from{opacity:0;transform:translateY(-4px)}}
+.it .end{flex-direction:column;align-items:flex-end;gap:4px;font-size:12px}
+.empty{padding:8px 4px 0;color:var(--fg-2);font-size:15px}
+.empty p{margin:0 0 12px}
+.empty b{display:block;color:var(--fg);font-weight:600;margin-bottom:4px}
+.empty-acts{display:flex;align-items:center;gap:8px}
+.more{color:var(--link)}
+.row button.grow{display:block;padding:0;min-width:0;text-align:left;color:inherit}
+.row.cand.on{padding-top:12px;padding-bottom:12px}
+.row[disabled]{opacity:1;cursor:default}

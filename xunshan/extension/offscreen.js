@@ -33,7 +33,7 @@ async function render(url, items, maxMs) {
     const t0 = Date.now();
     const parts = {};
     let meta = null;
-    const done = k => parts[k] && parts[k].found && parts[k].text;
+    const done = k => parts[k] && (parts[k].cands ? parts[k].cands.length : parts[k].found && parts[k].text);
     while (Date.now() - t0 < maxMs) {
       await new Promise(z => setTimeout(z, meta ? 600 : 900));
       const left = items.filter(i => !done(i.k));
@@ -72,6 +72,13 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       const doc = new DOMParser().parseFromString(msg.html, 'text/html');
       reply(QS.page.readPart(doc, msg.spec));
     } catch (e) { reply({ found: false, text: '', err: 'fetch', detail: 'parse' }); }
+    return;
+  }
+  if (msg.type === 'detect') {
+    try {
+      const doc = new DOMParser().parseFromString(msg.html, 'text/html');
+      reply({ title: (doc.title || '').trim(), cands: QS.detect.serialize(doc, msg.known || []) });
+    } catch (e) { reply({ cands: [] }); }
     return;
   }
   if (msg.type === 'snapHtml') {

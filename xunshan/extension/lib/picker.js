@@ -7,20 +7,20 @@
   const CSS_TXT = `
   :host{all:initial}
   *{box-sizing:border-box}
-  .box{position:fixed;pointer-events:none;z-index:2147483646;border-radius:8px;border:2px solid #0A84FF;background:rgba(10,132,255,.10);box-shadow:0 0 0 4000px rgba(0,0,0,.0);transition:all .08s ease-out;display:none}
-  .box.locked{background:rgba(10,132,255,.14);box-shadow:0 0 0 100vmax rgba(0,0,0,.28)}
-  .hint{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;gap:10px;align-items:center;padding:9px 10px 9px 16px;border-radius:999px;
-    font:500 14px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:#1D1D1F;background:rgba(255,255,255,.82);
+  .box{position:fixed;pointer-events:none;z-index:2147483646;border-radius:8px;border:2px solid #4E5BD6;background:rgba(78,91,214,.10);box-shadow:0 0 0 4000px rgba(0,0,0,.0);transition:all .08s ease-out;display:none}
+  .box.locked{background:rgba(78,91,214,.14);box-shadow:0 0 0 100vmax rgba(0,0,0,.28)}
+  .hint{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;gap:10px;align-items:center;height:44px;padding:0 6px 0 16px;border-radius:12px;
+    font:600 15px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei UI","Segoe UI",sans-serif;color:#1D1D1F;background:rgba(255,255,255,.82);
     -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 8px 28px rgba(0,0,0,.14)}
-  .hint small{color:#6E6E73;font-size:12px}
-  .x{all:unset;cursor:pointer;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:rgba(118,118,128,.14);color:#6E6E73;font-size:14px}
+  .hint small{color:#6E6E73;font-size:13px;font-weight:400}
+  .x{all:unset;cursor:pointer;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:#6E6E73}.x:hover{background:rgba(120,120,128,.12)}.x svg{width:16px;height:16px}
   @media (prefers-color-scheme:dark){.hint{color:#F5F5F7;background:rgba(40,40,42,.82);box-shadow:0 0 0 .5px rgba(255,255,255,.14),0 8px 28px rgba(0,0,0,.5)}.hint small{color:#98989D}.x{background:rgba(118,118,128,.3);color:#c7c7cc}}
   `;
   function start(opt) {
     const host = document.createElement('qianshou-picker');
     host.style.cssText = 'all:initial;position:fixed;inset:0;z-index:2147483647;pointer-events:none';
     const root = host.attachShadow({ mode: 'open' });
-    root.innerHTML = `<style>${CSS_TXT}${opt.css || ''}</style><div class="box"></div><div class="hint" style="pointer-events:auto"><span class="ht"></span><small class="hk"></small><button class="x" aria-label="close">✕</button></div>`;
+    root.innerHTML = `<style>${CSS_TXT}${opt.css || ''}</style><div class="box"></div><div class="hint" style="pointer-events:auto"><span class="ht"></span><small class="hk"></small><button class="x" aria-label="close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
     root.querySelector('.ht').textContent = opt.hint || '';
     root.querySelector('.hk').textContent = opt.keys || '';
     // 面板里的点击、按键到此为止，别让网页自己的脚本收到
@@ -43,7 +43,7 @@
     function onClick(e) {
       if (isOurs(e)) return;
       e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-      if (locked) return;
+      if (locked) { opt.onOutside && opt.onOutside(); return; }
       const el = document.elementFromPoint(e.clientX, e.clientY);
       if (!pickable(el)) return;
       target = el; lock();

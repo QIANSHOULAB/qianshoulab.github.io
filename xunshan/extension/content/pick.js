@@ -1,121 +1,171 @@
-/* 巡山僧：网页上框选要盯的那块，就地设条件和频率，一键开盯。 */
+/* 巡山僧：网页上自己框一块。点中就盯上（不用再点「开盯」），面板就地改条件、频率，能撤销、能重框。 */
 (function () {
   const QS = globalThis.QS, t = QS.t, P = QS.page, R = QS.rules;
   if (QS.picker.active) QS.picker.active.stop();
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const CSS = `
-  .pn{position:fixed;z-index:2147483647;width:340px;pointer-events:auto;padding:14px;border-radius:16px;color:#1D1D1F;background:rgba(255,255,255,.9);
-    -webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 18px 50px rgba(0,0,0,.22);
-    font:400 13px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Segoe UI",sans-serif;animation:pop .18s cubic-bezier(.2,.8,.2,1)}
-  @keyframes pop{from{opacity:0;transform:scale(.97) translateY(4px)}}
+  .pn{position:fixed;z-index:2147483647;width:360px;pointer-events:auto;padding:16px;border-radius:18px;color:#1d1d1f;background:rgba(255,255,255,.86);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 0 0 .5px rgba(0,0,0,.1),0 12px 32px rgba(0,0,0,.14);
+    font:400 15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI",system-ui,sans-serif;animation:pop 240ms cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(4px)}}
+  @media (prefers-reduced-motion:reduce){.pn{animation:none}}
   .pn *{box-sizing:border-box;font:inherit;color:inherit}
   .pn [hidden]{display:none!important}
-  .h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  .h b{font-weight:600;font-size:14px}
-  .nm{font:600 12px/1 ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;color:#1F8A3B;background:rgba(52,199,89,.14);padding:4px 8px;border-radius:999px}
-  .pv{max-height:74px;overflow:hidden;padding:8px 10px;border-radius:10px;background:rgba(118,118,128,.1);white-space:pre-wrap;word-break:break-word;font-size:12px;color:#3A3A3C;-webkit-mask-image:linear-gradient(#000 70%,transparent)}
-  .row{display:flex;align-items:center;gap:8px;margin-top:10px}
-  .lab{width:62px;flex:none;color:#6E6E73;font-size:12px}
-  .seg{display:inline-flex;padding:2px;border-radius:9px;background:rgba(118,118,128,.12)}
-  .seg button{all:unset;cursor:pointer;height:26px;padding:0 10px;border-radius:7px;font-size:12px;font-weight:500;display:inline-flex;align-items:center}
-  .seg button[aria-pressed="true"]{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
-  .in,.sl{all:unset;height:28px;padding:0 10px;border-radius:8px;background:rgba(118,118,128,.12);font-size:13px;min-width:0}
-  .in{flex:1;width:100%}
-  .in:focus{outline:2px solid #0A84FF}
-  .sl{padding-right:24px;cursor:pointer;line-height:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238E8E93' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
-  .sl option{color:#1D1D1F;background:#fff}
-  .ft{display:flex;align-items:center;gap:6px;margin-top:14px}
+  .h{display:flex;align-items:center;gap:12px}
+  .ok{width:32px;height:32px;flex:none;border-radius:8px;display:grid;place-items:center;background:#4e5bd6;color:#fff}
+  .ok svg{width:18px;height:18px}
+  .ok.wait{background:rgba(120,120,128,.12)}
+  .spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(120,120,128,.3);border-top-color:#6e6e73;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hm{flex:1;min-width:0}
+  .hm b{display:block;font-weight:600}
+  .hm span{display:block;font-size:13px;color:#6e6e73;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+  .b{all:unset;cursor:pointer;height:32px;padding:0 8px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;font-size:15px;color:#4e5bd6;white-space:nowrap}
+  .b:hover{background:rgba(78,91,214,.1)}
+  .b svg{width:14px;height:14px;color:#86868b}
+  .bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .seg{display:inline-flex;padding:2px;border-radius:10px;background:rgba(120,120,128,.12)}
+  .seg button{all:unset;cursor:pointer;height:28px;padding:0 12px;border-radius:8px;font-size:13px;display:inline-flex;align-items:center}
+  .seg button[aria-pressed="true"]{background:#fff;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.04)}
+  .in{all:unset;height:32px;padding:0 12px;border-radius:10px;background:rgba(120,120,128,.12);font-size:15px;width:96px}
+  .in:focus{outline:2px solid #4e5bd6}
+  .iv{all:unset;cursor:pointer;margin-left:auto;height:32px;padding:0 8px 0 12px;border-radius:10px;background:rgba(120,120,128,.12);display:inline-flex;align-items:center;gap:4px;font-size:15px}
+  .iv svg{width:14px;height:14px;color:#86868b}
+  .ft{display:flex;align-items:center;gap:4px;margin-top:12px;margin-left:-8px}
   .ft .sp{flex:1}
-  .b{all:unset;cursor:pointer;height:32px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;background:rgba(118,118,128,.12)}
-  .b.g{background:none;color:#0071E3;padding:0 8px}
-  .b.p{background:#0071E3;color:#fff;padding:0 18px}
-  .b:hover{filter:brightness(.96)}
-  .ok{display:flex;align-items:center;gap:10px;font-weight:500}
-  .ok i{width:26px;height:26px;border-radius:50%;background:#34C759;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:700}
-  .warn{color:#B25000;font-size:12px;margin-top:8px}
+  .warn{margin-top:12px;font-size:13px;color:#b25000}
+  .menu{position:absolute;right:16px;bottom:56px;min-width:150px;padding:4px;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 0 0 .5px rgba(0,0,0,.1),0 12px 32px rgba(0,0,0,.18)}
+  .menu button{all:unset;cursor:pointer;display:flex;align-items:center;width:100%;height:36px;padding:0 12px;border-radius:8px;box-sizing:border-box;font-size:15px}
+  .menu button:hover{background:#4e5bd6;color:#fff}
+  .menu button[aria-checked="true"]{font-weight:600}
   @media (prefers-color-scheme:dark){
-    .pn{color:#F5F5F7;background:rgba(36,36,38,.9);box-shadow:0 0 0 .5px rgba(255,255,255,.14),0 18px 50px rgba(0,0,0,.6)}
-    .pv{color:#D1D1D6;background:rgba(118,118,128,.22)}
-    .lab{color:#98989D}
-    .seg,.in,.sl,.b{background-color:rgba(118,118,128,.26)}
-    .seg button[aria-pressed="true"]{background:#636366}
-    .sl option{color:#F5F5F7;background:#2C2C2E}
-    .b.g{background:none;color:#409CFF}.b.p{background:#0A84FF}
-    .nm{color:#30D158;background:rgba(48,209,88,.18)}
-    .warn{color:#FFB340}
+    .pn{color:#f5f5f7;background:rgba(28,28,30,.86);box-shadow:0 0 0 .5px rgba(255,255,255,.14),0 12px 32px rgba(0,0,0,.6)}
+    .ok{background:#5562de}.ok.wait{background:rgba(120,120,128,.24)}
+    .hm span{color:#a1a1a6}
+    .b{color:#8c9aff}.b:hover{background:rgba(124,138,255,.18)}
+    .seg,.in,.iv{background:rgba(120,120,128,.24)}
+    .seg button[aria-pressed="true"]{background:#636366;box-shadow:none}
+    .warn{color:#ffd60a}
+    .menu{background:rgba(44,44,46,.98);box-shadow:0 0 0 .5px rgba(255,255,255,.14),0 12px 32px rgba(0,0,0,.6)}
+    .menu button:hover{background:#5562de}
   }`;
 
-  let defIv = 30;
-  chrome.storage.local.get('settings').then(o => { if (o.settings && o.settings.defaultInterval) defIv = o.settings.defaultInterval; });
-  let panel = null, state = { type: 'any', value: '', iv: null };
+  let panel = null, W = null, draft = null, menuOpen = false, idle = null, el = null;
+  const send = m => chrome.runtime.sendMessage(m);
 
-  function place(el) {
-    const r = el.getBoundingClientRect(), W = 340, H = panel.offsetHeight || 260, m = 12;
+  function place(target) {
+    const r = target.getBoundingClientRect(), Wd = 360, H = panel.offsetHeight || 200, m = 12;
     let top = r.bottom + m;
     if (top + H > innerHeight - m) top = r.top - H - m;
     if (top < m) top = Math.max(m, Math.min(innerHeight - H - m, r.top + 8));
-    let left = Math.min(Math.max(m, r.left), innerWidth - W - m);
+    const left = Math.min(Math.max(m, r.left), innerWidth - Wd - m);
     panel.style.top = top + 'px'; panel.style.left = left + 'px';
   }
+  // 没人碰就自己收起来（已经盯上了，收起来不丢东西）
+  function arm(ctl) { clearTimeout(idle); idle = setTimeout(() => { if (!panel || panel.matches(':hover') || panel.contains(ctl.root.activeElement) || menuOpen) return arm(ctl); ctl.stop(); }, 6000); }
 
-  function show(el, ctl) {
-    const text = P.readText(el);
-    const num = P.parseNumber(text);
+  async function add(target, ctl) {
+    const text = P.readText(target);
     if (!panel) { panel = document.createElement('div'); panel.className = 'pn'; ctl.root.appendChild(panel); }
-    if (state.iv == null) state.iv = defIv;
-    if (num == null && (state.type === 'below' || state.type === 'above')) state.type = 'any';
-    const conds = num != null ? ['any', 'below', 'above'] : ['any', 'has', 'gone'];
-    const cName = { any: 'condAny', below: 'condBelow', above: 'condAbove', has: 'condHas', gone: 'condGone' };
-    if (!state.value && num != null) state.value = String(num);
-    panel.innerHTML = `
-      <div class="h"><b>${t('pickPreview')}</b>${num != null ? `<span class="nm">${t('foundNum')} ${esc(R.fmtNum(num))}</span>` : ''}</div>
-      <div class="pv">${esc(text.slice(0, 300)) || '—'}</div>
-      ${text ? '' : `<div class="warn">${t('emptyPick')}</div>`}
-      <div class="row"><span class="lab">${t('condition')}</span><div class="seg">${conds.map(c => `<button type="button" data-c="${c}" aria-pressed="${state.type === c}">${t(cName[c])}</button>`).join('')}</div></div>
-      <div class="row" ${state.type === 'any' ? 'hidden' : ''}><span class="lab"></span><input class="in" id="cv" ${num != null ? 'inputmode="decimal"' : ''} placeholder="${state.type === 'gone' ? t('condGonePh') : state.type === 'has' ? t('condHasPh') : ''}" value="${esc(state.type === 'has' || state.type === 'gone' ? (state.kw || '') : state.value)}"></div>
-      <div class="row"><span class="lab">${t('frequency')}</span><select class="sl" id="iv">${R.IV.map(m => `<option value="${m}" ${+state.iv === m ? 'selected' : ''}>${t('every')} ${R.ivLabel(m)}</option>`).join('')}</select></div>
-      <div class="ft"><button class="b g" data-a="bigger">${t('bigger')}</button><span class="sp"></span><button class="b" data-a="again">${t('reselect')}</button><button class="b p" data-a="go" ${text ? '' : 'disabled'}>${t('start')}</button></div>`;
-    place(el);
-    panel.onclick = async e => {
-      const c = e.target.closest('[data-c]');
-      if (c) { state.type = c.dataset.c; show(ctl.target, ctl); const i = panel.querySelector('#cv'); if (i && state.type !== 'any') i.focus(); return; }
-      const a = e.target.closest('[data-a]'); if (!a) return;
-      if (a.dataset.a === 'bigger') ctl.bigger();
-      if (a.dataset.a === 'again') { panel.remove(); panel = null; ctl.resume(); }
-      if (a.dataset.a === 'go') go(ctl, text);
-    };
-    panel.oninput = e => {
-      if (e.target.id === 'cv') { if (state.type === 'has' || state.type === 'gone') state.kw = e.target.value; else state.value = e.target.value; }
-    };
-    panel.onchange = e => { if (e.target.id === 'iv') state.iv = +e.target.value; };
-    panel.onkeydown = e => { if (e.key === 'Enter' && e.target.id === 'cv') go(ctl, text); };
-  }
-
-  async function go(ctl, text) {
-    const el = ctl.target;
-    const selector = P.cssPath(el);
-    let cond = { type: state.type };
-    if (state.type === 'below' || state.type === 'above') {
-      const v = P.parseNumber(state.value);
-      cond = v == null ? { type: 'any' } : { type: state.type, value: v };
-    } else if (state.type === 'has' || state.type === 'gone') {
-      cond = (state.kw || '').trim() ? { type: state.type, value: state.kw.trim() } : { type: 'any' };
-    }
-    // 起个能分清的名字：页面标题 + 这块是啥（价格/库存/名额）
-    const hint = (text + ' ' + (el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : '') + ' ' + (el.getAttribute('aria-label') || '')).toLowerCase();
-    const kind = /[¥$€£₹]|rmb|price|价|sgd|usd/.test(hint) && P.parseNumber(text) != null ? t('kindPrice')
-      : /库存|有货|缺货|售罄|到货|stock|sold out|available/.test(hint) ? t('kindStock')
-      : /名额|余票|剩余|seat|slot|ticket/.test(hint) ? t('kindSeats') : '';
+    el = target;
+    if (!text) { panel.innerHTML = `<div class="warn">${t('emptyPick')}</div><div class="ft"><button class="b" data-a="again">${t('reselect')}</button></div>`; place(target); return; }
+    if (W) { await send({ type: 'remove', id: W.id }); W = null; } // 放大一圈 / 重框：换掉刚才那条
+    const hint = (text + ' ' + (target.id || '') + ' ' + (typeof target.className === 'string' ? target.className : '') + ' ' + (target.getAttribute('aria-label') || '')).toLowerCase();
+    const kind = /[¥$€£₹]|rmb|price|价|sgd|usd/.test(hint) && P.parseNumber(text) != null ? 'price'
+      : /库存|有货|缺货|售罄|到货|stock|sold out|available/.test(hint) ? 'stock'
+      : /名额|余票|剩余|seat|slot|ticket/.test(hint) ? 'seats' : 'pick';
+    const kn = { price: 'kindPrice', stock: 'kindStock', seats: 'kindSeats' }[kind];
     const base = (document.title || location.hostname).replace(/\s+/g, ' ').trim().slice(0, 50);
-    const label = kind ? base + ' · ' + kind : base;
-    panel.innerHTML = `<div class="ok"><i>✓</i><span>${t('added')}</span></div>`;
-    chrome.runtime.sendMessage({ type: 'add', watch: { url: location.href, title: document.title, label, selector, alts: P.altSelectors(el), anchor: P.anchorOf(el), pickedText: text, interval: state.iv, cond } });
-    setTimeout(() => ctl.stop(), 1800);
+    const watch = { url: location.href, title: document.title, kind: kind === 'pick' ? 'pick' : kind, label: kn ? base + ' · ' + t(kn) : base, selector: P.cssPath(target), alts: P.altSelectors(target), anchor: P.anchorOf(target), pickedText: text };
+    if (kind === 'pick') watch.cond = R.condFor('pick', text, P.parseNumber(text));
+    W = await send({ type: 'add', wait: false, watch });
+    draft = null;
+    show(ctl); arm(ctl);
   }
 
+  function show(ctl) {
+    if (!W || !panel) return;
+    const numeric = W.numeric || W.lastNum != null;
+    const types = R.condTypes(numeric);
+    const c = W.cond || { type: 'any' };
+    const type = draft || c.type;
+    const need = R.needsValue(type);
+    const val = c.type === type && c.value != null ? c.value : '';
+    const ph = type === 'gone' ? t('condGonePh') : type === 'has' ? t('condHasPh') : t('condNumPh');
+    const first = W.lastText == null && !W.err;
+    const now = W.lastText != null ? String(W.lastText).replace(/\s+/g, ' ').slice(0, 60) : P.readText(el).replace(/\s+/g, ' ').slice(0, 60);
+    const ae = ctl.root.activeElement, typing = ae && ae.id === 'cv' ? ae.value : null;
+    panel.innerHTML = `
+      <div class="h"><span class="ok ${first ? 'wait' : ''}">${first ? '<span class="spin"></span>' : svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>')}</span>
+        <div class="hm"><b>${first ? t('firstLook') : t('added')}</b><span>${esc(now)}</span></div>
+        <button class="b" data-a="undo">${t('undo')}</button></div>
+      <div class="bar"><div class="seg" role="group" aria-label="${t('condWhen')}">${types.map(x => `<button type="button" data-c="${x}" aria-pressed="${x === type}">${t('seg' + x[0].toUpperCase() + x.slice(1))}</button>`).join('')}</div>
+        ${need ? `<input class="in" id="cv" ${numeric ? 'inputmode="decimal"' : ''} placeholder="${ph}" value="${esc(typing != null ? typing : val)}" aria-label="${t('condWhen')}">` : ''}
+        <button class="iv" data-a="iv">${t('every')} ${R.ivLabel(W.interval)}${svg('<path d="m6 9 6 6 6-6"/>')}</button></div>
+      ${W.err ? `<div class="warn">${esc(t({ blocked: 'errBlocked', gone: 'errGone', login: 'errLogin', perm: 'errPerm' }[W.err] || 'error'))}</div>` : ''}
+      <div class="ft"><button class="b" data-a="bigger">${t('bigger')}</button><button class="b" data-a="again">${t('reselect')}</button></div>
+      ${menuOpen ? `<div class="menu" role="menu">${R.IV.map(m => `<button type="button" role="menuitemradio" data-iv="${m}" aria-checked="${+W.interval === m}">${t('every')} ${R.ivLabel(m)}</button>`).join('')}</div>` : ''}`;
+    place(el);
+    if (typing != null) { const i = panel.querySelector('#cv'); i.focus(); i.setSelectionRange(typing.length, typing.length); }
+  }
+
+  let saveT = null;
+  function saveVal(now) {
+    clearTimeout(saveT);
+    const go = () => {
+      const i = panel && panel.querySelector('#cv'); if (!i || !W) return;
+      const type = draft || W.cond.type;
+      const v = type === 'below' || type === 'above' ? P.parseNumber(i.value) : i.value.trim();
+      if (v == null || v === '') return;
+      draft = null;
+      send({ type: 'patch', id: W.id, patch: { cond: { type, value: v } } });
+    };
+    if (now) go(); else saveT = setTimeout(go, 600);
+  }
+
+  function wire(ctl) {
+    ctl.root.addEventListener('click', async e => {
+      if (!panel || !panel.contains(e.target)) return;
+      arm(ctl);
+      const iv = e.target.closest('[data-iv]');
+      if (iv) { menuOpen = false; send({ type: 'patch', id: W.id, patch: { interval: +iv.dataset.iv } }); return; }
+      const c = e.target.closest('[data-c]');
+      if (c) {
+        const type = c.dataset.c;
+        if (R.needsValue(type)) {
+          const keep = W.cond.type === type && W.cond.value != null;
+          const guess = type === 'gone' ? (String(W.lastText || W.pickedText || '').match(/暂时缺货|缺货|无货|售罄|已售完|sold out|out of stock/i) || [])[0] : null;
+          if (keep) draft = null;
+          else if (guess) { draft = null; send({ type: 'patch', id: W.id, patch: { cond: { type, value: guess } } }); }
+          else draft = type;
+          show(ctl);
+          const i = panel.querySelector('#cv'); if (i) i.focus();
+        } else { draft = null; send({ type: 'patch', id: W.id, patch: { cond: { type } } }); }
+        return;
+      }
+      const a = e.target.closest('[data-a]'); if (!a) return;
+      if (a.dataset.a === 'iv') { menuOpen = !menuOpen; show(ctl); return; }
+      if (a.dataset.a === 'undo') { clearTimeout(idle); if (W) await send({ type: 'remove', id: W.id }); W = null; ctl.stop(); return; }
+      if (a.dataset.a === 'bigger') { ctl.bigger(); return; }
+      if (a.dataset.a === 'again') { clearTimeout(idle); if (W) await send({ type: 'remove', id: W.id }); W = null; panel.remove(); panel = null; ctl.resume(); }
+    });
+    ctl.root.addEventListener('input', e => { if (e.target.id === 'cv') { arm(ctl); saveVal(); } });
+    ctl.root.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'cv') { saveVal(true); e.target.blur(); } });
+  }
+
+  // 后台看完第一眼、或者条件改了，面板跟着变
+  chrome.storage.onChanged.addListener((ch, area) => {
+    if (area !== 'local' || !ch.watches || !W) return;
+    const nw = (ch.watches.newValue || {})[W.id];
+    if (nw) { W = nw; const ctl = QS.picker.active; if (ctl && panel) show(ctl); }
+  });
+
+  let wired = false;
   QS.picker.start({
     hint: t('pickHint'), keys: t('pickKeys'), css: CSS,
-    onPick: (el, ctl) => show(el, ctl),
+    onPick: (target, ctl) => { if (!wired) { wire(ctl); wired = true; } add(target, ctl); },
+    onOutside: () => { const ctl = QS.picker.active; if (ctl && !menuOpen) ctl.stop(); else if (menuOpen) { menuOpen = false; show(ctl); } },
     onCancel: () => {}
   });
 })();

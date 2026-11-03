@@ -3,6 +3,7 @@
 const http = require('http');
 const { S, NEWS } = require('./scenario');
 let K = 0;
+let SLOW = 0; // /slow 这一页故意慢（截「看第一眼…」那一刻用）：/_slow?ms=
 const FAST = { 0: 300, 1: 300, 2: 300, 3: 300, 4: 300, 5: 300, 6: 300, 7: 300, 8: 300 };
 const hooks = [];   // 对手发来的通知 [{t, name, body}]
 const changes = []; // 测速页每次改价的时间
@@ -58,6 +59,8 @@ http.createServer((req, res) => {
   }
   if (p === '/_step') { K = +u.searchParams.get('k'); return send(200, JSON.stringify({ k: K }), 'application/json'); }
   if (p === '/_fast') { const i = +u.searchParams.get('i'); FAST[i] = +u.searchParams.get('v'); changes.push({ t: Date.now(), i, v: FAST[i] }); return send(200, '{}', 'application/json'); }
+  if (p === '/_slow') { SLOW = +u.searchParams.get('ms') || 0; return send(200, '{}', 'application/json'); }
+  if (p === '/slow') return setTimeout(() => send(200, page('山货铺 · 机械键盘', `<main><div class="pic">⌨️</div><div><h1>机械键盘 87 键</h1><div class="price">${yuan(699)}</div><div class="tag" id="stock">有货</div></div></main>`)), SLOW);
   if (p === '/_hooks') return send(200, JSON.stringify(hooks), 'application/json');
   if (p === '/_changes') return send(200, JSON.stringify(changes), 'application/json');
   if (p === '/orders') {

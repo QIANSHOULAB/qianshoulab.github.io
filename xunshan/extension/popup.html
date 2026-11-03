@@ -9,22 +9,25 @@
 <body>
 <header class="hd">
   <img class="logo" src="icons/48.png" alt="">
-  <div class="hd-t"><b data-t="app"></b><span data-t="slogan"></span></div>
-  <a class="all" href="app.html" target="_blank" id="all"><span data-t="openAll"></span><span class="n" id="allN"></span></a>
+  <div class="hd-t"><b data-t="app"></b><span class="duty"><i class="dot on" id="dutyDot"></i><span id="duty"></span></span></div>
+  <a class="all" href="app.html" target="_blank" id="all"><span data-t="openAll"></span><span class="n tn" id="allN"></span></a>
 </header>
-<section class="here card" id="here">
-  <div class="here-top"><span id="hereAv"></span><div class="here-txt"><div class="here-title" id="hereTitle"></div><div class="here-host" id="hereHost"></div></div></div>
-  <div class="acts" id="acts">
-    <button class="btn pri lg" id="pick"></button>
-    <button class="btn lg" id="whole"></button>
-  </div>
-  <div class="here-note" id="hereNote" hidden></div>
+
+<section class="blk" id="here">
+  <div class="sec-h"><span><span data-t="here"></span><span id="hereHost"></span></span></div>
+  <div class="group" id="cands"></div>
 </section>
-<section class="list" id="list"></section>
+
+<section class="blk" id="mine">
+  <div class="sec-h"><span data-t="mine"></span></div>
+  <div class="group" id="list"></div>
+</section>
+
 <section class="empty" id="empty" hidden>
-  <div class="empty-art" aria-hidden="true"><svg viewBox="0 0 120 64"><path d="M4 58 38 18l18 20 14-14 46 34z" fill="currentColor" opacity=".16"/><path d="M4 58 38 18l18 20 14-14 46 34" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" opacity=".5"/><circle cx="92" cy="14" r="6" fill="currentColor" opacity=".35"/></svg></div>
-  <b data-t="emptyTitle"></b><p data-t="emptySub"></p>
+  <p><b data-t="emptyTitle"></b><span data-t="emptySub"></span></p>
+  <div class="empty-acts"><button class="btn" id="demo" data-t="tryDemo"></button><a class="btn txt" href="app.html#add" target="_blank" id="batch" data-t="batchLink"></a></div>
 </section>
+
 <script src="lib/strings.js"></script>
 <script src="lib/store.js"></script>
 <script src="lib/ui.js"></script>
