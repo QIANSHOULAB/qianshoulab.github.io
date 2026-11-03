@@ -5,7 +5,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 39.6,
+  "secs": 40.2,
   "detail": []
  },
  "react": {
@@ -14,7 +14,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 68.4,
+  "secs": 68.5,
   "detail": [
    "13行数量：要「1200」收到「1,200」",
    "26行数量：要「1200」收到「1,200」",
@@ -31,7 +31,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 130.2,
+  "secs": 129.9,
   "detail": []
  },
  "ajax": {

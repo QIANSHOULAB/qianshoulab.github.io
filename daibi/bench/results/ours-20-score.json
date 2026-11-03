@@ -83,7 +83,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 25.9,
+  "secs": 25.7,
   "detail": []
  },
  "ajax": {
@@ -92,7 +92,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 14.4,
+  "secs": 14.7,
   "detail": []
  },
  "valid": {
@@ -101,7 +101,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 7.2,
+  "secs": 7.4,
   "detail": []
  },
  "date": {
@@ -110,7 +110,7 @@
   "missing_rows": 17,
   "bad_in": 0,
   "extra": 0,
-  "secs": 77.6,
+  "secs": 77.7,
   "detail": [
    "1行没交上",
    "2行没交上",

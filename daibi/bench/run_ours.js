@@ -74,8 +74,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const want = Object.keys(NEED[N][site].find(Boolean));
     const picks = [], pickFail = [];
     if (process.env.DBG) console.log(await panel.evaluate(() => document.getElementById("fieldSec").outerHTML.slice(0, 3000)));
+    let unfold = 0;
     for (const h of want) {
       if (b[h]) continue;
+      if (PICK[site] && PICK[site][h] && !(await panel.isVisible(`.frow[data-h="${h}"]`).catch(() => false)) && await panel.isVisible('[data-act=fold]').catch(() => false)) {
+        await panel.click('[data-act=fold]'); unfold++; await sleep(300); // 0.2.0 把这页用不上的列收起来了，要先点「展开」
+      }
       const loc = PICK[site] && PICK[site][h];
       await panel.hover(`.frow[data-h="${h}"]`).catch(() => {});
       if (!loc || !(await panel.isVisible(`.frow[data-h="${h}"] [data-act=pick]`).catch(() => false))) { pickFail.push(h + '(没有点选入口)'); continue; }
@@ -89,7 +93,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       b = await binds() || {};
       if (b[h]) picks.push(h); else { pickFail.push(h); await panel.click(`.frow[data-h="${h}"] [data-act=pick]`).catch(() => {}); await panel.keyboard.press('Escape').catch(() => {}); }
     }
-    console.log('  点选成功：', picks.join(',') || '无', ' 点选不成：', pickFail.join(',') || '无');
+    console.log('  展开', unfold, '次  点选成功：', picks.join(',') || '无', ' 点选不成：', pickFail.join(',') || '无');
     if (!(await panel.isChecked('#set-auto'))) await panel.click('label.qs-set');
     await sleep(300);
     const mainTxt = (await panel.textContent('#btnMain')).trim();
@@ -110,7 +114,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const errs = s.map((x, i) => x.s === 'error' ? `${i + 1}:${x.m}` : null).filter(Boolean);
     console.log(`  主按钮「${mainTxt}」 用时 ${secs}s  完成 ${s.filter(x => x.s === 'done').length}  出错 ${errs.length}  服务器收到 ${lg.length}`);
     errs.slice(0, 6).forEach(e => console.log('    ' + e));
-    results[site] = { auto, picks, pickFail, secs, mainTxt, status: s, received: lg.map(x => x.f) };
+    results[site] = { auto, picks, pickFail, unfold, secs, mainTxt, status: s, received: lg.map(x => x.f) };
     await panel.screenshot({ path: path.join(SHOTS, `ours-${site}-end.png`) });
     if (site === 'plain') await web.screenshot({ path: path.join(SHOTS, `ours-${site}-web.png`) });
   }
