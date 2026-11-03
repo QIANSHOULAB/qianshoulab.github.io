@@ -38,10 +38,13 @@
   function colName(i) { let s = ''; i++; while (i) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
   // 纯数字才当数字：不带前导 0、不超过 11 位（手机号、编号保留成文字也不丢）
   const NUM = /^-?(0|[1-9]\d{0,10})(\.\d+)?$/;
+  // 这些列一律按文字写，不让 Excel 自作主张
+  const TEXT_COL = /编号|号码|电话|手机|邮编|账号|卡号|身份证|(^|[\s_-])(id|sku|code|zip|phone|tel|mobile)([\s_-]|$)/i;
 
   function xlsx(aoa, sheetName = 'Sheet1') {
     const enc = new TextEncoder();
     const widths = [];
+    const textCol = (aoa[0] || []).map((h) => TEXT_COL.test(String(h || '')));
     let rowsXml = '';
     aoa.forEach((row, r) => {
       let cells = '';
@@ -50,7 +53,9 @@
         const ref = colName(c) + (r + 1);
         const s = String(v);
         widths[c] = Math.max(widths[c] || 6, Math.min(60, [...s].reduce((w, ch) => w + (ch.charCodeAt(0) > 255 ? 2 : 1), 0) + 2));
-        if (r > 0 && NUM.test(s)) cells += `<c r="${ref}"><v>${s}</v></c>`;
+        const m = r > 0 && !textCol[c] && s.match(NUM);
+        // 「4.0」存成数字但带一位小数的格式，Excel 里还是 4.0
+        if (m) cells += `<c r="${ref}"${m[2] ? ` s="${1 + Math.min(4, m[2].length - 1)}"` : ''}><v>${s}</v></c>`;
         else cells += `<c r="${ref}" t="inlineStr"${r === 0 ? ' s="1"' : ''}><is><t xml:space="preserve">${esc(s)}</t></is></c>`;
       });
       rowsXml += `<row r="${r + 1}">${cells}</row>`;
@@ -70,7 +75,7 @@
       'xl/_rels/workbook.xml.rels': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`,
       'xl/styles.xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="4"><numFmt numFmtId="164" formatCode="0.0"/><numFmt numFmtId="165" formatCode="0.00"/><numFmt numFmtId="166" formatCode="0.000"/><numFmt numFmtId="167" formatCode="0.0000"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
       'xl/worksheets/sheet1.xml': sheet,
     };
     return zip(Object.entries(files).map(([name, s]) => ({ name, data: enc.encode(s) })));

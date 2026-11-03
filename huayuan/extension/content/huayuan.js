@@ -8,6 +8,16 @@
   const MORE_WORDS = /^(加载更多|载入更多|查看更多|显示更多|点击加载更多|展开更多|load more|show more|see more|more results|view more)$/i;
   const BAD_ZONES = 'nav,header,footer,aside,[role=navigation],[role=menu],[role=menubar],[role=tablist],[role=banner],[role=contentinfo]';
   const MAX_ROWS = 5000;
+  // 无限滚动到底的告示
+  const END_WORDS = /^[\s\-—–~·.。…!！]*(到底了|到底啦|已经到底了?|已到底部?|没有更多了?|没有更多(内容|数据|结果|商品)了?|暂无更多(内容|数据)?|已加载全部(内容|数据)?|全部加载完毕|已显示全部|没有了|no more( results| items| posts| data)?|end of (results|list|feed)|you'?ve reached the end|that'?s all( for now)?)[\s\-—–~·.。…!！]*$/i;
+
+  const LOADING_WORDS = /^[\s.…]*(加载中|正在加载|载入中|努力加载中|loading)[\s.…]*$/i;
+
+  // 记最后一次网络请求收尾的时间（翻页后等「网络安静」再抓）
+  let lastNet = performance.now();
+  try {
+    new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.responseEnd > lastNet) lastNet = e.responseEnd; }).observe({ type: 'resource', buffered: true });
+  } catch {}
 
   function sig(el) {
     const cls = P.goodClasses(el).sort();
@@ -130,7 +140,9 @@
     const visit = (el, p, h, depth) => {
       if (el.tagName === 'IMG') { put(p + '|src', imgUrl(el), 'src', h); return; }
       if (el.tagName === 'A') { const href = el.getAttribute('href') || ''; if (href && !/^(javascript:|#)/i.test(href)) put(p + '|href', P.absUrl(href), 'href', h); }
-      if (getComputedStyle(el).display === 'none') return;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none') return;
+      if ((cs.textDecorationLine || '').includes('line-through') && !(el.parentElement && getComputedStyle(el.parentElement).textDecorationLine.includes('line-through'))) h = 'orig';
       if (P.isTextBlock(el)) {
         put(p + '|t', P.norm(el.textContent), 't', h);
         for (const im of el.getElementsByTagName('img')) put(p + '>img|src', imgUrl(im), 'src', h);
@@ -156,7 +168,10 @@
     const a = el.getAttribute('itemprop') || el.getAttribute('data-field') || el.getAttribute('data-label') || el.getAttribute('data-title');
     if (a) return a;
     const cls = P.goodClasses(el);
-    return cls.length ? cls[cls.length - 1] : null;
+    if (cls.length) return cls[cls.length - 1];
+    if (/^H[1-6]$/.test(el.tagName)) return 'title';
+    if (/^(DEL|S|STRIKE)$/.test(el.tagName)) return 'orig';
+    return null;
   }
 
   function rowsOf(loc) { return loc.kids.filter((k) => !isHeaderRow(k)).slice(0, MAX_ROWS); }
@@ -186,7 +201,23 @@
   }
   function fingerprint(target) {
     const loc = locate(target);
-    return { ok: !!loc, fp: fingerprintOf(loc), rows: loc ? loc.kids.length : 0, ready: document.readyState };
+    const sc = scroller(loc ? loc.el : document.body);
+    return { ok: !!loc, fp: fingerprintOf(loc), rows: loc ? loc.kids.length : 0, ready: document.readyState,
+      height: sc.scrollHeight, quiet: Math.round(performance.now() - lastNet), ...signs(loc) };
+  }
+
+  // 页面上看得见的告示：「到底了 / 没有更多」= end，「加载中」= loading（名单里面的不算）
+  function signs(loc) {
+    const out = { end: false, loading: !!document.querySelector('[aria-busy=true]:not([hidden])') };
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.nodeValue.length < 40 && (END_WORDS.test(n.nodeValue) || LOADING_WORDS.test(n.nodeValue)) ? 1 : 3),
+    });
+    for (let n; (n = w.nextNode());) {
+      const el = n.parentElement;
+      if (!el || (loc && loc.el.contains(el)) || P.norm(el.textContent).length > 40 || !P.visible(el)) continue;
+      if (END_WORDS.test(n.nodeValue)) out.end = true; else out.loading = true;
+    }
+    return out;
   }
 
   // ---- 下一页 ----
@@ -284,6 +315,22 @@
     return { ok: true };
   }
 
+  // 试滚一下：看往下滚会不会出新货。回原位由 restoreScroll 做
+  let savedY = null;
+  function trialScroll(target) {
+    const loc = locate(target);
+    if (!loc) return { ok: false };
+    const sc = scroller(loc.el);
+    savedY = { sc, top: sc.scrollTop, x: scrollX, y: scrollY };
+    return scrollMore(target);
+  }
+  function restoreScroll() {
+    if (!savedY) return true;
+    const { sc, top, x, y } = savedY; savedY = null;
+    if (sc === document.scrollingElement || sc === document.documentElement) window.scrollTo(x, y); else sc.scrollTop = top;
+    return true;
+  }
+
   // 面板窗口一关（端口断开），网页上的高亮和点选状态全部清掉
   chrome.runtime.onConnect.addListener((port) => {
     if (port.name !== 'qs-panel') return;
@@ -321,6 +368,8 @@
     clear() { P.stopPick(); P.clearMarks(); return true; },
     clickNext,
     scrollMore,
+    trialScroll,
+    restoreScroll,
     async pickNext(hint) {
       const el = await P.pick(hint, (t) => clickable(t));
       if (!el) return null;

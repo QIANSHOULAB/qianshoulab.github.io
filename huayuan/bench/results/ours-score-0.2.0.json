@@ -1,0 +1,239 @@
+[
+ {
+  "tool": "ours",
+  "scene": "a-table300",
+  "kind": "one",
+  "clicks": 2,
+  "steps": [
+   "点图标",
+   "导出 Excel"
+  ],
+  "ms": 2232,
+  "file": "a-table300.xlsx",
+  "note": "自动选了 one；",
+  "rowsShown": "300 行",
+  "pageErrors": [],
+  "score": {
+   "rowsOut": 300,
+   "rowsWant": 300,
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "colsOut": 7,
+   "colsWant": 7,
+   "wrongCols": 0,
+   "wrongColNames": [],
+   "namedOk": 7,
+   "extraCols": 0,
+   "badCells": 0,
+   "header": [
+    "编号",
+    "公司",
+    "联系人",
+    "电话",
+    "邮箱",
+    "城市",
+    "状态"
+   ]
+  }
+ },
+ {
+  "tool": "ours",
+  "scene": "b-cards",
+  "kind": "one",
+  "clicks": 2,
+  "steps": [
+   "点图标",
+   "导出 Excel"
+  ],
+  "ms": 1984,
+  "file": "b-cards.xlsx",
+  "note": "自动选了 one；",
+  "rowsShown": "80 行",
+  "pageErrors": [],
+  "score": {
+   "rowsOut": 80,
+   "rowsWant": 80,
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "colsOut": 9,
+   "colsWant": 9,
+   "wrongCols": 0,
+   "wrongColNames": [],
+   "namedOk": 9,
+   "extraCols": 0,
+   "badCells": 0,
+   "header": [
+    "名称",
+    "品牌",
+    "价格",
+    "原价",
+    "评分",
+    "发货地",
+    "编号",
+    "链接",
+    "图片"
+   ]
+  }
+ },
+ {
+  "tool": "ours",
+  "scene": "c-paged",
+  "kind": "next",
+  "clicks": 3,
+  "steps": [
+   "点图标",
+   "开始",
+   "导出 Excel"
+  ],
+  "ms": 12368,
+  "file": "c-paged.xlsx",
+  "note": "自动选了 next；",
+  "rowsShown": "500 行",
+  "pageErrors": [],
+  "score": {
+   "rowsOut": 500,
+   "rowsWant": 500,
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "colsOut": 7,
+   "colsWant": 7,
+   "wrongCols": 0,
+   "wrongColNames": [],
+   "namedOk": 7,
+   "extraCols": 0,
+   "badCells": 0,
+   "header": [
+    "编号",
+    "公司",
+    "联系人",
+    "电话",
+    "邮箱",
+    "城市",
+    "状态"
+   ]
+  }
+ },
+ {
+  "tool": "ours",
+  "scene": "d-ajax",
+  "kind": "next",
+  "clicks": 3,
+  "steps": [
+   "点图标",
+   "开始",
+   "导出 Excel"
+  ],
+  "ms": 15185,
+  "file": "d-ajax.xlsx",
+  "note": "自动选了 next；",
+  "rowsShown": "500 行",
+  "pageErrors": [],
+  "score": {
+   "rowsOut": 500,
+   "rowsWant": 500,
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "colsOut": 8,
+   "colsWant": 8,
+   "wrongCols": 0,
+   "wrongColNames": [],
+   "namedOk": 8,
+   "extraCols": 0,
+   "badCells": 0,
+   "header": [
+    "编号",
+    "名称",
+    "品牌",
+    "价格",
+    "评分",
+    "地区",
+    "名称链接",
+    "图片"
+   ]
+  }
+ },
+ {
+  "tool": "ours",
+  "scene": "e-loadmore",
+  "kind": "more",
+  "clicks": 3,
+  "steps": [
+   "点图标",
+   "开始",
+   "导出 Excel"
+  ],
+  "ms": 8580,
+  "file": "e-loadmore.xlsx",
+  "note": "自动选了 next；",
+  "rowsShown": "144 行",
+  "pageErrors": [],
+  "score": {
+   "rowsOut": 144,
+   "rowsWant": 144,
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "colsOut": 9,
+   "colsWant": 9,
+   "wrongCols": 0,
+   "wrongColNames": [],
+   "namedOk": 9,
+   "extraCols": 0,
+   "badCells": 0,
+   "header": [
+    "名称",
+    "品牌",
+    "价格",
+    "原价",
+    "评分",
+    "发货地",
+    "编号",
+    "链接",
+    "图片"
+   ]
+  }
+ },
+ {
+  "tool": "ours",
+  "scene": "f-infinite",
+  "kind": "scroll",
+  "clicks": 2,
+  "steps": [
+   "点图标",
+   "导出 Excel"
+  ],
+  "ms": 11076,
+  "file": "f-infinite.xlsx",
+  "note": "自动选了 scroll，自己滚起来了；",
+  "rowsShown": "200 行",
+  "pageErrors": [],
+  "score": {
+   "rowsOut": 200,
+   "rowsWant": 200,
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "colsOut": 8,
+   "colsWant": 8,
+   "wrongCols": 0,
+   "wrongColNames": [],
+   "namedOk": 8,
+   "extraCols": 0,
+   "badCells": 0,
+   "header": [
+    "编号",
+    "名称",
+    "品牌",
+    "价格",
+    "评分",
+    "地区",
+    "名称链接",
+    "图片"
+   ]
+  }
+ }
+]

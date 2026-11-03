@@ -6,6 +6,7 @@
       重复 = 同一编号出现第二次起每次算一处；多余 = 认不出编号的行（广告、杂行）。
   列：答案每一列，在表里找命中率最高的一列（只看认出的行）。值相等，或去掉 ≤6 字的标签前缀（「发货地：」「评分 」）后相等，算对。
       命中率 < 98% 记一处「错列」，同时报这列错了几格。答案里是空值的格子：表里也得空，或者整列都没对上时不另算。
+  列名：对上的那一列，表头跟答案列名一样（或同义：城市≈地区/发货地，链接≈名称链接）算「名字对」。多出来的列（答案里没有）记「杂列」。
 """
 import sys, json, os, re, openpyxl
 
@@ -23,6 +24,8 @@ def same(out, want):
         pre = out[: len(out) - len(want)]
         return bool(re.search(r'[:：\s]$', pre))
     return False
+
+SYN = {'城市': {'地区', '发货地'}, '链接': {'名称链接'}}
 
 def score(ans, xlsx):
     wb = openpyxl.load_workbook(xlsx, read_only=True)
@@ -48,9 +51,11 @@ def score(ans, xlsx):
         rate = best / n if n else 0
         cols.append({'col': c, 'hit': best, 'of': n, 'rate': round(rate, 4), 'outCol': head[bi] if bi is not None and bi < len(head) else None, 'bad': n - best})
     wrong = [c for c in cols if c['rate'] < 0.98]
+    named = sum(1 for c in cols if c['outCol'] == c['col'] or c['outCol'] in SYN.get(c['col'], ()))
+    used = {c['outCol'] for c in cols}
     return {'rowsOut': len(body), 'rowsWant': len(truth), 'miss': miss, 'dup': dup, 'extra': extra,
             'colsOut': len(head), 'colsWant': len(ans['cols']), 'wrongCols': len(wrong),
-            'wrongColNames': [f"{c['col']}({c['bad']}格)" for c in wrong], 'badCells': sum(c['bad'] for c in cols), 'header': head}
+            'wrongColNames': [f"{c['col']}({c['bad']}格)" for c in wrong], 'namedOk': named, 'extraCols': len([h for h in head if h not in used]), 'badCells': sum(c['bad'] for c in cols), 'header': head}
 
 if __name__ == '__main__':
     adir, odir = sys.argv[1], sys.argv[2]
@@ -60,6 +65,6 @@ if __name__ == '__main__':
         a = json.load(open(os.path.join(adir, r['scene'] + '.json')))
         s = score(a, r['file']) if r.get('file') and os.path.exists(r['file']) else None
         out.append({**r, 'score': s})
-        if s: print(f"{r['scene']:12} 点{r['clicks']} {r['ms']/1000:6.1f}s  出{s['rowsOut']}/{s['rowsWant']}行 漏{s['miss']} 重{s['dup']} 多{s['extra']}  列{s['colsOut']}/{s['colsWant']} 错列{s['wrongCols']} {s['wrongColNames']}  表头={s['header']}")
+        if s: print(f"{r['scene']:12} 点{r['clicks']} {r['ms']/1000:6.1f}s  出{s['rowsOut']}/{s['rowsWant']}行 漏{s['miss']} 重{s['dup']} 多{s['extra']}  列{s['colsOut']}/{s['colsWant']} 错列{s['wrongCols']} 名字对{s['namedOk']}/{s['colsWant']} 杂列{s['extraCols']} {s['wrongColNames']}  表头={s['header']}")
         else: print(r['scene'], '无文件', r.get('note'))
     json.dump(out, open(os.path.join(odir, 'score.json'), 'w'), ensure_ascii=False, indent=1)

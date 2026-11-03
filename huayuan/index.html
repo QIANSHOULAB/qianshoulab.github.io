@@ -55,9 +55,8 @@ img{max-width:100%;height:auto;display:block}
 .lnk{font-size:17px}
 .ver{margin-top:12px;color:var(--fg3);font-size:13px}
 
-.stage{position:relative;margin:44px auto 0;max-width:1040px;padding:0 16px 70px}
-.stage .bg{border-radius:14px;overflow:hidden;box-shadow:var(--shot);width:86%}
-.stage .fg{position:absolute;right:16px;bottom:0;width:54%;border-radius:14px;overflow:hidden;box-shadow:var(--shot)}
+.stage{margin:44px auto 0;max-width:1040px;padding:0 16px}
+.stage .win{border-radius:14px;box-shadow:var(--shot)}
 .cap{text-align:center;color:var(--fg2);font-size:14px;margin:18px 0 0}
 
 section.w{margin-top:96px}
@@ -70,7 +69,7 @@ h2{margin:0 0 10px;font:700 clamp(30px,5vw,44px)/1.12 var(--f-disp);letter-spaci
 .f h3{margin:0 0 6px;font-size:19px;font-weight:700}
 .f p{margin:0;color:var(--fg2);font-size:15px}
 
-.shot{margin:40px auto 0;max-width:880px;border-radius:14px;overflow:hidden;box-shadow:var(--shot)}
+.shot{margin:40px auto 0;max-width:1040px;border-radius:14px;overflow:hidden;box-shadow:var(--shot)}
 
 .steps{counter-reset:s;list-style:none;margin:40px auto 0;padding:0;max-width:720px;display:grid;gap:12px}
 .steps li{counter-increment:s;position:relative;background:var(--bg2);border-radius:16px;padding:18px 20px 18px 64px;font-size:16px}
@@ -85,9 +84,8 @@ h2{margin:0 0 10px;font:700 clamp(30px,5vw,44px)/1.12 var(--f-disp);letter-spaci
 
 @media (max-width:760px){
   .grid{grid-template-columns:1fr}
-  .stage .bg{width:100%}
-  .stage .fg{position:relative;right:auto;width:92%;margin:-18% 0 0 auto}
-  .stage{padding-bottom:0}
+  .stage .win,.shot{border-radius:10px}
+  .hero .sub br{display:none}
   .hero{padding-top:48px}
   section.w{margin-top:72px}
 }
@@ -97,53 +95,49 @@ h2{margin:0 0 10px;font:700 clamp(30px,5vw,44px)/1.12 var(--f-disp);letter-spaci
 <nav class="nav"><div class="w">
   <a class="home" href="../">千手院</a>
   <b>化缘僧</b>
-  <a class="pill" href="dist/huayuan-0.1.0.zip" download>下载</a>
+  <a class="pill" href="dist/huayuan-0.2.0.zip" download>下载</a>
 </div></nav>
 
 <header class="hero w">
   <img class="ico" src="img/icon.svg" alt="">
   <h1>化缘僧</h1>
   <p class="tag">点一下，你去玩，贫僧挨页化缘</p>
-  <p class="sub">网页上的客户名单、销售线索、商品列表，一键抓成 Excel。<br>自己翻页，自己滚到底，自己起列名。</p>
+  <p class="sub">网页上的客户名单、销售线索、商品列表，一键抓成 Excel。<br>贴在浏览器右边干活：自己翻页，自己滚到底，自己起列名。</p>
   <div class="cta">
-    <a class="btn" href="dist/huayuan-0.1.0.zip" download>下载插件</a>
+    <a class="btn" href="dist/huayuan-0.2.0.zip" download>下载插件</a>
     <a class="lnk" href="#install">怎么装 ›</a>
     <a class="lnk" href="demo/">示例页 ›</a>
   </div>
-  <div class="ver">0.1.0 · Edge / Chrome · 免费</div>
+  <div class="ver">0.2.0 · Edge / Chrome · 免费</div>
 </header>
 
 <div class="stage">
-  <picture class="bg-p">
-    <source srcset="img/page-table-highlight-dark.jpg" media="(prefers-color-scheme: dark)">
-    <img class="bg" src="img/page-table-highlight.jpg" alt="网页上的客户名单被蓝框圈出，下一页按钮被橙框标出" width="1760" height="1182" loading="eager">
-  </picture>
   <picture>
-    <source srcset="img/panel-table-start-dark.jpg" media="(prefers-color-scheme: dark)">
-    <img class="fg" src="img/panel-table-start.jpg" alt="化缘僧窗口：自动认出 20 行 8 列，找到了下一页" width="1760" height="1280">
+    <source srcset="img/side-table-dark.jpg" media="(prefers-color-scheme: dark)">
+    <img class="win" src="img/side-table.jpg" alt="左边网页的客户名单被蓝框圈出、下一页被橙框标出；右边侧栏里化缘僧已经认出 20 行 8 列" width="2562" height="1640" loading="eager">
   </picture>
 </div>
-<p class="cap w">蓝框是它认出的名单，橙框是它找到的「下一页」。这些都是它自己干的。</p>
+<p class="cap w">蓝框是它认出的名单，橙框是它找到的「下一页」，右边侧栏是已经抓好的表。这些都是它自己干的。</p>
 
 <section class="w">
   <h2>能自己来的，都自己来。</h2>
   <p class="lead">你只管点「开始」，然后去倒杯水。</p>
   <div class="grid">
     <div class="f"><span class="n">1</span><h3>自己认名单</h3><p>整页扫一遍，哪块最像名单就先抓哪块。不对？点「换一块」。</p></div>
-    <div class="f"><span class="n">2</span><h3>自己翻页</h3><p>「下一页」「加载更多」自己找、自己点。找不到就指给它看，一次就记住。</p></div>
-    <div class="f"><span class="n">3</span><h3>自己滚到底</h3><p>往下滚才出货的网页，它边滚边收，没有新的就收工。</p></div>
-    <div class="f"><span class="n">4</span><h3>自己起列名</h3><p>表头直接用；「电话：138…」这种自动拆成「电话」一列。没用的列先收起。</p></div>
+    <div class="f"><span class="n">2</span><h3>自己翻页</h3><p>「下一页」「加载更多」自己找、自己点。找不到就指给它看，一次就记住。网页整页跳走，侧栏照样在。</p></div>
+    <div class="f"><span class="n">3</span><h3>自己滚到底</h3><p>往下滚才出货的网页，它先替你试滚一下，出了货就一路滚到底，开始都不用点。看到「到底了」立刻收工。</p></div>
+    <div class="f"><span class="n">4</span><h3>自己起列名</h3><p>表头直接用；标题叫「名称」，划线价叫「原价」，「评分 4.5」拆成「评分」一列。没用的、重复的列先收起。</p></div>
     <div class="f"><span class="n">5</span><h3>自己去重</h3><p>翻页翻回来、同一条出现两次，只留一条。</p></div>
-    <div class="f"><span class="n">6</span><h3>一键成表</h3><p>Excel、CSV 或者直接复制。列能删、能改名、能拖顺序。</p></div>
+    <div class="f"><span class="n">6</span><h3>一键成表</h3><p>Excel、CSV 或者直接复制。4.0 还是 4.0，编号还是编号。列能删、能改名、能拖顺序。</p></div>
   </div>
 </section>
 
 <section class="w">
   <h2>卡片、表格、无限滚动，都化得动。</h2>
   <p class="lead">要登录的后台也行：用的就是你浏览器里已经登录的那个页面。</p>
-  <div class="shot"><img src="img/panel-scroll-done.jpg" alt="无限滚动的商品列表，滚到底收了 120 件" width="1760" height="1280" loading="lazy"></div>
-  <p class="cap">商品列表滚到底：120 件，带图片、价格、销量。</p>
-  <div class="shot"><img src="img/panel-cards-dark.jpg" alt="深色模式下，卡片式销售线索翻 4 页收了 48 条" width="1760" height="1280" loading="lazy"></div>
+  <div class="shot"><img src="img/side-scroll.jpg" alt="无限滚动的商品列表，化缘僧自己滚到底收了 120 件" width="2562" height="1640" loading="lazy"></div>
+  <p class="cap">商品列表：没点「开始」，自己滚到底，120 件，图片列放最后。</p>
+  <div class="shot"><img src="img/side-cards-dark.jpg" alt="深色模式下，卡片式销售线索翻 4 页收了 48 条" width="2562" height="1640" loading="lazy"></div>
   <p class="cap">卡片式线索翻 4 页：48 条，「电话：」「邮箱：」自动变成列名。</p>
 </section>
 
@@ -156,11 +150,11 @@ h2{margin:0 0 10px;font:700 clamp(30px,5vw,44px)/1.12 var(--f-disp);letter-spaci
   <h2>怎么装</h2>
   <p class="lead">还没上商店，先用「开发者模式」装，三分钟。</p>
   <ol class="steps">
-    <li><a href="dist/huayuan-0.1.0.zip" download>下载 huayuan-0.1.0.zip</a>，解压成一个文件夹。<span class="s">放个不会被误删的地方，删了插件就没了。</span></li>
+    <li><a href="dist/huayuan-0.2.0.zip" download>下载 huayuan-0.2.0.zip</a>，解压成一个文件夹。<span class="s">放个不会被误删的地方，删了插件就没了。</span></li>
     <li>地址栏打开 <code>edge://extensions</code><span class="s">Chrome 用 <code>chrome://extensions</code></span></li>
     <li>打开「开发人员模式」<span class="s">Edge 在左边栏下面，Chrome 在右上角。</span></li>
     <li>点「加载解压缩的扩展」，选刚才解压出来的文件夹。<span class="s">Chrome 里叫「加载已解压的扩展程序」。</span></li>
-    <li>点工具栏的拼图图标，把化缘僧钉出来。<span class="s">以后在任何有列表的网页上点它就行，快捷键 Alt+Shift+H。</span></li>
+    <li>点工具栏的拼图图标，把化缘僧钉出来。<span class="s">以后在任何有列表的网页上点它，右边弹出侧栏就开工。快捷键 Alt+Shift+H。</span></li>
   </ol>
   <p class="note">没有顺手的网页？先去 <a href="demo/">示例页</a> 试：表格、卡片、无限滚动各一页，全是假数据。</p>
 </section>

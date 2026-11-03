@@ -2,7 +2,7 @@
 // 记点击次数、用时，下载 xlsx，截面板图。准确度由 score.py 对标准答案打分。
 // 用法：node huayuan/bench/run.js <输出目录> <工具:ours|ids|ods> [插件目录] [场景,逗号分隔]
 //   ours 默认用 huayuan/extension；ids = Open Scraper（Instant Data Scraper 1.4.1 反混淆分支）；ods = Open Data Scraper（IDS 克隆）
-// 需要先 node huayuan/bench/gen.js 生成测试站。
+// 需要先 node huayuan/bench/gen.js 生成测试站。跑之前 LANG=C.UTF-8（不然沙盒里中文下载名会变成 download）。
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os');
 
@@ -81,16 +81,20 @@ async function main() {
       panel = await wait;
       panel.on('pageerror', (e) => errs.push('panel: ' + e.message));
       await panel.waitForLoadState('domcontentloaded');
-      if (TOOL === 'ours') await panel.setViewportSize({ width: 880, height: 640 });
+      if (TOOL === 'ours') await panel.setViewportSize({ width: 400, height: 820 }); // 侧边栏宽
       if (TOOL === 'ids') await panel.setViewportSize({ width: 720, height: 690 });
       if (TOOL === 'ods') await panel.setViewportSize({ width: 1100, height: 800 });
       await sw.evaluate(async (id) => { await chrome.tabs.update(id, { active: true }); }, tabId).catch(() => {});
 
       if (TOOL === 'ours') {
         await panel.waitForSelector('#ctl:not([hidden])', { timeout: 20000 });
+        await panel.waitForSelector('body[data-ready]', { timeout: 20000 }); // 长页面先试滚一下，看完再算
         const mode = await panel.evaluate(() => document.querySelector('#seg [aria-pressed=true]')?.dataset.mode);
-        r.note += `自动选了 ${mode}；`;
-        if (kind !== 'one') {
+        const auto = await panel.evaluate(() => /第 \d+ 屏|化完了/.test(document.getElementById('status').textContent));
+        r.note += `自动选了 ${mode}${auto ? '，自己滚起来了' : ''}；`;
+        if (auto) {
+          await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: LIMIT });
+        } else if (kind !== 'one') {
           // 自动没选对 → 真人要多点：选模式 / 点选下一页
           if (kind === 'scroll' && mode !== 'scroll') await click(panel, '#seg [data-mode=scroll]', '选「滚动」');
           if ((kind === 'next' || kind === 'more') && mode !== 'next') await click(panel, '#seg [data-mode=next]', '选「翻页」');

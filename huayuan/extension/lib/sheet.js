@@ -12,9 +12,14 @@
     percent: /^-?[\d.]+\s?%$/,
     label: /^(.{1,10}?)\s*[:：]$/,
     prefix: /^([^\d\s:：,，]{1,8})\s*[:：]\s*/,
+    // 「评分 4.0」「销量 1200」：空格隔开的中文标签 + 数字
+    spacePrefix: /^([㐀-鿿]{1,6})\s+(?=[-+]?[¥￥$€£]?\s?[\d,.]+\s?(%|分|星|件|元|人|条|次)?$)/,
     cjk: /[㐀-鿿]/,
     word: /^[a-z][a-z-]{2,20}$/i,
   };
+
+  // mailto:/tel: 链接跟文字列比时去掉前缀
+  const bare = (v) => { v = v || ''; if (!/^(mailto|tel|sms):/i.test(v)) return v; v = v.replace(/^(mailto|tel|sms):/i, '').split('?')[0]; try { return decodeURIComponent(v); } catch { return v; } };
 
   class QSSheet {
     constructor() { this.reset(); }
@@ -73,9 +78,11 @@
           if (lab || n >= 4) a.hide = 'const';
         }
         if (!a.hide && m.type === 't' && vals.length >= 2) {
-          const pre = {}; let best = null;
-          for (const v of vals.slice(0, 300)) { const mm = v.match(RE.prefix); if (mm) { pre[mm[1]] = (pre[mm[1]] || 0) + 1; if (!best || pre[mm[1]] > pre[best]) best = mm[1]; } }
-          if (best && pre[best] >= Math.min(vals.length, 300) * 0.8) { a.strip = best; a.name = best; }
+          for (const re of [RE.prefix, RE.spacePrefix]) {
+            const pre = {}; let best = null;
+            for (const v of vals.slice(0, 300)) { const mm = v.match(re); if (mm) { pre[mm[1]] = (pre[mm[1]] || 0) + 1; if (!best || pre[mm[1]] > pre[best]) best = mm[1]; } }
+            if (best && pre[best] >= Math.min(vals.length, 300) * 0.8) { a.strip = best; a.stripRe = re; a.name = best; break; }
+          }
         }
         if (!a.hide && n >= 20 && vals.length < n * 0.05) a.hide = 'sparse';
         info[k] = a;
@@ -96,7 +103,7 @@
       for (const k of keys) {
         const a = info[k];
         if (a.hide) continue;
-        const same = shown.find((s) => this.rows.every((r) => (r[s] || '') === (r[k] || '')));
+        const same = shown.find((s) => this.rows.every((r) => bare(r[s]) === bare(r[k])));
         if (same) a.hide = 'dup'; else shown.push(k);
       }
       // 起名
@@ -143,7 +150,10 @@
     }
 
     orderedKeys() {
-      if (!this.order) return this.keys.slice();
+      if (!this.order) {
+        const rank = (k) => ({ href: 1, src: 2 }[(this.meta[k] || {}).type] || 0);
+        return this.keys.map((k, i) => [k, i]).sort((x, y) => rank(x[0]) - rank(y[0]) || x[1] - y[1]).map((x) => x[0]);
+      }
       const rest = this.keys.filter((k) => !this.order.includes(k));
       return this.order.filter((k) => this.meta[k]).concat(rest);
     }
@@ -155,14 +165,14 @@
         const u = this.user[k] || {};
         const a = info[k];
         const hidden = u.hidden !== undefined ? u.hidden : !!a.hide;
-        return { key: k, name: u.name || a.name, hidden, why: a.hide, strip: a.strip, type: (this.meta[k] || {}).type };
+        return { key: k, name: u.name || a.name, hidden, why: a.hide, strip: a.strip, stripRe: a.stripRe, type: (this.meta[k] || {}).type };
       });
     }
     visible() { return this.columns().filter((c) => !c.hidden); }
 
     value(row, col) {
       let v = row[col.key] || '';
-      if (col.strip && v.startsWith(col.strip)) v = v.replace(RE.prefix, '');
+      if (col.strip && v.startsWith(col.strip)) v = v.replace(col.stripRe || RE.prefix, '');
       return v;
     }
 

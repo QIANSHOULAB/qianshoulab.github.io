@@ -1,5 +1,6 @@
 // 化缘僧端到端测试：真把插件装进 Chromium，在本地示例站上从头点到尾。
-// 用法：node huayuan/test/e2e.js [截图目录]
+// 用法：LANG=C.UTF-8 PW_CHANNEL=chromium node huayuan/test/e2e.js [截图目录]
+//       （LANG 要是 UTF-8：沙盒默认 C 语言环境下 Chromium 把中文下载文件名换成 download，真电脑上没这事）
 // 说明：Playwright 点不了工具栏图标，所以测试版 manifest 额外给了 localhost 的读取权限，
 //       再从后台直接调用 openPanel(tab)（跟点图标走同一个函数）。正式包只有 activeTab。
 const { chromium } = require('playwright');
@@ -9,7 +10,7 @@ const { execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const SHOTS = path.resolve(process.argv[2] || path.join(os.tmpdir(), 'huayuan-shots'));
 fs.mkdirSync(SHOTS, { recursive: true });
-const PORT = 8765, BASE = `http://127.0.0.1:${PORT}`;
+const PORT = Number(process.env.PORT) || 8765, BASE = `http://127.0.0.1:${PORT}`;
 const errors = [];
 const ok = (c, m) => { if (!c) throw new Error('✗ ' + m); console.log('  ✓ ' + m); };
 
@@ -60,8 +61,11 @@ async function main() {
     const wait = ctx.waitForEvent('page', (p) => p.url().includes('panel.html'));
     await sw.evaluate(async (id) => { const t = await chrome.tabs.get(id); await globalThis.openPanel(t); }, tabId);
     const panel = await wait; watch(panel, tag + '-panel');
-    await panel.setViewportSize({ width: 880, height: 640 }); // 跟真窗口一样大
+    await panel.setViewportSize({ width: 400, height: 820 }); // 跟侧边栏差不多宽
+    const opt = await sw.evaluate((id) => chrome.sidePanel.getOptions({ tabId: id }), tabId);
+    if (!opt || !opt.enabled || !String(opt.path).includes('tab=' + tabId)) throw new Error('侧边栏没给这个标签页设上：' + JSON.stringify(opt));
     await panel.waitForLoadState('domcontentloaded');
+    await panel.waitForSelector('body[data-ready]', { timeout: 30000 });
     return { page, panel, tabId };
   }
   const rows = (panel) => panel.evaluate(() => document.querySelectorAll('#grid tbody tr').length);
@@ -75,6 +79,23 @@ async function main() {
   async function download(panel, btn) {
     const [d] = await Promise.all([panel.waitForEvent('download'), panel.click(btn)]);
     const f = path.join(SHOTS, d.suggestedFilename()); await d.saveAs(f); return f;
+  }
+  // 介绍页用的图：网页 + 右边侧栏，拼成一张「浏览器窗口」
+  async function duo(page, panel, name, dark) {
+    const scheme = dark ? 'dark' : 'light';
+    await page.emulateMedia({ colorScheme: scheme }); await panel.emulateMedia({ colorScheme: scheme });
+    const vp = page.viewportSize();
+    await page.setViewportSize({ width: 880, height: 820 });
+    await page.waitForTimeout(300);
+    const a = (await page.screenshot()).toString('base64');
+    const b = (await panel.screenshot()).toString('base64');
+    await page.setViewportSize(vp);
+    const comp = await ctx.newPage();
+    await comp.setViewportSize({ width: 1281, height: 820 });
+    await comp.setContent(`<body style="margin:0;display:flex;background:${dark ? '#000' : '#fff'}"><img src="data:image/png;base64,${a}" style="width:880px;height:820px"><i style="width:1px;background:${dark ? '#38383A' : '#D2D2D7'}"></i><img src="data:image/png;base64,${b}" style="width:400px;height:820px"></body>`);
+    await comp.screenshot({ path: path.join(SHOTS, name + '.png') });
+    await comp.close();
+    await page.emulateMedia({ colorScheme: 'light' }); await panel.emulateMedia({ colorScheme: 'light' });
   }
   const py = (code, f) => execFileSync('python3', ['-c', code, f], { encoding: 'utf8' }).trim();
 
@@ -94,6 +115,8 @@ async function main() {
   await panel.screenshot({ path: path.join(SHOTS, 'panel-table-start-dark.png') });
   await page.screenshot({ path: path.join(SHOTS, 'page-table-highlight-dark.png') });
   await panel.emulateMedia({ colorScheme: 'light' }); await page.emulateMedia({ colorScheme: 'light' });
+  await duo(page, panel, 'duo-table-start', false);
+  await duo(page, panel, 'duo-table-start-dark', true);
   await crawl(panel);
   ok((await blk(panel)).startsWith('100'), '翻完 5 页，收 100 行：' + await status(panel));
   ok(page.url().includes('p=5'), '网页停在第 5 页');
@@ -106,13 +129,16 @@ async function main() {
   await panel.locator('#grid th[data-key] .nm', { hasText: /^联系人$/ }).click();
   await panel.keyboard.press('Control+A'); await panel.keyboard.type('对接人'); await panel.keyboard.press('Enter');
   ok((await heads(panel)).includes('对接人'), '改列名');
+  await panel.setViewportSize({ width: 760, height: 820 }); // 侧栏拉宽了再拖（窄的时候第一列躲在序号列后面，拖不准）
   const src = panel.locator('#grid th[data-key]').filter({ hasText: '邮箱' });
   const dst = panel.locator('#grid th[data-key]').first();
   const bb = await dst.boundingBox();
   await src.dragTo(dst, { targetPosition: { x: 4, y: bb.height / 2 } });
   ok((await heads(panel))[0] === '邮箱', '拖到第一列：' + (await heads(panel)).slice(0, 3).join(' | '));
   await panel.screenshot({ path: path.join(SHOTS, 'panel-table-done.png') });
+  await panel.setViewportSize({ width: 400, height: 820 });
   let f = await download(panel, '#xlsx');
+  ok(/^化缘_127\.0\.0\.1_\d{8}-\d{4}\.xlsx$/.test(path.basename(f)), '下载文件名是中文：' + path.basename(f));
   let out = py("import sys,openpyxl;ws=openpyxl.load_workbook(sys.argv[1]).active;r=list(ws.values);print(len(r)-1,'|'.join(str(x) for x in r[0]),'|'.join(str(x) for x in r[1]))", f);
   console.log('    xlsx:', out);
   ok(out.startsWith('100 邮箱|') && out.includes('对接人') && !out.includes('编号'), 'xlsx 100 行，改名/删列/顺序都带上');
@@ -137,19 +163,21 @@ async function main() {
   await panel.screenshot({ path: path.join(SHOTS, 'panel-cards-done.png') });
   await panel.emulateMedia({ colorScheme: 'dark' });
   await panel.screenshot({ path: path.join(SHOTS, 'panel-cards-dark.png') });
+  await duo(page, panel, 'duo-cards-done-dark', true);
   await panel.close(); await page.close();
 
   // ---------- 3. 无限滚动 ----------
   console.log('3. 商品列表（无限滚动）');
   ({ page, panel } = await openOn(`${BASE}/demo/scroll.html`, 'scroll'));
-  await panel.waitForSelector('#ctl:not([hidden])');
-  ok((await rows(panel)) === 24, '认出商品，24 件');
-  ok(await panel.locator('#seg button[data-mode=scroll][aria-pressed=true]').count() === 1, '没有下一页，自动选「滚动」');
+  ok(await panel.locator('#seg button[data-mode=scroll][aria-pressed=true]').count() === 1, '没有下一页，试滚一下出了新货，自动选「滚动」');
+  ok(/第 \d+ 屏/.test(await status(panel)) || /化完了/.test(await status(panel)), '不用点开始，自己接着滚：' + await status(panel));
+  const t0 = Date.now();
+  await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: 90000 });
+  ok((await blk(panel)).startsWith('120'), '滚到底，120 件：' + await status(panel) + `（收尾 ${((Date.now() - t0) / 1000).toFixed(1)} 秒）`);
   h = await heads(panel);
-  ok(h.includes('图片') && h.includes('价格'), '图片列、价格列：' + h.join(' | '));
-  await crawl(panel);
-  ok((await blk(panel)).startsWith('120'), '滚到底，120 件：' + await status(panel));
+  ok(h.includes('图片') && h.includes('价格') && h.indexOf('图片') === h.length - 1, '图片列放最后：' + h.join(' | '));
   await panel.screenshot({ path: path.join(SHOTS, 'panel-scroll-done.png') });
+  await duo(page, panel, 'duo-scroll-done', false);
   f = await download(panel, '#xlsx');
   out = py("import sys,openpyxl;ws=openpyxl.load_workbook(sys.argv[1]).active;print(ws.max_row-1)", f);
   ok(out === '120', 'xlsx 120 行');
@@ -180,8 +208,30 @@ async function main() {
   ok(await page.locator('[data-qs-list],[data-qs-next]').count() === 0, '关掉面板，网页上的高亮清干净');
   await page.close();
 
-  // ---------- 5. 进不去的页面：给示例 ----------
-  console.log('5. 浏览器自带页面');
+  // ---------- 5. 列名、值清洗、xlsx 格式（直接喂数据） ----------
+  console.log('5. 列名和值清洗');
+  ({ page, panel } = await openOn(`${BASE}/demo/table.html`, 'units'));
+  const u = await panel.evaluate(() => {
+    const s = new QSSheet();
+    const keys = ['a|href', 'img|src', 'h3>a|t', 'p.price|t', 'p.orig|t', 'p.rate|t', 'p.loc|t', 'm|href', 'm|t'];
+    const meta = { 'a|href': { type: 'href' }, 'img|src': { type: 'src' }, 'h3>a|t': { type: 't', hint: 'title' }, 'p.price|t': { type: 't', hint: 'price' }, 'p.orig|t': { type: 't', hint: 'orig' }, 'p.rate|t': { type: 't', hint: 'rate' }, 'p.loc|t': { type: 't', hint: 'loc' }, 'm|href': { type: 'href' }, 'm|t': { type: 't', hint: 'mail' } };
+    const rows = [];
+    for (let i = 0; i < 6; i++) rows.push({ 'a|href': 'http://x/' + i, 'img|src': 'http://x/' + i + '.png', 'h3>a|t': '货' + i, 'p.price|t': '¥' + (100 + i), 'p.orig|t': '¥' + (200 + i), 'p.rate|t': '评分 4.' + (i % 2 ? 5 : 0), 'p.loc|t': '上海', 'm|href': 'mailto:a' + i + '@x.com', 'm|t': 'a' + i + '@x.com' });
+    rows[0]['p.loc|t'] = '杭州';
+    s.add({ keys, meta, rows });
+    const aoa = s.toAOA();
+    const blob = QSExport.xlsx(aoa, 't');
+    return blob.arrayBuffer().then((b) => ({ head: aoa[0], r1: aoa[1], b64: btoa(String.fromCharCode(...new Uint8Array(b))) }));
+  });
+  ok(JSON.stringify(u.head) === JSON.stringify(['名称', '价格', '原价', '评分', '地区', '邮箱', '链接', '图片']), '列名：' + u.head.join(' | '));
+  ok(u.r1[3] === '4.0', '「评分 4.0」拆成列名，值留 4.0');
+  const xf = path.join(SHOTS, 'units.xlsx'); fs.writeFileSync(xf, Buffer.from(u.b64, 'base64'));
+  out = py("import sys,openpyxl;ws=openpyxl.load_workbook(sys.argv[1]).active;c=ws['D2'];print(c.value,c.number_format)", xf);
+  ok(out === '4.0 0.0', 'xlsx 里 4.0 带一位小数格式：' + out);
+  await panel.close(); await page.close();
+
+  // ---------- 6. 进不去的页面：给示例 ----------
+  console.log('6. 浏览器自带页面');
   ({ page, panel } = await openOn('chrome://version/', 'chrome'));
   await panel.waitForSelector('#empty:not([hidden])');
   ok((await panel.locator('#emptyT').textContent()).includes('进不去') && (await rows(panel)) === 8, '说清楚进不去，并摆出示例表');

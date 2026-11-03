@@ -12,7 +12,8 @@
     cands: [], ci: 0, target: null, host: '', origin: '',
     mode: 'one', next: null, nextSpec: null, canScroll: false,
     running: false, stopAsked: false, pages: 0, ended: null, picking: false,
-    settings: { delay: 1.5, maxPages: 50 },
+    settings: { delay: 0.5, maxPages: 50 },
+    trying: false, complete: false,
     lastCount: 0, port: null, permWaiter: null,
   };
 
@@ -71,9 +72,37 @@
     const data = await call('extract', S.target);
     sheet.add(data);
     await probe(true);
-    S.mode = S.next && S.next.found ? 'next' : S.canScroll ? 'scroll' : 'one';
+    S.complete = false; S.trying = false;
+    if (S.next && S.next.found) S.mode = 'next';
+    else if (S.canScroll) { S.mode = 'scroll'; S.trying = true; }
+    else { S.mode = 'one'; S.complete = true; }
     await call('highlight', S.target, S.nextSpec, !first).catch(() => {});
     show('ctl'); render(true);
+    if (S.trying) return trial();
+    document.body.dataset.ready = '1';
+  }
+
+  // 长页面：先替用户往下滚一下。出了新货 = 无限滚动，直接接着滚完；没出 = 整页都在，回到原位。
+  async function trial() {
+    let ch = { changed: false };
+    try {
+      const before = await call('fingerprint', S.target);
+      await call('trialScroll', S.target);
+      ch = await waitChange(before, { timeout: 6000, quickNo: 1200 });
+    } catch {}
+    S.trying = false;
+    if (ch.changed) {
+      await settle(0);
+      const data = await safeCall('extract', S.target);
+      if (data && data.ok) sheet.add(data);
+      S.pages++;
+      document.body.dataset.ready = '1';
+      return run();
+    }
+    await call('restoreScroll').catch(() => {});
+    S.mode = 'one'; S.complete = true;
+    render();
+    document.body.dataset.ready = '1';
   }
 
   async function probe() {
@@ -90,7 +119,8 @@
     render();
     let stale = 0;
     const max = Math.max(1, Number(S.settings.maxPages) || 50);
-    const delay = Math.max(300, (Number(S.settings.delay) || 1.5) * 1000);
+    const d = Number(S.settings.delay);
+    const delay = Math.min(30000, Math.max(0, (Number.isFinite(d) ? d : 0.5) * 1000));
     try {
       while (!S.stopAsked && S.pages < max) {
         const before = await safeCall('fingerprint', S.target);
@@ -98,15 +128,17 @@
           const r = await safeCall('clickNext', S.target, S.nextSpec);
           if (!r || !r.ok) { S.ended = 'end'; break; }
         } else {
+          if (before && before.end) { S.ended = 'end'; break; } // 页面已经写着「到底了」
           await safeCall('scrollMore', S.target);
         }
-        const changed = await waitChange(before && before.fp, S.mode === 'scroll' ? 6000 : 15000);
+        const ch = await waitChange(before, S.mode === 'scroll' ? { timeout: 8000, quickNo: 3000 } : { timeout: 15000 });
         if (S.stopAsked) break;
-        if (!changed) {
-          if (S.mode === 'scroll' && ++stale < 3) continue;
+        if (!ch.changed) {
+          // 页面还在长、只是名单没动（虚拟列表、慢）→ 再滚两次；写着到底了 / 高度不长了 → 立刻收
+          if (S.mode === 'scroll' && !ch.end && ch.grew && ++stale < 3) continue;
           S.ended = 'end'; break;
         }
-        await sleep(S.mode === 'scroll' ? Math.min(delay, 800) : delay);
+        await settle(delay);
         const data = await safeCall('extract', S.target);
         const added = data && data.ok ? sheet.add(data) : 0;
         S.pages++;
@@ -123,21 +155,39 @@
     render();
   }
 
-  // 等页面变：Ajax 换内容、整页跳转、滚动追加都算
-  async function waitChange(fp, timeout) {
+  // 等页面变：Ajax 换内容、整页跳转、滚动追加都算。返回 { changed, end, grew }
+  // quickNo：滚动时，过了这么久名单没动、页面没长、网络也安静、没有「加载中」，就当到底了，不干等
+  async function waitChange(before, { timeout, quickNo = 0 }) {
+    const fp = before && before.fp, h0 = (before && before.height) || 0;
     const t0 = Date.now();
-    let lastSeen = null, sameTimes = 0;
+    let lastSeen = null, last = null;
     while (Date.now() - t0 < timeout) {
-      if (S.stopAsked) return false;
-      await sleep(350);
+      if (S.stopAsked) return { changed: false };
+      await sleep(300);
       const f = await safeCall('fingerprint', S.target).catch(() => null);
       if (!f || !f.ok || f.ready === 'loading') { lastSeen = null; continue; }
+      last = f;
       if (f.fp !== fp) {
-        if (f.fp === lastSeen) { if (++sameTimes >= 1) return true; } // 连续两次一样 = 渲染稳了
-        else { lastSeen = f.fp; sameTimes = 0; }
+        if (f.fp === lastSeen) return { changed: true }; // 连续两次一样 = 渲染稳了
+        lastSeen = f.fp;
+      } else if (quickNo) {
+        if (f.end) return { changed: false, end: true };
+        const t = Date.now() - t0;
+        if (t > quickNo && !f.loading && f.height <= h0 + 2 && f.quiet > Math.min(t, quickNo) * 0.6) return { changed: false, grew: false };
       }
     }
-    return lastSeen !== null && lastSeen !== fp;
+    return { changed: lastSeen !== null && lastSeen !== fp, grew: !!(last && last.height > h0 + 2), end: !!(last && last.end) };
+  }
+
+  // 页面稳了再抓：等网络安静 300 毫秒（最多 2 秒），再按设置多等一会
+  async function settle(delay) {
+    const t0 = Date.now();
+    while (Date.now() - t0 < 2000) {
+      const f = await safeCall('fingerprint', S.target).catch(() => null);
+      if (!f || !(f.quiet < 300)) break;
+      await sleep(120);
+    }
+    if (delay) await sleep(delay);
   }
 
   // 跳了页之后浏览器可能收回临时授权：停下来请用户点一下「允许」
@@ -172,7 +222,8 @@
   }
 
   function showEmpty(kind) {
-    S.running = false;
+    S.running = false; S.trying = false;
+    document.body.dataset.ready = '1';
     show('empty');
     $('perm').hidden = true;
     $('emptyT').textContent = T(kind === 'noList' ? 'noList' : kind === 'tabGone' ? 'tabGone' : 'noAccess');
@@ -185,25 +236,26 @@
 
   function render(fresh) {
     const n = S.cands.length;
-    $('blkN').textContent = sheet.rows.length.toLocaleString() + ' 行';
-    $('blkS').textContent = (n > 1 ? T('block', { i: S.ci + 1, n }) : T('blockOnly')) + ' · ' + sheet.visible().length + ' 列';
+    $('blkN').textContent = T('rows', { n: sheet.rows.length.toLocaleString() });
+    $('blkS').textContent = (n > 1 ? T('block', { i: S.ci + 1, n }) : T('blockOnly')) + ' · ' + T('cols', { n: sheet.visible().length });
     $('swap').hidden = n < 2;
-    $('swap').disabled = S.running;
+    $('swap').disabled = S.running || S.trying;
     for (const b of $('seg').children) {
       b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode));
-      b.disabled = S.running;
+      b.disabled = S.running || S.trying;
     }
     // 提示 + 下一页
     const hint = $('hint'), pick = $('pick');
     pick.hidden = S.mode !== 'next' || S.running;
-    if (S.picking) { hint.textContent = T('pickWait'); pick.textContent = T('cancel'); pick.hidden = false; }
+    if (S.trying) { hint.innerHTML = '<span class="spin"></span>'; hint.append(T('trying')); }
+    else if (S.picking) { hint.textContent = T('pickWait'); pick.textContent = T('cancel'); pick.hidden = false; }
     else if (S.mode === 'next') {
       if (S.next && S.next.found) { hint.innerHTML = ''; const k = document.createElement('span'); k.className = 'k'; k.textContent = S.next.text; hint.append(T('nextFound', { text: '' }), k); pick.textContent = T('nextRepick'); }
       else { hint.textContent = T(S.ended === 'end' ? 'nextEnd' : 'nextNone'); pick.textContent = T('nextPick'); }
-    } else hint.textContent = T(S.mode === 'scroll' ? 'scrollHint' : 'oneHint');
+    } else hint.textContent = T(S.mode === 'scroll' ? 'scrollHint' : S.complete ? 'allHere' : 'oneHint');
     // 主按钮
     const go = $('go');
-    go.hidden = S.mode === 'one';
+    go.hidden = S.mode === 'one' || S.trying || (S.ended === 'end' && !S.running); // 化完了就别再亮「开始」，下一步是导出
     go.className = 'btn big ' + (S.running ? 'stop' : 'primary');
     go.textContent = S.running ? T('stop') : S.ended === 'stop' ? T('again') : T('start');
     go.disabled = !S.running && S.mode === 'next' && !(S.next && S.next.found);
@@ -212,7 +264,11 @@
     const st = $('status');
     const rows = sheet.rows.length.toLocaleString();
     if (S.running) st.textContent = T(S.mode === 'scroll' ? 'runningScroll' : 'running', { p: S.pages, rows });
-    else if (S.ended) st.textContent = T(S.ended === 'stop' ? 'finishedStop' : 'finished', { p: S.pages, rows, unit: T(S.mode === 'scroll' ? 'unitScreen' : 'unitPage') });
+    else if (S.ended) {
+      const b = document.createElement('b');
+      b.textContent = T(S.ended === 'stop' ? 'finishedStop' : 'finished', { p: S.pages, rows, unit: T(S.mode === 'scroll' ? 'unitScreen' : 'unitPage') });
+      st.replaceChildren(b);
+    }
     else st.textContent = '';
     renderGrid(fresh);
     renderMeta();
@@ -321,10 +377,10 @@
   grid.addEventListener('dragend', () => { dragKey = null; clearOver(); for (const t of grid.querySelectorAll('.drag')) t.classList.remove('drag'); });
 
   // ---------- 按钮 ----------
-  $('swap').onclick = async () => { if (S.running) return; await choose((S.ci + 1) % S.cands.length); };
+  $('swap').onclick = async () => { if (S.running || S.trying) return; await choose((S.ci + 1) % S.cands.length); };
   $('seg').onclick = async (e) => {
-    const b = e.target.closest('button[data-mode]'); if (!b || S.running) return;
-    S.mode = b.dataset.mode; S.ended = null; render();
+    const b = e.target.closest('button[data-mode]'); if (!b || S.running || S.trying) return;
+    S.mode = b.dataset.mode; S.ended = null; S.complete = false; render();
   };
   $('go').onclick = () => run();
   $('pick').onclick = async () => {
@@ -344,7 +400,8 @@
   $('gear').onclick = (e) => { e.stopPropagation(); $('pop').hidden = !$('pop').hidden; };
   document.addEventListener('click', (e) => { if (!e.target.closest('.top-r')) $('pop').hidden = true; });
   for (const id of ['setDelay', 'setMax']) $(id).addEventListener('change', () => {
-    S.settings.delay = Math.min(30, Math.max(0.5, Number($('setDelay').value) || 1.5));
+    const dv = Number($('setDelay').value);
+    S.settings.delay = Math.min(30, Math.max(0, Number.isFinite(dv) ? Math.round(dv * 10) / 10 : 0.5));
     S.settings.maxPages = Math.min(1000, Math.max(1, Math.round(Number($('setMax').value) || 50)));
     $('setDelay').value = S.settings.delay; $('setMax').value = S.settings.maxPages;
     QSSettings.set(S.settings);
@@ -354,11 +411,19 @@
     const has = sheet.rows.length > 0 && sheet.visible().length > 0 && !$('empty').hidden === false;
     for (const id of ['copy', 'csv', 'xlsx']) $(id).disabled = !has;
   }
-  const fileBase = () => `huayuan_${(S.host || 'page').replace(/^www\./, '')}_${QSExport.stamp()}`;
-  $('xlsx').onclick = () => { const f = fileBase() + '.xlsx'; QSExport.download(QSExport.xlsx(sheet.toAOA(), S.host || 'Sheet1'), f); toast(T('exported', { file: f })); };
-  $('csv').onclick = () => { const f = fileBase() + '.csv'; QSExport.download(QSExport.csv(sheet.toAOA()), f); toast(T('exported', { file: f })); };
+  const fileBase = () => `${T('filePrefix')}_${(S.host || 'page').replace(/^www\./, '')}_${QSExport.stamp()}`;
+  function save(kind) {
+    const aoa = sheet.toAOA();
+    const blob = kind === 'xlsx' ? QSExport.xlsx(aoa, S.host || 'Sheet1') : QSExport.csv(aoa);
+    QSExport.download(blob, fileBase() + '.' + kind);
+    toast(T('exported', { n: (aoa.length - 1).toLocaleString() }));
+  }
+  $('xlsx').onclick = () => save('xlsx');
+  $('csv').onclick = () => save('csv');
   $('copy').onclick = async () => { const aoa = sheet.toAOA(); await QSExport.copy(QSExport.tsv(aoa)); toast(T('copied', { n: aoa.length - 1 })); };
 
+  // 提示条浮在导出按钮上方：记下底栏有多高
+  try { new ResizeObserver(() => document.documentElement.style.setProperty('--foot-h', $('bottom').offsetHeight + 'px')).observe($('bottom')); } catch {}
   let tt = null;
   function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2200); }
 
