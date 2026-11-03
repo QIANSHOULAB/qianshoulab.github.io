@@ -12,7 +12,7 @@
     cands: [], ci: 0, target: null, host: '', origin: '',
     mode: 'one', next: null, nextSpec: null, canScroll: false,
     running: false, stopAsked: false, pages: 0, ended: null, picking: false,
-    settings: { delay: 0.5, maxPages: 50 },
+    settings: { delay: 0.3, maxPages: 50 },
     trying: false, complete: false,
     lastCount: 0, port: null, permWaiter: null,
   };
@@ -73,22 +73,30 @@
     sheet.add(data);
     await probe(true);
     S.complete = false; S.trying = false;
+    let tr = null;
     if (S.next && S.next.found) S.mode = 'next';
-    else if (S.canScroll) { S.mode = 'scroll'; S.trying = true; }
+    else if (S.canScroll) { S.mode = 'scroll'; S.trying = true; tr = await trialStart(); } // 先滚出去，画表的工夫顺便等着
     else { S.mode = 'one'; S.complete = true; }
-    await call('highlight', S.target, S.nextSpec, !first).catch(() => {});
+    await call('highlight', S.target, S.nextSpec, !first && !tr).catch(() => {}); // 试滚着就别把名单滚回视野
     show('ctl'); render(true);
-    if (S.trying) return trial();
+    if (S.trying) return trial(tr);
     document.body.dataset.ready = '1';
   }
 
-  // 长页面：先替用户往下滚一下。出了新货 = 无限滚动，直接接着滚完；没出 = 整页都在，回到原位。
-  async function trial() {
-    let ch = { changed: false };
+  async function trialStart() {
     try {
       const before = await call('fingerprint', S.target);
+      const t0 = Date.now();
       await call('trialScroll', S.target);
-      ch = await waitChange(before, { timeout: 6000, quickNo: 1200 });
+      return { before, t0 };
+    } catch { return null; }
+  }
+
+  // 长页面：先替用户往下滚一下。出了新货 = 无限滚动，直接接着滚完；没出 = 整页都在，回到原位。
+  async function trial(tr) {
+    let ch = { changed: false };
+    try {
+      if (tr) ch = await waitChange(tr.before, { timeout: 6000, quickNo: 450, t0: tr.t0 });
     } catch {}
     S.trying = false;
     if (ch.changed) {
@@ -103,6 +111,27 @@
     S.mode = 'one'; S.complete = true;
     render();
     document.body.dataset.ready = '1';
+    lateWatch();
+  }
+
+  // 试滚只看半秒就下结论，所以后面再盯 5 秒：名单要是自己长了（慢吞吞的无限滚动），改成「滚动」接着滚完
+  async function lateWatch() {
+    const ci = S.ci;
+    const base = await safeCall('fingerprint', S.target).catch(() => null);
+    if (!base || !base.ok) return;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 5000) {
+      await sleep(400);
+      if (S.ci !== ci || S.running || S.picking || S.mode !== 'one') return;
+      const f = await safeCall('fingerprint', S.target).catch(() => null);
+      if (!f || !f.ok || f.fp === base.fp || f.rows <= base.rows) continue;
+      await settle(0);
+      const data = await safeCall('extract', S.target);
+      if (!data || !data.ok || !sheet.add(data)) return;
+      if (S.ci !== ci || S.running || S.mode !== 'one') return;
+      S.mode = 'scroll'; S.complete = false; S.pages++;
+      return run();
+    }
   }
 
   async function probe() {
@@ -120,7 +149,7 @@
     let stale = 0;
     const max = Math.max(1, Number(S.settings.maxPages) || 50);
     const d = Number(S.settings.delay);
-    const delay = Math.min(30000, Math.max(0, (Number.isFinite(d) ? d : 0.5) * 1000));
+    const delay = Math.min(30000, Math.max(0, (Number.isFinite(d) ? d : 0.3) * 1000));
     try {
       while (!S.stopAsked && S.pages < max) {
         const before = await safeCall('fingerprint', S.target);
@@ -138,7 +167,9 @@
           if (S.mode === 'scroll' && !ch.end && ch.grew && ++stale < 3) continue;
           S.ended = 'end'; break;
         }
-        await settle(delay);
+        // 追加式（加载更多 / 无限滚动）旧行还留在页面上，这一批晚到的下一轮照样收得到，不用多等；整页换内容的才多等
+        const append = ch.rows > ((before && before.rows) || 0);
+        await settle(append ? 0 : delay);
         const data = await safeCall('extract', S.target);
         const added = data && data.ok ? sheet.add(data) : 0;
         S.pages++;
@@ -149,6 +180,12 @@
       if (String(e.message) !== 'gone') console.warn(e);
     }
     if (!S.ended) S.ended = S.stopAsked ? 'stop' : 'end';
+    // 收尾再收一遍：追加式最后一批没多等，这里补上
+    try {
+      await settle(delay);
+      const data = await safeCall('extract', S.target);
+      if (data && data.ok) sheet.add(data);
+    } catch {}
     S.running = false; S.stopAsked = false;
     await probe();
     await call('highlight', S.target, S.nextSpec, false).catch(() => {});
@@ -157,18 +194,17 @@
 
   // 等页面变：Ajax 换内容、整页跳转、滚动追加都算。返回 { changed, end, grew }
   // quickNo：滚动时，过了这么久名单没动、页面没长、网络也安静、没有「加载中」，就当到底了，不干等
-  async function waitChange(before, { timeout, quickNo = 0 }) {
+  async function waitChange(before, { timeout, quickNo = 0, t0 = Date.now() }) {
     const fp = before && before.fp, h0 = (before && before.height) || 0;
-    const t0 = Date.now();
     let lastSeen = null, last = null;
     while (Date.now() - t0 < timeout) {
       if (S.stopAsked) return { changed: false };
-      await sleep(300);
+      await sleep(100);
       const f = await safeCall('fingerprint', S.target).catch(() => null);
       if (!f || !f.ok || f.ready === 'loading') { lastSeen = null; continue; }
       last = f;
       if (f.fp !== fp) {
-        if (f.fp === lastSeen) return { changed: true }; // 连续两次一样 = 渲染稳了
+        if (f.fp === lastSeen) return { changed: true, rows: f.rows }; // 连续两次一样 = 渲染稳了
         lastSeen = f.fp;
       } else if (quickNo) {
         if (f.end) return { changed: false, end: true };
@@ -185,7 +221,7 @@
     while (Date.now() - t0 < 2000) {
       const f = await safeCall('fingerprint', S.target).catch(() => null);
       if (!f || !(f.quiet < 300)) break;
-      await sleep(120);
+      await sleep(80);
     }
     if (delay) await sleep(delay);
   }
@@ -401,7 +437,7 @@
   document.addEventListener('click', (e) => { if (!e.target.closest('.top-r')) $('pop').hidden = true; });
   for (const id of ['setDelay', 'setMax']) $(id).addEventListener('change', () => {
     const dv = Number($('setDelay').value);
-    S.settings.delay = Math.min(30, Math.max(0, Number.isFinite(dv) ? Math.round(dv * 10) / 10 : 0.5));
+    S.settings.delay = Math.min(30, Math.max(0, Number.isFinite(dv) ? Math.round(dv * 10) / 10 : 0.3));
     S.settings.maxPages = Math.min(1000, Math.max(1, Math.round(Number($('setMax').value) || 50)));
     $('setDelay').value = S.settings.delay; $('setMax').value = S.settings.maxPages;
     QSSettings.set(S.settings);

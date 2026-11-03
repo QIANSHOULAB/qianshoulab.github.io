@@ -1,7 +1,8 @@
 // 化缘僧比武 · 跑分脚本：把我们的和对手的插件各装进 Playwright 的 Chromium，按「真人最少点几下」的路线跑每个场景，
 // 记点击次数、用时，下载 xlsx，截面板图。准确度由 score.py 对标准答案打分。
 // 用法：node huayuan/bench/run.js <输出目录> <工具:ours|ids|ods> [插件目录] [场景,逗号分隔]
-//   ours 默认用 huayuan/extension；ids = Open Scraper（Instant Data Scraper 1.4.1 反混淆分支）；ods = Open Data Scraper（IDS 克隆）
+//   ours 默认用 huayuan/extension；ids = Instant Data Scraper 商店版（1.9.3，crx 解包目录；1.4.1 的 Open Scraper 分支 ui 不同，已不支持）；ods = Open Data Scraper（IDS 克隆）
+// ids 要先从 Chrome 应用商店官方地址下 crx（https://clients2.google.com/service/update2/crx?response=redirect&prodversion=130.0&acceptformat=crx2,crx3&x=id%3Dofaokhiedipichpaobibbnahnkdoiiah%26uc），unzip 解到仓库外。
 // 需要先 node huayuan/bench/gen.js 生成测试站。跑之前 LANG=C.UTF-8（不然沙盒里中文下载名会变成 download）。
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os');
@@ -57,6 +58,19 @@ async function main() {
   if (!sw) sw = await ctx.waitForEvent('serviceworker');
   const extId = sw.url().split('/')[2];
   const results = [];
+  let onboard = 0;
+  if (TOOL === 'ids') {
+    // 商店版 IDS 1.9.x 装好后先弹一页开户向导：Get Started → 勾服务条款 → Confirm & Activate → 「Continue with Basic Only」。
+    // 那一页还要你同意收集、转卖浏览数据（Browsing Activity / AI / Ads Data），我们不勾，只勾必填的服务条款。一次性，记在 onboard 里不算进每个场景。
+    await sleep(2500);
+    const o = ctx.pages().find((p) => p.url().includes('options.html')) || await ctx.waitForEvent('page', { predicate: (p) => p.url().includes('options.html'), timeout: 15000 });
+    await o.click('text=Get Started'); onboard++; await sleep(600);
+    await o.check('#options-terms-checkbox'); onboard++;
+    await o.click('text=Confirm & Activate'); onboard++; await sleep(600);
+    await o.click('text=Continue with Basic Only'); onboard++; await sleep(1200);
+    await o.close();
+    console.log(JSON.stringify({ tool: TOOL, onboardClicks: onboard }));
+  }
 
   for (const sc of ONLY) {
     const kind = KIND[sc];
@@ -88,6 +102,15 @@ async function main() {
 
       if (TOOL === 'ours') {
         await panel.waitForSelector('#ctl:not([hidden])', { timeout: 20000 });
+        r.tableMs = Date.now() - t0; // 表出来的时刻（试滚还在后台跑）
+        if (kind === 'one') {
+          // 单页：跟 IDS 同一条路——表一出来就点导出（导出键这时已经能点）。试滚的结论另记 readyMs，拿来核对没有漏
+          r.file = await dl(panel, '#xlsx', r); r.ms = Date.now() - t0;
+          await panel.waitForSelector('body[data-ready]', { timeout: 20000 });
+          r.readyMs = Date.now() - t0;
+          const m = await panel.evaluate(() => document.querySelector('#seg [aria-pressed=true]')?.dataset.mode);
+          r.note += `表 ${r.tableMs} 毫秒出来、${r.ms} 毫秒导完；试滚 ${r.readyMs} 毫秒下结论：${m}${m === 'one' ? '（导出的就是全部）' : '（还有，导早了）'}；`;
+        } else {
         await panel.waitForSelector('body[data-ready]', { timeout: 20000 }); // 长页面先试滚一下，看完再算
         const mode = await panel.evaluate(() => document.querySelector('#seg [aria-pressed=true]')?.dataset.mode);
         const auto = await panel.evaluate(() => /第 \d+ 屏|化完了/.test(document.getElementById('status').textContent));
@@ -106,20 +129,18 @@ async function main() {
         await sleep(300);
         r.rowsShown = await panel.evaluate(() => document.getElementById('blkN').textContent);
         r.file = await dl(panel, '#xlsx', r);
+        }
       } else if (TOOL === 'ids') {
-        await panel.waitForSelector('#content', { state: 'visible', timeout: 30000 });
-        await panel.waitForFunction(() => document.querySelectorAll('#hot tbody tr').length > 0, null, { timeout: 30000 }).catch(() => {});
+        await panel.waitForSelector('#xlsx', { state: 'visible', timeout: 30000 });
+        await panel.waitForFunction(() => document.querySelectorAll('.handsontable tbody tr').length > 0, null, { timeout: 30000 }).catch(() => {});
         if (kind === 'scroll') { await click(panel, '#infinateScroll', '勾「Infinite scroll」'); }
-        if (kind === 'next' || kind === 'more') { await click(panel, '#nextButton', '点「Locate Next」'); await sleep(500); await click(page, NEXT_SEL[sc], '在网页上点下一页'); await sleep(800); }
+        if (kind === 'next' || kind === 'more') { await click(panel, '#nextButton', '点「Locate Next」'); await sleep(500); await page.bringToFront(); await click(page, NEXT_SEL[sc], '在网页上点下一页'); await sleep(800); }
         if (kind !== 'one') {
           await click(panel, '#startScraping', 'Start crawling');
-          // 收工的信号：出错提示（找不到下一页 / 没有新行）或 Start 按钮重新出现
-          await sleep(1500);
-          await panel.waitForFunction(() => {
-            const vis = (id) => { const e = document.getElementById(id); return e && e.offsetParent !== null && e.textContent.trim(); };
-            return vis('error') || vis('finished') || (document.getElementById('startScraping').offsetParent !== null);
-          }, null, { timeout: LIMIT });
-          r.note += (await panel.evaluate(() => ['error', 'finished', 'stats'].map((i) => document.getElementById(i)?.textContent.trim()).join(' / '))) + '；';
+          // 收工：Start 按钮变 Stop，再变回来（或出提示）
+          await panel.waitForFunction((on) => [...document.querySelectorAll('button')].some((b) => b.offsetParent !== null && /Stop crawling/.test(b.textContent)) === on, true, { timeout: 8000 }).catch(() => {});
+          await panel.waitForFunction((on) => [...document.querySelectorAll('button')].some((b) => b.offsetParent !== null && /Stop crawling/.test(b.textContent)) === on, false, { timeout: LIMIT, polling: 200 });
+          r.note += (await panel.evaluate(() => document.body.innerText.match(/Pages scraped[\s\S]*?Working time: \S+/)?.[0].replace(/\s+/g, ' '))) + '；';
         }
         r.file = await dl(panel, '#xlsx', r);
       } else {
@@ -136,7 +157,7 @@ async function main() {
         r.note += (await panel.evaluate(() => document.getElementById('statusMsg').textContent)) + '；';
         r.file = await dl(panel, '#btnXLSX', r);
       }
-      r.ms = Date.now() - t0;
+      r.ms = r.ms || Date.now() - t0;
     } catch (e) { r.note += '出错：' + e.message.split('\n')[0]; r.ms = Date.now() - t0; }
     r.pageErrors = errs.slice(0, 5);
     if (panel) {
@@ -148,7 +169,7 @@ async function main() {
     console.log(JSON.stringify(r));
     results.push(r);
   }
-  fs.writeFileSync(path.join(OUT, TOOL, 'run.json'), JSON.stringify(results, null, 1));
+  fs.writeFileSync(path.join(OUT, TOOL, 'run.json'), JSON.stringify({ onboardClicks: onboard, results }, null, 1));
   await ctx.close(); server.close();
 
   async function dl(panel, sel, r) {

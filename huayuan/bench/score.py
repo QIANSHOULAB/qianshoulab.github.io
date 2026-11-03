@@ -60,6 +60,7 @@ def score(ans, xlsx):
 if __name__ == '__main__':
     adir, odir = sys.argv[1], sys.argv[2]
     run = json.load(open(os.path.join(odir, 'run.json')))
+    if isinstance(run, dict): run = run['results']
     out = []
     for r in run:
         a = json.load(open(os.path.join(adir, r['scene'] + '.json')))

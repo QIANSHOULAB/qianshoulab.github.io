@@ -1,0 +1,553 @@
+{
+ "ours": {
+  "a-table300": {
+   "msRounds": [
+    886,
+    869,
+    954
+   ],
+   "msMedian": 886,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    1165,
+    1151,
+    1072
+   ],
+   "note": "表 739 毫秒出来、886 毫秒导完；试滚 1165 毫秒下结论：one（导出的就是全部）；",
+   "score": {
+    "rowsOut": 300,
+    "rowsWant": 300,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 7,
+    "colsWant": 7,
+    "wrongCols": 0,
+    "wrongColNames": [],
+    "namedOk": 7,
+    "extraCols": 0,
+    "badCells": 0,
+    "header": [
+     "编号",
+     "公司",
+     "联系人",
+     "电话",
+     "邮箱",
+     "城市",
+     "状态"
+    ]
+   }
+  },
+  "b-cards": {
+   "msRounds": [
+    704,
+    741,
+    710
+   ],
+   "msMedian": 710,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    1100,
+    1075,
+    1079
+   ],
+   "note": "表 544 毫秒出来、704 毫秒导完；试滚 1100 毫秒下结论：one（导出的就是全部）；",
+   "score": {
+    "rowsOut": 80,
+    "rowsWant": 80,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 9,
+    "colsWant": 9,
+    "wrongCols": 0,
+    "wrongColNames": [],
+    "namedOk": 9,
+    "extraCols": 0,
+    "badCells": 0,
+    "header": [
+     "名称",
+     "品牌",
+     "价格",
+     "原价",
+     "评分",
+     "发货地",
+     "编号",
+     "链接",
+     "图片"
+    ]
+   }
+  },
+  "c-paged": {
+   "msRounds": [
+    9755,
+    10299,
+    9730
+   ],
+   "msMedian": 9755,
+   "clicks": 3,
+   "steps": [
+    "点图标",
+    "开始",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "自动选了 next；",
+   "score": {
+    "rowsOut": 500,
+    "rowsWant": 500,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 7,
+    "colsWant": 7,
+    "wrongCols": 0,
+    "wrongColNames": [],
+    "namedOk": 7,
+    "extraCols": 0,
+    "badCells": 0,
+    "header": [
+     "编号",
+     "公司",
+     "联系人",
+     "电话",
+     "邮箱",
+     "城市",
+     "状态"
+    ]
+   }
+  },
+  "d-ajax": {
+   "msRounds": [
+    11593,
+    11887,
+    11398
+   ],
+   "msMedian": 11593,
+   "clicks": 3,
+   "steps": [
+    "点图标",
+    "开始",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "自动选了 next；",
+   "score": {
+    "rowsOut": 500,
+    "rowsWant": 500,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 8,
+    "colsWant": 8,
+    "wrongCols": 0,
+    "wrongColNames": [],
+    "namedOk": 8,
+    "extraCols": 0,
+    "badCells": 0,
+    "header": [
+     "编号",
+     "名称",
+     "品牌",
+     "价格",
+     "评分",
+     "地区",
+     "名称链接",
+     "图片"
+    ]
+   }
+  },
+  "e-loadmore": {
+   "msRounds": [
+    5929,
+    5795,
+    5916
+   ],
+   "msMedian": 5916,
+   "clicks": 3,
+   "steps": [
+    "点图标",
+    "开始",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "自动选了 next；",
+   "score": {
+    "rowsOut": 144,
+    "rowsWant": 144,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 9,
+    "colsWant": 9,
+    "wrongCols": 0,
+    "wrongColNames": [],
+    "namedOk": 9,
+    "extraCols": 0,
+    "badCells": 0,
+    "header": [
+     "名称",
+     "品牌",
+     "价格",
+     "原价",
+     "评分",
+     "发货地",
+     "编号",
+     "链接",
+     "图片"
+    ]
+   }
+  },
+  "f-infinite": {
+   "msRounds": [
+    7534,
+    7509,
+    7516
+   ],
+   "msMedian": 7516,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "自动选了 scroll，自己滚起来了；",
+   "score": {
+    "rowsOut": 200,
+    "rowsWant": 200,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 8,
+    "colsWant": 8,
+    "wrongCols": 0,
+    "wrongColNames": [],
+    "namedOk": 8,
+    "extraCols": 0,
+    "badCells": 0,
+    "header": [
+     "编号",
+     "名称",
+     "品牌",
+     "价格",
+     "评分",
+     "地区",
+     "名称链接",
+     "图片"
+    ]
+   }
+  }
+ },
+ "ids": {
+  "a-table300": {
+   "msRounds": [
+    873,
+    916,
+    954
+   ],
+   "msMedian": 916,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "",
+   "score": {
+    "rowsOut": 300,
+    "rowsWant": 300,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 8,
+    "colsWant": 7,
+    "wrongCols": 0,
+    "wrongColNames": [],
+    "namedOk": 0,
+    "extraCols": 1,
+    "badCells": 0,
+    "header": [
+     "tablescraper-selected-row",
+     "tablescraper-selected-row 2",
+     "tablescraper-selected-row 3",
+     "tablescraper-selected-row 4",
+     "tablescraper-selected-row 5",
+     "tablescraper-selected-row href",
+     "tablescraper-selected-row 6",
+     "tablescraper-selected-row 7"
+    ]
+   }
+  },
+  "b-cards": {
+   "msRounds": [
+    621,
+    729,
+    779
+   ],
+   "msMedian": 729,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "",
+   "score": {
+    "rowsOut": 80,
+    "rowsWant": 80,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 9,
+    "colsWant": 9,
+    "wrongCols": 1,
+    "wrongColNames": [
+     "图片(69格)"
+    ],
+    "namedOk": 0,
+    "extraCols": 0,
+    "badCells": 69,
+    "header": [
+     "card href",
+     "card src",
+     "card",
+     "brand",
+     "price",
+     "rate",
+     "loc",
+     "sku",
+     "orig"
+    ]
+   }
+  },
+  "c-paged": {
+   "msRounds": [
+    13501,
+    13885,
+    13727
+   ],
+   "msMedian": 13727,
+   "clicks": 5,
+   "steps": [
+    "点图标",
+    "点「Locate Next」",
+    "在网页上点下一页",
+    "Start crawling",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "Pages scraped: 10 Rows collected: 500 Rows from last page: 50 Working time: 11s；",
+   "score": {
+    "rowsOut": 500,
+    "rowsWant": 500,
+    "miss": 0,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 8,
+    "colsWant": 7,
+    "wrongCols": 0,
+    "wrongColNames": [],
+    "namedOk": 0,
+    "extraCols": 1,
+    "badCells": 0,
+    "header": [
+     "tablescraper-selected-row",
+     "tablescraper-selected-row 2",
+     "tablescraper-selected-row 3",
+     "tablescraper-selected-row 4",
+     "tablescraper-selected-row 5",
+     "tablescraper-selected-row href",
+     "tablescraper-selected-row 6",
+     "tablescraper-selected-row 7"
+    ]
+   }
+  },
+  "d-ajax": {
+   "msRounds": [
+    13331,
+    13333,
+    13272
+   ],
+   "msMedian": 13331,
+   "clicks": 5,
+   "steps": [
+    "点图标",
+    "点「Locate Next」",
+    "在网页上点下一页",
+    "Start crawling",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "Pages scraped: 9 Rows collected: 450 Rows from last page: 50 Working time: 9s；",
+   "score": {
+    "rowsOut": 450,
+    "rowsWant": 500,
+    "miss": 50,
+    "dup": 0,
+    "extra": 0,
+    "colsOut": 8,
+    "colsWant": 8,
+    "wrongCols": 1,
+    "wrongColNames": [
+     "图片(351格)"
+    ],
+    "namedOk": 0,
+    "extraCols": 0,
+    "badCells": 351,
+    "header": [
+     "row src",
+     "sku",
+     "nm",
+     "nm href",
+     "brand",
+     "price",
+     "loc",
+     "rate"
+    ]
+   }
+  },
+  "e-loadmore": {
+   "msRounds": [
+    7430,
+    7356,
+    7446
+   ],
+   "msMedian": 7430,
+   "clicks": 5,
+   "steps": [
+    "点图标",
+    "点「Locate Next」",
+    "在网页上点下一页",
+    "Start crawling",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "Pages scraped: 5 Rows collected: 152 Rows from last page: 144 Working time: 5s；",
+   "score": {
+    "rowsOut": 152,
+    "rowsWant": 144,
+    "miss": 0,
+    "dup": 8,
+    "extra": 0,
+    "colsOut": 9,
+    "colsWant": 9,
+    "wrongCols": 1,
+    "wrongColNames": [
+     "图片(128格)"
+    ],
+    "namedOk": 0,
+    "extraCols": 0,
+    "badCells": 128,
+    "header": [
+     "card href",
+     "card src",
+     "card",
+     "brand",
+     "price",
+     "orig",
+     "rate",
+     "loc",
+     "sku"
+    ]
+   }
+  },
+  "f-infinite": {
+   "msRounds": [
+    26378,
+    26353,
+    26389
+   ],
+   "msMedian": 26378,
+   "clicks": 4,
+   "steps": [
+    "点图标",
+    "勾「Infinite scroll」",
+    "Start crawling",
+    "导出 Excel"
+   ],
+   "readyMs": [
+    null,
+    null,
+    null
+   ],
+   "note": "Pages scraped: 8 Rows collected: 345 Rows from last page: 200 Working time: 21s；",
+   "score": {
+    "rowsOut": 345,
+    "rowsWant": 200,
+    "miss": 0,
+    "dup": 145,
+    "extra": 0,
+    "colsOut": 8,
+    "colsWant": 8,
+    "wrongCols": 1,
+    "wrongColNames": [
+     "图片(182格)"
+    ],
+    "namedOk": 0,
+    "extraCols": 0,
+    "badCells": 182,
+    "header": [
+     "row src",
+     "sku",
+     "nm",
+     "nm href",
+     "brand",
+     "price",
+     "rate",
+     "loc"
+    ]
+   }
+  }
+ },
+ "meta": {
+  "date": "2026-11-03",
+  "ours": "化缘僧 0.2.1",
+  "ids": "Instant Data Scraper 1.9.3（Chrome 应用商店 crx，sha256 cadb3632cb1bb0793155cec58d7173e54886ac85867baa2d9e8ff71d9213acb1）",
+  "idsOnboardClicks": 4,
+  "rounds": 3
+ }
+}

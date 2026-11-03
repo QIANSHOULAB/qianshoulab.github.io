@@ -187,6 +187,12 @@ async function main() {
   await panel.waitForFunction((n) => document.getElementById('blkN').textContent !== n, n0);
   ok(true, '换一块：' + n0 + ' → ' + await blk(panel));
   await panel.close(); await page.close();
+  // 慢吞吞的无限滚动：1.5 秒才来货、也不写「加载中」。试滚半秒看不出来，后面盯着的 5 秒要接住
+  ({ page, panel } = await openOn(`${BASE}/demo/scroll.html?slow=1`, 'scroll-slow'));
+  await panel.waitForFunction(() => document.querySelector('#seg [data-mode=scroll][aria-pressed=true]'), null, { timeout: 8000 });
+  await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: 90000 });
+  ok((await blk(panel)).startsWith('120'), '慢加载的无限滚动：试滚没看出来，随后自己改成滚动收齐 120 件：' + await status(panel));
+  await panel.close(); await page.close();
 
   // ---------- 4. 手动指定下一页 + 中途停 ----------
   console.log('4. 手动指定下一页、中途停');

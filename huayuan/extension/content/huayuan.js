@@ -13,10 +13,11 @@
 
   const LOADING_WORDS = /^[\s.…]*(加载中|正在加载|载入中|努力加载中|loading)[\s.…]*$/i;
 
-  // 记最后一次网络请求收尾的时间（翻页后等「网络安静」再抓）
+  // 记最后一次网络请求收尾的时间（翻页后等「网络安静」再抓）。图片、样式、字体不算：它们不改名单，懒加载图片一滚就来一串，只会白等
   let lastNet = performance.now();
+  const SKIP_NET = /^(img|image|css|link|font|video|audio|icon|beacon|track)$/;
   try {
-    new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.responseEnd > lastNet) lastNet = e.responseEnd; }).observe({ type: 'resource', buffered: true });
+    new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!SKIP_NET.test(e.initiatorType) && e.responseEnd > lastNet) lastNet = e.responseEnd; }).observe({ type: 'resource', buffered: true });
   } catch {}
 
   function sig(el) {
