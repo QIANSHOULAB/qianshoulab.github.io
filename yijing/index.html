@@ -65,6 +65,7 @@ svg{display:block}
 
 /* 顶栏 */
 .nav{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:52px;padding:0 max(16px,calc(50% - 544px));transition:background-color var(--t) var(--ease),box-shadow var(--t) var(--ease)}
+body[data-view="empty"] .nav,body[data-view="pick"] .nav{padding:0 max(16px,calc(50% - 474px))}
 .nav.scrolled{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--line)}
 .nav-back{justify-self:start;display:inline-flex;align-items:center;gap:4px;color:var(--accent-ink);font-size:17px;min-height:44px;margin-left:-4px}
 .nav-back svg{width:20px;height:20px}
@@ -1387,6 +1388,7 @@ function renderDock() {
 function render() {
   const v = view();
   app.className = 'wrap' + (v === 'work' ? '' : ' narrow');
+  document.body.dataset.view = v;
   let h;
   if (v === 'empty') h = `<section class="hero"><img src="icon.svg" alt=""><h1>${STR.app}</h1><p>${STR.heroSub}</p></section>${dropCard()}${tgtSection()}<p class="grp-foot" style="text-align:center">${STR.dropMore}</p>`;
   else {
