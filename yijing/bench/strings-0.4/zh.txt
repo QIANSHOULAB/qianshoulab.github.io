@@ -188,7 +188,7 @@ tidyGroup	同一个「Handle」排回一起，空格补齐
 tidyFillS	Title、Vendor、Type、Tags 等 5 列
 tidyDrop	跳过「SKU」为空的 12 行
 tidyDropS	目标的「SKU」必填，这些行导过去也是废行
-footApp	千手院 · 译经僧 0.4.0
+footApp	千手院 · 译经僧 0.4.1
 footMail	要新花样、嫌哪里反人类，找方丈：
 footHome	千手院总舵
 langLabel	语言
@@ -201,7 +201,7 @@ demoData.giv	子涵 | 浩然 | 雨桐 | 思远 | 晓峰 | 若溪 | 嘉怡 | 俊�
 demoData.py	zihan | haoran | yutong | siyuan | xiaofeng | ruoxi | jiayi | junjie | mengqi | wenbo | xinran | zhiqiang
 demoData.en	Alex Lim | Mia Tan | Ryan Goh | Chloe Ng
 demoData.first	欧阳晓峰
-demoData.co	一苇渡江科技 | 不二法门咨询 | 菩提树下贸易 | 明镜台设计 | 拈花微笑文化 | 南山南物流 | 山高水长传媒 | 松风明月食品
+demoData.co	一苇渡江科技 | 不二法门咨询 | 柳暗花明贸易 | 清风徐来设计 | 春风十里文化 | 南山南物流 | 山高水长传媒 | 松风明月食品
 demoData.jt	销售总监 | 采购经理 | 行政主管 | 创始人 | 财务 | 运营专员 | 市场经理 | 技术负责人
 demoData.city	上海 | 北京 | 深圳 | 杭州 | 成都 | 新加坡 | 广州 | 苏州
 demoData.note	 |  |  |  | 老客户，别催款 | 只在周三回消息 | 爱喝茶 |  | 年底要发票 | 

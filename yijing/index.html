@@ -50,8 +50,8 @@
   --toast-bg:rgba(58,58,60,.96);
   color-scheme:dark;
 }
-/* 英文版：西文字体排前面（不然 Windows 上英文会用雅黑的西文字形） */
-:root:lang(en){--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI Variable Text","Segoe UI",system-ui,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei UI",sans-serif}
+/* 英文版：西文字体排前面，再接中文字体（不然 Windows 上英文会用雅黑的西文字形）；中文版照规范那套不变 */
+html[lang="en"]{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",sans-serif}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;min-height:100vh;background:var(--bg-group);color:var(--fg);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums}
@@ -59,6 +59,8 @@ body{margin:0;min-height:100vh;background:var(--bg-group);color:var(--fg);font:4
 button,input,select{font:inherit;color:inherit}
 button{background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit;-webkit-appearance:none;appearance:none}
 a{color:var(--accent-ink);text-decoration:none}
+/* 名字类的字（文件名、列名、模板名、配方名）不用等宽数字：Inter 一类字体开了等宽数字会把连字符撑宽，「old-crm-contacts.csv」看着像「old - crm - contacts」 */
+.end-t,.m-t,.m-s .from,.li-main b,.list .li b,.sh-t,.vk,th{font-variant-numeric:normal}
 [hidden]{display:none!important}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-field)}
 button:focus:not(:focus-visible){outline:none}
@@ -347,7 +349,7 @@ tr:last-child td{border-bottom:0}
 <input type="file" id="fSrc" hidden multiple accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fTgt" hidden accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fRec" hidden accept=".json,application/json">
-<script src="strings.js?v=0.4.0"></script>
+<script src="strings.js?v=0.4.1"></script>
 <script>
 'use strict';
 /* ================= 界面文字：全在 strings.js（中文、英文各一套），这里只挑用哪套 ================= */

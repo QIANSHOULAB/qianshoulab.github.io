@@ -77,7 +77,7 @@
     tidyH: '顺手整理',
     tidyFill: g => `同一个「${g}」的空格往下补`, tidyGroup: g => `同一个「${g}」排回一起，空格补齐`, tidyFillS: (cs, k) => `${cs.slice(0, 4).join('、')}${k > 4 ? ` 等 ${k} 列` : ''}`,
     tidyDrop: (h, k) => `跳过「${h}」为空的 ${n(k)} 行`, tidyDropS: t => `目标的「${t}」必填，这些行导过去也是废行`,
-    footApp: '千手院 · 译经僧 0.4.0', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
+    footApp: '千手院 · 译经僧 0.4.1', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
     langLabel: '语言', langNames: { en: 'EN', zh: '中文' },
     // 示例数据（虚构）：用示例试试时丢进来的那份「旧系统导出」
     demoData: {
@@ -88,7 +88,7 @@
       py: ['zihan', 'haoran', 'yutong', 'siyuan', 'xiaofeng', 'ruoxi', 'jiayi', 'junjie', 'mengqi', 'wenbo', 'xinran', 'zhiqiang'],
       en: ['Alex Lim', 'Mia Tan', 'Ryan Goh', 'Chloe Ng'],
       first: '欧阳晓峰',
-      co: ['一苇渡江科技', '不二法门咨询', '菩提树下贸易', '明镜台设计', '拈花微笑文化', '南山南物流', '山高水长传媒', '松风明月食品'],
+      co: ['一苇渡江科技', '不二法门咨询', '柳暗花明贸易', '清风徐来设计', '春风十里文化', '南山南物流', '山高水长传媒', '松风明月食品'],
       jt: ['销售总监', '采购经理', '行政主管', '创始人', '财务', '运营专员', '市场经理', '技术负责人'],
       city: ['上海', '北京', '深圳', '杭州', '成都', '新加坡', '广州', '苏州'],
       note: ['', '', '', '', '老客户，别催款', '只在周三回消息', '爱喝茶', '', '年底要发票', ''],
@@ -165,7 +165,7 @@
     tidyH: 'Tidy-up',
     tidyFill: g => `Fill blanks down within each “${g}”`, tidyGroup: g => `Regroup rows by “${g}” and fill blanks`, tidyFillS: (cs, k) => `${cs.slice(0, 4).join(', ')}${k > 4 ? ` + ${k - 4} more` : ''}`,
     tidyDrop: (h, k) => `Skip ${pl(k, 'row', 'rows')} with no “${h}”`, tidyDropS: t => `The target requires “${t}”. These rows would just bounce.`,
-    footApp: 'Yijing · Data Mover 0.4.0 · Qianshou Lab', footMail: 'Want a feature, or is something driving you up the wall? Email the abbot: ', footHome: 'Qianshou Lab',
+    footApp: 'Yijing · Data Mover 0.4.1 · Qianshou Lab', footMail: 'Want a feature, or is something driving you up the wall? Email the abbot: ', footHome: 'Qianshou Lab',
     langLabel: 'Language', langNames: { en: 'EN', zh: '中文' },
     // Sample data (made up): the "old system export" behind Try a sample
     demoData: {
@@ -173,7 +173,7 @@
       H: ['Customer No.', 'Full Name', 'Sex', 'Mobile', 'E-mail', 'Organisation', 'Position', 'City', 'Date Added', 'Total Spent ($)', 'Remarks'],
       people: [['Alex', 'M'], ['Priya', 'F'], ['Marcus', 'M'], ['Chloe', 'F'], ['Ryan', 'M'], ['Sarah', 'F'], ['Daniel', 'M'], ['Mei Ling', 'F'], ['Jordan', 'M'], ['Emily', 'F'], ['Wei Jie', 'M'], ['Hannah', 'F']],
       last: ['Tan', 'Nair', 'Lim', 'Ng', 'Goh', 'Lee', 'Wong', 'Chua', 'Smith', 'Clarke', 'Koh', 'Brown'],
-      co: ['Inner Peace Logistics', 'Monk Mode Labs', 'Middle Path Consulting', 'Zen Garden Supply', 'Lotus Pond Media', 'Still Water Foods', 'Enlightened Metrics', 'Quiet Mind Design'],
+      co: ['Inner Peace Logistics', 'Monk Mode Labs', 'Middle Ground Consulting', 'Zen Garden Supply', 'Lotus Pond Media', 'Still Water Foods', 'Clear Head Analytics', 'Quiet Mind Design'],
       jt: ['Head of Sales', 'Procurement Manager', 'Office Manager', 'Founder', 'Finance', 'Operations', 'Marketing Lead', 'CTO'],
       city: ['Singapore', 'Kuala Lumpur', 'London', 'San Francisco', 'Sydney', 'Hong Kong', 'Singapore', 'Toronto'],
       note: ['', '', '', '', 'Long-time client. Do not chase invoices.', 'Only replies on Wednesdays', 'Tea, never coffee', '', 'Wants the invoice before year end', ''],

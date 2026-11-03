@@ -188,7 +188,7 @@ tidyGroup	Regroup rows by “Handle” and fill blanks
 tidyFillS	Title, Vendor, Type, Tags + 1 more
 tidyDrop	Skip 12 rows with no “SKU”
 tidyDropS	The target requires “SKU”. These rows would just bounce.
-footApp	Yijing · Data Mover 0.4.0 · Qianshou Lab
+footApp	Yijing · Data Mover 0.4.1 · Qianshou Lab
 footMail	Want a feature, or is something driving you up the wall? Email the abbot: 
 footHome	Qianshou Lab
 langLabel	Language
@@ -198,7 +198,7 @@ demoData.name	old-crm-contacts.csv
 demoData.H	Customer No. | Full Name | Sex | Mobile | E-mail | Organisation | Position | City | Date Added | Total Spent ($) | Remarks
 demoData.people	Alex M | Priya F | Marcus M | Chloe F | Ryan M | Sarah F | Daniel M | Mei Ling F | Jordan M | Emily F | Wei Jie M | Hannah F
 demoData.last	Tan | Nair | Lim | Ng | Goh | Lee | Wong | Chua | Smith | Clarke | Koh | Brown
-demoData.co	Inner Peace Logistics | Monk Mode Labs | Middle Path Consulting | Zen Garden Supply | Lotus Pond Media | Still Water Foods | Enlightened Metrics | Quiet Mind Design
+demoData.co	Inner Peace Logistics | Monk Mode Labs | Middle Ground Consulting | Zen Garden Supply | Lotus Pond Media | Still Water Foods | Clear Head Analytics | Quiet Mind Design
 demoData.jt	Head of Sales | Procurement Manager | Office Manager | Founder | Finance | Operations | Marketing Lead | CTO
 demoData.city	Singapore | Kuala Lumpur | London | San Francisco | Sydney | Hong Kong | Singapore | Toronto
 demoData.note	 |  |  |  | Long-time client. Do not chase invoices. | Only replies on Wednesdays | Tea, never coffee |  | Wants the invoice before year end | 
