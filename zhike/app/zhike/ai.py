@@ -18,14 +18,27 @@ class AIError(Exception):
 
 def fill_template(tpl: str, mail, fields: dict) -> str:
     vals = {k: (v or {}).get("raw", "") if isinstance(v, dict) else (v or "") for k, v in fields.items()}
+    # 中英两套占位都认：{称呼}/{name} 对方名字，{发件人}/{sender}，{主题}/{subject}
     vals.setdefault("发件人", mail.from_name or mail.from_addr)
     vals.setdefault("主题", mail.subject)
     vals.setdefault("称呼", mail.from_name or "您")
+    vals.setdefault("sender", mail.from_name or mail.from_addr)
+    vals.setdefault("subject", mail.subject)
+    vals.setdefault("name", mail.from_name or "there")
     return re.sub(r"\{([^{}]{1,30})\}", lambda m: str(vals.get(m.group(1), m.group(0))), tpl)
 
 
-def build_prompt(mail, fields: dict, hint: str) -> str:
+def build_prompt(mail, fields: dict, hint: str, lang: str = "zh") -> str:
     facts = "\n".join(f"- {k}：{(v or {}).get('raw', '')}" for k, v in fields.items() if v)
+    if lang == "en":
+        return (
+            "You are drafting an email reply on behalf of the recipient, who will read it before deciding to send.\n"
+            "Rules: output only the reply body, no subject line, no explanations; reply in the same language as the "
+            "incoming email; short, polite, specific; never make things up, mark unknowns as [TBD] for the user to fill in.\n"
+            + (f"The user's instructions for this kind of email: {hint}\n" if hint.strip() else "")
+            + (f"Facts extracted from the email:\n{facts}\n" if facts else "")
+            + f"\nFrom: {mail.from_name} <{mail.from_addr}>\nSubject: {mail.subject}\nBody:\n{mail.text[:6000]}"
+        )
     return (
         "你在替收件人起草一封邮件回复，用户会自己看过再决定发不发。\n"
         "要求：只输出回复正文，不要主题行、不要解释；语言跟来信一致；简短、礼貌、具体；"

@@ -50,7 +50,9 @@ def check(timeout=8, url=None):
             return None
         return {"latest": latest, "current": VERSION, "newer": _v(latest) > _v(VERSION), "url": PAGE,
                 "exe": info.get("url") or BASE + "Zhike.exe", "sha256": (info.get("sha256") or "").lower(),
-                "size": int(info.get("size") or 0), "can_self": exe_path() is not None}
+                "size": int(info.get("size") or 0), "can_self": exe_path() is not None,
+                # 更新说明（「这次弄了点啥」）中英两套，CI 从 ui/strings.js 的 up_notes 写进 version.json；老的 version.json 没有就空着
+                "notes": {k: str(v)[:400] for k, v in (info.get("notes") or {}).items() if k in ("en", "zh") and v}}
     except Exception:
         return None
 

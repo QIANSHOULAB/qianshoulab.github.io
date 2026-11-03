@@ -1,15 +1,16 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>知客僧</title>
-<meta name="description" content="知客僧 - 邮件分拣。Windows 电脑版：连上邮箱，贫僧看看最近的信把规则拟好，你只管点「收下」。订单号、金额、日期自己落进 Excel，该转的转，回信只起草。开机就在岗，免费，信不出你的电脑。">
+<title>Zhike · Inbox Sorter — orders and invoices, straight into Excel</title>
+<meta name="description" content="Zhike is a free Windows app that sorts your inbox. Connect your mailbox, it drafts the rules, you hit Accept. Order numbers, amounts and dates land in Excel, the right emails get forwarded, replies get drafted but never sent. Your mail never leaves your PC.">
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="icon-180.png">
+<script src="app/ui/strings.js?v=0.4.0"></script>
 <style>
 /* 照 _ops/设计规范.md：系统字、一个主色（知客僧赭）、其余全灰；居中单栏最宽 980；首屏一句大标题、一句副标题、主操作 */
 :root{
@@ -21,7 +22,7 @@
   --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
-  --glass:rgba(251,251,253,.98);   /* 顶栏压在滚过去的字上：压到 .98，底下的字看不清 */
+  --glass:rgba(255,255,255,.98);   /* 顶栏压在滚过去的字上：压到 .98，底下的字看不清 */
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
@@ -31,6 +32,8 @@
   --accent:#c2552a; --accent-press:#cf6236; --link:#f08a5d;
   --shadow:none; --glass:rgba(28,28,30,.98); color-scheme:dark;
 }}
+/* 英文：西文字体排前面（Windows 上不然会用雅黑的西文字形）；中文那套不变 */
+html[lang="en"]{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI Variable Text","Segoe UI",system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",sans-serif}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;background:var(--bg-group);color:var(--fg);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased}
@@ -38,25 +41,36 @@ a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 img{display:block;max-width:100%;height:auto}
 p{text-wrap:pretty}
+[hidden]{display:none!important}
 .wrap{max-width:980px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) 0 max(16px,env(safe-area-inset-right))}
 .nav{position:sticky;top:0;z-index:10;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line)}
-.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:48px;font-size:13px}
-.nav a{color:var(--fg-2);display:inline-flex;align-items:center;min-height:44px}
+.nav .wrap{display:flex;align-items:center;gap:16px;height:48px;font-size:13px}
+.nav a{color:var(--fg-2);display:inline-flex;align-items:center;min-height:44px;white-space:nowrap}
 .nav a:hover{color:var(--fg);text-decoration:none}
-.nav b{display:inline-flex;align-items:center;gap:8px;color:var(--fg);font-weight:600;font-size:15px}
+.nav b{display:inline-flex;align-items:center;gap:8px;color:var(--fg);font-weight:600;font-size:15px;margin:0 auto;white-space:nowrap}
 .nav b img{width:24px;height:24px}
+/* 右上角 EN / 中文：选过就记住（localStorage 的 zhike.lang）；网址带 ?lang=zh|en 先听网址 */
+.lang{display:flex;flex:none;background:var(--fill);border-radius:var(--r-field);padding:2px;gap:2px}
+.lang button{position:relative;height:28px;min-width:44px;padding:0 10px;border:0;border-radius:var(--r-chip);background:none;color:var(--fg);font:400 13px/1 var(--font);cursor:pointer;transition:background-color var(--t) var(--ease)}
+.lang button::after{content:"";position:absolute;inset:-8px -1px}  /* 点得到的地方够 44 高 */
+.lang button[aria-pressed="true"]{background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1),0 0 0 .5px rgba(0,0,0,.04)}
+@media (prefers-color-scheme:dark){.lang button[aria-pressed="true"]{background:#636366}}
 .hero{text-align:center;padding:64px 0 32px}
 .hero .ic{width:96px;height:96px;margin:0 auto 24px}
 .hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.01em}
+.hero h1 span{white-space:nowrap}
 .hero .sl{margin:12px 0 0;font-size:clamp(22px,3vw,28px);line-height:1.2;font-weight:600;text-wrap:balance}
+:lang(zh) .hero .sl span{white-space:nowrap}   /* 中文：「快递单」别被拆成两行；英文本来就在空格处换行 */
 .hero .tg{margin:12px auto 0;max-width:560px;font-size:17px;color:var(--fg-2);text-wrap:balance}
+:lang(en) .hero h1,:lang(en) h2{letter-spacing:-.02em}
+h2{text-wrap:balance}
 .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border-radius:14px;font-size:17px;font-weight:600;background:var(--fill);color:var(--fg);transition:background var(--t) var(--ease)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border-radius:14px;font-size:17px;font-weight:600;background:var(--fill);color:var(--fg);white-space:nowrap;transition:background var(--t) var(--ease)}
 .btn:hover{background:var(--fill-2);text-decoration:none}
 .btn.pri{background:var(--accent);color:var(--on-accent)}
 .btn.pri:hover{background:var(--accent-press)}
 .btn svg{width:20px;height:20px}
-.meta{margin-top:12px;font-size:13px;color:var(--fg-3);font-variant-numeric:tabular-nums}
+.meta{margin-top:12px;font-size:13px;color:var(--fg-3)}
 .shot{margin:48px auto 0;border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
 @media (prefers-color-scheme:dark){.shot,.pic{box-shadow:0 0 0 1px var(--line)}}
 .sec{display:grid;grid-template-columns:1fr 1.3fr;gap:48px;align-items:center;padding:64px 0}
@@ -81,15 +95,16 @@ p{text-wrap:pretty}
 .inst ol{list-style:none;counter-reset:s;margin:24px 0 0;padding:0;display:grid;gap:16px}
 .inst li{counter-increment:s;display:flex;gap:12px;align-items:flex-start}
 .inst li::before{content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--fill);color:var(--fg);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.inst li b{margin-right:4px}
 .boxes{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
 .boxes span{padding:4px 12px;border-radius:var(--r-chip);background:var(--fill);font-size:13px}
 details{margin-top:24px;border-top:1px solid var(--line)}
-summary{cursor:pointer;min-height:44px;display:flex;align-items:center;justify-content:space-between;font-weight:600;list-style:none}
+summary{cursor:pointer;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600;list-style:none}
 summary::-webkit-details-marker{display:none}
 summary::after{content:"+";font-weight:400;font-size:22px;color:var(--fg-2)}
 details[open] summary::after{content:"–"}
 details ul{margin:0;padding:0 0 0 20px;color:var(--fg-2);font-size:15px}
-details li{margin:8px 0}
+details li{margin:8px 0;overflow-wrap:anywhere}
 .privacy{text-align:center;max-width:640px;margin:0 auto;padding:64px 0 0}
 .privacy h2{margin:0;font-size:clamp(28px,4vw,34px)}
 .privacy p{color:var(--fg-2)}
@@ -101,84 +116,124 @@ details li{margin:8px 0}
   .sec.flip .txt{order:0}
   .grid{grid-template-columns:1fr 1fr}
 }
+@media (max-width:480px){.nav .dl{display:none}}   /* 手机上首屏就有大下载按钮，顶栏留给名字和语言 */
 @media (max-width:440px){.grid{grid-template-columns:1fr}.btn{width:100%}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<nav class="nav"><div class="wrap"><a href="https://qianshoulab.github.io/">千手院</a><b><img src="icon.svg" alt="">知客僧</b><a href="#dl">下载</a></div></nav>
+<!-- 字全在 app/ui/strings.js 的 SITE 里（程序界面的字也在那个文件）。默认英文；右上角 EN / 中文，选过就记住 -->
+<nav class="nav"><div class="wrap">
+  <a href="https://qianshoulab.github.io/" data-s="home">QIANSHOU LAB</a>
+  <b><img src="icon.svg" alt=""><span data-s="navName">Zhike</span></b>
+  <a class="dl" href="#dl" data-s="navDl">Download</a>
+  <div class="lang" role="group" aria-label="Language"><button type="button" data-lang="en" lang="en">EN</button><button type="button" data-lang="zh" lang="zh-CN">中文</button></div>
+</div></nav>
 <div class="wrap">
   <header class="hero">
     <img class="ic" src="icon.svg" width="96" height="96" alt="">
-    <h1><span style="white-space:nowrap">信来贫僧接，</span><span style="white-space:nowrap">施主去玩。</span></h1>
-    <p class="sl">订单、发票、快递单，自己落进 Excel。</p>
-    <p class="tg">连上邮箱，贫僧把最近的信过一遍、规则拟好，你只管点「收下」。该转的转，回信只起草。</p>
+    <h1 data-sh="h1"></h1>
+    <p class="sl" data-sh="sl"></p>
+    <p class="tg" data-s="tg"></p>
     <div class="cta" id="dl">
-      <a class="btn pri" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/zhike-latest/Zhike.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>下载 Windows 版</a>
-      <a class="btn" href="#how">怎么上岗</a>
+      <a class="btn pri" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/zhike-latest/Zhike.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-s="dl"></span></a>
+      <a class="btn" href="#how" data-s="how"></a>
     </div>
-    <div class="meta">0.3.0 · Windows 10 / 11 · 免费 · 双击就跑，自己更新</div>
+    <div class="meta" data-s="meta"></div>
     <div class="shot">
-      <picture><source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/app-light.webp" width="2360" height="1520" alt="知客僧主界面：左边邮件列表，右边一封发票信，上方卡片列出抽出来的发票号、金额、到期日，标着「进表」「转给 finance」"></picture>
+      <picture><source data-img="app-dark" srcset="img/app-dark-en.webp" media="(prefers-color-scheme: dark)"><img data-img="app-light" data-alt="alt1" src="img/app-light-en.webp" width="2360" height="1520" alt=""></picture>
     </div>
   </header>
 
   <section class="sec">
-    <div class="txt"><h2>规则？<br>贫僧拟好了。</h2><p>连上邮箱那一下，贫僧把最近的信过一遍：订单、发票、快递单、询价各归一类，几家写的「订单号」「Order Number」归成同一列。推销信、冒充熟人的不算数。</p><p>你看一眼，要转给谁填上，点「收下」。不写正则，不用一个字段一个字段去点。</p></div>
-    <div class="pic"><picture><source srcset="img/recs-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/recs-light.webp" width="960" height="760" alt="贫僧拟了 4 条规则：发票、物流、订单、询价，每张卡片列出认信的发件人、抽出来的字段和样例值，底部一个「收下 4 条」" loading="lazy"></picture></div>
+    <div class="txt"><h2 data-sh="s1h"></h2><p data-s="s1p1"></p><p data-s="s1p2"></p></div>
+    <div class="pic"><picture><source data-img="recs-dark" srcset="img/recs-dark-en.webp" media="(prefers-color-scheme: dark)"><img data-img="recs-light" data-alt="alt2" src="img/recs-light-en.webp" width="1920" height="1520" alt="" loading="lazy"></picture></div>
   </section>
 
   <section class="sec flip">
-    <div class="txt"><h2>开机就在岗，<br>有事才叫你。</h2><p>登录 Windows 就进托盘，自己连上次的邮箱，关机时来的信接着收。新来一家供应商？贫僧拟好「归进发票」，你点一下，刚才那封也一并进表、转走。</p><p>只在要你拿主意的时候冒个泡：回信草稿备好了、来了新一类的信、密码不对、Excel 被占着。</p></div>
-    <ol class="steps" aria-label="一天里贫僧干的事">
-      <li><i>1</i><div><b>开机</b><span>进托盘，连上邮箱，接着上回的进度收</span></div></li>
-      <li><i>2</i><div><b>来信</b><span>认出是哪类，字段进表，该转的转，回信起草好放草稿箱</span></div></li>
-      <li><i>3</i><div><b>拿不准</b><span>新的一类信、像推销的信：先不动，冒泡问你</span></div></li>
+    <div class="txt"><h2 data-sh="s2h"></h2><p data-s="s2p1"></p><p data-s="s2p2"></p></div>
+    <ol class="steps" data-aria="stepsLabel">
+      <li><i>1</i><div><b data-s="st1b"></b><span data-s="st1"></span></div></li>
+      <li><i>2</i><div><b data-s="st2b"></b><span data-s="st2"></span></div></li>
+      <li><i>3</i><div><b data-s="st3b"></b><span data-s="st3"></span></div></li>
     </ol>
   </section>
 
-  <section class="grid" aria-label="还能干啥">
-    <div class="g"><b>点一下也行</b><span>贫僧没认出来的，选中正文里的字就收成一列</span></div>
-    <div class="g"><b>同一张 Excel</b><span>金额、数量是数字，日期是日期，拿去就能求和</span></div>
-    <div class="g"><b>该转的转</b><span>发票转财务、询价转销售，附件一起带上</span></div>
-    <div class="g"><b>回信只起草</b><span>有 Gemini 钥匙用 AI 写，没有套模板，发不发你说了算</span></div>
-    <div class="g"><b>转了三手也认得</b><span>同事转来的信，扒到最里层按原发件人认</span></div>
-    <div class="g"><b>PDF 里的也抽</b><span>发票附件里的金额、采购单号，跟正文一样</span></div>
-    <div class="g"><b>挡推销</b><span>主题蹭关键词的推销、冒充熟人的域名，挡下可放行</span></div>
-    <div class="g"><b>手滑能撤</b><span>收错了、删错了，点「撤销」，不问「确定吗」</span></div>
-    <div class="g"><b>信不出门</b><span>邮件、密码都在你电脑上，没有我们的服务器</span></div>
+  <section class="grid" data-aria="gridLabel">
+    <div class="g"><b data-s="g1b"></b><span data-s="g1"></span></div>
+    <div class="g"><b data-s="g2b"></b><span data-s="g2"></span></div>
+    <div class="g"><b data-s="g3b"></b><span data-s="g3"></span></div>
+    <div class="g"><b data-s="g4b"></b><span data-s="g4"></span></div>
+    <div class="g"><b data-s="g5b"></b><span data-s="g5"></span></div>
+    <div class="g"><b data-s="g6b"></b><span data-s="g6"></span></div>
+    <div class="g"><b data-s="g7b"></b><span data-s="g7"></span></div>
+    <div class="g"><b data-s="g8b"></b><span data-s="g8"></span></div>
+    <div class="g"><b data-s="g9b"></b><span data-s="g9"></span></div>
   </section>
 
   <section class="inst" id="how">
-    <h2>两步上岗</h2>
-    <p class="sub">没有安装，没有注册。</p>
+    <h2 data-s="instH"></h2>
+    <p class="sub" data-s="instS"></p>
     <ol>
-      <li><span><b>下载，双击。</b>Windows 要是拦一下，点「更多信息」→「仍要运行」。</span></li>
-      <li><span><b>连邮箱。</b>填邮箱和应用专用密码（QQ、163 叫授权码），服务器贫僧自己认。贫僧拟好规则，你点「收下」。</span></li>
+      <li><span data-sh="i1"></span></li>
+      <li><span data-sh="i2"></span></li>
     </ol>
-    <div class="boxes"><span>Gmail</span><span>QQ 邮箱</span><span>腾讯企业邮</span><span>163</span><span>126</span><span>iCloud</span><span>Yahoo</span><span>公司邮箱（IMAP）</span><span>Outlook · 即将支持</span></div>
+    <div class="boxes"><span data-s="bx1"></span><span data-s="bx2"></span><span data-s="bx3"></span><span data-s="bx4"></span><span data-s="bx5"></span><span data-s="bx6"></span><span data-s="bx7"></span><span data-s="bx8"></span><span data-s="bx9"></span></div>
     <details>
-      <summary>应用专用密码去哪拿</summary>
+      <summary data-s="pwQ"></summary>
       <ul>
-        <li>Gmail：先开两步验证，再到 <a href="https://myaccount.google.com/apppasswords">myaccount.google.com/apppasswords</a> 生成。</li>
-        <li>QQ 邮箱：网页版 → 设置 → 账号 → 开启 IMAP/SMTP 服务 → 生成授权码。</li>
-        <li>163 / 126：网页版 → 设置 → POP3/SMTP/IMAP → 开启 IMAP → 拿授权码。</li>
-        <li>Outlook / Hotmail / Microsoft 365：即将支持。微软不让用密码收信了，贫僧走微软登录，到时点一下登上就行。</li>
-        <li>公司邮箱：问管理员要 IMAP / SMTP 地址，程序里填上。</li>
+        <li data-sh="pw1"></li>
+        <li data-sh="pw2"></li>
+        <li data-sh="pw3"></li>
+        <li data-sh="pw4"></li>
+        <li data-sh="pw5"></li>
       </ul>
     </details>
   </section>
 
   <section class="privacy">
-    <h2>贫僧嘴严</h2>
-    <p>密码进 Windows 凭据管理器。邮件直接从你电脑连你的邮箱；AI 起草时，信直接发给你自己的 Google 钥匙，中间没有千手院。查新版只是读一个版本号。</p>
+    <h2 data-s="privH"></h2>
+    <p data-s="priv"></p>
   </section>
 
   <footer class="foot">
-    <div>千手院 · 知客僧 0.3.0</div>
-    <div>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></div>
-    <div><a href="https://qianshoulab.github.io/">千手院总舵 https://qianshoulab.github.io/</a></div>
+    <div data-s="footName"></div>
+    <div><span data-s="footMail"></span><span class="mail">oilsongchengmin@gmail.com</span></div>
+    <div><a href="https://qianshoulab.github.io/" data-s="footHome"></a></div>
   </footer>
 </div>
+<script>
+// 默认英文；右上角 EN / 中文，选过就记住（localStorage 的 zhike.lang）；网址带 ?lang=zh|en 先听网址。不跟浏览器语言走。
+(() => {
+  const SITE = window.SITE, LK = 'zhike.lang';
+  const save = (l) => { try { localStorage.setItem(LK, l); } catch (e) {} };
+  let lang = null;
+  try { lang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+  if (SITE[lang]) save(lang);
+  else { try { lang = localStorage.getItem(LK); } catch (e) {} if (!SITE[lang]) lang = 'en'; }
+  function apply() {
+    const s = SITE[lang], suf = lang === 'en' ? '-en' : '';
+    document.documentElement.lang = s.htmlLang;
+    document.title = s.title;
+    document.querySelector('meta[name=description]').content = s.desc;
+    for (const el of document.querySelectorAll('[data-s]')) el.textContent = s[el.dataset.s];
+    for (const el of document.querySelectorAll('[data-sh]')) el.innerHTML = s[el.dataset.sh];
+    for (const el of document.querySelectorAll('[data-alt]')) el.alt = s[el.dataset.alt];
+    for (const el of document.querySelectorAll('[data-aria]')) el.setAttribute('aria-label', s[el.dataset.aria]);
+    for (const el of document.querySelectorAll('[data-img]')) el[el.tagName === 'IMG' ? 'src' : 'srcset'] = 'img/' + el.dataset.img + suf + '.webp';
+    const g = document.querySelector('.lang');
+    g.setAttribute('aria-label', s.langLabel);
+    for (const b of g.children) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+  }
+  document.querySelector('.lang').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-lang]');
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang; save(lang);
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash);
+    apply();
+  });
+  apply();
+})();
+</script>
 </body>
 </html>

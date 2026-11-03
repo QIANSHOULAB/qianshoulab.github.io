@@ -33,8 +33,8 @@ def fwd_of(raw_inner_text, frm, subj, depth=2):
 
 # ---------- 转发信 ----------
 def test_forward_unwrap_two_levels():
-    m = parse(fwd_of("订单号：SM-9\n实付金额：¥10.00", "山门商贸 <orders@shanmen-shop.example>", "订单确认 #SM-9"))
-    assert m.orig_from == "orders@shanmen-shop.example" and m.orig_from_name == "山门商贸"
+    m = parse(fwd_of("订单号：SM-9\n实付金额：¥10.00", "青禾商贸 <orders@qinghe-shop.example>", "订单确认 #SM-9"))
+    assert m.orig_from == "orders@qinghe-shop.example" and m.orig_from_name == "青禾商贸"
     assert m.orig_subject == "订单确认 #SM-9"
     assert m.fwd_by == ["b@ourco.example", "a@ourco.example"]
 
@@ -50,7 +50,7 @@ def test_forward_unwrap_chinese_outlook_and_plain_mail_untouched():
 def test_forwarded_order_matches_rule_by_original_sender(env):
     imap, eng, store = env["imap"], env["eng"], env["store"]
     inner = "您好，您的订单已确认。\n\n订单号：SM-77\n下单时间：2026-11-01 09:30\n实付金额：¥88.00\n联系人：王小明  电话：138-0013-8000"
-    imap.deliver(fwd_of(inner, "山门商贸 <orders@shanmen-shop.example>", "订单确认 #SM-77"))
+    imap.deliver(fwd_of(inner, "青禾商贸 <orders@qinghe-shop.example>", "订单确认 #SM-77"))
     eng.run_once()
     r = rows(store.settings["excel_path"], "订单")
     assert r[0]["订单号"] == "SM-77" and r[0]["金额"] == 88.0
@@ -115,12 +115,12 @@ def test_complete_order_with_unsubscribe_footer_still_processed(env):
 
 def test_lookalike_domain_held(env):
     imap, eng, store = env["imap"], env["eng"], env["store"]
-    store.rules[0]["conditions"] = {"from": ["@shanmen-shop.example"], "subject": [], "body": [], "exclude": []}
-    imap.deliver(make_mail("订单确认 #X", "订单号：X1\n实付金额：¥1.00", frm="orders@shanmen-sh0p.example"))
-    imap.deliver(make_mail("订单确认 #Y", "订单号：Y1\n实付金额：¥1.00", frm="orders@shanmen-shop.example"))
+    store.rules[0]["conditions"] = {"from": ["@qinghe-shop.example"], "subject": [], "body": [], "exclude": []}
+    imap.deliver(make_mail("订单确认 #X", "订单号：X1\n实付金额：¥1.00", frm="orders@qinghe-sh0p.example"))
+    imap.deliver(make_mail("订单确认 #Y", "订单号：Y1\n实付金额：¥1.00", frm="orders@qinghe-shop.example"))
     eng.run_once()
     # 冒充域名本来就对不上发件人条件；这里看的是 junk_reason 认得出它
-    m = parse(make_mail("x", "y", frm="orders@shanmen-sh0p.example"))
+    m = parse(make_mail("x", "y", frm="orders@qinghe-sh0p.example"))
     assert R.junk_reason(m, store.rules) == "lookalike"
 
 

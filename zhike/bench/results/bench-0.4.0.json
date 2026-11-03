@@ -1,0 +1,155 @@
+{
+ "date": "2026-11-03",
+ "note": "0.4.0 = this commit (text only: strings.js zh/en); same gen_mails seeds 2/3, same score.py, same run_zhike.py usage (Chinese rule names, ZHIKE_LANG=zh)",
+ "seed2": {
+  "v040": {
+   "score": {
+    "mails": 200,
+    "field_total": 517,
+    "field_err": 8,
+    "rule_err": 0,
+    "junk_rows": 0,
+    "fwd_should": 80,
+    "fwd_err": 0,
+    "fwd_missed": 0,
+    "fwd_wrong": 0,
+    "by_kind": {
+     "inquiry": 8
+    },
+    "by_field": {
+     "询价·数量": 7,
+     "询价·电话": 1
+    },
+    "field_acc": 0.9845
+   },
+   "meta": {
+    "actions": {
+     "click": 1,
+     "drag": 0,
+     "type": 2,
+     "chars": 40
+    },
+    "build_sec": 3.7,
+    "rec_sec_10": 0.002,
+    "run_sec_200": 2.43,
+    "core_sec_200": 0.1,
+    "smtp_sent": 80,
+    "excel": {
+     "money_cells": 104,
+     "money_numeric": 104,
+     "date_cells": 140,
+     "date_typed": 140,
+     "qty_cells": 23,
+     "qty_numeric": 23,
+     "rows": 170
+    },
+    "rec_names": [
+     "发票",
+     "物流",
+     "订单",
+     "询价"
+    ]
+   }
+  },
+  "v040_en": {
+   "rules_en": [
+    "Invoices",
+    "Orders",
+    "Quotes",
+    "Shipping"
+   ],
+   "run_sec_200": 2.73,
+   "smtp_sent": 80,
+   "headers": {
+    "Invoices": [
+     "Received",
+     "From",
+     "Invoice #",
+     "Amount",
+     "Due date",
+     "Attachments"
+    ],
+    "Shipping": [
+     "Received",
+     "From",
+     "Tracking #",
+     "ETA"
+    ],
+    "Orders": [
+     "Received",
+     "From",
+     "Order #",
+     "Order date",
+     "Amount"
+    ],
+    "Quotes": [
+     "Received",
+     "From",
+     "Product",
+     "Quantity",
+     "Phone"
+    ]
+   },
+   "score": {
+    "field_total": 517,
+    "field_err": 8,
+    "rule_err": 0,
+    "junk_rows": 0,
+    "fwd_should": 80,
+    "fwd_err": 0
+   }
+  }
+ },
+ "seed3": {
+  "v040": {
+   "score": {
+    "mails": 200,
+    "field_total": 518,
+    "field_err": 9,
+    "rule_err": 1,
+    "junk_rows": 0,
+    "fwd_should": 81,
+    "fwd_err": 1,
+    "fwd_missed": 1,
+    "fwd_wrong": 0,
+    "by_kind": {
+     "inquiry": 9,
+     "inquiry·转发": 1
+    },
+    "by_field": {
+     "询价·数量": 7,
+     "询价·电话": 2
+    },
+    "field_acc": 0.9826
+   },
+   "meta": {
+    "actions": {
+     "click": 1,
+     "drag": 0,
+     "type": 2,
+     "chars": 40
+    },
+    "build_sec": 3.8,
+    "rec_sec_10": 0.002,
+    "run_sec_200": 2.6,
+    "core_sec_200": 0.09,
+    "smtp_sent": 80,
+    "excel": {
+     "money_cells": 104,
+     "money_numeric": 104,
+     "date_cells": 140,
+     "date_typed": 140,
+     "qty_cells": 23,
+     "qty_numeric": 23,
+     "rows": 169
+    },
+    "rec_names": [
+     "发票",
+     "物流",
+     "订单",
+     "询价"
+    ]
+   }
+  }
+ }
+}

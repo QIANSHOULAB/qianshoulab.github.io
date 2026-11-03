@@ -6,15 +6,17 @@ import re
 import uuid
 
 
-def new_rule(name: str = "新规则") -> dict:
+def new_rule(name: str | None = None, lang: str = "zh") -> dict:
+    """新规则：自带「收到时间」「发件人」两列（列名跟着当前语言，进了 Excel 就是表头）。"""
+    from .text import T
     return {
         "id": uuid.uuid4().hex[:10],
-        "name": name,
+        "name": name or T("rule_new", lang),
         "enabled": True,
         "conditions": {"from": [], "subject": [], "body": [], "exclude": []},
         "fields": [
-            {"name": "收到时间", "builtin": "@received", "type": "datetime"},
-            {"name": "发件人", "builtin": "@from", "type": "email"},
+            {"name": T("b_received", lang), "builtin": "@received", "type": "datetime"},
+            {"name": T("b_from", lang), "builtin": "@from", "type": "email"},
         ],
         "forward": {"enabled": False, "to": [], "note": ""},
         "reply": {"enabled": False, "mode": "auto", "template": "", "hint": ""},

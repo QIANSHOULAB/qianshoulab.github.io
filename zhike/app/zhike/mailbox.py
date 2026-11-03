@@ -347,7 +347,9 @@ def _quote(text: str) -> str:
     return "\n".join("> " + ln for ln in text.splitlines())
 
 
-def build_forward(mail, from_addr: str, to_addrs: list, note: str = "") -> EmailMessage:
+def build_forward(mail, from_addr: str, to_addrs: list, note: str = "", lang: str = "zh") -> EmailMessage:
+    """转发：信头那几行（转发的邮件 / Forwarded message）跟着界面语言；原信正文、附件照原样。"""
+    from .text import T
     import email
     import email.policy
     orig = email.message_from_bytes(mail.raw, policy=email.policy.default)
@@ -362,9 +364,9 @@ def build_forward(mail, from_addr: str, to_addrs: list, note: str = "") -> Email
     if mail.from_addr:
         m["Reply-To"] = mail.from_addr
     head = [note.strip(), ""] if note.strip() else []
-    head += ["---------- 转发的邮件 ----------",
-             f"发件人：{mail.from_name} <{mail.from_addr}>".replace(" <", " <") if mail.from_name else f"发件人：{mail.from_addr}",
-             f"日期：{mail.date}", f"主题：{mail.subject}", "", getattr(mail, "body", "") or mail.text]
+    who = f"{mail.from_name} <{mail.from_addr}>" if mail.from_name else mail.from_addr
+    head += [T("fwd_head", lang), T("fwd_from", lang, v=who), T("fwd_date", lang, v=mail.date),
+             T("fwd_subj", lang, v=mail.subject), "", getattr(mail, "body", "") or mail.text]
     m.set_content("\n".join(head))
     for part in orig.walk():
         if part.is_multipart():

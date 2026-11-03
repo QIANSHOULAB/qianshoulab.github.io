@@ -19,11 +19,12 @@ def data_dir() -> Path:
     return p
 
 
-def default_excel_path() -> str:
+def default_excel_path(lang: str = "en") -> str:
+    from .text import T
     base = Path.home() / "Documents"
     if not base.exists():
         base = Path.home()
-    return str(base / "知客僧" / "知客僧.xlsx")
+    return str(base / T("excel_dir", lang) / T("excel_file", lang))
 
 
 DEFAULT_CONFIG = {
@@ -82,12 +83,21 @@ class Store:
         self.root.mkdir(parents=True, exist_ok=True)
         self.config = JsonFile(self.root / "config.json", DEFAULT_CONFIG)
         self.state = JsonFile(self.root / "state.json", DEFAULT_STATE)
-        if not self.config.data["settings"].get("excel_path"):
-            self.config.data["settings"]["excel_path"] = default_excel_path()
+        s = self.config.data["settings"]
+        if s.get("lang") not in ("en", "zh"):
+            # 界面语言：默认英文。0.3 升上来、已经连着邮箱在用中文的，没选过就接着中文，免得一升级满屏换了字。
+            # ZHIKE_LANG 只给测试、比武脚本用（它们照中文那套写的）。
+            s["lang"] = os.environ.get("ZHIKE_LANG") or ("zh" if self.config.data.get("accounts") else "en")
+        if not s.get("excel_path"):
+            s["excel_path"] = default_excel_path(s["lang"])
 
     @property
     def settings(self):
         return self.config.data["settings"]
+
+    @property
+    def lang(self) -> str:
+        return "zh" if self.settings.get("lang") == "zh" else "en"
 
     @property
     def accounts(self):

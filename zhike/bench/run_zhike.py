@@ -29,6 +29,8 @@ OUT.mkdir(parents=True, exist_ok=True)
 (OUT / "知客僧.xlsx").unlink(missing_ok=True)   # 上次的表别混进来
 os.environ["ZHIKE_HOME"] = tempfile.mkdtemp(prefix="zhike-bench-")
 os.environ["ZHIKE_NO_KEYRING"] = "1"
+# 0.4 起程序默认英文；比武的标准答案按中文规则名、列名写（订单 / 订单号……），跟 0.3.0 同一套口径，所以这里跑中文那套
+os.environ.setdefault("ZHIKE_LANG", "zh")
 
 from zhike.api import Api  # noqa: E402
 from zhike.engine import Engine  # noqa: E402

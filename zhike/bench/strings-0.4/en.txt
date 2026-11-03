@@ -1,0 +1,393 @@
+app	Zhike
+tagline	Inbox Sorter
+html_lang	en
+locale	en-US
+sep	, 
+q	“{s}”
+nav_inbox	Inbox
+nav_rules	Rules
+nav_table	Sheets
+nav_drafts	Drafts
+nav_log	Log
+nav_settings	Settings
+lang_label	Language
+lang_row	Display language
+lang_hint	Rules you already accepted keep their names and headers
+welcome_t	Connect your inbox.
+welcome_s	Orders, invoices and tracking numbers file themselves into Excel. Inbox zen, no meditation required.
+try_demo	Try the demo
+demo_bar	This is a demo. Connect your inbox to put Zhike to work.
+demo_btn	Connect
+acc_email	Email
+acc_email_ph	name@company.com
+acc_pw	App password
+acc_pw_qq	Auth code
+acc_pw_ph	Not your login password
+acc_custom	Enter servers
+acc_imap	Incoming (IMAP)
+acc_smtp	Outgoing (SMTP)
+acc_port	Port
+sec_ssl	SSL
+sec_starttls	STARTTLS
+sec_plain	None
+btn_connect	Connect
+connecting	Connecting, and skimming your recent mail…
+err_auth	Wrong password. Use an app password (QQ and 163 call it an auth code), not your web login.
+err_net	Can't reach the server. Check your connection, or the server address and port.
+err_need_server	Zhike doesn't know this provider. Add the incoming and outgoing servers.
+err_need_pw	Password is empty.
+err_bad_email	That doesn't look like an email address.
+err_error	The mail server said something cryptic: {d}
+help_gmail	Turn on 2-Step Verification, then create one here: 
+help_qq	QQ Mail on the web → Settings → Account → enable IMAP/SMTP → generate an auth code.
+help_163	Web mail → Settings → POP3/SMTP/IMAP → enable IMAP → get an auth code.
+help_custom	Work email? Ask IT for the IMAP and SMTP servers.
+acc_server	Servers: {s}
+pw_where_credman	Your password lives in Windows Credential Manager, on this PC only.
+pw_where_file	Your password is stored encrypted, on this PC only.
+ms_btn	Microsoft sign-in
+ms_note	Outlook, Hotmail and Microsoft 365 use Microsoft sign-in. No password needed.
+ms_soon	Outlook coming soon. Microsoft stopped taking passwords for mail, so Zhike is learning Microsoft sign-in.
+ms_wait	Finish signing in in your browser…
+ms_relogin	Sign in again
+err_ms_soon	Outlook coming soon.
+err_ms_timeout	Waited 5 minutes, no sign-in. Try again.
+err_ms_denied	Microsoft says you didn't hit Accept.
+err_ms_imap	Signed in, but IMAP is off for this mailbox. In Outlook on the web: Settings → Mail → Forwarding and IMAP → turn it on.
+err_ms_other	Microsoft said something cryptic: {d}
+recs_t	{n} rules, drafted for you
+recs_t_1	1 rule, drafted for you
+recs_s	Based on your last {m} emails. Keep what you want, switch off the rest, add who gets a copy.
+recs_none_t	Nothing to batch yet
+recs_none_s	Open an email and select what you want. Zhike learns a rule from it.
+rec_n	{n} emails
+rec_n_1	1 email
+rec_anyone	From anyone
+rec_subj	subject has {s}
+rec_fw	Forward to
+rec_fw_ph	Who? Blank means no forwarding
+rec_extend	Add to “{r}”
+rec_extend_s	New sender, same columns
+rec_off	Skip
+rec_atts	Attachments
+btn_accept	Accept {n} rules
+btn_accept_1	Accept 1 rule
+btn_accept_none	Skip all
+dock_hint	Once accepted, new mail gets handled the moment it lands.
+accepted	Accepted {n} rules. New mail goes straight to Excel.
+accepted_1	Accepted 1 rule. New mail goes straight to Excel.
+accepted_caught	Accepted. The {m} emails that came in earlier are handled too.
+accepted_caught_1	Accepted. The email that came in earlier is handled too.
+dismissed	Skipped. Zhike won't bring those up again.
+btn_undo	Undo
+recs_banner	{n} rules drafted for you
+recs_banner_1	1 rule drafted for you
+recs_look	Review
+autostart_on	Starts with Windows: on. Close the window and Zhike keeps watching from the tray.
+autostart_off	Starts with Windows: off.
+btn_off	Turn off
+btn_on	Turn on
+inbox_empty_t	No mail yet
+inbox_empty_s	New mail shows up here.
+pick_hint	Select text in the email to make it a column.
+by_rule	Handled by “{r}”
+no_rule	No rule for this one
+no_rule_s	Select what you want in the email. Zhike learns a rule from it.
+rec_hint	Zhike drafted a rule for these: “{r}”.
+btn_new_rule_from	New rule
+field_missing	Not found
+field_missing_tip	Click, then select it in the email
+want_hint	Select the value for “{f}” in the email. Zhike will remember this layout.
+want_cancel	Cancel
+fwd_by	Forwarded by {who}
+fwd_orig	Original: {who}
+junk_promo	Looks like spam, held
+junk_lookalike	Lookalike sender, held
+junk_note	Not added to Excel or forwarded. If it's legit, release it from the Log.
+act_excel	To Excel
+act_forward	Forward to {to}
+act_draft	Draft reply
+btn_run_now	Check now
+ran	Checked. {n} new.
+pop_name	Column name
+pop_rule	Add to
+pop_new_rule	New rule (from this email)
+pop_add	Add
+btn_cancel	Cancel
+pop_more	Select the same value in one more email like this and Zhike gets sharper.
+rules_empty_t	No rules yet
+rules_empty_s	Open an email and select what you want. That's a rule.
+rules_recs	Drafted for you
+cond_h	Which emails
+cond_from	From has
+cond_subject	Subject has
+cond_body	Body has
+cond_exclude	Skip if it has
+cond_ph	Enter to add
+cond_note	Any word on a line counts; every filled line must match. Forwarded mail goes by the original sender.
+fields_h	Columns
+fields_note	Add more by selecting text in Inbox.
+fields_builtin	Add built-in
+b_received	Received
+b_from	From
+b_from_name	Sender name
+b_subject	Subject
+b_attachments	Attachments
+type_text	Text
+type_id	ID
+type_money	Amount
+type_date	Date
+type_datetime	Time
+type_email	Email
+type_phone	Phone
+type_number	Number
+type_qty	Quantity
+learned_from	learned from {n} emails
+learned_from_1	learned from 1 email
+how_after	after {l}
+how_next	line after {l}
+how_nth	value #{n} of this type in the body
+actions_h	Then
+a_excel	Add to Excel
+a_excel_s	Sheet “{s}”
+a_forward	Forward to
+a_forward_ph	Who? Enter to add, blank means no forwarding
+a_reply	Draft a reply
+a_reply_s	Goes to Drafts. Zhike never hits send.
+reply_auto	Use AI
+reply_tpl	Template
+reply_tpl_h	Template
+reply_tpl_note	{Column name} becomes the extracted value; {name} is the sender's name.
+reply_hint_h	Notes for the AI
+reply_hint_ph	e.g. Friendly. Say the quote goes out today.
+btn_try	Preview
+try_by	For “{s}”, 
+try_ai	written by AI
+try_tpl	from the template
+hits	{n} sample emails match
+hits_1	1 sample email matches
+n_fields	{n} columns
+n_fields_1	1 column
+s_fw	forwards
+s_reply	drafts
+btn_delete_rule	Delete rule
+deleted_rule	Deleted “{r}”
+move_up	Move up
+move_down	Move down
+rule_order_note	Top to bottom: the first rule that matches takes it.
+btn_new_rule	New rule
+del	Remove
+table_empty	Nothing here yet
+table_empty_s	Matching emails land here, one row each.
+table_none_s	Accept a rule first.
+btn_open_excel	Open Excel
+btn_show_folder	Show folder
+btn_flush	Write now
+pending_note	Excel has the file open, {n} rows waiting. Close it and Zhike writes them in.
+pending_note_1	Excel has the file open, 1 row waiting. Close it and Zhike writes it in.
+demo_table	Demo data. Nothing written to disk.
+drafts_empty_t	No drafts
+drafts_empty_s	Turn on “Draft a reply” in a rule and Zhike writes the first draft for you.
+d_saved_ok	In your Drafts folder
+d_saved_quota	Mailbox full, kept here only
+d_saved_auth	Wrong password, kept here only
+d_saved_error	Not saved to mailbox, kept here only
+d_saved_demo	Demo
+d_to	To {to}
+btn_copy	Copy
+copied	Copied
+log_empty	Nothing done yet. Enjoy the quiet.
+log_time	Time
+log_subject	Subject
+log_rule	Rule
+log_did	Done
+held_promo	Held · spammy
+held_lookalike	Held · lookalike sender
+btn_release	Release
+by_ai	Found by AI
+w_forward	Forward
+w_draft	Draft
+s_ok	Done
+s_pending	Queued
+s_net	Offline, will retry
+s_auth	Wrong password
+s_quota	Mailbox full
+s_error	Failed
+s_demo	Demo
+ai_fallback	AI skipped ({why}), used the template
+why_quota	free quota used up
+why_key	bad key
+why_net	can't connect
+why_other	hiccup
+set_accounts	Mailboxes
+acc_add	Add mailbox
+acc_remove	Remove
+removed_acct	Removed {e}
+acc_fix_pw	Fix password
+acc_new_pw	New app password
+acc_samples	Redraft rules
+acc_watching	Watching
+set_ai	AI drafts
+ai_key	Gemini key
+ai_ph	Paste key
+ai_get	Get one free
+ai_on	Key set. Replies are drafted by AI.
+ai_off	No key, no problem. Replies use the template.
+btn_save	Save
+btn_clear	Clear
+ai_saved	Key saved.
+err_ai_key	That key doesn't work.
+err_ai_net	Can't reach Google. Key not saved.
+err_ai_other	Google said something cryptic: {d}
+set_run	Running
+autostart	Start with Windows
+autostart_s	Sits in the tray after login and reconnects your mailboxes
+interval	Check every
+min	{n} min
+excel_at	Excel file
+btn_change	Change
+set_about	About
+version	Version {v}
+btn_update	Check for updates
+up_new	Version {v} is out
+up_ready	{v} is downloaded and swaps in next launch
+up_none	You're up to date
+up_fail	Couldn't check. Try again later.
+up_checking	Checking…
+btn_download	Download
+btn_restart	Restart now
+side_update	Version {v} is here
+up_card_t	Zhike {v} is out. ({c} had a good run.)
+up_notes_h	What's new:
+up_keep	Switching versions leaves your settings, rules and Excel file alone. Restart when it suits you.
+up_notes	Zhike speaks English now, and still speaks Chinese. Switch in Settings; new rule names and Excel headers follow along.
+foot_name	QIANSHOU LAB · Zhike
+foot_mail	Ideas, bugs, business: write to the abbot at 
+foot_home	QIANSHOU LAB home
+st_demo	Demo
+st_ok_n	Watching {n} mailboxes
+st_checked	Checked {t}
+st_net	Offline, retrying in {s}s
+st_net_m	Offline, retrying in {m} min
+st_auth	{who}: wrong password
+st_error	{who}: something's off
+st_idle	Ready
+st_pending	{n} rows waiting on Excel
+st_pending_1	1 row waiting on Excel
+toast_saved	Saved
+toast_field	Added “{f}”
+toast_rule	New rule “{r}”
+err_generic	Something went wrong: {d}
+ago_now	just now
+ago_min	{n} min ago
+ago_hour	{n} h ago
+n_drafts	{n} reply drafts are ready in your Drafts folder. Give them a look and send.
+n_drafts_1	A reply draft is ready in your Drafts folder. Give it a look and send.
+n_auth	{who}: wrong password. Zhike paused it so the account doesn't get locked. Open Zhike to fix it.
+n_excel	Excel has the file open, {n} rows waiting. Close it and Zhike writes them in.
+n_excel_1	Excel has the file open, 1 row waiting. Close it and Zhike writes it in.
+n_recs	A new kind of email showed up. Zhike drafted {n} rules: {r}. Your call.
+n_recs_1	A new kind of email showed up. Zhike drafted a rule: {r}. Your call.
+tray_hint	Window closed, Zhike is still on duty in the tray. Right-click the icon to quit.
+m_open	Open Zhike
+m_run	Check now
+m_excel	Open Excel
+m_quit	Quit
+rt_order	Orders
+rt_invoice	Invoices
+rt_ship	Shipping
+rt_quote	Quotes
+col_order	Order #
+col_invoice	Invoice #
+col_amount	Amount
+col_due	Due date
+col_orderdate	Order date
+col_tracking	Tracking #
+col_eta	ETA
+col_phone	Phone
+col_qty	Quantity
+col_product	Product
+col_contact	Contact
+rule_new	New rule
+field_default	Field
+tpl_default	Hi {name},\n\nGot your email. I'll take a look and get back to you shortly.\n
+fwd_head	---------- Forwarded message ----------
+fwd_from	From: {v}
+fwd_date	Date: {v}
+fwd_subj	Subject: {v}
+ms_done_ok	Signed in
+ms_done_fail	Didn't sign in
+ms_done_s	Head back to Zhike. You can close this tab.
+excel_dir	Zhike
+excel_file	Zhike.xlsx
+site.htmlLang	en
+site.title	Zhike · Inbox Sorter — orders and invoices, straight into Excel
+site.desc	Zhike is a free Windows app that sorts your inbox. Connect your mailbox, it drafts the rules, you hit Accept. Order numbers, amounts and dates land in Excel, the right emails get forwarded, replies get drafted but never sent. Your mail never leaves your PC.
+site.langLabel	Language
+site.home	QIANSHOU LAB
+site.navName	Zhike
+site.navDl	Download
+site.h1	<span>Mail comes in.</span> <span>You clock out.</span>
+site.sl	Orders, invoices and tracking numbers file themselves into Excel.
+site.tg	Connect your inbox. Zhike reads your recent mail, drafts the rules, and you hit Accept. It forwards what needs forwarding and drafts replies. Sending is your call.
+site.dl	Download for Windows
+site.how	How it works
+site.meta	0.4.0 · Windows 10 / 11 · Free · Double-click to run, updates itself
+site.alt1	Zhike main window: mail list on the left, an invoice email on the right, with a card showing the extracted invoice number, amount and due date, tagged To Excel and Forward to finance
+site.s1h	Rules?<br>Already drafted.
+site.s1p1	The moment you connect, Zhike reads your recent mail and sorts it into orders, invoices, shipping and quote requests. “Order Number” from one shop and “Order #” from another land in the same column. Spam and lookalike senders don't count.
+site.s1p2	Give it a glance, add who gets a copy, hit Accept. No regex. No clicking fields one by one.
+site.alt2	Zhike drafted 4 rules: Invoices, Shipping, Orders and Quotes. Each card lists the senders it matches, the columns it pulls with sample values, and an Accept 4 rules button at the bottom
+site.s2h	On at boot.<br>Quiet unless needed.
+site.s2p1	Log in and Zhike sits in the tray, reconnects your mailbox and picks up where it left off. New supplier? Zhike drafts “Add to Invoices”. One click, and the email that just came in gets filed and forwarded too.
+site.s2p2	It only pings you when there's a call to make: reply drafts are ready, a new kind of email showed up, a password stopped working, or Excel has the file locked.
+site.stepsLabel	A day on the job
+site.st1b	Boot
+site.st1	Into the tray, mailbox connected, picks up where it left off
+site.st2b	Mail arrives
+site.st2	Sorted, columns into Excel, forwarded if needed, reply drafted in Drafts
+site.st3b	Not sure?
+site.st3	A new kind of email, or something spammy: Zhike holds it and asks you
+site.gridLabel	What else it does
+site.g1b	Point and click works too
+site.g1	Anything Zhike missed: select text in the email and it becomes a column
+site.g2b	One Excel file
+site.g2	Amounts are numbers, dates are dates. SUM away.
+site.g3b	Forwards for you
+site.g3	Invoices to finance, quotes to sales, attachments included
+site.g4b	Drafts, never sends
+site.g4	AI writes with your own Gemini key, templates without. What goes out is up to you.
+site.g5b	Forwarded three times? Fine.
+site.g5	Mail a colleague passed along is matched by the original sender
+site.g6b	Reads PDFs too
+site.g6	Amounts and PO numbers from invoice attachments, same as the body
+site.g7b	Holds spam
+site.g7	Promos riding on keywords and lookalike domains get held. Release one if it's legit.
+site.g8b	Undo beats “Are you sure?”
+site.g8	Accepted or deleted by mistake? Hit Undo.
+site.g9b	Mail stays home
+site.g9	Mail and passwords stay on your PC. We don't have servers.
+site.instH	Two steps
+site.instS	Nothing to install. No sign-up.
+site.i1	<b>Download, double-click.</b> If Windows SmartScreen pops up, click “More info”, then “Run anyway”.
+site.i2	<b>Connect your inbox.</b> Enter your email and an app password (QQ and 163 call it an auth code). Zhike knows the servers, drafts the rules, and you hit Accept.
+site.bx1	Gmail
+site.bx2	QQ Mail
+site.bx3	Tencent Exmail
+site.bx4	163
+site.bx5	126
+site.bx6	iCloud
+site.bx7	Yahoo
+site.bx8	Work email (IMAP)
+site.bx9	Outlook · coming soon
+site.pwQ	Where do I get an app password?
+site.pw1	Gmail: turn on 2-Step Verification, then create one at <a href="https://myaccount.google.com/apppasswords">myaccount.google.com/apppasswords</a>.
+site.pw2	QQ Mail: web → Settings → Account → enable IMAP/SMTP → generate an auth code.
+site.pw3	163 / 126: web → Settings → POP3/SMTP/IMAP → enable IMAP → get an auth code.
+site.pw4	Outlook / Hotmail / Microsoft 365: coming soon. Microsoft stopped taking passwords for mail, so Zhike will use Microsoft sign-in. One click once it lands.
+site.pw5	Work email: ask IT for the IMAP / SMTP addresses and enter them in the app.
+site.privH	Tight-lipped.
+site.priv	Your password goes into Windows Credential Manager. Zhike talks to your mailbox straight from your PC. AI drafts go to Gemini on your own Google key, with QIANSHOU LAB nowhere in between. Checking for updates just reads a version number.
+site.footName	QIANSHOU LAB · Zhike 0.4.0
+site.footMail	Ideas, bugs, business: write to the abbot at 
+site.footHome	QIANSHOU LAB home https://qianshoulab.github.io/

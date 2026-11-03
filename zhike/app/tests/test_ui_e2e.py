@@ -27,7 +27,7 @@ def shot(pg, name):
         pg.screenshot(path=os.path.join(SHOTS, name + ".png"))
 
 
-FWD = ("帮忙录一下\n\n---------- Forwarded message ---------\nFrom: 山门商贸 <orders@shanmen-shop.example>\n"
+FWD = ("帮忙录一下\n\n---------- Forwarded message ---------\nFrom: 青禾商贸 <orders@qinghe-shop.example>\n"
        "Date: Mon, 2 Nov 2026 09:00:00 +0800\nSubject: 订单确认 #SM-1001\nTo: me@test.local\n\n"
        "订单号：SM-1001\n下单时间：2026-11-01 09:30\n实付金额：¥1,280.50\n")
 
@@ -88,7 +88,7 @@ def test_full_flow(home, imap, smtp, scheme):
         pg.press("#wform [name=pw]", "Enter")             # 回车就连
         # 连上：贫僧拟好了规则，转来的订单信按原发件人认
         pg.wait_for_selector(".rec")
-        assert api.recs()[0]["conditions"]["from"] == ["@shanmen-shop.example"]
+        assert api.recs()[0]["conditions"]["from"] == ["@qinghe-shop.example"]
         assert "开机自己跑" in pg.inner_text(".note")       # 开机自启当场说一句，一下能关
         shot(pg, f"recs-{scheme}")
         pg.fill(".rec .tag-in", "boss@test.local")
@@ -100,7 +100,7 @@ def test_full_flow(home, imap, smtp, scheme):
         assert [f["name"] for f in rule["fields"] if not f.get("builtin")] == ["订单号", "下单日期", "金额"]
         # 来新信：一封转来的订单、一封冒充推销
         imap.deliver(make_mail("Fwd: 订单确认 #SM-1002", FWD.replace("1001", "1002"), frm="同事B <b@ourco.example>"))
-        imap.deliver(make_mail("订单确认：恭喜您获得免费手机一台", "订单号：WIN888\n请点击链接领取", frm="山门商贸 <promo@shanmen-shop.example>"))
+        imap.deliver(make_mail("订单确认：恭喜您获得免费手机一台", "订单号：WIN888\n请点击链接领取", frm="青禾商贸 <promo@qinghe-shop.example>"))
         pg.click('[data-act="run-now"]')
         pg.wait_for_selector('.li:has-text("恭喜您获得")')
         # 被挡下的推销信：收件里看得到原因；「没找到」点一下就进补样例模式

@@ -34,6 +34,8 @@ def smtp():
 def home(tmp_path, monkeypatch):
     monkeypatch.setenv("ZHIKE_HOME", str(tmp_path / "home"))
     monkeypatch.setenv("ZHIKE_NO_KEYRING", "1")
+    # 老测试照中文那套写（规则名「订单」、列名「订单号」）；程序默认英文，英文那套在 test_v04.py 里单测
+    monkeypatch.setenv("ZHIKE_LANG", "zh")
     # Windows 上开机自启写在注册表里（全用户共用，不跟着 ZHIKE_HOME 走）：每个测试从「没开」起，测完放回原样
     snap = None
     if sys.platform == "win32":
@@ -90,7 +92,7 @@ def gemini():
     g.stop()
 
 
-def make_mail(subject, body, frm="山门商贸 <orders@shanmen-shop.example>", atts=(), headers=None, html=None):
+def make_mail(subject, body, frm="青禾商贸 <orders@qinghe-shop.example>", atts=(), headers=None, html=None):
     m = EmailMessage()
     m["From"] = frm
     m["To"] = "me@test.local"
@@ -107,10 +109,10 @@ def make_mail(subject, body, frm="山门商贸 <orders@shanmen-shop.example>", a
     return m.as_bytes()
 
 
-def order_mail(no, amount, who="王小明", phone="138-0013-8000"):
+def order_mail(no, amount, who="王小明", phone="138-0013-8000", frm="青禾商贸 <orders@qinghe-shop.example>"):
     return make_mail(f"订单确认 #{no}",
                      f"您好，您的订单已确认。\n\n订单号：{no}\n下单时间：2026-11-01 09:30\n实付金额：¥{amount}\n"
-                     f"联系人：{who}  电话：{phone}\n", atts=[(f"发票_{no}.pdf", b"%PDF-1.4 x")])
+                     f"联系人：{who}  电话：{phone}\n", atts=[(f"发票_{no}.pdf", b"%PDF-1.4 x")], frm=frm)
 
 
 @pytest.fixture

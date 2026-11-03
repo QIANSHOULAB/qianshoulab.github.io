@@ -1,6 +1,6 @@
 """界面调用的全部接口。pywebview 直接调这个类；开发时 devserver 用 HTTP 转一手，同一份代码。
 
-返回给界面的错误都是代码（net/auth/quota/...），界面上的字在 ui/strings.js 里统一翻译。
+返回给界面的错误都是代码（net/auth/quota/...），界面上的字在 ui/strings.js 里；托盘、气泡这几句也在那儿（zhike/text.py 读）。
 """
 from __future__ import annotations
 
@@ -16,7 +16,8 @@ from . import VERSION, ai, learn, oauth, platform as P, recommend as RC, rules a
 from .engine import Engine
 from .mailbox import PROVIDERS, AuthError, MailError, NetError, account_from, test_account
 from .secrets import Secrets
-from .store import Store
+from .store import Store, default_excel_path
+from .text import T, norm
 
 
 def _mail_view(m, rule=None, with_text=True, rules=()):
@@ -52,6 +53,11 @@ class Api:
         self._run_logs = []
         self._told = {"auth": set(), "excel": False}
         self._un_seen = 0
+        self.on_lang = None        # app.py 挂上：换了语言，窗口标题、托盘菜单跟着换
+
+    @property
+    def lang(self) -> str:
+        return self.store.lang
 
     # ---------- 内部 ----------
     def _changed(self, kind, payload):
@@ -67,21 +73,22 @@ class Api:
 
     def _tell(self, logs):
         """有事才叫人：回信草稿备好了、拟了新规则、邮箱密码不对、Excel 被占着。进表、转发这种照常的事不吵。"""
-        from . import APP_NAME
+        L = self.lang
+        app = T("app", L)
         drafts = [lg for lg in logs if lg.get("draft") == "ok"]
         if drafts:
-            self.notify(APP_NAME, S["n_drafts"].format(n=len(drafts)))
+            self.notify(app, T("n_drafts", L, n=len(drafts)))
         for aid, st in self.engine.status.items():
             if st.get("state") == "auth" and aid not in self._told["auth"]:
                 self._told["auth"].add(aid)
                 who = next((a["email"] for a in self.store.accounts if a["id"] == aid), "")
-                self.notify(APP_NAME, S["n_auth"].format(who=who))
+                self.notify(app, T("n_auth", L, who=who))
             elif st.get("state") == "ok":
                 self._told["auth"].discard(aid)
         pend = len(self.store.state.data.get("pending_rows", []))
         if pend and not self._told["excel"]:
             self._told["excel"] = True
-            self.notify(APP_NAME, S["n_excel"].format(n=pend))
+            self.notify(app, T("n_excel", L, n=pend))
         elif not pend:
             self._told["excel"] = False
         # 这一轮来了没规则管的信，才值得重新拟一遍（都有规则管的话，拟稿不会变）
@@ -95,7 +102,7 @@ class Api:
             told.extend(r["id"] for r in fresh)
             del told[:-200]
             self.store.state.save()
-            self.notify(APP_NAME, S["n_recs"].format(n=len(fresh), r="、".join(r["name"] for r in fresh[:3])))
+            self.notify(app, T("n_recs", L, n=len(fresh), r=T("sep", L).join(r["name"] for r in fresh[:3])))
 
     @property
     def demo(self):
@@ -134,6 +141,7 @@ class Api:
             "ms_login": oauth.available(),
             "secret_where": self.secrets.where,
             "platform": sys.platform,
+            "lang": self.lang,
         }
 
     def tick(self):
@@ -160,10 +168,10 @@ class Api:
         """看最近的信拟好的规则（还没收）。示例模式没有。同一个版本号内不重算。"""
         if self.demo:
             return []
-        if self._recs[0] == self._rev:
+        if self._recs[0] == (self._rev, self.lang):
             return self._recs[1]
-        out = RC.recommend(self.engine.samples(), self.store.rules, self.store.config.data.get("dismissed", []))
-        self._recs = (self._rev, out)
+        out = RC.recommend(self.engine.samples(), self.store.rules, self.store.config.data.get("dismissed", []), lang=self.lang)
+        self._recs = ((self._rev, self.lang), out)
         return out
 
     def accept_recs(self, items, skipped=()):
@@ -255,7 +263,7 @@ class Api:
     # ---------- 规则 ----------
     def new_rule(self, mail_key=None, name=None):
         m = self.engine.find_mail(mail_key) if mail_key else None
-        r = R.new_rule(name or (m and _short(m.orig_subject or m.subject)) or "新规则")
+        r = R.new_rule(name or (m and _short(m.orig_subject or m.subject, self.lang)) or None, self.lang)
         if m:
             r["conditions"] = R.propose_conditions([m])
         self._rules().insert(0, r)
@@ -295,7 +303,7 @@ class Api:
         m = self.engine.find_mail(key)
         if not m:
             raise KeyError(key)
-        name = (name or "").strip() or "字段"
+        name = (name or "").strip() or T("field_default", self.lang)
         old = next((f for f in r["fields"] if f["name"] == name and not f.get("builtin")), None)
         examples = [e for e in (old or {}).get("examples", []) if e["key"] != key]
         examples.append({"key": key, "start": int(start), "end": int(end)})
@@ -321,7 +329,7 @@ class Api:
 
     def add_builtin(self, rid, builtin):
         r = self._rule(rid)
-        name = learn.BUILTINS[builtin]
+        name = T("b_" + builtin.lstrip("@"), self.lang) if builtin in learn.BUILTINS else builtin
         if not any(f.get("builtin") == builtin for f in r["fields"]):
             r["fields"].append({"name": name, "builtin": builtin,
                                 "type": "datetime" if builtin == "@received" else "text"})
@@ -437,7 +445,7 @@ class Api:
         acct = account_from(email_addr, "outlook")
         acct.update(id=uuid.uuid4().hex[:8], enabled=True, auth="oauth")
         try:
-            tok = oauth.login(email_addr, open_browser=self._browser)
+            tok = oauth.login(email_addr, open_browser=self._browser, lang=self.lang)
         except oauth.OAuthError as e:
             return {"ok": False, "code": {"net": "net", "timeout": "ms_timeout", "denied": "ms_denied"}.get(e.code, "ms_other"),
                     "detail": e.detail[:200]}
@@ -458,7 +466,7 @@ class Api:
     def relogin_microsoft(self, acct_id):
         acct = next(a for a in self.store.accounts if a["id"] == acct_id)
         try:
-            tok = oauth.login(acct["email"], open_browser=self._browser)
+            tok = oauth.login(acct["email"], open_browser=self._browser, lang=self.lang)
         except oauth.OAuthError as e:
             return {"ok": False, "code": {"net": "net", "timeout": "ms_timeout", "denied": "ms_denied"}.get(e.code, "ms_other")}
         oauth.TokenStore(self.secrets).save(acct_id, tok)
@@ -569,6 +577,24 @@ class Api:
         return {"body": body, "mode": how, "ai_error": err}
 
     # ---------- 设置 ----------
+    def set_lang(self, lang):
+        """EN / 中文：选了就记住（config.json），下次打开直接是这套。已经收下的规则名、列名不动（Excel 里的表头不能说改就改）；
+        新拟的规则、示例、托盘、气泡换成新语言。"""
+        old, new = self.lang, norm(lang)
+        s = self.store.settings
+        s["lang"] = new
+        # Excel 还在默认的地方、还没写过：文件名跟着换（知客僧.xlsx ↔ Zhike.xlsx）
+        if old != new and s.get("excel_path") == default_excel_path(old) and not Path(s["excel_path"]).exists():
+            s["excel_path"] = default_excel_path(new)
+        self.store.config.save()
+        self._rev += 1
+        if self.on_lang:
+            try:
+                self.on_lang(new)
+            except Exception:
+                pass
+        return new
+
     def set_setting(self, k, v):
         if k == "autostart":
             P.set_autostart(bool(v))
@@ -618,22 +644,11 @@ class Api:
         return True
 
 
-# 托盘里的字（界面上的字都在 ui/strings.js，这几句是托盘和气泡自己说的）
-S = {
-    "n_drafts": "{n} 封回信草稿备好了，在邮箱草稿箱里，看一眼就能发。",
-    "n_auth": "{who} 密码不对，贫僧先停下，免得被锁。打开知客僧改一下。",
-    "n_excel": "Excel 开着，{n} 行候着。关掉它，贫僧自己补上。",
-    "n_recs": "新来一类信，贫僧拟了 {n} 条规则：{r}。收不收你定。",
-    "tray_hint": "关了窗口，贫僧在托盘里接着盯。右键图标能退出。",
-    "m_open": "打开知客僧", "m_run": "现在就收", "m_excel": "打开 Excel", "m_quit": "退出",
-}
-
-
-def _short(s):
+def _short(s, lang="zh"):
     import re
     s = re.sub(r"^\s*(?:(?:fwd?|fw|re|转发|回复)\s*[:：]\s*)+", "", s or "", flags=re.I)
     s = re.split(r"[#＃:：\d\[\(（【]", s, maxsplit=1)[0].strip(" -—|·")
-    return (s or "新规则")[:12]
+    return (s or T("rule_new", lang))[:24 if lang == "en" else 12]
 
 
 def _cell(v, kind=None):

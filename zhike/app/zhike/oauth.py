@@ -84,7 +84,7 @@ def _tokens(resp: dict, old_refresh: str = "") -> dict:
             "expires_at": time.time() + int(resp.get("expires_in", 3600)) - 120}
 
 
-def login(email: str, open_browser=webbrowser.open, timeout: float = 300) -> dict:
+def login(email: str, open_browser=webbrowser.open, timeout: float = 300, lang: str = "zh") -> dict:
     """打开浏览器让用户在微软页面登录，等回调，换回令牌。"""
     if not available():
         raise OAuthError("unavailable")
@@ -102,10 +102,11 @@ def login(email: str, open_browser=webbrowser.open, timeout: float = 300) -> dic
                 self.end_headers()
                 return
             got.update({k: v[0] for k, v in q.items()})
-            page = ("<!doctype html><meta charset=utf-8><title>知客僧</title>"
+            from .text import T
+            page = (f"<!doctype html><html lang={T('html_lang', lang)}><meta charset=utf-8><title>{T('app', lang)}</title>"
                     "<body style='font:15px -apple-system,Segoe UI,sans-serif;display:grid;place-items:center;height:90vh'>"
-                    "<div style='text-align:center'><h2>" + ("登上了" if "code" in got else "没登上") +
-                    "</h2><p>回知客僧就行，这页可以关了。</p></div>").encode()
+                    "<div style='text-align:center'><h2>" + T("ms_done_ok" if "code" in got else "ms_done_fail", lang) +
+                    "</h2><p>" + T("ms_done_s", lang) + "</p></div>").encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(page)))

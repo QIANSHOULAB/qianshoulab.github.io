@@ -61,7 +61,7 @@ def test_recommended_rule_reads_like_hand_built():
     assert got["订单号"]["raw"] == "LM-585500" and got["金额"]["value"] == 66.75
     assert rule["forward"] == {"enabled": True, "to": ["boss@test.local"], "note": ""}
     # 新来一封没见过的写法（订单编号、应付总额）照样认（同义词 0.2 就有）
-    m = parse(make_mail("订单确认 #SM-77", "订单编号：SM-77\n下单时间：2026-11-01 09:30\n应付总额：￥88.00\n"))
+    m = parse(make_mail("订单确认 #SM-77", "订单编号：SM-77\n下单时间：2026-11-01 09:30\n应付总额：￥88.00\n", frm="山门商贸 <orders@shanmen-shop.example>"))
     assert R.first_match([rule], m) is rule and learn.extract_all(rule["fields"], m)["订单号"]["raw"] == "SM-77"
 
 
@@ -114,7 +114,7 @@ def test_connect_recommend_accept_undo(home, imap, smtp):
     out = api.accept_recs([{"id": r["id"], "forward": fw.get(r["name"], [])} for r in recs])
     assert out["created"] == 4 and api.recs() == []
     assert sorted(r["name"] for r in api.boot()["rules"]) == sorted(["订单", "物流", "发票", "询价"])
-    imap.deliver(order_mail("SM-500", "500.00"))
+    imap.deliver(order_mail("SM-500", "500.00", frm="山门商贸 <orders@shanmen-shop.example>"))   # 比武样例里那家
     imap.deliver(make_mail("询价：文件柜", "产品：文件柜\n数量：3 台\n联系电话：+65 8000 0000", frm="客户 <someone@post.example>"))
     api.engine.run_once()
     assert rows(api.store.settings["excel_path"], "订单")[0]["订单号"] == "SM-500"

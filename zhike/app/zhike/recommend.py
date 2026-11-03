@@ -11,6 +11,8 @@
 - 订单、发票、物流只收公司发的（orders@、billing@、noreply@ 这种，或名字像公司）；个人来信里提了个订单号不算。
 - 已经有规则管的信不再拟。某一类已有规则，来了新的一家：拟成「归进已有规则」。
 - 人点了「不要」的，记住，不再拟（来了新的发件人才再问）。
+- 规则名、列名跟着界面语言（lang）：内部认字段、认类型一律用中文规范名（订单号、订单……），拟好交出去时才换成当前语言的叫法，
+  所以中文时收下的规则，切到英文后来了新的一家照样「归进去」。
 """
 from __future__ import annotations
 
@@ -19,6 +21,7 @@ import math
 import re
 
 from . import learn, rules as R
+from .text import col, type_name, type_names
 
 # (类型名, 认它要有的字段（规范名）, 谁都会来——不限发件人)
 TYPES = [
@@ -146,8 +149,8 @@ def _sig(kind, key, domains):
     return f"{kind}-{h}"
 
 
-def recommend(mails: list, rules: list, dismissed=(), limit: int = 8) -> list:
-    """mails：最近收到的信（Mail）；rules：已有规则。返回拟好的规则（还没收）。"""
+def recommend(mails: list, rules: list, dismissed=(), limit: int = 8, lang: str = "zh") -> list:
+    """mails：最近收到的信（Mail）；rules：已有规则。返回拟好的规则（还没收），名字、列名用 lang 那套。"""
     pool = []
     for m in mails:
         if m.zhike_mark or R.first_match(rules, m):
@@ -190,7 +193,7 @@ def recommend(mails: list, rules: list, dismissed=(), limit: int = 8) -> list:
     for key, ps in groups.items():
         if key[0] == "other" and len(ps) < 2:
             continue
-        rec = _build(key, ps, rules)
+        rec = _build(key, ps, rules, lang)
         if rec and rec["id"] not in set(dismissed):
             out.append(rec)
     out.sort(key=lambda r: (-r["count"], r["name"]))
@@ -213,7 +216,7 @@ def _fields_of(ps):
     return order
 
 
-def _build(key, ps, rules):
+def _build(key, ps, rules, lang="zh"):
     t = key[1] if key[0] == "type" else None
     opened = next((o for x, _n, o in TYPES if x == t), False)
     names = _fields_of(ps)
@@ -255,16 +258,16 @@ def _build(key, ps, rules):
     fields = []
     for nm in names:
         ex = [(p["m"], p["fields"][nm]) for p in ps if nm in p["fields"]]
-        fields.append({"name": nm, "type": learn.infer_type(ex[0][1]["value"], ex[0][1]["label"]),
+        fields.append({"name": col(nm, lang), "key": nm, "type": learn.infer_type(ex[0][1]["value"], ex[0][1]["label"]),
                        "examples": [{"key": m.key(), "start": c["start"], "end": c["end"], "raw": c["value"]} for m, c in ex]})
     atts = all(m.attachments for m in mails)
-    name = t or _short(mails[0])
+    name = type_name(t, lang) if t else _short(mails[0], lang)
     target = _existing(t, frm, rules) if t else None
     kind = "extend" if target else "new"
     rec = {"id": _sig(kind, (target or {}).get("id", "") + (t or "|".join(names)), [_domain(x["addr"]) for x in senders] if not opened else []),
            "kind": kind, "type": t, "name": target["name"] if target else name, "rule_id": target["id"] if target else None,
            "open": opened, "count": len(mails), "mails": [m.key() for m in mails], "senders": senders,
-           "conditions": cond, "fields": fields, "attachments": atts,
+           "conditions": cond, "fields": fields, "attachments": atts, "lang": lang,
            "att_example": mails[0].attachments[0] if atts else ""}
     # 拟出来的条件必须认得这批信，认不得就放宽（不靠主题）
     probe = to_rule(rec, {m.key(): m for m in mails})
@@ -279,29 +282,33 @@ def _common(ss):
     return p if len(p) >= 2 else ""
 
 
-def _short(m):
+def _short(m, lang="zh"):
     from .api import _short as s
-    return s(getattr(m, "orig_subject", "") or m.subject)
+    return s(getattr(m, "orig_subject", "") or m.subject, lang)
 
 
 def _existing(t, frm, rules):
-    """同一类已经有规则了（名字一样，或者认它的字段都在）：新来的这家拟成「归进去」。"""
+    """同一类已经有规则了（名字一样，或者认它的字段都在）：新来的这家拟成「归进去」。
+    名字、列名两种语言都认（中文时收的「订单」、英文时收的 Orders 是同一类）。"""
     need = next((n for x, n, _o in TYPES if x == t), ())
+    names_t = type_names(t)
     for r in rules:
-        names = {f["name"] for f in r.get("fields", [])}
-        if r.get("name") == t or (need and all(x in names for x in need)):
+        names = {learn.canonical(f["name"]) for f in r.get("fields", [])}
+        if r.get("name") in names_t or (need and all(x in names for x in need)):
             return r
     return None
 
 
 def to_rule(rec: dict, mails: dict, name: str | None = None, forward=None) -> dict:
     """拟好的 → 真规则：字段用这批信里的位置学（和人手点选走同一条路）。mails：key → Mail。"""
-    r = R.new_rule((name or rec["name"]).strip()[:24] or rec["name"])
+    lang = rec.get("lang", "zh")
+    r = R.new_rule((name or rec["name"]).strip()[:24] or rec["name"], lang)
     r["conditions"] = {k: list(v) for k, v in rec["conditions"].items()}
     for f in rec["fields"]:
         r["fields"].append(_learned(f, mails))
     if rec.get("attachments"):
-        r["fields"].append({"name": "附件", "builtin": "@attachments", "type": "text"})
+        from .text import T
+        r["fields"].append({"name": T("b_attachments", lang), "builtin": "@attachments", "type": "text"})
     fw = [x.strip() for x in forward or [] if x and x.strip()]
     r["forward"] = {"enabled": bool(fw), "to": fw, "note": ""}
     r["from_rec"] = rec["id"]
@@ -330,11 +337,13 @@ def extend(rule: dict, rec: dict, mails: dict, forward=None) -> dict:
                 c["subject"].append(x)
     elif c.get("subject") and not rec["conditions"].get("subject"):
         c["subject"] = []          # 新来的这家主题没有固定说法：只靠发件人
-    by = {f["name"]: f for f in r.get("fields", []) if not f.get("builtin")}
+    # 按规范名对字段：老规则是中文时收的（订单号），新拟的是英文（Order #）也对得上；列名照老规则的不动
+    by = {learn.canonical(f["name"]): f for f in r.get("fields", []) if not f.get("builtin")}
     for f in rec["fields"]:
-        new = _learned(f, mails)
-        if f["name"] in by:
-            old = by[f["name"]]
+        k = f.get("key") or learn.canonical(f["name"])
+        if k in by:
+            old = by[k]
+            new = _learned(dict(f, name=old["name"]), mails)
             merged = learn.merge_specs(old, new)
             merged["examples"] = (old.get("examples") or []) + new["examples"]
             merged["examples"] = merged["examples"][-5:]

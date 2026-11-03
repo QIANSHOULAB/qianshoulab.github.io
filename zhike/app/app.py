@@ -4,10 +4,12 @@
 接着上次的进度收信，不弹窗口；有事（草稿备好、拟了新规则、密码不对、Excel 被占着）才冒气泡。关窗口 = 收进托盘。
 
 用法：
-  知客僧.exe              打开窗口（已经在跑：把那个窗口亮出来）
-  知客僧.exe --tray       开机自启用：只进托盘，不弹窗口
-  知客僧.exe --selftest out.json   冒烟自测（打包后 CI 用）
-  知客僧.exe --update-probe out.json   自动更新冒烟：换完自己、重启后写个文件就退（CI 用）
+  Zhike.exe              打开窗口（已经在跑：把那个窗口亮出来）
+  Zhike.exe --tray       开机自启用：只进托盘，不弹窗口
+  Zhike.exe --selftest out.json   冒烟自测（打包后 CI 用）
+  Zhike.exe --update-probe out.json   自动更新冒烟：换完自己、重启后写个文件就退（CI 用）
+
+窗口标题、托盘、气泡的字跟着设置里选的语言（默认英文），字在 ui/strings.js。
 """
 from __future__ import annotations
 
@@ -106,8 +108,9 @@ def main():
 
     import webview
     import pystray
-    from zhike import APP_NAME, VERSION, platform as P
-    from zhike.api import Api, S as TXT
+    from zhike import VERSION, platform as P
+    from zhike.api import Api
+    from zhike.text import T
 
     state = {"window": None, "icon": None, "quitting": False}
 
@@ -146,10 +149,11 @@ def main():
             state["window"].destroy()
 
     api = Api(on_quit=quit_all, notify=notify)
+    tr = lambda k: T(k, api.lang)   # noqa: E731  托盘、窗口标题的字跟着设置里选的语言（ui/strings.js）
 
     def pick_excel():
         w = state["window"]
-        r = w.create_file_dialog(webview.SAVE_DIALOG, save_filename="知客僧.xlsx",
+        r = w.create_file_dialog(webview.SAVE_DIALOG, save_filename=tr("excel_file"),
                                  file_types=("Excel (*.xlsx)",))
         if not r:
             return None
@@ -169,7 +173,7 @@ def main():
 
     hidden = "--tray" in args
     dark = P.prefers_dark()
-    win = webview.create_window(f"{APP_NAME}", resource("ui", "index.html"), js_api=js_facade(api),
+    win = webview.create_window(tr("app"), resource("ui", "index.html"), js_api=js_facade(api),
                                 width=1180, height=760, min_size=(980, 640), hidden=hidden,
                                 background_color="#000000" if dark else "#F5F5F7", text_select=True)
     state["window"] = win
@@ -182,21 +186,36 @@ def main():
         if not api.store.state.data.get("told_tray"):
             api.store.state.data["told_tray"] = True
             api.store.state.save()
-            notify(APP_NAME, TXT["tray_hint"])
+            notify(tr("app"), tr("tray_hint"))
         return False      # 关窗口 = 收进托盘，后台照常盯着
 
     win.events.closing += on_closing
 
+    # 菜单的字是现取的（pystray 的 text 可以是函数）：设置里换了语言，下次点开托盘就是新的
     menu = pystray.Menu(
-        pystray.MenuItem(TXT["m_open"], lambda: show(), default=True),
-        pystray.MenuItem(TXT["m_run"], lambda: api.engine.wake()),
-        pystray.MenuItem(TXT["m_excel"], lambda: api.open_excel()),
+        pystray.MenuItem(lambda _: tr("m_open"), lambda: show(), default=True),
+        pystray.MenuItem(lambda _: tr("m_run"), lambda: api.engine.wake()),
+        pystray.MenuItem(lambda _: tr("m_excel"), lambda: api.open_excel()),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem(TXT["m_quit"], lambda: quit_all()),
+        pystray.MenuItem(lambda _: tr("m_quit"), lambda: quit_all()),
     )
-    icon = pystray.Icon("zhike", tray_image(), f"{APP_NAME} {VERSION}", menu)
+    icon = pystray.Icon("zhike", tray_image(), f"{tr('app')} {VERSION}", menu)
     state["icon"] = icon
     icon.run_detached()
+
+    def on_lang(_lang):
+        """设置里换了 EN / 中文：窗口标题、托盘提示、托盘菜单跟着换。"""
+        try:
+            win.set_title(tr("app"))
+        except Exception:
+            pass
+        try:
+            icon.title = f"{tr('app')} {VERSION}"
+            icon.update_menu()
+        except Exception:
+            pass
+
+    api.on_lang = on_lang
 
     if api.store.accounts:
         api.engine.start()

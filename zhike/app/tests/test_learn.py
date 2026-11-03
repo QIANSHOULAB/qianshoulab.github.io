@@ -69,7 +69,7 @@ def test_attachments_and_builtins():
     m = parse(raw)
     assert m.attachments == ["a.pdf", "b.pdf"]
     assert learn.extract({"name": "附件", "builtin": "@attachments"}, m)["raw"] == "a.pdf; b.pdf"
-    assert learn.extract({"name": "发件人", "builtin": "@from"}, m)["raw"] == "orders@shanmen-shop.example"
+    assert learn.extract({"name": "发件人", "builtin": "@from"}, m)["raw"] == "orders@qinghe-shop.example"
 
 
 def test_suggest_fields():

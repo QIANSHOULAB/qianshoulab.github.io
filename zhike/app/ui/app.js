@@ -1,5 +1,6 @@
-/* 知客僧界面。所有文字走 t()（见 strings.js）；所有数据走 call()（pywebview 或开发用 HTTP）。
-   0.3：第一次打开就是连邮箱；连上后贫僧拟好规则，人只管收不收；能撤销的不问「确定吗」。 */
+/* 知客僧界面。所有文字走 t()（见 strings.js，中英两套）；所有数据走 call()（pywebview 或开发用 HTTP）。
+   0.3：第一次打开就是连邮箱；连上后贫僧拟好规则，人只管收不收；能撤销的不问「确定吗」。
+   0.4：默认英文，设置里（第一次打开那屏右上角也有）EN / 中文 一切，记在 config.json，下次打开直接是上次选的。 */
 "use strict";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -68,7 +69,7 @@ function fmtTime(iso) {
   const d = new Date(iso), n = new Date();
   const p = (x) => String(x).padStart(2, "0");
   if (d.toDateString() === n.toDateString()) return `${p(d.getHours())}:${p(d.getMinutes())}`;
-  return `${d.getMonth() + 1}月${d.getDate()}日`;
+  return d.toLocaleDateString(t("locale"), { month: "short", day: "numeric" });     // 11月2日 / Nov 2
 }
 function ago(iso) {
   if (!iso) return "";
@@ -88,6 +89,23 @@ function chip(code, extra) {
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || "").trim());
 const demoMode = () => !!(S.boot && S.boot.demo);
 const welcoming = () => S.boot && !S.boot.accounts.length && !S.tryDemo;
+
+/* 语言：EN / 中文 分段控件。默认英文；选过就记住（后台存进 config.json），界面、托盘、新拟的规则一起换 */
+function applyLang() {
+  window.LANG = S.boot && S.boot.lang === "zh" ? "zh" : "en";
+  document.documentElement.lang = t("html_lang");
+  document.title = t("app");
+}
+function langSeg(cls = "") {
+  return `<div class="seg lang ${cls}" role="group" aria-label="${esc(t("lang_label"))}"><button data-lang="en" lang="en" class="${LANG === "en" ? "on" : ""}">EN</button><button data-lang="zh" lang="zh-CN" class="${LANG === "zh" ? "on" : ""}">中文</button></div>`;
+}
+async function setLang(l) {
+  if (l === LANG) return;
+  await safe(call("set_lang", l));
+  S.rec = {}; S.tries = {};
+  await reloadAll();
+  render();
+}
 
 /* 浮层菜单（代替系统下拉框） */
 function menu(anchor, items, cur, onPick) {
@@ -178,7 +196,6 @@ function connectForm(id) {
 }
 const HELP = {
   gmail: () => `${t("help_gmail")}<a data-url="https://myaccount.google.com/apppasswords">myaccount.google.com/apppasswords</a>`,
-  outlook: () => `${t("help_outlook")}<a data-url="https://account.live.com/proofs/AppPassword">account.live.com</a>`,
   qq: () => t("help_qq"), exmail: () => t("help_qq"), "163": () => t("help_163"), "126": () => t("help_163"),
   custom: () => t("help_custom"),
 };
@@ -191,7 +208,7 @@ function wireForm(f) {
     const ms = g.provider === "outlook";
     $(".ahelp", f).hidden = false;
     $(".ahelp", f).innerHTML = ms ? esc(S.boot.ms_login ? t("ms_note") : t("ms_soon"))
-      : (HELP[g.provider] || HELP.custom)() + (g.imap_host ? `<br>${t("acc_server")}：${esc(g.imap_host)} / ${esc(g.smtp_host)}` : "");
+      : (HELP[g.provider] || HELP.custom)() + (g.imap_host ? `<br>${esc(t("acc_server", { s: g.imap_host + " / " + g.smtp_host }))}` : "");
     $(".pwl", f).textContent = ["qq", "exmail", "163", "126"].includes(g.provider) ? t("acc_pw_qq") : t("acc_pw");
     $$(".ms-only", f).forEach((x) => (x.hidden = !(ms && S.boot.ms_login)));
     $(".pwf", f).hidden = ms;
@@ -202,7 +219,7 @@ function wireForm(f) {
   em.addEventListener("input", upd);
 }
 function viewWelcome() {
-  $("#main").innerHTML = `<div class="welcome"><div class="wl">
+  $("#main").innerHTML = `<div class="welcome">${langSeg("corner")}<div class="wl">
     <span class="wl-ico">${I.logo}</span>
     <h1>${t("welcome_t")}</h1>
     <p class="wl-s">${t("welcome_s")}</p>
@@ -262,7 +279,7 @@ function viewRecs() {
   const on = rs.filter((r) => recState(r).on).length;
   const cards = rs.map((r) => {
     const st = recState(r);
-    const who = r.senders.map((s) => esc(s.who)).slice(0, 3).join("、") + (r.senders.length > 3 ? " …" : "");
+    const who = r.senders.map((s) => esc(s.who)).slice(0, 3).join(t("sep")) + (r.senders.length > 3 ? " …" : "");
     const cond = r.open ? `${t("rec_anyone")} · ${esc(t("rec_subj", { s: r.conditions.subject.slice(0, 4).join(" / ") }))}`
       : `${who}${r.conditions.subject.length ? " · " + esc(t("rec_subj", { s: r.conditions.subject.join(" / ") })) : ""}`;
     const kv = r.fields.map((f) => `<div class="kv"><span>${esc(f.name)}</span><b title="${esc(f.examples[0].raw)}">${esc(f.examples[0].raw)}</b></div>`).join("")
@@ -343,7 +360,7 @@ function renderReader() {
       return `<div class="kv"><span>${esc(f.name)}</span>${f.builtin ? `<b class="miss">${t("field_missing")}</b>` : `<button class="want ${on ? "on" : ""}" data-want="${esc(f.name)}" title="${t("field_missing_tip")}">${t("field_missing")} ›</button>`}</div>`;
     }).join("");
     let acts = [`<span class="chip">${I.check}${t("act_excel")}</span>`];
-    if (rule.forward.enabled && rule.forward.to.length) acts.push(`<span class="chip">${I.fwd}${esc(t("act_forward", { to: rule.forward.to.join("、") }))}</span>`);
+    if (rule.forward.enabled && rule.forward.to.length) acts.push(`<span class="chip">${I.fwd}${esc(t("act_forward", { to: rule.forward.to.join(t("sep")) }))}</span>`);
     if (rule.reply.enabled) acts.push(`<span class="chip">${I.draft}${t("act_draft")}</span>`);
     if (m.junk) acts = [`<span class="chip doubt">${I.warn}${t("junk_" + m.junk)}</span><span class="help">${t("junk_note")}</span>`];
     claim = `<div class="claim"><div class="claim-h"><b>${esc(t("by_rule", { r: rule.name }))}</b><button class="btn text sm" data-goto-rule="${rule.id}">${t("nav_rules")} ›</button></div>
@@ -357,7 +374,7 @@ function renderReader() {
   const init = (m.from_name || m.from_addr || "?").trim().slice(0, 1).toUpperCase();
   el.innerHTML = `
     <h2 class="r-subj">${esc(m.subject)}</h2>
-    <div class="r-meta"><div class="avatar">${esc(init)}</div><div><b>${esc(m.from_name || m.from_addr)}</b> <span>&lt;${esc(m.from_addr)}&gt;</span><br><span>${new Date(m.date).toLocaleString("zh-CN", { hour12: false })}</span></div></div>
+    <div class="r-meta"><div class="avatar">${esc(init)}</div><div><b>${esc(m.from_name || m.from_addr)}</b> <span>&lt;${esc(m.from_addr)}&gt;</span><br><span class="nums">${new Date(m.date).toLocaleString(t("locale"), { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" })}</span></div></div>
     ${m.orig ? `<div class="r-fwd">${I.fwd}<span>${esc(t("fwd_by", { who: m.from_name || m.from_addr }))}</span><b>${esc(t("fwd_orig", { who: (m.orig.from_name ? m.orig.from_name + " " : "") + (m.orig.from ? "<" + m.orig.from + ">" : "") }))}</b></div>` : ""}
     ${m.attachments.length ? `<div class="r-atts">${m.attachments.map((a) => `<span class="chip">${I.clip}${esc(a)}</span>`).join("")}</div>` : ""}
     ${claim}
@@ -433,7 +450,7 @@ function openPop(m, s, e, rect, name) {
   const pop = document.createElement("div");
   pop.className = "pop";
   pop.innerHTML = `
-    <p class="val">「<b>${esc(m.text.slice(s, e))}</b>」</p>
+    <p class="val">${t("q", { s: `<b>${esc(m.text.slice(s, e))}</b>` })}</p>
     <div class="field"><label>${t("pop_name")}</label><input class="in" id="pname" value="${esc(name || (S.want && m.rule && S.want.rule === m.rule.id ? S.want.name : "") || guessName(m, s))}" maxlength="20" autocomplete="off"></div>
     <div class="field"><label>${t("pop_rule")}</label><button class="in pick" id="prule" type="button"><span>${esc((choices.find((c) => c[0] === rid) || choices[0])[1])}</span>${I.updown}</button></div>
     <div class="pop-row"><button class="btn" data-act="pop-close">${t("btn_cancel")}</button><button class="btn pri" id="padd">${t("pop_add")}</button></div>
@@ -447,7 +464,7 @@ function openPop(m, s, e, rect, name) {
   const nm = $("#pname", pop); nm.focus(); nm.select();
   $("#prule", pop).onclick = (ev) => { ev.stopPropagation(); menu($("#prule", pop), choices, rid, (v) => { rid = v; $("#prule span", pop).textContent = choices.find((c) => c[0] === v)[1]; }); };
   const go = async () => {
-    const fname = nm.value.trim() || "字段";
+    const fname = nm.value.trim() || t("field_default");
     closePop();
     let target = rid;
     if (target === "__new") {
@@ -492,7 +509,7 @@ function renderRule() {
   const firstMail = S.mails.find((m) => m.rule && m.rule.id === r.id);
   const fields = r.fields.map((f) => {
     const v = firstMail && firstMail.fields[f.name];
-    const lab = (f.labels || []).map((x) => "「" + (/[一-鿿]/.test(x) ? x.replace(/:$/, "：") : x) + "」").join(" ");
+    const lab = (f.labels || []).map((x) => t("q", { s: /[一-鿿]/.test(x) ? x.replace(/:$/, "：") : x })).join(" ");
     const how = f.builtin ? "" : lab ? t(f.next_line ? "how_next" : "how_after", { l: lab }) : t("how_nth", { n: (f.nth || 0) + 1 });
     const learned = how + (f.examples && f.examples.length ? " · " + t("learned_from", { n: f.examples.length }) : "");
     return `<div class="row"><div class="l"><input class="fname" data-fname="${esc(f.name)}" value="${esc(f.name)}" spellcheck="false">${learned ? `<span>${esc(learned)}</span>` : ""}</div>
@@ -551,15 +568,21 @@ async function viewTable() {
   const tb = await safe(call("table", S.tableRule));
   if (S.view !== "table") return;
   const demo = demoMode();
-  const right = demo ? "" : `<span class="path" title="${esc(tb.path)}">${esc(tb.path || "")}</span><button class="btn" data-act="show-folder">${t("btn_show_folder")}</button><button class="btn pri" data-act="open-excel">${t("btn_open_excel")}</button>`;
+  const right = demo ? "" : `<span class="path tail" title="${esc(tb.path)}"><bdi>${esc(tb.path || "")}</bdi></span><button class="btn" data-act="show-folder">${t("btn_show_folder")}</button><button class="btn pri" data-act="open-excel">${t("btn_open_excel")}</button>`;
   const tabs = `<div class="tabs"><div class="seg">${S.rules.map((r) => `<button class="${r.id === S.tableRule ? "on" : ""}" data-tab="${r.id}">${esc(r.name)}</button>`).join("")}</div>${demo ? `<span class="help">${t("demo_table")}</span>` : ""}</div>`;
   const pend = tb.pending ? `<div class="note doubt">${I.warn}<span>${esc(t("pending_note", { n: tb.pending }))}</span><button class="btn sm" data-act="flush">${t("btn_flush")}</button></div>` : "";
   const rows = (tb.pending_rows || []).map((r) => ({ r, p: 1 })).concat(tb.rows.map((r) => ({ r, p: 0 })));
-  const isNum = (v) => /^[¥￥$S]*[\d,.\-]+$/.test(String(v || "").replace(/^S\$/, ""));
+  // 金额、数量才右对齐、等宽数字；日期、编号（带连字符的）不算，不然等宽数字把连字符撑宽
+  const isNum = (v) => /^-?(?:S\$|US\$|HK\$|RMB\s?|[¥￥$€£])?\s?-?\d[\d,]*(?:\.\d+)?(?:\s?[^\d\s]{1,6})?$/.test(String(v ?? "").trim()) && !/\d-\d/.test(String(v));
   const body = rows.length
     ? `<div class="tbl-wrap"><table><thead><tr>${tb.columns.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(({ r, p }) => `<tr class="${p ? "pend" : ""}">${tb.columns.map((h) => `<td class="${isNum(r[h]) ? "num" : ""}">${esc(r[h] ?? "")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
     : `<div class="empty short"><div class="empty-ico">${I.table}</div><b>${t("table_empty")}</b><p>${t("table_empty_s")}</p></div>`;
   $("#main").innerHTML = `<div class="scroll">${head(t("nav_table"), right)}${demoBar()}<div class="page wide">${tabs}${pend}${body}</div></div>`;
+  fadeEdges();
+}
+/* 表格比窗口宽：右缘渐隐（不把最后一列切成半个字），滚到头就不隐了 */
+function fadeEdges() {
+  $$(".tbl-wrap").forEach((w) => { const up = () => w.classList.toggle("more", w.scrollLeft + w.clientWidth < w.scrollWidth - 2); up(); w.onscroll = up; });
 }
 
 /* ---------- 草稿 / 记录 ---------- */
@@ -578,7 +601,8 @@ async function viewLog() {
   if (!lg.length) { $("#main").innerHTML = `${head(t("nav_log"))}${demoBar()}<div class="empty"><div class="empty-ico">${I.log}</div><b>${t("log_empty")}</b></div>`; return; }
   const cell = (code, what) => code ? chip(code, what + " · " + t("s_" + code)) : "";
   const held = (l) => l.held ? `${chip("pending", t("held_" + (l.junk || "promo")))}${l.id ? `<button class="btn sm" data-release="${esc(l.id)}">${t("btn_release")}</button>` : ""}` : "";
-  $("#main").innerHTML = `<div class="scroll">${head(t("nav_log"))}${demoBar()}<div class="page wide"><div class="tbl-wrap lg"><table><thead><tr><th>${t("log_time")}</th><th>${t("log_subject")}</th><th>${t("log_rule")}</th><th>${t("log_did")}</th></tr></thead><tbody>${lg.map((l) => `<tr class="${l.held ? "pend" : ""}"><td>${fmtTime(l.time)}</td><td class="subj">${esc(l.subject)}</td><td>${l.rule ? esc(l.rule) : l.held ? `<span class="help">${esc(l.held)}</span>` : '<span class="help">—</span>'}</td><td class="did">${held(l)}${cell(l.excel, t("act_excel"))}${cell(l.forward, t("w_forward"))}${cell(l.draft, t("w_draft"))}${l.ai_fields && l.ai_fields.length ? chip("demo", t("by_ai") + " · " + l.ai_fields.join("、")) : ""}${l.ai_error ? chip("pending", t("ai_fallback", { why: t("why_" + l.ai_error) })) : ""}</td></tr>`).join("")}</tbody></table></div></div></div>`;
+  $("#main").innerHTML = `<div class="scroll">${head(t("nav_log"))}${demoBar()}<div class="page wide"><div class="tbl-wrap lg"><table><thead><tr><th>${t("log_time")}</th><th>${t("log_subject")}</th><th>${t("log_rule")}</th><th>${t("log_did")}</th></tr></thead><tbody>${lg.map((l) => `<tr class="${l.held ? "pend" : ""}"><td>${fmtTime(l.time)}</td><td class="subj">${esc(l.subject)}</td><td>${l.rule ? esc(l.rule) : l.held ? `<span class="help">${esc(l.held)}</span>` : '<span class="help">—</span>'}</td><td class="did">${held(l)}${cell(l.excel, t("act_excel"))}${cell(l.forward, t("w_forward"))}${cell(l.draft, t("w_draft"))}${l.ai_fields && l.ai_fields.length ? chip("demo", t("by_ai") + " · " + l.ai_fields.join(t("sep"))) : ""}${l.ai_error ? chip("pending", t("ai_fallback", { why: t("why_" + l.ai_error) })) : ""}</td></tr>`).join("")}</tbody></table></div></div></div>`;
+  fadeEdges();
 }
 
 /* ---------- 设置 ---------- */
@@ -605,12 +629,20 @@ function viewSettings() {
         <div class="row"><div class="l"><b>${t("interval")}</b></div><div class="seg" data-seg="interval">${iv.map((n) => `<button data-v="${n * 60}" class="${b.settings.interval_sec === n * 60 ? "on" : ""}">${t("min", { n })}</button>`).join("")}</div></div>
         <div class="row"><div class="l"><b>${t("excel_at")}</b><span class="path">${esc(b.settings.excel_path)}</span></div>${b.platform === "win32" ? `<button class="btn sm" data-act="pick-excel">${t("btn_change")}</button>` : ""}</div>
       </div></div>
+    <div class="grp"><div class="grp-h"><h2>${t("lang_label")}</h2></div>
+      <div class="box"><div class="row"><div class="l"><b>${t("lang_row")}</b><span>${t("lang_hint")}</span></div>${langSeg()}</div></div></div>
     <div class="grp"><div class="grp-h"><h2>${t("set_about")}</h2></div>
-      <div class="box"><div class="row"><div class="l"><b>${t("version", { v: b.version })}</b><span id="upmsg">${upMsg(S.tick.update)}</span></div>${S.tick.update && S.tick.update.ready ? `<button class="btn pri sm" data-act="restart">${t("btn_restart")}</button>` : `<button class="btn sm" data-act="update">${t("btn_update")}</button>`}</div></div>
+      <div class="box"><div class="row"><div class="l"><b>${t("version", { v: b.version })}</b><span id="upmsg">${upMsg(S.tick.update)}</span></div>${S.tick.update && S.tick.update.ready ? `<button class="btn pri sm" data-act="restart">${t("btn_restart")}</button>` : `<button class="btn sm" data-act="update">${t("btn_update")}</button>`}</div>${upCard(S.tick.update)}</div>
       <div class="foot">${t("foot_name")} ${b.version}<br>${t("foot_mail")}<span class="mail">oilsongchengmin@gmail.com</span><br><a class="link" data-url="https://qianshoulab.github.io/">${t("foot_home")} https://qianshoulab.github.io/</a></div></div>
   </div></div>`;
   const f = $("#sform");
   if (f) { wireForm(f); if (S.focusEmail) { $("[name=email]", f).focus(); S.focusEmail = false; } }
+}
+/* 有新版本卡片：几版 → 这次弄了点啥（version.json 里的 up_notes，中英两套）→ 换版本不动你的东西 */
+function upCard(u) {
+  if (!u || !u.newer) return "";
+  const notes = (u.notes && (u.notes[LANG] || u.notes.en)) || "";
+  return `<div class="row col upcard"><b>${esc(t("up_card_t", { v: u.latest, c: u.current }))}</b>${notes ? `<p><span>${t("up_notes_h")}</span>${esc(notes)}</p>` : ""}<p class="help">${t("up_keep")}</p></div>`;
 }
 function upMsg(u) {
   if (!u) return "";
@@ -620,7 +652,7 @@ function upMsg(u) {
 }
 
 /* ---------- 数据 ---------- */
-async function loadBoot() { S.boot = await call("boot"); S.rules = S.boot.rules; }
+async function loadBoot() { S.boot = await call("boot"); S.rules = S.boot.rules; applyLang(); }
 async function loadMails() { S.mails = await call("mails"); }
 async function loadRecs() { S.recs = S.boot && !S.boot.demo ? await call("recs") : []; }
 async function reloadAll() {
@@ -631,7 +663,7 @@ async function reloadAll() {
 
 /* ---------- 事件 ---------- */
 document.addEventListener("click", async (ev) => {
-  const el = ev.target.closest("[data-nav],[data-mail],[data-act],[data-rule],[data-goto-rule],[data-tab],[data-untag],[data-delfield],[data-builtin],[data-mode],[data-move],[data-copy],[data-url],[data-rmacct],[data-fixpw],[data-savepw],[data-relogin],[data-samples],[data-want],[data-release],.seg[data-seg] button,.sg");
+  const el = ev.target.closest("[data-nav],[data-mail],[data-act],[data-rule],[data-goto-rule],[data-tab],[data-untag],[data-delfield],[data-builtin],[data-mode],[data-move],[data-copy],[data-url],[data-rmacct],[data-fixpw],[data-savepw],[data-relogin],[data-samples],[data-want],[data-release],[data-lang],.seg[data-seg] button,.sg");
   if (!ev.target.closest(".pop,.menu") && !(el && el.classList.contains("sg"))) closePop();
   if (!el) return;
   const d = el.dataset;
@@ -641,6 +673,7 @@ document.addEventListener("click", async (ev) => {
     if (seg.dataset.seg === "interval") { await safe(call("set_setting", "interval_sec", +el.dataset.v)); await loadBoot(); toast(t("toast_saved")); }
     return;
   }
+  if (d.lang) { await setLang(d.lang); return; }
   if (d.nav) { S.view = d.nav; if (d.nav === "inbox" || d.nav === "rules" || d.nav === "recs") { await loadMails(); await loadRecs(); } render(); return; }
   if (d.mail) { S.sel = d.mail; $$(".li").forEach((x) => x.classList.toggle("on", x.dataset.mail === d.mail)); renderReader(); return; }
   if (el.classList.contains("sg")) {

@@ -19,6 +19,7 @@ from . import ai, learn, rules as R, samples
 from .excel import ExcelLocked, append_rows
 from .mailbox import AuthError, Imap, MailError, NetError, QuotaError, Smtp, build_draft, build_forward
 from .mailparse import parse
+from .text import T
 
 MAX_TRIES = 6
 SAMPLE_KEEP = 30
@@ -37,17 +38,22 @@ class Engine:
         self._stop = threading.Event()
         self._wake = threading.Event()
         self._thread = None
-        self._demo = None
+        self._demo = {}
         self._batch = None
         self.started_at = clock()
         self.unclaimed_seq = 0     # 来过几封没规则管的信（Api 看它变了才重新拟规则）
 
-    # ---------- 示例 ----------
+    @property
+    def lang(self) -> str:
+        return getattr(self.store, "lang", "zh")
+
+    # ---------- 示例（跟着界面语言：中文一套信，英文一套信） ----------
     def demo(self):
-        if self._demo is None:
-            ms = samples.mails()
-            self._demo = {"mails": ms, "rules": samples.demo_rules(ms)}
-        return self._demo
+        L = self.lang
+        if L not in self._demo:
+            ms = samples.mails(L)
+            self._demo[L] = {"mails": ms, "rules": samples.demo_rules(ms, L)}
+        return self._demo[L]
 
     def demo_results(self):
         d = self.demo()
@@ -343,7 +349,7 @@ class Engine:
         fw = rule.get("forward") or {}
         if fw.get("enabled") and fw.get("to") and "forward" not in job["done"]:
             try:
-                Smtp(acct, self.password(acct)).send(build_forward(mail, acct["email"], fw["to"], fw.get("note", "")))
+                Smtp(acct, self.password(acct)).send(build_forward(mail, acct["email"], fw["to"], fw.get("note", ""), self.lang))
                 log["forward"] = "ok"
                 job["done"].append("forward")
             except NetError:
@@ -400,10 +406,10 @@ class Engine:
     def _draft_text(self, rule, mail, fields):
         rp = rule["reply"]
         key = self.secrets.get("ai:gemini")
-        tpl = rp.get("template") or "{称呼}您好，\n\n来信收到，我看一下尽快回复您。\n"
+        tpl = rp.get("template") or T("tpl_default", self.lang)
         if rp.get("mode") != "template" and key:
             try:
-                txt = ai.gemini(key, ai.build_prompt(mail, fields, rp.get("hint", "")),
+                txt = ai.gemini(key, ai.build_prompt(mail, fields, rp.get("hint", ""), self.lang),
                                 self.store.settings.get("ai_model", "gemini-flash-latest"), base=self.ai_base)
                 return txt, "ai", None
             except ai.AIError as e:

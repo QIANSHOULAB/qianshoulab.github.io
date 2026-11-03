@@ -11,9 +11,9 @@
   --tint:rgba(194,85,42,.1); --tint-2:rgba(194,85,42,.18);
   --bad-ink:#d70015; --doubt-ink:#8a5a00;
   --side:#f5f5f7; --field:#ffffff;
-  --glass:rgba(255,255,255,.85); --glass-bar:rgba(255,255,255,.98); --glass-dark:rgba(36,36,38,.96);
-  /* 毛玻璃：顶栏、底栏底下有滚过去的字，Chromium 里粘住的栏会把底下的字按 (1 - 不透明度) 透出一层清楚的影子，
-     所以这两条压到 .98（底下的字看不清，放大也认不出）；浮层、菜单、提示条是浮在上面的，模糊照常起作用，.85 / .96 就够 */   /* 压在滚动内容上的毛玻璃：底下的字看不清为止 */
+  --glass:rgba(255,255,255,.85); --glass-bar:rgba(255,255,255,.98); --toast-bg:rgba(255,255,255,.98); --toast-fg:#1d1d1f;
+  /* 毛玻璃：顶栏、底栏、提示条底下有滚过去的字，Chromium 里粘住的栏会把底下的字按 (1 - 不透明度) 透出一层清楚的影子，
+     所以这几条压到 .98（浅白、深 #1c1c1e，底下的字看不清，放大也认不出）；点选弹窗浮在信上，模糊照常起作用，.85 就够 */
   --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
   --pop:0 12px 40px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06);
@@ -30,10 +30,12 @@
   --tint:rgba(240,138,93,.16); --tint-2:rgba(240,138,93,.28);
   --bad-ink:#ff6961; --doubt-ink:#ffd60a; --doubt:rgba(255,214,10,.16);
   --side:#1c1c1e; --field:#2c2c2e;
-  --glass:rgba(28,28,30,.85); --glass-bar:rgba(28,28,30,.98); --glass-dark:rgba(58,58,60,.96);
+  --glass:rgba(28,28,30,.85); --glass-bar:rgba(28,28,30,.98); --toast-bg:rgba(28,28,30,.98); --toast-fg:#f5f5f7;
   --pop:0 12px 40px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.1);
   color-scheme:dark;
 }}
+/* 英文界面：西文字体排前面（不然 Windows 上英文会用雅黑的西文字形）；中文那套不变 */
+html[lang="en"]{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",sans-serif}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font:400 15px/1.5 var(--font);-webkit-font-smoothing:antialiased;overflow:hidden;user-select:none}
@@ -188,6 +190,15 @@ textarea.in{height:auto;min-height:96px;padding:8px 12px;line-height:1.5;resize:
 .adv-row{display:grid;grid-template-columns:1fr 88px;gap:8px 8px;align-items:end}
 .adv-row .seg{grid-column:1/-1;justify-self:start}
 .foot-note{margin:0;font-size:12px;color:var(--fg-3);text-align:center}
+.welcome{position:relative}
+.seg.lang.corner{position:absolute;top:16px;right:16px}
+.seg.lang button{min-width:44px;position:relative}
+.seg.lang{overflow:visible}
+.seg.lang button::after{content:"";position:absolute;inset:-8px 0}   /* 点得到的地方够 44 高 */
+.upcard{gap:4px}
+.upcard p{margin:0;font-size:13px;color:var(--fg-2)}
+.upcard p span{color:var(--fg);font-weight:600;margin-right:4px}
+.upcard+.row::before,.row+.upcard::before{content:"";position:absolute;left:16px;right:0;top:0;height:1px;background:var(--line)}
 
 /* ---------- 收件 ---------- */
 .inbox{flex:1;display:grid;grid-template-columns:minmax(280px,340px) 1fr;min-height:0;border-top:1px solid var(--line);margin-top:16px}
@@ -220,7 +231,7 @@ textarea.in{height:auto;min-height:96px;padding:8px 12px;line-height:1.5;resize:
 .claim-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:12px 24px;padding:12px 16px 16px}
 .kv{min-width:0}
 .kv span{display:block;font-size:13px;color:var(--fg-2)}
-.kv b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:text;font-variant-numeric:tabular-nums}
+.kv b{display:block;overflow-wrap:anywhere;user-select:text}   /* 长邮箱、长编号折行，不切成「…」 */
 .kv b svg{width:16px;height:16px;color:var(--fg-2)}
 .kv .miss{color:var(--fg-3);font-weight:400}
 .kv .want{display:block;color:var(--ink);text-align:left;font-size:15px}
@@ -269,6 +280,7 @@ textarea.in{height:auto;min-height:96px;padding:8px 12px;line-height:1.5;resize:
 .row .l b{display:block}
 .row .l span{display:block;font-size:13px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .k{width:104px;flex:none;color:var(--fg-2);font-size:13px}
+html[lang="en"] .row .k{width:112px}
 .row.col{flex-direction:column;align-items:stretch;padding:12px 16px}
 .row.inset{padding-left:16px}
 .row-err{padding:0 16px 12px}
@@ -285,7 +297,7 @@ textarea.in{height:auto;min-height:96px;padding:8px 12px;line-height:1.5;resize:
 .fname:hover{background:var(--fill)}
 .fname:focus{background:var(--field);box-shadow:0 0 0 2px var(--tint-2)}
 .typ{font-size:12px;color:var(--fg-2);background:var(--fill);border-radius:var(--r-chip);padding:2px 8px;white-space:nowrap}
-.sample{font-size:13px;color:var(--fg-2);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sample{font-size:13px;color:var(--fg-2);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sample.miss{color:var(--fg-3)}
 .builtins{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .builtins .btn{height:28px}
@@ -335,8 +347,10 @@ textarea.in{height:auto;min-height:96px;padding:8px 12px;line-height:1.5;resize:
 /* ---------- 表格 ---------- */
 .tabs{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 .tbl-wrap{border-radius:var(--r-card);overflow:auto;background:var(--card);box-shadow:var(--shadow)}
+.tbl-wrap.more{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 64px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 64px),transparent)}
 table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{padding:12px 16px;text-align:left;white-space:nowrap;font-variant-numeric:tabular-nums}
+th,td{padding:12px 16px;text-align:left;white-space:nowrap}
+td.num,.lg td:first-child,.nums{font-variant-numeric:tabular-nums}
 td{border-top:1px solid var(--line);user-select:text}
 th{position:sticky;top:0;background:var(--card-2);font-weight:600;color:var(--fg-2);z-index:1}
 tr.pend td{background:var(--doubt)}
@@ -345,6 +359,8 @@ td.subj{max-width:320px;overflow:hidden;text-overflow:ellipsis}
 td.did .chip,td.did .btn{margin-right:4px}
 .path{font-size:12px;color:var(--fg-2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;user-select:text;display:block}
 .bar .path{max-width:280px}
+.path.tail{direction:rtl;text-align:left}   /* 路径太长：省掉前头，留住文件名（…/知客僧/知客僧.xlsx） */
+.path.tail bdi{direction:ltr;unicode-bidi:isolate}
 
 /* ---------- 草稿 ---------- */
 .cards{display:grid;gap:16px}
@@ -370,10 +386,10 @@ td.did .chip,td.did .btn{margin-right:4px}
 #aimsg.err{color:var(--bad-ink)}
 
 /* ---------- 提示条（毛玻璃，能撤销） ---------- */
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:16px;max-width:min(560px,calc(100vw - 48px));padding:8px 8px 8px 16px;min-height:44px;border-radius:var(--r-btn);background:var(--glass-dark);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);color:#f5f5f7;font-size:15px;z-index:60;animation:toastin 240ms var(--ease);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:16px;width:max-content;max-width:min(560px,calc(100vw - 48px));padding:8px 8px 8px 16px;min-height:44px;border-radius:var(--r-btn);background:var(--toast-bg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);color:var(--toast-fg);font-size:15px;z-index:60;animation:toastin 240ms var(--ease);box-shadow:0 8px 24px rgba(0,0,0,.14),0 0 0 1px var(--line)}
 .toast span{padding-right:8px}
-.toast-act{height:32px;padding:0 12px;border-radius:var(--r-chip);color:#ffb08a;font-weight:600}
-.toast-act:hover{background:rgba(255,255,255,.12)}
+.toast-act{height:32px;padding:0 12px;border-radius:var(--r-chip);color:var(--ink);font-weight:600;white-space:nowrap}
+.toast-act:hover{background:var(--tint)}
 @keyframes toastin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 
 @media (max-width:1060px){

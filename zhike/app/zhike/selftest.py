@@ -67,6 +67,12 @@ def run(out_path=None) -> int:
         names = sorted(r["name"] for r in recommend(samples.mails(), []))
         assert "订单" in names and "发票" in names, names
         res["steps"]["recommend"] = names
+        # 中英两套字（打包时 ui/strings.js 有没有带上、Python 读不读得出来）；英文示例信拟出英文规则名、列名
+        from .text import T
+        assert T("app", "en") == "Zhike" and T("app", "zh") == "知客僧", (T("app", "en"), T("app", "zh"))
+        en = {r["name"]: [f["name"] for f in r["fields"]] for r in recommend(samples.mails("en"), [], lang="en")}
+        assert "Orders" in en and "Order #" in en["Orders"], en
+        res["steps"]["recommend_en"] = sorted(en)
         res["steps"]["forwards"] = len(smtp.sent)
         res["steps"]["drafts"] = len(imap.drafts)
         if sys.platform == "win32":

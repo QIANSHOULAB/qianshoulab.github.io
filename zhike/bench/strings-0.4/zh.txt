@@ -1,0 +1,379 @@
+app	知客僧
+tagline	信来贫僧接
+html_lang	zh-CN
+locale	zh-CN
+sep	、
+q	「{s}」
+nav_inbox	收件
+nav_rules	规则
+nav_table	表格
+nav_drafts	草稿
+nav_log	记录
+nav_settings	设置
+lang_label	语言
+lang_row	界面语言
+lang_hint	已经收下的规则，名字和表头不变
+welcome_t	连上邮箱，贫僧开工。
+welcome_s	订单、发票、快递单自己进 Excel，该转的转。
+try_demo	用示例试试
+demo_bar	这是示例。连上你的邮箱，贫僧就开工。
+demo_btn	连邮箱
+acc_email	邮箱
+acc_email_ph	name@qq.com
+acc_pw	应用专用密码
+acc_pw_qq	授权码
+acc_pw_ph	不是登录密码
+acc_custom	自己填服务器
+acc_imap	收信服务器
+acc_smtp	发信服务器
+acc_port	端口
+sec_ssl	SSL
+sec_starttls	STARTTLS
+sec_plain	不加密
+btn_connect	连上
+connecting	正在连，顺手看看最近的信…
+err_auth	密码不对。要用应用专用密码（QQ、163 叫授权码），不是网页登录密码。
+err_net	连不上服务器。看看网，或者服务器地址、端口。
+err_need_server	这个邮箱贫僧不认识，填一下收信和发信服务器。
+err_need_pw	密码还空着。
+err_bad_email	邮箱地址看着不对。
+err_error	邮箱回了句看不懂的：{d}
+help_gmail	先开两步验证，再到这里生成：
+help_qq	QQ 邮箱网页 → 设置 → 账号 → 开启 IMAP/SMTP → 生成授权码。
+help_163	网页邮箱 → 设置 → POP3/SMTP/IMAP → 开启 IMAP → 拿授权码。
+help_custom	公司邮箱：问管理员要 IMAP / SMTP 地址。
+acc_server	服务器：{s}
+pw_where_credman	密码进 Windows 凭据管理器，只在这台电脑。
+pw_where_file	密码加密存在这台电脑上。
+ms_btn	微软登录
+ms_note	Outlook、Hotmail、公司的 Microsoft 365 走微软登录，不要密码。
+ms_soon	Outlook 即将支持。微软不让用密码收信了，贫僧在接微软登录。
+ms_wait	去浏览器里登录，登完回来…
+ms_relogin	重新登录
+err_ms_soon	Outlook 即将支持。
+err_ms_timeout	等了 5 分钟没登上，再点一次。
+err_ms_denied	微软那边没点「接受」。
+err_ms_imap	登上了，但这个邮箱没开 IMAP。去 Outlook 网页 → 设置 → 邮件 → 转发和 IMAP 打开。
+err_ms_other	微软回了句看不懂的：{d}
+recs_t	贫僧拟了 {n} 条规则
+recs_s	看了最近 {m} 封信。要的留着，不要的关掉，想转给谁填上。
+recs_none_t	没认出成批的信
+recs_none_s	挑一封，选中要的字，贫僧照着学一条。
+rec_n	{n} 封
+rec_anyone	谁来都认
+rec_subj	主题含 {s}
+rec_fw	转给
+rec_fw_ph	谁？不填就不转
+rec_extend	归进「{r}」
+rec_extend_s	新来的一家，字段对得上
+rec_off	不要
+rec_atts	附件
+btn_accept	收下 {n} 条
+btn_accept_none	都不要
+dock_hint	收下以后，新信一到就照着办。
+accepted	收下 {n} 条。新信一到就进表。
+accepted_caught	收下了，刚才那 {m} 封也照办了。
+dismissed	不要了，贫僧记着。
+btn_undo	撤销
+recs_banner	贫僧拟了 {n} 条规则
+recs_look	看看
+autostart_on	开机自己跑：开着。关窗口贫僧躲进托盘接着盯。
+autostart_off	开机自己跑：关了。
+btn_off	关掉
+btn_on	打开
+inbox_empty_t	还没有信
+inbox_empty_s	新信一到，这里就有。
+pick_hint	选中正文里的字，收成一个字段。
+by_rule	归「{r}」管
+no_rule	没有规则管这封
+no_rule_s	选中正文里要的字，贫僧照着学一条。
+rec_hint	贫僧拟了条规则「{r}」管这类信。
+btn_new_rule_from	建规则
+field_missing	没找到
+field_missing_tip	点一下，再去正文里选它
+want_hint	在正文里选中「{f}」的值，贫僧记下这种写法。
+want_cancel	算了
+fwd_by	{who} 转来的
+fwd_orig	原信：{who}
+junk_promo	像推销，挡下了
+junk_lookalike	冒充熟人的域名，挡下了
+junk_note	不进表、不转发。真不是垃圾，去「记录」里放行。
+act_excel	进表
+act_forward	转给 {to}
+act_draft	起草回复
+btn_run_now	现在就收
+ran	看过了，新信 {n} 封。
+pop_name	字段名
+pop_rule	放进
+pop_new_rule	新规则（按这封）
+pop_add	收下
+btn_cancel	取消
+pop_more	同类信再选一回同一个值，贫僧学得更准。
+rules_empty_t	还没有规则
+rules_empty_s	挑封信，选中要的字就是一条。
+rules_recs	贫僧拟的
+cond_h	哪些信归它
+cond_from	发件人含
+cond_subject	主题含
+cond_body	正文含
+cond_exclude	含这些就不管
+cond_ph	回车添加
+cond_note	一行里对上一个词就算，填了的几行都得对上。转来的信看原发件人。
+fields_h	抽哪些
+fields_note	去收件里选中字就能加。
+fields_builtin	加内置
+b_received	收到时间
+b_from	发件人
+b_from_name	发件人名字
+b_subject	主题
+b_attachments	附件
+type_text	文字
+type_id	编号
+type_money	金额
+type_date	日期
+type_datetime	时间
+type_email	邮箱
+type_phone	电话
+type_number	数字
+type_qty	数量
+learned_from	从 {n} 封样例学的
+how_after	跟在{l}后面
+how_next	{l}的下一行
+how_nth	正文里第 {n} 个这种值
+actions_h	然后干啥
+a_excel	写进 Excel
+a_excel_s	工作表「{s}」
+a_forward	转给
+a_forward_ph	谁？回车添加，不填就不转
+a_reply	草拟回复
+a_reply_s	只存进草稿箱，绝不自己发
+reply_auto	有钥匙用 AI
+reply_tpl	只用模板
+reply_tpl_h	模板
+reply_tpl_note	{字段名} 换成抽出来的值，{称呼} 是对方名字。
+reply_hint_h	给 AI 的交代
+reply_hint_ph	比如：语气客气，报价说今天发
+btn_try	试一下
+try_by	按「{s}」写的：
+try_ai	AI 写的
+try_tpl	模板套的
+hits	{n} 封样例归它
+n_fields	{n} 项
+s_fw	转发
+s_reply	起草
+btn_delete_rule	删掉规则
+deleted_rule	删了「{r}」
+move_up	往前
+move_down	往后
+rule_order_note	从上往下，第一条对上的规则接手。
+btn_new_rule	新规则
+del	删
+table_empty	这张表还空着
+table_empty_s	规则对上的新信会一行行落进来。
+table_none_s	先收条规则。
+btn_open_excel	打开 Excel
+btn_show_folder	看文件夹
+btn_flush	现在补写
+pending_note	Excel 正被别的程序占着，{n} 行候着。关掉它，贫僧自己补上。
+demo_table	示例数据，没写进任何文件。
+drafts_empty_t	没有草稿
+drafts_empty_s	规则里打开「草拟回复」，对上的信贫僧先替你写好。
+d_saved_ok	在邮箱草稿箱里
+d_saved_quota	邮箱满了，只在这儿
+d_saved_auth	密码不对，只在这儿
+d_saved_error	没存进邮箱，只在这儿
+d_saved_demo	示例
+d_to	回给 {to}
+btn_copy	复制
+copied	复制好了
+log_empty	还没干过活，先摸会儿鱼。
+log_time	时间
+log_subject	主题
+log_rule	规则
+log_did	干了啥
+held_promo	挡下 · 像推销
+held_lookalike	挡下 · 冒充熟人
+btn_release	放行
+by_ai	AI 找的
+w_forward	转发
+w_draft	草稿
+s_ok	成
+s_pending	排队
+s_net	断网，会重试
+s_auth	密码错
+s_quota	邮箱满
+s_error	失败
+s_demo	示例
+ai_fallback	AI 没用上（{why}），套了模板
+why_quota	免费额度用完
+why_key	钥匙不对
+why_net	连不上
+why_other	出岔子
+set_accounts	邮箱
+acc_add	加邮箱
+acc_remove	移除
+removed_acct	移除了 {e}
+acc_fix_pw	改密码
+acc_new_pw	新的应用专用密码
+acc_samples	重拟规则
+acc_watching	在盯
+set_ai	AI 起草
+ai_key	Gemini 钥匙
+ai_ph	粘贴钥匙
+ai_get	免费拿一把
+ai_on	钥匙在，起草用 AI。
+ai_off	没钥匙也行，起草用模板。
+btn_save	存
+btn_clear	清掉
+ai_saved	钥匙存好了。
+err_ai_key	钥匙不对。
+err_ai_net	连不上 Google，钥匙没存。
+err_ai_other	Google 回了句看不懂的：{d}
+set_run	运行
+autostart	开机自己跑
+autostart_s	登录 Windows 就进托盘，自己连上次的邮箱
+interval	多久看一次
+min	{n} 分钟
+excel_at	Excel 放在
+btn_change	换地方
+set_about	关于
+version	版本 {v}
+btn_update	检查更新
+up_new	有新版 {v}
+up_ready	{v} 已经下好，下次打开自动换上
+up_none	已经是最新
+up_fail	查不到，等下再试
+up_checking	查着呢…
+btn_download	去下载
+btn_restart	现在重启
+side_update	新版 {v} 到了
+up_card_t	知客僧 {v} 搞出来了。（你那 {c} 该淘汰了）
+up_notes_h	这次弄了点啥：
+up_keep	放心，换版本不动你的设置、规则和 Excel。哪会儿方便哪会儿重启。
+up_notes	会说英文了，设置里一下切中文 / English；新拟的规则名、Excel 表头跟着换。
+foot_name	千手院 · 知客僧
+foot_mail	要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：
+foot_home	千手院总舵
+st_demo	示例
+st_ok_n	盯着 {n} 个邮箱
+st_checked	{t}看过
+st_net	断网了，{s} 秒后再试
+st_net_m	断网了，{m} 分钟后再试
+st_auth	{who} 密码不对
+st_error	{who} 出了点岔子
+st_idle	准备开工
+st_pending	{n} 行等 Excel 松手
+toast_saved	记下了
+toast_field	收下「{f}」
+toast_rule	新规则「{r}」
+err_generic	出了点岔子：{d}
+ago_now	刚刚
+ago_min	{n} 分钟前
+ago_hour	{n} 小时前
+n_drafts	{n} 封回信草稿备好了，在邮箱草稿箱里，看一眼就能发。
+n_auth	{who} 密码不对，贫僧先停下，免得被锁。打开知客僧改一下。
+n_excel	Excel 开着，{n} 行候着。关掉它，贫僧自己补上。
+n_recs	新来一类信，贫僧拟了 {n} 条规则：{r}。收不收你定。
+tray_hint	关了窗口，贫僧在托盘里接着盯。右键图标能退出。
+m_open	打开知客僧
+m_run	现在就收
+m_excel	打开 Excel
+m_quit	退出
+rt_order	订单
+rt_invoice	发票
+rt_ship	物流
+rt_quote	询价
+col_order	订单号
+col_invoice	发票号
+col_amount	金额
+col_due	到期日
+col_orderdate	下单日期
+col_tracking	运单号
+col_eta	预计送达
+col_phone	电话
+col_qty	数量
+col_product	产品
+col_contact	联系人
+rule_new	新规则
+field_default	字段
+tpl_default	{称呼}您好，\n\n来信收到，我看一下尽快回复您。\n
+fwd_head	---------- 转发的邮件 ----------
+fwd_from	发件人：{v}
+fwd_date	日期：{v}
+fwd_subj	主题：{v}
+ms_done_ok	登上了
+ms_done_fail	没登上
+ms_done_s	回知客僧就行，这页可以关了。
+excel_dir	知客僧
+excel_file	知客僧.xlsx
+site.htmlLang	zh-CN
+site.title	知客僧 · 邮件分拣
+site.desc	知客僧：Windows 上的邮件分拣。连上邮箱，贫僧把规则拟好，你只管点「收下」；订单号、金额、日期自己落进 Excel，该转的转，回信只起草。开机就在岗，免费，信不出你的电脑。
+site.langLabel	语言
+site.home	千手院
+site.navName	知客僧
+site.navDl	下载
+site.h1	<span>信来贫僧接，</span><span>施主去玩。</span>
+site.sl	<span>订单、发票、快递单，</span><span>自己落进 Excel。</span>
+site.tg	连上邮箱，贫僧把最近的信过一遍、规则拟好，你只管点「收下」。该转的转，回信只起草。
+site.dl	下载 Windows 版
+site.how	怎么上岗
+site.meta	0.4.0 · Windows 10 / 11 · 免费 · 双击就跑，自己更新
+site.alt1	知客僧主界面：左边邮件列表，右边一封发票信，上方卡片列出抽出来的发票号、金额、到期日，标着「进表」「转给 finance」
+site.s1h	规则？<br>贫僧拟好了。
+site.s1p1	连上邮箱那一下，贫僧把最近的信过一遍：订单、发票、快递单、询价各归一类，几家写的「订单号」「Order Number」归成同一列。推销信、冒充熟人的不算数。
+site.s1p2	你看一眼，要转给谁填上，点「收下」。不写正则，不用一个字段一个字段地点。
+site.alt2	贫僧拟了 4 条规则：发票、物流、订单、询价，每张卡片列出认信的发件人、抽出来的字段和样例值，底部一个「收下 4 条」
+site.s2h	开机就在岗，<br>有事才叫你。
+site.s2p1	登录 Windows 就进托盘，自己连上次的邮箱，关机时来的信接着收。新来一家供应商？贫僧拟好「归进发票」，你点一下，刚才那封也一并进表、转走。
+site.s2p2	只在要你拿主意的时候冒个泡：回信草稿备好了、来了新一类的信、密码不对、Excel 被占着。
+site.stepsLabel	一天里贫僧干的事
+site.st1b	开机
+site.st1	进托盘，连上邮箱，接着上回的进度收
+site.st2b	来信
+site.st2	认出是哪类，字段进表，该转的转，回信起草好放草稿箱
+site.st3b	拿不准
+site.st3	新的一类信、像推销的信：先不动，冒泡问你
+site.gridLabel	还能干啥
+site.g1b	点一下也行
+site.g1	贫僧没认出来的，选中正文里的字就收成一列
+site.g2b	同一张 Excel
+site.g2	金额、数量是数字，日期是日期，拿去就能求和
+site.g3b	该转的转
+site.g3	发票转财务、询价转销售，附件一起带上
+site.g4b	回信只起草
+site.g4	有 Gemini 钥匙用 AI 写，没有套模板，发不发你说了算
+site.g5b	转了三手也认得
+site.g5	同事转来的信，扒到最里层按原发件人认
+site.g6b	PDF 里的也抽
+site.g6	发票附件里的金额、采购单号，跟正文一样
+site.g7b	挡推销
+site.g7	主题蹭关键词的推销、冒充熟人的域名，挡下可放行
+site.g8b	手滑能撤
+site.g8	收错了、删错了，点「撤销」，不问「确定吗」
+site.g9b	信不出门
+site.g9	邮件、密码都在你电脑上，没有我们的服务器
+site.instH	两步上岗
+site.instS	没有安装，没有注册。
+site.i1	<b>下载，双击。</b>Windows 要是拦一下，点「更多信息」→「仍要运行」。
+site.i2	<b>连邮箱。</b>填邮箱和应用专用密码（QQ、163 叫授权码），服务器贫僧自己认。贫僧拟好规则，你点「收下」。
+site.bx1	Gmail
+site.bx2	QQ 邮箱
+site.bx3	腾讯企业邮
+site.bx4	163
+site.bx5	126
+site.bx6	iCloud
+site.bx7	Yahoo
+site.bx8	公司邮箱（IMAP）
+site.bx9	Outlook · 即将支持
+site.pwQ	应用专用密码去哪拿
+site.pw1	Gmail：先开两步验证，再到 <a href="https://myaccount.google.com/apppasswords">myaccount.google.com/apppasswords</a> 生成。
+site.pw2	QQ 邮箱：网页版 → 设置 → 账号 → 开启 IMAP/SMTP 服务 → 生成授权码。
+site.pw3	163 / 126：网页版 → 设置 → POP3/SMTP/IMAP → 开启 IMAP → 拿授权码。
+site.pw4	Outlook / Hotmail / Microsoft 365：即将支持。微软不让用密码收信了，贫僧走微软登录，到时点一下登上就行。
+site.pw5	公司邮箱：问管理员要 IMAP / SMTP 地址，程序里填上。
+site.privH	贫僧嘴严
+site.priv	密码进 Windows 凭据管理器。邮件直接从你电脑连你的邮箱；AI 起草时，拿你自己的 Google 钥匙直接问 Gemini，中间没有千手院。查新版只是读一个版本号。
+site.footName	千手院 · 知客僧 0.4.0
+site.footMail	要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：
+site.footHome	千手院总舵 https://qianshoulab.github.io/
