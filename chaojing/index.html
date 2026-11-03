@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Chaojing">
-<script src="strings.js?v=0.4.0"></script>
+<script src="strings.js?v=0.4.1"></script>
 <script>
 /* 挑语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage）> 默认英文。不跟浏览器语言走（Song 11-03 22:19）。标题、简介、<html lang> 在画页面之前就换好 */
 (function(){
@@ -37,7 +37,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
   --desk:#f5f5f7; --dz:#f5f5f7; --paper-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);
-  --glass:rgba(255,255,255,.72); --scrim:rgba(0,0,0,.32); --toast-bg:rgba(29,29,31,.92); --toast-fg:#f5f5f7;
+  --glass:rgba(255,255,255,.98); --scrim:rgba(0,0,0,.32); --toast-bg:rgba(255,255,255,.98); --toast-fg:#1d1d1f;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -47,7 +47,7 @@
   --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --bad-ink:#ff6961; --shadow:none;
   --accent:#FF6369; --accent-tint:rgba(255,99,105,.16);
   --desk:#000000; --dz:#1c1c1e; --paper-shadow:0 0 0 .5px rgba(255,255,255,.1);
-  --glass:rgba(22,22,23,.72); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(58,58,60,.96);
+  --glass:rgba(28,28,30,.98); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(28,28,30,.98); --toast-fg:#f5f5f7;
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
@@ -57,7 +57,7 @@
   --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --bad-ink:#ff6961; --shadow:none;
   --accent:#FF6369; --accent-tint:rgba(255,99,105,.16);
   --desk:#000000; --dz:#1c1c1e; --paper-shadow:0 0 0 .5px rgba(255,255,255,.1);
-  --glass:rgba(22,22,23,.72); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(58,58,60,.96);
+  --glass:rgba(28,28,30,.98); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(28,28,30,.98); --toast-fg:#f5f5f7;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -98,6 +98,7 @@ a{color:var(--accent);text-decoration:none}
 .hero{max-width:980px;margin:0 auto;padding:72px 0 32px;text-align:center}
 .hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
 .hero p{margin:16px auto 0;max-width:620px;font-size:21px;line-height:1.4;color:var(--fg-2);text-wrap:balance;white-space:pre-line}
+html[lang="en"]{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI Variable Text","Segoe UI",system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",sans-serif}
 html[lang="en"] .hero h1{letter-spacing:-.02em}
 /* 中文只在标点处折行，词不拆开（「一行｜抄一份」这种） */
 html[lang^="zh"] .hero p,html[lang^="zh"] .dropzone>b,html[lang^="zh"] .dropzone .ds{word-break:keep-all;overflow-wrap:anywhere}
@@ -175,10 +176,11 @@ body.dragging .dropzone{background:var(--accent-tint);box-shadow:inset 0 0 0 2px
   /* 放不下的那边渐隐，不把字硬切成半个：右边还能横着滚、下面还有行时才隐 */
   -webkit-mask-image:linear-gradient(to right,#000 calc(100% - var(--fr)),transparent),linear-gradient(to bottom,#000 calc(100% - var(--fb)),transparent);
   -webkit-mask-composite:source-in;mask-image:linear-gradient(to right,#000 calc(100% - var(--fr)),transparent),linear-gradient(to bottom,#000 calc(100% - var(--fb)),transparent);mask-composite:intersect}
-table.data{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+table.data{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px}
 table.data th,table.data td{padding:8px 12px;text-align:left;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--line)}
 table.data th{position:sticky;top:0;background:var(--card);font-weight:600;color:var(--fg-2);z-index:1}
-table.data td.n,table.data th.n{color:var(--fg-3);width:1%;padding-right:4px;text-align:right}
+table.data td.n,table.data th.n{color:var(--fg-3);width:1%;padding-right:4px;text-align:right;font-variant-numeric:tabular-nums}
+/* 等宽数字只给行号、计数、进度开：Inter 这类字体开了 tabular-nums 会把连字符也撑宽（One‑Slide 变 One - Slide），文件名、表头、正文都不开 */
 table.data tbody tr{cursor:pointer}
 table.data tbody tr:hover td{background:var(--fill)}
 table.data tbody tr.sel td{background:var(--accent-tint)}
@@ -229,7 +231,8 @@ table.data tbody tr.sel td.n{color:var(--accent);font-weight:600}
 #cPv{position:sticky;top:76px;background:var(--card)}
 @media (min-width:901px){.pv-body{min-height:320px}}
 .pv-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 8px 16px;border-bottom:.5px solid var(--line)}
-.pv-h .tt{min-width:0;font-size:13px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.pv-h .tt{min-width:0;font-size:13px;color:var(--fg-2)}
+#pvOf{font-variant-numeric:tabular-nums}
 .pv-h .tt b{display:block;font-size:15px;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rownav{display:flex;align-items:center;gap:4px;flex:none}
 .rn-b{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--accent)}
@@ -300,7 +303,9 @@ textarea.paste{flex:1;min-height:260px;margin:16px;border-radius:var(--r-field);
 
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:var(--toast-bg);color:var(--toast-fg);padding:8px 8px 8px 16px;min-height:44px;border-radius:var(--r-btn);font-size:13px;z-index:80;max-width:calc(100% - 32px);animation:rise var(--t) var(--ease)}
 .toast.plain{padding-right:16px}
-.toast button{color:#FF8A8E;font-weight:600;font-size:13px;height:32px;padding:0 8px}
+.toast{width:max-content}  /* left:50% 定位时可用宽度只有半屏，英文提示会被折成两行 */
+.toast{-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 8px 24px rgba(0,0,0,.12),0 0 0 .5px var(--line)}
+.toast button{color:var(--accent);font-weight:600;font-size:13px;height:32px;padding:0 8px}
 @media (max-width:900px){body.work .toast{bottom:calc(96px + env(safe-area-inset-bottom))}}
 #renderer{position:fixed;left:-30000px;top:0;width:2400px;height:1600px;border:0;pointer-events:none}
 </style>
@@ -412,7 +417,7 @@ const LANG_KEY="chaojing.lang";
 let LANG=window.CJ_LANG||"zh", T=CJ_STRINGS[LANG], EXAMPLES=T.examples;
 const GOLD="#8B6A2F", INK="#1D1D1F";
 
-const VER="0.4.0";
+const VER="0.4.1";
 /* ============ 小工具 ============ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -946,7 +951,8 @@ function fixLH(root){
 const FB_FAMILY='"Noto Sans CJK SC","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei","WenQuanYi Zen Hei",sans-serif';
 const RCSS=`html,body{margin:0;background:#fff}#host{width:max-content}section.docx{margin:0!important;box-shadow:none!important;background:#fff}
 section.docx,section.docx *{font-kerning:none!important;font-variant-ligatures:none!important;text-rendering:optimizeSpeed}
-section.docx,[data-qf=s]{font-family:QSans,${FB_FAMILY}!important}[data-qf=r]{font-family:QSerif,QSans,${FB_FAMILY}!important}[data-qf=k]{font-family:QKai,QSans,${FB_FAMILY}!important}
+section.docx,[data-qf=s]{font-family:QLatS,QSans,${FB_FAMILY}!important}[data-qf=r]{font-family:QLatR,QSerif,QSans,${FB_FAMILY}!important}[data-qf=k]{font-family:QLatR,QKai,QSans,${FB_FAMILY}!important}
+[data-ql][data-qf=s],[data-ql] [data-qf=s]{font-family:QLatS,QLatSX,QSans,${FB_FAMILY}!important}[data-ql][data-qf=r],[data-ql] [data-qf=r]{font-family:QLatR,QLatRX,QSerif,QSans,${FB_FAMILY}!important}[data-ql][data-qf=k],[data-ql] [data-qf=k]{font-family:QLatR,QLatRX,QKai,QSans,${FB_FAMILY}!important}
 .docx p{line-height:${LH}}.docx-tab-stop[data-qn]{word-spacing:0!important;font-size:0!important}`;
 let rendererReady=null, rendererWin=null;
 function ensureRenderer(){
@@ -963,7 +969,19 @@ function ensureRenderer(){
 
 /* ---- 字体：黑体 Noto Sans SC、宋体 Noto Serif SC、楷体 霞鹜文楷（都是 OFL）。按字切成小块，只搬用得上的块，搬过的存进浏览器缓存 ---- */
 // s=黑体 r=宋体 k=楷体。Word 里的字体名按「像哪种」归到这三套里（fontFam）
-const FAMS={s:{dir:"fonts/",css:"QSans",pdf:"NotoSansSC"},r:{dir:"fonts/serif/",css:"QSerif",pdf:"NotoSerifSC"},k:{dir:"fonts/kai/",css:"QKai",pdf:"LXGWWenKai"}};
+// 0.4.1：西文另配 l=Noto Sans（跟黑体）、t=Noto Serif（跟宋体、楷体），像 Word 那样西文字符走西文字体。
+//   拉丁字母、数字、西文符号（isLat）一律走西文字体；弯引号、破折号、省略号、间隔号这类中西都用的标点（isAmb）
+//   只在「没有中文、有拉丁字母」的段落（<p data-ql>）里走西文字体，中文段落里照旧全角。空格不归西文字体，主字体（基线、行高）还是中文那套。
+const FAMS={s:{dir:"fonts/",css:"QSans",pdf:"NotoSansSC"},r:{dir:"fonts/serif/",css:"QSerif",pdf:"NotoSerifSC"},k:{dir:"fonts/kai/",css:"QKai",pdf:"LXGWWenKai"},
+  l:{dir:"fonts/latin/",css:"QLatS",cssX:"QLatSX",pdf:"NotoSans",lat:1},t:{dir:"fonts/latin-serif/",css:"QLatR",cssX:"QLatRX",pdf:"NotoSerif",lat:1}};
+const LATIN={s:"l",r:"t",k:"t"}, CJK_FAMS=["s","r","k"];
+const isAmb=c=>c===0xB7||(c>=0x2010&&c<=0x2027)||(c>=0x2030&&c<=0x203A);
+const isLat=c=>(c>0x20&&c<0x7F)||(c>=0xA1&&c<=0x24F&&c!==0xB7)||(c>=0x1E00&&c<=0x1EFF)||c===0x20AC||c===0x2122;
+const CJK_RE=/[\u2E80-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFFEF]|[\uD840-\uD8BF][\uDC00-\uDFFF]/, LATIN_RE=/[A-Za-z\u00C0-\u024F]/;
+function markLatin(root){ // 没有中文、有拉丁字母的段落打 data-ql：这种段落里的弯引号、破折号走西文字体
+  for(const p of root.querySelectorAll("p")){const t=p.textContent,on=!CJK_RE.test(t)&&LATIN_RE.test(t);if(on!==p.hasAttribute("data-ql"))on?p.setAttribute("data-ql",""):p.removeAttribute("data-ql")}
+}
+const toRanges=cps=>{const a=[...cps].sort((x,y)=>x-y),out=[];for(let i=0;i<a.length;){let j=i;while(j+1<a.length&&a[j+1]===a[j]+1)j++;out.push("U+"+(i===j?a[i].toString(16):a[i].toString(16)+"-"+a[j].toString(16)));i=j+1}return out.join(",")};
 for(const f of Object.values(FAMS)){f.idx=null;f.sfnt={400:{},700:{}}}
 const FONT=FAMS.s; // 黑体兜底：别的字体里没有的字用它
 const FONT_CACHE="chaojing-font-1", FACES=new Set(), ASC={};
@@ -972,7 +990,7 @@ const CJK_NAME=/[㐀-鿿]|simsun|simhei|kaiti|fangsong|yahei|dengxian|pingfang|h
 function fontFam(list){
   const names=String(list||"").split(",").map(x=>x.trim().replace(/^["']|["']$/g,"")).filter(Boolean);
   if(!names.length)return "s";
-  for(const k in FAMS)if(names[0]===FAMS[k].css)return k;
+  if(/^Q(Lat|Sans|Serif|Kai)/.test(names[0])){for(const n of names)for(const k of CJK_FAMS)if(n===FAMS[k].css)return k;return "s"}
   const cls=n=>{n=n.toLowerCase().replace(/[\s_\-]/g,"");return KAI_RE.test(n)?"k":SERIF_RE.test(n)&&!/sans/.test(n)?"r":"s"};
   const cjk=names.find(n=>CJK_NAME.test(n.toLowerCase().replace(/[\s_\-]/g,"")));
   return cls(cjk||names[0]);
@@ -1009,6 +1027,7 @@ function fontIndex(fam="s"){
       const cov=new Map(), ranges=j.files.map(()=>[]); let p=0;
       for(let i=0;i<j.r.length;i+=3){const a=p+j.r[i],b=a+j.r[i+1],s=j.r[i+2];for(let c=a;c<=b;c++)cov.set(c,s);ranges[s].push(a===b?a.toString(16):a.toString(16)+"-"+b.toString(16));p=b}
       F.cov=cov; F.files=j.files; F.ranges=ranges.map(r=>r.map(x=>"U+"+x).join(",")); F.raw=j.r;
+      if(F.lat){const L=j.files.map(()=>[]),X=j.files.map(()=>[]);for(const [c,s] of cov){if(isLat(c))L[s].push(c);else if(isAmb(c))X[s].push(c)}F.ranges=L.map(toRanges);F.rangesX=X.map(toRanges)}
       return j;
     })();
     F.idx.catch(()=>{F.idx=null});
@@ -1038,8 +1057,9 @@ async function installFaces(win,fam,w,ids){
   const F=FAMS[fam];
   for(const id of ids){
     const key=fam+w+":"+id; if(FACES.has(key))continue;
-    const f=new win.FontFace(F.css,await F.sfnt[w][id],{weight:String(w),unicodeRange:F.ranges[id]});
-    await f.load(); win.document.fonts.add(f); FACES.add(key);
+    const buf=await F.sfnt[w][id];
+    for(const [css,rg] of [[F.css,F.ranges[id]],[F.cssX,F.rangesX&&F.rangesX[id]]]){if(!css||!rg)continue;const f=new win.FontFace(css,buf,{weight:String(w),unicodeRange:rg});await f.load();win.document.fonts.add(f)}
+    FACES.add(key);
   }
 }
 function measureAsc(win,fam){ // 基线在字框里的位置（各套字不一样）
@@ -1049,7 +1069,8 @@ function measureAsc(win,fam){ // 基线在字框里的位置（各套字不一�
   const r=d.createRange(); r.setStart(s.firstChild,0); r.setEnd(s.firstChild,1); const cr=r.getBoundingClientRect(); const base=s.lastChild.getBoundingClientRect().bottom;
   s.remove(); return cr.height?(base-cr.top)/cr.height:0.801;
 }
-const famIds=(fam,cps)=>{const F=FAMS[fam],ids=new Set([F.cov.get(32),F.cov.get(120)]);if(fam==="s")ids.add(0);for(const c of cps){const s=F.cov.get(c);if(s!=null)ids.add(s)}ids.delete(undefined);return ids};
+const famIds=(fam,cps)=>{const F=FAMS[fam];if(F.lat){const ids=new Set();for(const c of cps)if(isLat(c)||isAmb(c)){const s=F.cov.get(c);if(s!=null)ids.add(s)}return ids}
+  const ids=new Set([F.cov.get(32),F.cov.get(120)]);if(fam==="s")ids.add(0);for(const c of cps){const s=F.cov.get(c);if(s!=null)ids.add(s)}ids.delete(undefined);return ids};
 
 /* ---- 排版前处理（只给预览和 PDF 用，Word 成品不动）：
    1. Word 自动编号（numbering.xml）自己算成真字，插在段首，缩进和制表位照 Word 的规矩补上；
@@ -1259,12 +1280,14 @@ function extractSection(win,sec){
     const s=node.nodeValue; if(!s||!/[^\s　​﻿]/.test(s))continue;
     const el=node.parentElement; if(!el||el.tagName==="STYLE")continue; const ti=info(win,el); if(!ti.tx)continue;
     let run=null; const pi=pOf(el), FF=FAMS[ti.f]||FONT, asc=ASC[ti.f]||ASC.s||0.801;
+    const lf=LATIN[ti.f]||"l", LF=FAMS[lf], pp=el.closest("p"), pl=!!(pp&&pp.hasAttribute("data-ql"));
     for(let i=0;i<s.length;){
       const cp=s.codePointAt(i), L=cp>0xffff?2:1;
       if(cp<=32||cp===0xA0||cp===0x3000||cp===0x200B||cp===0xFEFF||cp===0xAD||(cp>=0xE000&&cp<=0xE002)){i+=L;continue}
       rg.setStart(node,i); rg.setEnd(node,i+L); const r=rg.getBoundingClientRect(); i+=L;
       if(r.width<0.01&&r.height<0.01)continue;
-      const x=r.left-ox, y=r.top-oy, f=FF.cov&&FF.cov.has(cp)?ti.f:FONT.cov.has(cp)?"s":null; // 这套字里没有 → 黑体 → 再没有就画成图
+      const ls=LF.cov&&(isLat(cp)||pl&&isAmb(cp))?LF.cov.get(cp):undefined; // 西文字符走西文字体（浏览器里也是这么排的：unicode-range 一样）
+      const x=r.left-ox, y=r.top-oy, f=ls!=null&&FACES.has(lf+"400:"+ls)?lf:FF.cov&&FF.cov.has(cp)?ti.f:FONT.cov.has(cp)?"s":null; // 这套字里没有 → 黑体 → 再没有就画成图
       if(!f){
         items.push({t:"t",f:"s",w:ti.b?700:400,s:ti.size,c:ti.c,i:ti.it,top:y,h:r.height,y:y+r.height*0.8,ch:[cp],x:[x],r:x+r.width,z:ti.z,inv:1,p:pi});
         items.push({t:"g",id:glyphImg(win,cp,ti,r),x,y,w:r.width,h:r.height,z:ti.z});
@@ -1334,7 +1357,7 @@ function extractDoc(win,host){
 async function renderInto(win,host,bytes){
   host.innerHTML=""; INFO=new WeakMap();
   await win.docx.renderAsync(new win.Uint8Array(prepDocx(bytes)),host,null,PV_OPTS); // 跨 iframe 要换成它自己的 Uint8Array，不然 JSZip 不认
-  fixLH(host); host._fams=markFonts(win,host); await win.document.fonts.ready; fixNumTabs(win,host);
+  fixLH(host); host._fams=markFonts(win,host); markLatin(host); await win.document.fonts.ready; fixNumTabs(win,host);
   await Promise.all([...host.querySelectorAll("img")].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
   await win.document.fonts.ready;
 }
@@ -1377,12 +1400,15 @@ async function pdfSession(units){
   for(const u of units)for(const i of S.units[u])for(const t of S.tpl.tags){const c=S.map[t];addS(c>=0?S.data.rows[i][c]:c===-1?`{{${t}}}`:"")}
   const bold=/<w:b\/>|<w:b w:val="(?:1|true|on)"\s*\/>|<w:bCs\/>/.test(xml);
   const weights=bold?[400,700]:[400], fonts=[], have=new Set();
-  const need=async fams=>{ // 用到哪套字才搬哪套（宋体、楷体只在模板里有的时候搬）
-    for(const f of fams){
-      if(have.has(f))continue; have.add(f); await fontIndex(f); const ids=famIds(f,cps);
-      await Promise.all(weights.map(w=>fontSlices(f,w,ids)));
-      for(const w of weights){await installFaces(win,f,w,ids);for(const id of ids)fonts.push({fam:f,w,id})}
-      await win.document.fonts.ready; if(!ASC[f])ASC[f]=measureAsc(win,f);
+  const need=async fams=>{ // 用到哪套字才搬哪套（宋体、楷体只在模板里有的时候搬）；每套中文字顺带它配的西文字
+    for(const f of [...fams].flatMap(f=>LATIN[f]?[f,LATIN[f]]:[f])){
+      if(have.has(f))continue; have.add(f); const lat=!!FAMS[f].lat;
+      try{
+        await fontIndex(f); const ids=famIds(f,cps); if(!ids.size)continue;
+        await Promise.all(weights.map(w=>fontSlices(f,w,ids)));
+        for(const w of weights){await installFaces(win,f,w,ids);for(const id of ids)fonts.push({fam:f,w,id})}
+      }catch(e){if(lat){console.warn(e);continue}throw e} // 西文字下不来：照旧用中文字体里的西文，不耽误出货
+      await win.document.fonts.ready; if(!lat&&!ASC[f])ASC[f]=measureAsc(win,f);
     }
   };
   await need(["s"]);
@@ -1398,7 +1424,7 @@ async function pdfSession(units){
   return {
     fonts, fast:!!P,
     async layout(u){
-      if(P)applyUnit(P,u); else{await renderInto(win,host,fillDocx(u,false));await need(host._fams);fixNumTabs(win,host)}
+      if(P){applyUnit(P,u);markLatin(host)} else{await renderInto(win,host,fillDocx(u,false));await need(host._fams);fixNumTabs(win,host)}
       return extractDoc(win,host);
     }
   };
@@ -1407,8 +1433,8 @@ async function pdfSession(units){
 /* ---- 后台线程：拿清单写 PDF（字体按这一份用到的字现切子集） ---- */
 function pdfWorker(){
   "use strict";
-  const F={}, IMG=[], IMGZ=[], COVS={}; const te=new TextEncoder();
-  const NAME={s:"NotoSansSC",r:"NotoSerifSC",k:"LXGWWenKai"};
+  const F={}, IMG=[], IMGZ=[], COVS={}, FCACHE=new Map(); const te=new TextEncoder();
+  const NAME={s:"NotoSansSC",r:"NotoSerifSC",k:"LXGWWenKai",l:"NotoSans",t:"NotoSerif"};
   onmessage=async e=>{
     const m=e.data;
     if(m.type==="idx"){const C=COVS[m.fam]=new Map();let p=0;const r=m.r;for(let i=0;i<r.length;i+=3){const a=p+r[i],b=a+r[i+1],s=r[i+2];for(let c=a;c<=b;c++)C.set(c,s);p=b}return}
@@ -1469,7 +1495,8 @@ function pdfWorker(){
     const uni=[]; for(const [c,g] of gid)if(uni[g]==null)uni[g]=c;
     return {bytes:sfnt(tabs),gid,adv,upm:base.upm,uni,bbox:[hdv.getInt16(36),hdv.getInt16(38),hdv.getInt16(40),hdv.getInt16(42)],asc:hh.getInt16(4),desc:hh.getInt16(6)};
   }
-  async function z(u8){if(!self.CompressionStream)return null;return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream("deflate"))).arrayBuffer())}
+  // 压缩：直接往 CompressionStream 里写。0.4.1 实测：小块 1000 次 0.11 秒；原来绕 Blob.stream() + pipeThrough 要 1.8 秒（每份 PDF 压好几块，多一套西文字体就多好几块）
+  async function z(u8){if(!self.CompressionStream)return null;const cs=new CompressionStream("deflate"),w=cs.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer())}
   const N=v=>{const r=Math.round(v*100)/100;return r===0?"0":String(r)};
   const col=c=>`${N(c[0]/255)} ${N(c[1]/255)} ${N(c[2]/255)}`;
   const hex4=g=>g.toString(16).padStart(4,"0");
@@ -1478,7 +1505,10 @@ function pdfWorker(){
   async function buildPdf(P){
     const W=P.W,H=P.H, use={};
     for(const pg of P.pages)for(const it of pg.fixed.concat(pg.body))if(it.t==="t"){const fam=it.f||"s",has7=F[fam+"700"]&&Object.keys(F[fam+"700"]).length>0;const w=it.w===700&&has7?700:400;if(it.w===700&&!has7)it.syn=1;it.fw=fam+w;for(const c of it.ch)(use[it.fw]||(use[it.fw]=new Set())).add(c)}
-    const fonts={}; for(const k in use){const f=subset(k,[...use[k]]);if(f)fonts[k]=f}
+    // 字体子集按「字体 + 用到的字（排好序）」缓存：西文那套、标题粗体这种每份都一样的字，切一次、压一次，后面的份直接用
+    const fonts={}, FE={}; for(const k in use){const cps=[...use[k]].sort((a,b)=>a-b),key=k+":"+cps.join(",");let e=FCACHE.get(key);
+      if(e)FCACHE.delete(key);else{e={f:subset(k,cps)};if(FCACHE.size>=64)FCACHE.delete(FCACHE.keys().next().value)}
+      FCACHE.set(key,e); if(e.f){fonts[k]=e.f;FE[k]=e}}
     const objs=[]; const alloc=()=>{objs.push(null);return objs.length};
     const put=(n,dict,stream)=>{objs[n-1]={dict,stream}};
     const sput=async(n,dict,raw)=>{const c=await z(raw);put(n,`<< ${dict} /Length ${(c||raw).length}${c?" /Filter /FlateDecode":""} >>`,c||raw)};
@@ -1492,13 +1522,16 @@ function pdfWorker(){
       const ws=[]; for(let i=0;i<f.adv.length;i++)ws.push(Math.round(f.adv[i]*1000/f.upm));
       put(cid,`<< /Type /Font /Subtype /CIDFontType2 /BaseFont /${name} /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor ${fd} 0 R /CIDToGIDMap /Identity /DW 1000 /W [0 [${ws.join(" ")}]] >>`);
       const k=1000/f.upm;
-      put(fd,`<< /Type /FontDescriptor /FontName /${name} /Flags ${w[0]==="s"?4:6} /FontBBox [${f.bbox.map(v=>Math.round(v*k)).join(" ")}] /ItalicAngle 0 /Ascent ${Math.round(f.asc*k)} /Descent ${Math.round(f.desc*k)} /CapHeight 733 /StemV ${w.endsWith("700")?140:80} /FontFile2 ${ff} 0 R >>`);
-      const fc=await z(f.bytes); put(ff,`<< /Length ${(fc||f.bytes).length} /Length1 ${f.bytes.length}${fc?" /Filter /FlateDecode":""} >>`,fc||f.bytes);
-      let cm="/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n";
-      const pairs=[]; f.uni.forEach((c,g)=>{if(c!=null)pairs.push(`<${hex4(g)}> <${utf16hex(c)}>`)});
-      for(let i=0;i<pairs.length;i+=100){const ch=pairs.slice(i,i+100);cm+=`${ch.length} beginbfchar\n${ch.join("\n")}\nendbfchar\n`}
-      cm+="endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend";
-      await sput(tu,"",te.encode(cm));
+      put(fd,`<< /Type /FontDescriptor /FontName /${name} /Flags ${"sl".includes(w[0])?4:6} /FontBBox [${f.bbox.map(v=>Math.round(v*k)).join(" ")}] /ItalicAngle 0 /Ascent ${Math.round(f.asc*k)} /Descent ${Math.round(f.desc*k)} /CapHeight 733 /StemV ${w.endsWith("700")?140:80} /FontFile2 ${ff} 0 R >>`);
+      const e=FE[w]; if(e.fc===undefined)e.fc=await z(f.bytes); const fc=e.fc; put(ff,`<< /Length ${(fc||f.bytes).length} /Length1 ${f.bytes.length}${fc?" /Filter /FlateDecode":""} >>`,fc||f.bytes);
+      if(e.tu===undefined){
+        let cm="/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n";
+        const pairs=[]; f.uni.forEach((c,g)=>{if(c!=null)pairs.push(`<${hex4(g)}> <${utf16hex(c)}>`)});
+        for(let i=0;i<pairs.length;i+=100){const ch=pairs.slice(i,i+100);cm+=`${ch.length} beginbfchar\n${ch.join("\n")}\nendbfchar\n`}
+        cm+="endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend";
+        const raw=te.encode(cm),c=await z(raw);e.tu={c,raw};
+      }
+      put(tu,`<< /Length ${(e.tu.c||e.tu.raw).length}${e.tu.c?" /Filter /FlateDecode":""} >>`,e.tu.c||e.tu.raw);
       fontRef[w]=t0;
     }
     const imgRef={};
@@ -1586,6 +1619,7 @@ const inflight=()=>POOL.ws.reduce((a,w)=>a+w.q.size,0);
 
 function prefetchFonts(){ // 选了 PDF 就先把常用字那一块搬过来，点生成时不用等
   ensureRenderer().then(()=>fontIndex("s")).then(()=>Promise.all([fontSlices("s",400,[0]),fontSlices("s",700,[0])])).then(()=>pool()).catch(()=>{});
+  fontIndex("l").then(()=>fontSlices("l",400,[0])).catch(()=>{});
 }
 
 /* ============ 批量生成 ============ */

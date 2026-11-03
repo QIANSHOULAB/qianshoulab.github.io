@@ -132,14 +132,14 @@ examples.cert.text1	QIANSHOU ACADEMY
 examples.cert.text2	Certificate of Completion
 examples.cert.text3	This certifies that
 examples.cert.text4	{{Name}}
-examples.cert.text5	completed all {{Hours}} hours of "{{Course}}" on {{Date}} and passed the final assessment.
-examples.cert.text6	Qianshou Academy, Office of the Registrar
+examples.cert.text5	completed all {{Hours}} hours of “{{Course}}” on {{Date}} and passed the final assessment.
+examples.cert.text6	Qianshou Academy · Office of the Registrar
 examples.cert.text7	CERTIFICATE NO. {{Certificate No}}
 examples.cert.headers	Name | Course | Hours | Date | Certificate No | Phone
 examples.cert.row1	Ava Chen | Excel: Fake It Till You Make It | 32 | November 2, 2026 | QS-2026-0001 | 555-0101
 examples.cert.row2	Leo Park | The One-Slide Year in Review | 16 | November 2, 2026 | QS-2026-0002 | 555-0102
 examples.cert.row3	Nora Quinn | Meeting Notes Nobody Reads | 12 | November 3, 2026 | QS-2026-0003 | 555-0103
-examples.cert.row4	Sam Patel | Email Etiquette and Strategic Cc'ing | 8 | November 3, 2026 | QS-2026-0004 | 555-0104
+examples.cert.row4	Sam Patel | Email Etiquette and Strategic Cc’ing | 8 | November 3, 2026 | QS-2026-0004 | 555-0104
 examples.cert.row5	Iris Novak | Excel: Fake It Till You Make It | 32 | November 4, 2026 | QS-2026-0005 | 555-0105
 examples.cert.row6	Theo Brooks | Pivot Tables Without Tears | 24 | November 4, 2026 | QS-2026-0006 | 555-0106
 examples.cert.row7	Mia Torres | The One-Slide Year in Review | 16 | November 5, 2026 | QS-2026-0007 | 555-0107
@@ -155,7 +155,7 @@ examples.invoice.text5	{{Client}} / {{Address}}
 examples.invoice.text6	Item | Qty | Unit price | Amount
 examples.invoice.text7	{{Item}} | {{Qty}} | {{Unit price}} | {{Amount}}
 examples.invoice.text8	Total ${{Total}}
-examples.invoice.text9	Due by {{Due}}. Pay to Qianshou Stationery Co., bank details in your contract.
+examples.invoice.text9	Due by {{Due}} · Qianshou Stationery Co. · Bank details in your contract
 examples.invoice.headers	Invoice No | Client | Address | Date | Due | Item | Qty | Unit price | Amount | Total
 examples.invoice.row1	INV-1101 | Lime Tree Coffee (Downtown) | 18 Elm St, Portland, OR 97204 | Nov 2, 2026 | Nov 30, 2026 | Copy paper, Letter (case) | 12 | 42.00 | 504.00 | 789.00
 examples.invoice.row2	INV-1101 | Lime Tree Coffee (Downtown) | 18 Elm St, Portland, OR 97204 | Nov 2, 2026 | Nov 30, 2026 | Gel pens (box of 12) | 30 | 9.50 | 285.00 | 789.00
@@ -171,13 +171,13 @@ examples.offer.rule	Offer Letter - {{Name}}
 examples.offer.text1	OFFER LETTER
 examples.offer.text2	Welcome aboard
 examples.offer.text3	Dear {{Name}},
-examples.offer.text4	After more interview rounds than anyone enjoyed, we're delighted to offer you the role of {{Role}} on our {{Team}} team.
+examples.offer.text4	After more interview rounds than anyone enjoyed, we’re delighted to offer you the role of {{Role}} on our {{Team}} team.
 examples.offer.text5	Start date | {{Start date}}
 examples.offer.text6	Base salary | ${{Salary}} a year
 examples.offer.text7	Probation | {{Probation}}
 examples.offer.text8	Location | {{Location}}
-examples.offer.text9	On day one, bring a photo ID to reception by 9:30 a.m. Questions before then? HR is one email away.
-examples.offer.text10	People Team, Hill & Harbor Technologies, Inc.
+examples.offer.text9	On day one, bring a photo ID to reception by 9:30 a.m. Questions before then? HR is one email away — no ticket required.
+examples.offer.text10	Hill & Harbor Technologies, Inc. · People Team
 examples.offer.text11	{{Date}}
 examples.offer.headers	Name | Team | Role | Start date | Salary | Probation | Location | Date
 examples.offer.row1	Ava Chen | Product | Product Manager | December 1, 2026 | 132,000 | 90 days | San Francisco | November 2, 2026

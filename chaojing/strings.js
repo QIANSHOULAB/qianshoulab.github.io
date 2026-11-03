@@ -210,17 +210,17 @@
     split: "Split", merge: "Merge",
     ver: v => `v${v}`,
     /* Samples: templates are editor HTML, turned into .docx on load. Every name and company is made up.
-       PDF 用的是中文字体（Noto Sans SC），弯引号、间隔号、破折号在里面是全角宽，英文示例里不用它们。 */
+       0.4.1 起 PDF 里西文走西文字体，弯引号、破折号、间隔号照常用。 */
     examples: {
       cert: {
         orient: "landscape", border: GOLD, file: "Certificate", data: "Graduates.xlsx", rule: "{{Name}} - Certificate",
-        html: `<p><br></p><p><br></p><h6 style="text-align:center;color:${GOLD}">QIANSHOU ACADEMY</h6><h1 style="text-align:center"><span style="font-size:48px">Certificate of Completion</span></h1><p style="text-align:center"><br></p><p style="text-align:center"><span style="font-size:18.7px;color:#6E6E73">This certifies that</span></p><h1 style="text-align:center"><span style="color:${GOLD};font-size:53px">{{Name}}</span></h1><p style="text-align:center"><span style="font-size:18.7px">completed all {{Hours}} hours of "{{Course}}" on {{Date}} and passed the final assessment.</span></p><p style="text-align:center"><br></p><p style="text-align:right"><span style="font-size:18.7px"><b>Qianshou Academy, Office of the Registrar</b></span></p><h6 style="text-align:right">CERTIFICATE NO. {{Certificate No}}</h6>`,
+        html: `<p><br></p><p><br></p><h6 style="text-align:center;color:${GOLD}">QIANSHOU ACADEMY</h6><h1 style="text-align:center"><span style="font-size:48px">Certificate of Completion</span></h1><p style="text-align:center"><br></p><p style="text-align:center"><span style="font-size:18.7px;color:#6E6E73">This certifies that</span></p><h1 style="text-align:center"><span style="color:${GOLD};font-size:53px">{{Name}}</span></h1><p style="text-align:center"><span style="font-size:18.7px">completed all {{Hours}} hours of “{{Course}}” on {{Date}} and passed the final assessment.</span></p><p style="text-align:center"><br></p><p style="text-align:right"><span style="font-size:18.7px"><b>Qianshou Academy · Office of the Registrar</b></span></p><h6 style="text-align:right">CERTIFICATE NO. {{Certificate No}}</h6>`,
         headers: ["Name", "Course", "Hours", "Date", "Certificate No", "Phone"],
         rows: [
           ["Ava Chen", "Excel: Fake It Till You Make It", "32", "November 2, 2026", "QS-2026-0001", "555-0101"],
           ["Leo Park", "The One-Slide Year in Review", "16", "November 2, 2026", "QS-2026-0002", "555-0102"],
           ["Nora Quinn", "Meeting Notes Nobody Reads", "12", "November 3, 2026", "QS-2026-0003", "555-0103"],
-          ["Sam Patel", "Email Etiquette and Strategic Cc'ing", "8", "November 3, 2026", "QS-2026-0004", "555-0104"],
+          ["Sam Patel", "Email Etiquette and Strategic Cc’ing", "8", "November 3, 2026", "QS-2026-0004", "555-0104"],
           ["Iris Novak", "Excel: Fake It Till You Make It", "32", "November 4, 2026", "QS-2026-0005", "555-0105"],
           ["Theo Brooks", "Pivot Tables Without Tears", "24", "November 4, 2026", "QS-2026-0006", "555-0106"],
           ["Mia Torres", "The One-Slide Year in Review", "16", "November 5, 2026", "QS-2026-0007", "555-0107"],
@@ -229,7 +229,7 @@
       },
       invoice: {
         orient: "portrait", file: "Invoice", data: "Invoice lines.xlsx", rule: "{{Invoice No}} - {{Client}}",
-        html: `<h6 style="color:${GOLD}">INVOICE</h6><h1>Invoice</h1><p><span style="color:#6E6E73">Invoice no.</span> {{Invoice No}}  <span style="color:#6E6E73">Date</span> {{Date}}</p><hr><h3>Bill to</h3><p>{{Client}}<br>{{Address}}</p><p><br></p><table><tbody><tr><th>Item</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit price</th><th style="text-align:right">Amount</th></tr><tr><td>{{Item}}</td><td style="text-align:right">{{Qty}}</td><td style="text-align:right">{{Unit price}}</td><td style="text-align:right">{{Amount}}</td></tr></tbody></table><h2 style="text-align:right">Total \${{Total}}</h2><p><br></p><h6>Due by {{Due}}. Pay to Qianshou Stationery Co., bank details in your contract.</h6>`,
+        html: `<h6 style="color:${GOLD}">INVOICE</h6><h1>Invoice</h1><p><span style="color:#6E6E73">Invoice no.</span> {{Invoice No}}  <span style="color:#6E6E73">Date</span> {{Date}}</p><hr><h3>Bill to</h3><p>{{Client}}<br>{{Address}}</p><p><br></p><table><tbody><tr><th>Item</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit price</th><th style="text-align:right">Amount</th></tr><tr><td>{{Item}}</td><td style="text-align:right">{{Qty}}</td><td style="text-align:right">{{Unit price}}</td><td style="text-align:right">{{Amount}}</td></tr></tbody></table><h2 style="text-align:right">Total \${{Total}}</h2><p><br></p><h6>Due by {{Due}} · Qianshou Stationery Co. · Bank details in your contract</h6>`,
         headers: ["Invoice No", "Client", "Address", "Date", "Due", "Item", "Qty", "Unit price", "Amount", "Total"],
         rows: [
           ["INV-1101", "Lime Tree Coffee (Downtown)", "18 Elm St, Portland, OR 97204", "Nov 2, 2026", "Nov 30, 2026", "Copy paper, Letter (case)", "12", "42.00", "504.00", "789.00"],
@@ -244,7 +244,7 @@
       },
       offer: {
         orient: "portrait", file: "Offer Letter", data: "New hires.xlsx", rule: "Offer Letter - {{Name}}",
-        html: `<h6 style="color:${GOLD}">OFFER LETTER</h6><h1>Welcome aboard</h1><p><br></p><p>Dear <b>{{Name}}</b>,</p><p>After more interview rounds than anyone enjoyed, we're delighted to offer you the role of <b>{{Role}}</b> on our <b>{{Team}}</b> team.</p><table><tbody><tr><th>Start date</th><td>{{Start date}}</td></tr><tr><th>Base salary</th><td>\${{Salary}} a year</td></tr><tr><th>Probation</th><td>{{Probation}}</td></tr><tr><th>Location</th><td>{{Location}}</td></tr></tbody></table><p>On day one, bring a photo ID to reception by 9:30 a.m. Questions before then? HR is one email away.</p><p><br></p><p style="text-align:right">People Team, Hill &amp; Harbor Technologies, Inc.</p><p style="text-align:right">{{Date}}</p>`,
+        html: `<h6 style="color:${GOLD}">OFFER LETTER</h6><h1>Welcome aboard</h1><p><br></p><p>Dear <b>{{Name}}</b>,</p><p>After more interview rounds than anyone enjoyed, we’re delighted to offer you the role of <b>{{Role}}</b> on our <b>{{Team}}</b> team.</p><table><tbody><tr><th>Start date</th><td>{{Start date}}</td></tr><tr><th>Base salary</th><td>\${{Salary}} a year</td></tr><tr><th>Probation</th><td>{{Probation}}</td></tr><tr><th>Location</th><td>{{Location}}</td></tr></tbody></table><p>On day one, bring a photo ID to reception by 9:30 a.m. Questions before then? HR is one email away — no ticket required.</p><p><br></p><p style="text-align:right">Hill &amp; Harbor Technologies, Inc. · People Team</p><p style="text-align:right">{{Date}}</p>`,
         headers: ["Name", "Team", "Role", "Start date", "Salary", "Probation", "Location", "Date"],
         rows: [
           ["Ava Chen", "Product", "Product Manager", "December 1, 2026", "132,000", "90 days", "San Francisco", "November 2, 2026"],
