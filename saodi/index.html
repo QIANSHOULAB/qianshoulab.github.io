@@ -104,7 +104,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
 <nav><div class="wrap">
   <a class="back" href="https://qianshoulab.github.io/"><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5 1.5 7.5l6 6"/></svg>千手院</a>
   <span class="me"><img src="icon.svg" alt=""><span>戒尺僧</span></span>
-  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.0/SaodiSeng-0.3.0.exe">下载</a>
+  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.1/SaodiSeng-0.3.1.exe">下载</a>
 </div></nav>
 
 <main class="wrap">
@@ -114,8 +114,8 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
     <p class="tag">凡尘乱档，统统归位</p>
     <p class="lede">专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。</p>
     <div class="cta">
-      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.0/SaodiSeng-0.3.0.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>下载 Windows 版</a>
-      <span class="meta" id="meta">0.3.0 · 19 MB · Windows 10 / 11 · 免费 · 不用装，双击就跑</span>
+      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.1/SaodiSeng-0.3.1.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>下载 Windows 版</a>
+      <span class="meta" id="meta">0.3.1 · 19 MB · Windows 10 / 11 · 免费 · 不用装，双击就跑</span>
     </div>
     <div class="shot">
       <picture>
@@ -157,7 +157,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
   <section class="sec">
     <h2>三步上手</h2>
     <div class="steps">
-      <div class="s"><b>01</b><h3>下载</h3><p>点上面的按钮，拿到 <code id="exeName">SaodiSeng-0.3.0.exe</code>。</p></div>
+      <div class="s"><b>01</b><h3>下载</h3><p>点上面的按钮，拿到 <code id="exeName">SaodiSeng-0.3.1.exe</code>。</p></div>
       <div class="s"><b>02</b><h3>双击</h3><p>不用安装。Windows 拦一下就点 <code>更多信息</code> → <code>仍要运行</code>。</p></div>
       <div class="s"><b>03</b><h3>去玩</h3><p>「下载」它自己盯着。要改名，把文件夹拖进窗口。</p></div>
     </div>
@@ -172,13 +172,13 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
 <script>
 /* 下载链接跟着 version.json 走：以后出新版只改 version.json 不用改页面 */
 fetch("version.json", { cache: "no-store" }).then(r => r.json()).then(v => {
-  if (!v.version || v.version === "0.3.0") return;
+  if (!v.version || v.version === "0.3.1") return;
   const u = `https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v${v.version}/SaodiSeng-${v.version}.exe`;
   document.getElementById("dlBtn").href = u;
   document.getElementById("dlTop").href = u;
   document.getElementById("exeName").textContent = `SaodiSeng-${v.version}.exe`;
   const m = document.getElementById("meta");
-  m.textContent = m.textContent.replace("0.3.0", v.version);
+  m.textContent = m.textContent.replace("0.3.1", v.version);
 }).catch(() => {});
 </script>
 </body>
