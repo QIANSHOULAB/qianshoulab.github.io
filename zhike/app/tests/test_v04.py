@@ -40,7 +40,7 @@ def test_strings_both_languages_complete():
     # Python 读出来的跟浏览器里一样
     try:
         out = subprocess.run(["node", "-e", "global.window=global;require(process.argv[1]);console.log(JSON.stringify(STR))",
-                              str(UI / "strings.js")], capture_output=True, text=True, timeout=30)
+                              str(UI / "strings.js")], capture_output=True, encoding="utf-8", timeout=30)
     except FileNotFoundError:
         pytest.skip("no node")
     assert json.loads(out.stdout) == d
