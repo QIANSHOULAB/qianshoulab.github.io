@@ -3,6 +3,8 @@
 // 0.4.0 起界面跟浏览器语言走，这里固定 zh-CN，跟 0.3.0 比同一套中文界面。
 // 用法：node steps.js <网址> <0.2|0.3> <输出.json>（0.4 照 0.3 的流程走）
 const { chromium } = require('playwright');
+// 0.4.1 起默认英文、右上角选过就记住，不跟浏览器语言：中文那遍等于「选过中文」的人，先把选择写进 localStorage（不动别的字段）
+const pinLang = l => { try { const u = JSON.parse(localStorage.getItem('baozuseng.ui') || '{}'); if (!u.lang) { u.lang = l; localStorage.setItem('baozuseng.ui', JSON.stringify(u)); } } catch (e) {} };
 const fs = require('fs'), path = require('path');
 const [BASE, VER, OUT] = process.argv.slice(2);
 const sc = JSON.parse(fs.readFileSync(path.join(__dirname, 'scenario.json'), 'utf8'));
@@ -14,6 +16,7 @@ const NAMES = aug.add.map(x => x.name);
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE_UA, hasTouch: true, acceptDownloads: true, locale: 'zh-CN' });
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(BASE).origin });
+  await ctx.addInitScript(pinLang, 'zh');
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));

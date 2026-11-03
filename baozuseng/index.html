@@ -1,17 +1,17 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>包租僧</title>
-<meta name="description" content="二房东记账：房租、电费按人头按天自动分，全屋账单一键复制。账只存在你自己手机里。">
+<title>Baozu · Rent Splitter</title>
+<meta name="description" content="For landlords who rent out rooms: rent and the power bill, split per person and by the day, in one message for the whole house. Your books stay on your phone.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="包租僧">
+<meta name="apple-mobile-web-app-title" content="Baozu">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.en.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -28,8 +28,8 @@
   --r-card:18px; --r-btn:12px; --r-btn-l:14px; --r-field:10px; --r-chip:8px;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
-  --glass:rgba(245,245,247,.72); --scrim:rgba(0,0,0,.32); --sheet:#f5f5f7; --sheet-card:#ffffff;
-  --toast-bg:rgba(29,29,31,.72); --toast-fg:#f5f5f7; --knob:#ffffff; --bar:rgba(120,120,128,.28);
+  --glass:rgba(255,255,255,.98); --scrim:rgba(0,0,0,.32); --sheet:#f5f5f7; --sheet-card:#ffffff;
+  --toast-bg:rgba(255,255,255,.98); --toast-fg:#1d1d1f; --knob:#ffffff; --bar:rgba(120,120,128,.28);
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
@@ -39,8 +39,8 @@
   --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --shadow:none;
   --accent:#ff5ca8; --accent-fill:#d63384; --accent-tint:rgba(255,92,168,.16);
   --bad-ink:#ff6961; --bad-tint:rgba(255,69,58,.16);
-  --glass:rgba(22,22,24,.72); --scrim:rgba(0,0,0,.56); --sheet:#1c1c1e; --sheet-card:#2c2c2e;
-  --toast-bg:rgba(58,58,60,.72); --bar:rgba(120,120,128,.44);
+  --glass:rgba(28,28,30,.98); --scrim:rgba(0,0,0,.56); --sheet:#1c1c1e; --sheet-card:#2c2c2e;
+  --toast-bg:rgba(28,28,30,.98); --toast-fg:#f5f5f7; --bar:rgba(120,120,128,.44);
   color-scheme:dark;
 }}
 
@@ -63,7 +63,10 @@ button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
 .nav.scrolled{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--line)}
 .nav-in{display:contents}
 .nav-l{justify-self:start;min-width:0}
-.nav-r{justify-self:end;display:flex;gap:8px}
+.nav-r{justify-self:end;display:flex;align-items:center;gap:8px}
+.lang-seg button{padding:0 8px}
+.nav{column-gap:8px}
+.nav-a,.seg button{white-space:nowrap}
 .nav-t{font-weight:600;font-size:17px;opacity:0;transition:opacity var(--t) var(--ease);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50vw}
 .nav.scrolled .nav-t{opacity:1}
 .nav-back{display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-size:17px;height:44px;margin-left:-4px;padding-right:8px}
@@ -220,7 +223,6 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.7;color:var(--fg-2);text-align:center}
 .mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
-.foot .lang{color:var(--accent);font-size:13px;font-weight:600;min-height:44px;padding:0 12px;margin-top:4px}
 
 /* 总账图 */
 .chart{background:var(--card);border-radius:var(--r-card);padding:16px;margin-top:24px;box-shadow:var(--shadow)}
@@ -308,11 +310,11 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 
 /* 提示条：能撤销 */
 /* 提示条：底部居中（整页内容区就是居中的），离底 24 + 安全区，毛玻璃；页面底部留了 96 不让它盖最后一行 */
-#toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:12px;min-height:44px;max-width:calc(100% - 32px);transform:translateY(16px);opacity:0;pointer-events:none;padding:8px 16px;border-radius:var(--r-btn);box-shadow:0 8px 24px rgba(0,0,0,.16);background:var(--toast-bg);color:var(--toast-fg);font-size:15px;font-weight:400;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);transition:opacity var(--t) var(--ease),transform var(--t) var(--ease)}
+#toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:12px;min-height:44px;max-width:calc(100% - 32px);transform:translateY(16px);opacity:0;pointer-events:none;padding:8px 16px;border-radius:var(--r-btn);box-shadow:0 8px 24px rgba(0,0,0,.16),0 0 0 .5px var(--line);background:var(--toast-bg);color:var(--toast-fg);font-size:15px;font-weight:400;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);transition:opacity var(--t) var(--ease),transform var(--t) var(--ease)}
 #toast.show{opacity:1;transform:none}
 #toast.has-act{padding-right:8px}
 #toast.show.has-act{pointer-events:auto}
-#toast button{color:#ff8cc4;font-weight:600;min-height:36px;padding:0 8px;border-radius:var(--r-chip);white-space:nowrap}
+#toast button{color:var(--accent);font-weight:600;min-height:36px;padding:0 8px;border-radius:var(--r-chip);white-space:nowrap}
 
 /* 放到主屏幕 */
 .a2hs{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:var(--r-card);padding:12px 4px 12px 16px;margin-bottom:24px;box-shadow:var(--shadow)}
@@ -357,23 +359,22 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="drop" aria-hidden="true"><div id="dropT"></div></div>
 
-<script src="strings.js?v=0.4.0"></script>
+<script src="strings.js?v=0.4.1"></script>
 <script>
 (function () {
 'use strict';
-const VERSION = '0.4.0';
+const VERSION = '0.4.1';
 
 /* =====================================================================
    界面文字全在 strings.js（中文、英文各一套，键一一对应），这里只挑语言：
-   页脚切过就照切的，没切过看浏览器语言——zh 开头用中文，其余用英文。
+   默认英文，第二语言中文（Song 11-03 22:19）；右上角 EN / 中文 选过就记住，不跟浏览器走。
    ===================================================================== */
 const STR = window.BZS_STR;
 const LS = 'baozuseng.v1', LSU = 'baozuseng.ui';
 let UI = {};
 try { UI = JSON.parse(localStorage.getItem(LSU) || '{}') || {}; } catch (e) { UI = {}; }
 function saveUI() { try { localStorage.setItem(LSU, JSON.stringify(UI)); } catch (e) {} }
-const autoLang = () => (/^zh\b/i.test(navigator.language || '') ? 'zh' : 'en');
-let LANG = STR[UI.lang] ? UI.lang : autoLang(), T = STR[LANG];
+let LANG = STR[UI.lang] ? UI.lang : 'en', T = STR[LANG];
 // <html lang>、<title>、description、主屏名字、manifest 跟着语言换
 function applyLang() {
   const q = x => document.querySelector(x);
@@ -820,14 +821,16 @@ function tenantBill(c, x, m) {
 
 /* ---------- views ---------- */
 function view(html) { document.body.classList.remove('stale-all'); $('#view').innerHTML = html; }
+// 右上角 EN / 中文（每页都在同一个位置）
+const langSeg = () => `<div class="seg lang-seg" role="group" aria-label="${T.langAria}"><button type="button" data-act="lang" data-l="en" lang="en" aria-pressed="${LANG === 'en'}">${T.langEN}</button><button type="button" data-act="lang" data-l="zh" lang="zh-CN" aria-pressed="${LANG === 'zh'}">${T.langZH}</button></div>`;
 function setNav(o) {
   $('#navL').innerHTML = o.back ? `<a class="nav-back" href="#">${ICON.chevL}<span>${esc(o.back)}</span></a>` : '';
   $('#navT').textContent = o.title || '';
-  $('#navR').innerHTML = o.right || '';
+  $('#navR').innerHTML = (o.right || '') + langSeg();
   $('#nav').classList.toggle('wide', !!o.wide);
 }
 const loadingBlock = () => `<div class="loading"><span class="spin"></span>${T.loading}</div>`;
-const footer = () => `<footer class="foot"><div>${T.foot(VERSION)}</div><div id="syncLine">${syncText()}</div><div>${T.footMail}<span class="mail">${T.mail}</span></div><div><button type="button" class="lang" data-act="lang" lang="${STR[T.other].lang}">${T.langOther}</button></div></footer>`;
+const footer = () => `<footer class="foot"><div>${T.foot(VERSION)}</div><div id="syncLine">${syncText()}</div><div>${T.footMail}<span class="mail">${T.mail}</span></div></footer>`;
 const addRow = (act, label, icon) => `<button type="button" class="row add" data-act="${act}"><span class="plus">${icon || ICON.plus}</span><span>${label}</span></button>`;
 function monthSwitch(min) {
   const m = S.month;
@@ -1347,8 +1350,8 @@ function toast(msg, actLabel, fn) {
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show', 'has-act'), actLabel ? 6000 : 2200);
 }
 
-// 设置里那个切换（页脚）：切了就记住，以后不再看浏览器语言
-function setLang(l) { if (!STR[l]) return; LANG = l; T = STR[l]; UI.lang = l; saveUI(); applyLang(); render(); }
+// 右上角的切换：选了就记住（localStorage 存不了也照样切，只是下次回到默认英文）
+function setLang(l) { if (!STR[l] || l === LANG) return; LANG = l; T = STR[l]; UI.lang = l; saveUI(); applyLang(); render(); }
 
 /* ---------- routing & events ---------- */
 function go(route) {
@@ -1361,7 +1364,7 @@ function act(name, el) {
   const h = curHouse();
   switch (name) {
     case 'close': closeSheet(); break;
-    case 'lang': setLang(T.other); break;
+    case 'lang': setLang(el.dataset.l); break;
     case 'm-prev': S.month = ymAdd(S.month, -1); render(); break;
     case 'm-next': S.month = ymAdd(S.month, 1); render(); break;
     case 'm-cur': S.month = CUR; render(); break;

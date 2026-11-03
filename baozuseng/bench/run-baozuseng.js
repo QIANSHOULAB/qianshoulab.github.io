@@ -14,6 +14,8 @@ const RM = n => L.rooms[STR.zh.rooms.indexOf(n)]; // 房间快捷钮
 const PASTE = (k, zh) => (EN ? EN.paste[k] : zh);
 const rx = f => f('@@').replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('@@', '([\\d,.]+)');
 const RX = { rent: rx(L.rowRent), elec: rx(L.rowElec), neg: L.net(-1) };
+// 0.4.1 起默认英文、右上角选过就记住，不跟浏览器语言：中文那遍等于「选过中文」的人，先把选择写进 localStorage（不动别的字段）
+const pinLang = l => { try { const u = JSON.parse(localStorage.getItem('baozuseng.ui') || '{}'); if (!u.lang) { u.lang = l; localStorage.setItem('baozuseng.ui', JSON.stringify(u)); } } catch (e) {} };
 const sc = JSON.parse(fs.readFileSync(path.join(__dirname, 'scenario.json'), 'utf8'));
 const ans = JSON.parse(fs.readFileSync(path.join(__dirname, 'answer.json'), 'utf8'));
 const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
@@ -26,6 +28,7 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE_UA, hasTouch: true, acceptDownloads: true, locale: LOCALE });
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(BASE).origin });
+  await ctx.addInitScript(pinLang, LANG);
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
@@ -175,6 +178,7 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('[data-act=bk-save]').click()]);
   const bkPath = path.join(OUT, 'backup-final.json'); await dl.saveAs(bkPath);
   const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IPHONE_UA, hasTouch: true, locale: LOCALE });
+  await ctx2.addInitScript(pinLang, LANG);
   const p2 = await ctx2.newPage(); p2.on('pageerror', e => errors.push('pageerror(new phone): ' + e.message));
   await p2.clock.setFixedTime(new Date('2026-11-05T10:00:00')); await p2.goto(BASE); await p2.waitForSelector('.empty');
   const restoreCnt = { taps: 0 };

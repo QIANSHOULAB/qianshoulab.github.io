@@ -1,12 +1,13 @@
 # Baozu 0.4.0 English UI copy (exported from strings.js). One per line: key<Tab>text; #2 = same string, other case (plural, sign).
 lang	en
-other	zh
-langOther	中文
+langAria	Language
+langEN	EN
+langZH	中文
 manifest	manifest.en.webmanifest
 app	Baozu
 appFull	Baozu · Rent Splitter
 appSub	Rent Splitter
-desc	For landlords who rent out rooms: rent and the power bill, split by head and by day, in one message for the whole house. Your books stay on your phone.
+desc	For landlords who rent out rooms: rent and the power bill, split per person and by the day, in one message for the whole house. Your books stay on your phone.
 tagline	Power bill, split to the cent. Drama not included.
 loading	Consulting the ledger…
 shareWord	Share
@@ -90,7 +91,8 @@ elecAllMine	Nobody to split with. The $268.30 is all yours.
 elecIncAll	Everyone’s rent includes power, so the $268.30 is all yours.
 heads#1	Split 5 ways: $53.66 each for a full month
 heads#2	Split 3 ways, you included: $55.20 each for a full month
-heads#3	One head: $250.00 for a full month
+heads#3	Just one person: $250.00 for a full month
+heads#4	Just you: $250.00 for a full month
 youSelf	your share
 incN	1 with power incl.
 rounding	rounding

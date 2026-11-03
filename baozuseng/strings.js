@@ -1,5 +1,5 @@
 /* 包租僧 · 界面文字：全部在这一个文件里，中文一套、英文一套，键一一对应。
-   改字只改这里。index.html 按浏览器语言挑一套（zh 开头用中文，其余用英文），页脚能手动切。
+   改字只改这里。默认英文，第二语言中文（Song 11-03 22:19）；页面右上角 EN / 中文 切换，选过就记住，不跟浏览器走。
    英文不是翻译，是照英文用户的习惯重写的。manifest 两份由 bench/strings-export.js 从这里生成。
    动态的字是函数；两套的函数参数一样。 */
 (function (root) {
@@ -14,7 +14,7 @@ const enMonth = enDate({ month: 'long' }), enMonthYear = enDate({ month: 'long',
 
 const STR = {
 zh: {
-  lang: 'zh-CN', other: 'en', langOther: 'English', manifest: 'manifest.webmanifest',
+  lang: 'zh-CN', langAria: '语言', langEN: 'EN', langZH: '中文', manifest: 'manifest.webmanifest',
   app: '包租僧', appFull: '包租僧', appSub: '',
   desc: '二房东记账：房租、电费按人头按天自动分，全屋账单一键复制。账只存在你自己手机里。',
   tagline: '电费掰到分，狮子吼都省了',
@@ -157,9 +157,9 @@ zh: {
 },
 
 en: {
-  lang: 'en', other: 'zh', langOther: '中文', manifest: 'manifest.en.webmanifest',
+  lang: 'en', langAria: 'Language', langEN: 'EN', langZH: '中文', manifest: 'manifest.en.webmanifest',
   app: 'Baozu', appFull: 'Baozu · Rent Splitter', appSub: 'Rent Splitter',
-  desc: 'For landlords who rent out rooms: rent and the power bill, split by head and by day, in one message for the whole house. Your books stay on your phone.',
+  desc: 'For landlords who rent out rooms: rent and the power bill, split per person and by the day, in one message for the whole house. Your books stay on your phone.',
   tagline: 'Power bill, split to\u00a0the\u00a0cent. Drama not\u00a0included.', // 不换行空格：手机上在句号处断行
   loading: 'Consulting the ledger…',
   shareWord: 'Share',
@@ -207,7 +207,7 @@ en: {
   elecNoTen: 'No tenants yet, so this one’s all yours.',
   elecAllMine: v => `Nobody to split with. The ${v} is all yours.`,
   elecIncAll: v => `Everyone’s rent includes power, so the ${v} is all yours.`,
-  heads: (n, self, b) => (n === 1 ? `One head${self ? ' (you)' : ''}: ${b} for a full month` : `Split ${n} ways${self ? ', you included' : ''}: ${b} each for a full month`),
+  heads: (n, self, b) => (n === 1 ? `${self ? 'Just you' : 'Just one person'}: ${b} for a full month` : `Split ${n} ways${self ? ', you included' : ''}: ${b} each for a full month`),
   youSelf: 'your share', incN: n => `${n} with power incl.`, rounding: 'rounding',
   sharersPay: (n, v) => `${n} ${pl(n, 'tenant pays', 'tenants pay')} ${v}`, youEat: (what, v) => ` · you cover ${v} (${what})`,
   byDays: 'By the day: ',

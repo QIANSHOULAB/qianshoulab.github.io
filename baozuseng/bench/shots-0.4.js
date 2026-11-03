@@ -1,13 +1,16 @@
 // 0.4.0 中英文字交货：
-// 1) 截图（浅色）：中、英 × 手机 390 / 电脑 1280 × 空状态 / 结果 = 8 张，放 shots-0.4/；另加手机上新房子、改房客两个浮层（x-*），中英各 2 张。
+// 1) 截图（浅色）：中、英 × 手机 390 / 电脑 1280 × 空状态 / 结果 = 8 张，放 shots-0.4/；另加手机上新房子、改房客两个浮层（x-*）、深色结果（result-dark），中英各 3 张。
+//    0.4.1 起默认英文，中文那遍先把「选过中文」写进 localStorage；另查中文浏览器第一次打开是英文。
 // 2) 排版检查：中英 × 390 / 1280，把每一屏、每个浮层都打开一遍（空状态、示例、首页、房子页、填电费、出错、按房间、总账、
-//    新房子 / 加房客 / 改房客 / 加支出 / 这套房 / 贴名单 / 结清提示、提示条，页脚语言切换来回切一遍），查：按钮折成两行、字被截断或撑出去、输入框被挤扁、整页横向滚动。
+//    新房子 / 加房客 / 改房客 / 加支出 / 这套房 / 贴名单 / 结清提示、提示条，右上角 EN / 中文 来回切一遍），查：按钮折成两行、字被截断或撑出去、输入框被挤扁、整页横向滚动。
 // 用法：node shots-0.4.js <网址> <中文备份.json> <英文备份.json>（备份用 run-baozuseng.js 跑出来的 backup-final.json）
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 const [BASE, BKZH, BKEN] = process.argv.slice(2), OUT = path.join(__dirname, 'shots-0.4');
 fs.mkdirSync(OUT, { recursive: true });
 const STR = require(path.join(__dirname, '..', 'strings.js'));
+// 0.4.1 起默认英文、右上角选过就记住，不跟浏览器语言：中文那遍等于「选过中文」的人，先把选择写进 localStorage（不动别的字段）
+const pinLang = l => { try { const u = JSON.parse(localStorage.getItem('baozuseng.ui') || '{}'); if (!u.lang) { u.lang = l; localStorage.setItem('baozuseng.ui', JSON.stringify(u)); } } catch (e) {} };
 const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const BULK = { zh: '小周 小房 300\n小燕 储物间', en: 'Zed  Small room  300\nYan  Store room' };
 const PASTE = { zh: '阿明 主人房 900\n小美 普通房1 650 包电\n阿强 普通房2\nRaj 小房 520 15号入住', en: 'Ming  Master room  900\nMei  Common room 1  650 incl.\nKeong  Common room 2\nRaj  Small room  520  from 15th' };
@@ -19,7 +22,7 @@ function audit() {
   const vis = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && !el.closest('[hidden]'); };
   const lines = el => { const rg = document.createRange(); rg.selectNodeContents(el); const tops = new Set(); for (const r of rg.getClientRects()) if (r.width > 1) tops.add(Math.round(r.top + r.height / 2)); const ys = [...tops].sort((a, b) => a - b); let n = 0, last = -99; for (const y of ys) { if (y - last > 6) n++; last = y; } return n; };
   const label = el => (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40);
-  const SEL = '.btn, .nav-a:not(.round), .nav-back, .chip, .seg button, .sh-x, .sh-ok, .sh-t, .bk-sh, .pick button, #toast button, .ms-t, .txt-btn, .ro-go, .foot .lang, .hero-f .go, .row.add > span:not(.plus):not(.row-main), .row.add .row-t, .grp-h h2, .hero-l, .elec-h, .f-k small, .f-k:not(:has(small)), .f-label, .sub-h span, .bk-h span, .demo-bar b, .lt h1:not(.big), .cf-t, .ms-now, .ms-back, .row-t, .row-v, .tag2, .ro-m, .ro-v, .lbl';
+  const SEL = '.btn, .nav-a:not(.round), .nav-back, .chip, .seg button, .sh-x, .sh-ok, .sh-t, .bk-sh, .pick button, #toast button, .ms-t, .txt-btn, .ro-go, .hero-f .go, .row.add > span:not(.plus):not(.row-main), .row.add .row-t, .grp-h h2, .hero-l, .elec-h, .f-k small, .f-k:not(:has(small)), .f-label, .sub-h span, .bk-h span, .demo-bar b, .lt h1:not(.big), .cf-t, .ms-now, .ms-back, .row-t, .row-v, .tag2, .ro-m, .ro-v, .lbl';
   for (const el of document.querySelectorAll(SEL)) {
     if (!vis(el)) continue;
     const r = el.getBoundingClientRect(), t = label(el);
@@ -37,13 +40,19 @@ function audit() {
 (async () => {
   const b = await chromium.launch();
   const report = {}, errors = [], shots = [];
+  // 默认英文：中文浏览器第一次打开也是英文（不跟浏览器语言）
+  { const ctx = await b.newContext({ locale: 'zh-CN' }); const p = await ctx.newPage(); await p.goto(BASE); await p.waitForSelector('.lt h1');
+    const st = await p.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, pressed: (document.querySelector('.lang-seg [aria-pressed=true]') || {}).textContent }));
+    if (st.lang !== STR.en.lang || st.title !== STR.en.appFull || st.pressed !== STR.en.langEN) errors.push('默认不是英文：' + JSON.stringify(st));
+    await ctx.close(); }
   for (const lang of ['zh', 'en']) for (const [w, h] of [[390, 844], [1280, 860]]) {
     const L = STR[lang], key = `${lang}-${w}`, issues = report[key] = {};
     const data = JSON.parse(fs.readFileSync(lang === 'zh' ? BKZH : BKEN, 'utf8'));
-    const mk = async (seed) => {
-      const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, colorScheme: 'light', locale: lang === 'zh' ? 'zh-CN' : 'en-US', ...(w === 390 ? { userAgent: IPHONE_UA, hasTouch: true } : {}) });
+    const mk = async (seed, scheme) => {
+      const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, colorScheme: scheme || 'light', locale: lang === 'zh' ? 'zh-CN' : 'en-US', ...(w === 390 ? { userAgent: IPHONE_UA, hasTouch: true } : {}) });
       await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(BASE).origin });
       if (seed) await ctx.addInitScript(d => { if (!localStorage.getItem('baozuseng.v1')) { localStorage.setItem('baozuseng.v1', JSON.stringify({ v: 2, houses: d.houses, order: d.order })); localStorage.setItem('baozuseng.ui', '{"a2hs":1,"lastBk":"2026-12-01"}'); } }, data);
+      await ctx.addInitScript(pinLang, lang);
       const p = await ctx.newPage(); p.on('pageerror', e => errors.push(`${key}: ${e.message}`)); p.on('console', m => m.type() === 'error' && errors.push(`${key}: ${m.text()}`));
       await p.clock.setFixedTime(new Date('2026-12-05T10:00:00'));
       await p.goto(BASE); await p.waitForSelector('.lt h1');
@@ -64,20 +73,20 @@ function audit() {
       // 示例账本
       await p.locator('[data-act=load-demo]').click(); await p.waitForSelector('.demo-bar'); await check(p, '示例首页');
       await p.locator('a.row').first().click(); await p.waitForSelector('#elecIn'); await check(p, '示例房子页');
-      // 页脚的语言切换：切过去、刷新还在、再切回来
-      const O = STR[L.other], state = () => p.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, mf: document.querySelector('link[rel=manifest]').getAttribute('href'), h: document.querySelector('.grp-h h2').textContent }));
-      await p.locator('.foot .lang').click(); await p.waitForTimeout(200);
+      // 右上角 EN / 中文：切过去、刷新还在、再切回来
+      const other = lang === 'zh' ? 'en' : 'zh', O = STR[other], state = () => p.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, mf: document.querySelector('link[rel=manifest]').getAttribute('href'), h: document.querySelector('.grp-h h2').textContent }));
+      await p.locator(`.lang-seg [data-l=${other}]`).click(); await p.waitForTimeout(200);
       let st = await state();
       if (st.lang !== O.lang || st.title !== O.appFull || st.mf !== O.manifest || !st.h.startsWith(O.tenants)) errors.push(`${key}: 语言切换没切过去 ${JSON.stringify(st)}`);
       await p.reload(); await p.waitForSelector('#elecIn'); st = await state();
       if (st.lang !== O.lang) errors.push(`${key}: 切过的语言刷新后没记住`);
-      await p.locator('.foot .lang').click(); await p.waitForTimeout(200); st = await state();
+      await p.locator(`.lang-seg [data-l=${lang}]`).click(); await p.waitForTimeout(200); st = await state();
       if (st.lang !== L.lang || st.title !== L.appFull || !st.h.startsWith(L.tenants)) errors.push(`${key}: 语言切不回来 ${JSON.stringify(st)}`);
       await ctx.close(); }
     // 有账：首页、房子页、各浮层、结果、出错、按房间、总账
     { const { ctx, p } = await mk(true);
       await check(p, '首页');
-      await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await check(p, '首页底部（备份、页脚、语言切换）');
+      await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await check(p, '首页底部（备份、页脚）');
       await p.evaluate(() => window.scrollTo(0, 0));
       await p.locator('a.row', { hasText: unitA }).click(); await p.waitForSelector('#elecIn'); await check(p, '房子页（电费没填）');
       await p.locator('#elecIn').fill('263.40'); await p.locator('#elecIn').evaluate(el => el.blur()); await check(p, '房子页（电费填了）');
@@ -102,6 +111,15 @@ function audit() {
       await p.locator('#elecIn').fill(''); await p.locator('#elecIn').pressSequentially('26o.4'); await check(p, '出错（电费打了字母）');
       await p.locator('.nav-back').click(); await p.waitForSelector('.hero');
       await p.locator('.nav-a').click(); await p.waitForSelector('.chart'); await check(p, '总账');
+      await ctx.close(); }
+    // 深色：手机上的结果（顶栏、提示条 98% 不透明的底色深色也要对）
+    if (w === 390) { const { ctx, p } = await mk(true, 'dark');
+      await p.locator('a.row', { hasText: unitA }).click(); await p.waitForSelector('#elecIn');
+      await p.locator('#elecIn').fill('263.40'); await p.locator('#elecIn').evaluate(el => el.blur());
+      await p.locator('[data-act=copy-bills]').click(); await p.waitForTimeout(300);
+      await p.locator('[data-act=all-paid]').click(); await p.waitForSelector('#toast.show #toastAct');
+      await p.evaluate(() => { const l = document.querySelector('#hTen .list'); window.scrollTo(0, l.getBoundingClientRect().bottom + scrollY - (innerHeight - 108)); });
+      await check(p, '结果（深色）'); await shot(p, 'result-dark');
       await ctx.close(); }
   }
   await b.close();

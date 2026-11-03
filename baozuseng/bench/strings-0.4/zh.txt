@@ -1,7 +1,8 @@
 # 包租僧 0.4.0 中文界面文字（strings.js 导出）。一行一条：键<Tab>文字；#2 是同一句的另一种情形（单复数、正负）。
 lang	zh-CN
-other	en
-langOther	English
+langAria	语言
+langEN	EN
+langZH	中文
 manifest	manifest.webmanifest
 app	包租僧
 appFull	包租僧
@@ -91,6 +92,7 @@ elecIncAll	全是包电的，这 $268.30 全归你扛。
 heads#1	5 个人头，住满一月每人 $53.66
 heads#2	3 个人头（含你），住满一月每人 $55.20
 heads#3	1 个人头，住满一月每人 $250.00
+heads#4	1 个人头（含你），住满一月每人 $250.00
 youSelf	你自己
 incN	包电 1 份
 rounding	凑整差几分

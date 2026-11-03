@@ -1,5 +1,5 @@
 // 把 strings.js 的中英两套文字导成 strings-0.4/zh.txt、en.txt（一行一条：键 + Tab + 文字，两份键的顺序一样，方便对着看）。
-// 动态的字用示例值跑一遍；单复数、正负不同说法的都跑两种。再从 strings.js 生成两份 manifest，检查 index.html 里写死的中文 <title> / description 跟 strings.js 一致。
+// 动态的字用示例值跑一遍；单复数、正负不同说法的都跑两种。再从 strings.js 生成两份 manifest，检查 index.html 里写死的默认英文 <html lang> / <title> / description / manifest 跟 strings.js 一致。
 // 有 e2e 结果（results/result-baozuseng-0.4.0-<lang>.json）就把真流程复制出来的全屋账单也附在末尾。
 // 用法：node strings-export.js
 const fs = require('fs'), path = require('path');
@@ -16,7 +16,7 @@ const S = {
   missElec: L => [[1], [2]], owedAll: L => [['$200.00']], nHouses: L => [[1], [2]], opened: L => [[L.fm.m('2026-10')]], nTenants: L => [[1], [6]],
   chipOwe: L => [['$200.00']], chipLeft: L => [[2]], notOpenYet: L => [[L.fm.mL('2026-10')]], goto: L => [[L.fm.m('2026-10')]], elecOf: L => [[L.fm.m('2026-08')]],
   paidN: L => [[4, 6]], allPaidS: L => [[3]], allPaidDone: L => [[5]], elecHintPrev: L => [['$268.30']], elecAllMine: L => [['$268.30']], elecIncAll: L => [['$268.30']],
-  heads: L => [[5, false, '$53.66'], [3, true, '$55.20'], [1, false, '$250.00']], incN: L => [[1]],
+  heads: L => [[5, false, '$53.66'], [3, true, '$55.20'], [1, false, '$250.00'], [1, true, '$250.00']], incN: L => [[1]],
   sharersPay: L => [[4, '$214.64'], [1, '$100.00']], youEat: L => [[L.youSelf + ' + ' + L.incN(1), '$67.06']],
   dayPart: L => [[L.demo.t.t5[0], 18, '$19.11']], copiedBills: L => [[5]],
   rowRent: L => [['900.00']], rowElec: L => [['53.66']], rowDays: L => [[18, 30]], owe: L => [['$200.00']], prevOwe: L => [['$200.00']],
@@ -83,9 +83,10 @@ for (const lang of ['zh', 'en']) {
   const m = { name: L.appFull, short_name: L.app, description: L.desc, lang: L.lang, start_url: './', scope: './', display: 'standalone', background_color: '#f5f5f7', theme_color: '#f5f5f7', icons };
   fs.writeFileSync(path.join(ROOT, L.manifest), JSON.stringify(m, null, 2) + '\n');
 }
-// index.html 里写死的中文（没跑脚本前、爬虫看到的）要跟 strings.js 一样
+// index.html 里写死的默认语言（英文；没跑脚本前、爬虫看到的）要跟 strings.js 一样
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const want = [`<title>${STR.zh.appFull}</title>`, `<meta name="description" content="${STR.zh.desc}">`, `<meta name="apple-mobile-web-app-title" content="${STR.zh.app}">`];
+const D = STR.en;
+const want = [`<html lang="${D.lang}">`, `<title>${D.appFull}</title>`, `<meta name="description" content="${D.desc}">`, `<meta name="apple-mobile-web-app-title" content="${D.app}">`, `<link rel="manifest" href="${D.manifest}">`];
 const bad = want.filter(w => !html.includes(w));
-if (bad.length) throw new Error('index.html 写死的中文跟 strings.js 不一致：' + bad.join(' | '));
+if (bad.length) throw new Error('index.html 写死的默认英文跟 strings.js 不一致：' + bad.join(' | '));
 console.log(JSON.stringify({ lines: counts, keys: zk.length, out: OUT }));

@@ -1,10 +1,13 @@
 // 0.3.0 自动做掉的、去掉「确定吗」的地方都能撤：都收了 → 撤销；删房子 → 撤销；整页丢备份 → 换账 → 撤销。用法：node undo-check.js <网址> <备份.json>（固定 zh-CN）
 const { chromium } = require('playwright');
+// 0.4.1 起默认英文、右上角选过就记住，不跟浏览器语言：中文那遍等于「选过中文」的人，先把选择写进 localStorage（不动别的字段）
+const pinLang = l => { try { const u = JSON.parse(localStorage.getItem('baozuseng.ui') || '{}'); if (!u.lang) { u.lang = l; localStorage.setItem('baozuseng.ui', JSON.stringify(u)); } } catch (e) {} };
 const fs = require('fs');
 const [BASE, BK] = process.argv.slice(2);
 (async () => {
   const b = await chromium.launch(); const errors = [], res = {};
   const ctx = await b.newContext({ viewport: { width: 1280, height: 860 }, locale: 'zh-CN' });
+  await ctx.addInitScript(pinLang, 'zh');
   const p = await ctx.newPage(); p.on('pageerror', e => errors.push(e.message)); p.on('console', m => m.type() === 'error' && errors.push(m.text()));
   await p.clock.setFixedTime(new Date('2026-12-05T10:00:00'));
   await p.goto(BASE); await p.locator('[data-act=load-demo]').click();
