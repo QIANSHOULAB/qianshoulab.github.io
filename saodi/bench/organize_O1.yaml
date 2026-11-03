@@ -1,0 +1,29 @@
+# organize-tool 3.3（File Juggler 的开源替补）按类型分：一类一条规则，最后一条兜底进「其他」
+# 用法：sed "s#ROOT#/路径/O1#g" organize_O1.yaml > /tmp/o1.yaml && organize run /tmp/o1.yaml
+rules:
+  - locations: ROOT
+    filters: [{extension: [jpg, jpeg, png, gif, bmp, webp, heic, tif, tiff]}]
+    actions: [{move: {dest: "ROOT/图片/", on_conflict: rename_new}}]
+  - locations: ROOT
+    filters: [{extension: [pdf, doc, docx, txt, rtf, md, wps]}]
+    actions: [{move: {dest: "ROOT/文档/", on_conflict: rename_new}}]
+  - locations: ROOT
+    filters: [{extension: [xls, xlsx, csv]}]
+    actions: [{move: {dest: "ROOT/表格/", on_conflict: rename_new}}]
+  - locations: ROOT
+    filters: [{extension: [ppt, pptx, key]}]
+    actions: [{move: {dest: "ROOT/演示/", on_conflict: rename_new}}]
+  - locations: ROOT
+    filters: [{extension: [zip, rar, 7z, tar, gz, tgz]}]
+    actions: [{move: {dest: "ROOT/压缩包/", on_conflict: rename_new}}]
+  - locations: ROOT
+    filters: [{extension: [mp3, wav, flac, m4a, aac]}]
+    actions: [{move: {dest: "ROOT/音频/", on_conflict: rename_new}}]
+  - locations: ROOT
+    filters: [{extension: [mp4, mov, avi, mkv]}]
+    actions: [{move: {dest: "ROOT/视频/", on_conflict: rename_new}}]
+  - locations: ROOT
+    filters: [{extension: [exe, msi, dmg, apk]}]
+    actions: [{move: {dest: "ROOT/安装包/", on_conflict: rename_new}}]
+  - locations: ROOT
+    actions: [{move: {dest: "ROOT/其他/", on_conflict: rename_new}}]

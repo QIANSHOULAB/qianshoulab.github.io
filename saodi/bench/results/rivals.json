@@ -1,0 +1,24 @@
+{
+ "note": "2026-11-03 沙盒 Linux 实测，脚本 kr_drive.py / gp_drive.py / organize_O*.yaml / dl_bench.py。wrong = 没落到标准答案位置的文件数（含没改、改错、跳过）。",
+ "KRename 5.0.2": {
+  "R1": {"wrong_default_sort": 917, "wrong_numeric_sort": 0, "run_s_after_finish": 1.26, "load_1000_files_s": "3-30（3 秒时界面还在读列表、输入被吞；30 秒时正常）"},
+  "R2": {"wrong": 50, "why": "20 个撞名直接跳过不改；30 个文件把扩展名 .IMG_ 也替换成了 .旅行_"},
+  "R3": {"wrong": 0},
+  "R4": {"wrong": 402, "why": "拍摄时间写成 2024:05:01 08:00:00（冒号，Windows 不认），要再配查找替换；内容对 397，3 个撞名跳过，2 张没 EXIF 的被改成隐藏文件 .jpg/.png"},
+  "R5": {"wrong": 15, "why": "只差大小写的 15 对撞名，跳过"},
+  "R6": {"wrong": 10, "why": "要配正则查找替换 \\s+→空格 才能并空格；10 对整理后撞名跳过"},
+  "cli_template_bug": "--template 命令行参数不生效（实测只能点界面）"
+ },
+ "GPRename 20210415": {
+  "R1": {"wrong": 918, "why": "按字面排序编号（#1、#10、#100、#11…），没有自然排序选项；超 255 字节的那个文件卡在临时名 .txt_gp（扩展名坏了）", "run_s": "<0.5"},
+  "R5": {"wrong": 240, "why": "15 个撞名每个弹一个框挡着，点完 OK 整批没改", "popups": 15},
+  "R2/R3/R4/R6/O1/O2": "没跑：没有日期/EXIF 功能，分文件夹不归它管；替换和去空格本可跑，额度原因没跑"
+ },
+ "organize-tool 3.3.0（替 File Juggler）": {
+  "O1": {"wrong": 4, "why": "把下载中的 .part/.crdownload、隐藏文件 .隐藏配置、Thumbs.db 也挪进了「其他」", "run_s": 1.52, "config_lines": 28},
+  "O2": {"wrong": 0, "run_s": 0.97, "config_lines": 13}
+ },
+ "aria2 1.37.0": {
+  "D": {"wrong": 1, "why": "不支持续传的服务器中途断线：报错放弃，留下半截 norange.bin 和 norange.bin.aria2（加不加 -c 一样）", "elapsed_s": 0.4}
+ }
+}

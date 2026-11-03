@@ -1,0 +1,14 @@
+# organize-tool 3.3 照片按拍摄月份：exif 过滤器取 DateTimeOriginal，取不到的按修改时间
+rules:
+  - locations: ROOT
+    filters:
+      - extension: [jpg, jpeg, heic, tif, tiff]
+      - exif: exif.datetimeoriginal
+    actions:
+      - move: {dest: "ROOT/{exif.exif.datetimeoriginal.strftime('%Y')}/{exif.exif.datetimeoriginal.strftime('%Y-%m')}/", on_conflict: rename_new}
+  - locations: ROOT
+    filters:
+      - extension: [jpg, jpeg, heic, tif, tiff]
+      - lastmodified
+    actions:
+      - move: {dest: "ROOT/{lastmodified.strftime('%Y')}/{lastmodified.strftime('%Y-%m')}/", on_conflict: rename_new}

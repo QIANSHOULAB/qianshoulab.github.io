@@ -1,0 +1,42 @@
+{
+ "total": 52,
+ "ok": 51,
+ "wrong_name": 0,
+ "missing_or_corrupt": 1,
+ "junk_files": 2,
+ "examples": [
+  {
+   "url": "/norange.bin",
+   "want": "norange.bin",
+   "got": null
+  }
+ ],
+ "junk": [
+  "norange.bin.aria2",
+  "norange.bin"
+ ],
+ "big_requests": [
+  "-",
+  "bytes=24000000-59999999"
+ ],
+ "big_resumed": true,
+ "tool": "aria2",
+ "elapsed_s": 0.4,
+ "reported": {
+  "exit": 8,
+  "tail": [
+   "5b06d3|OK  |    47MiB/s|/tmp/sb/DL-aria2/合同3.pdf",
+   "1c0276|OK  |   231MiB/s|/tmp/sb/DL-aria2/8.bin",
+   "ba60f4|OK  |   232MiB/s|/tmp/sb/DL-aria2/23.bin",
+   "152a0f|OK  |   427MiB/s|/tmp/sb/DL-aria2/15.bin",
+   "4606eb|ERR |   220MiB/s|/tmp/sb/DL-aria2/norange.bin",
+   "89ddbc|OK  |   1.0MiB/s|/tmp/sb/DL-aria2/合同2.pdf",
+   "",
+   "Status Legend:",
+   "(OK):download completed.(ERR):error occurred.",
+   "",
+   "aria2 will resume download if the transfer is restarted.",
+   "If there are any errors, then see the log file. See '-l' option in help/man page for details."
+  ]
+ }
+}

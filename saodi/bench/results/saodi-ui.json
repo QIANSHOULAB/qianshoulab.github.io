@@ -1,0 +1,98 @@
+[
+ {
+  "scenario": "R1",
+  "total": 1000,
+  "ok": 1000,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "tool": "扫地僧(界面)",
+  "clicks": 3,
+  "typing": 1,
+  "run_to_toast_s": 0.19
+ },
+ {
+  "scenario": "R2",
+  "total": 350,
+  "ok": 350,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "tool": "扫地僧(界面)",
+  "clicks": 4,
+  "typing": 2,
+  "run_to_toast_s": 0.13
+ },
+ {
+  "scenario": "R3",
+  "total": 300,
+  "ok": 300,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "tool": "扫地僧(界面)",
+  "clicks": 2,
+  "typing": 0,
+  "run_to_toast_s": 0.1
+ },
+ {
+  "scenario": "R4",
+  "total": 550,
+  "ok": 550,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 150,
+  "tool": "扫地僧(界面)",
+  "clicks": 4,
+  "typing": 0,
+  "run_to_toast_s": 0.14
+ },
+ {
+  "scenario": "R5",
+  "total": 300,
+  "ok": 300,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "tool": "扫地僧(界面)",
+  "clicks": 3,
+  "typing": 0,
+  "run_to_toast_s": 0.08
+ },
+ {
+  "scenario": "R6",
+  "total": 220,
+  "ok": 220,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "tool": "扫地僧(界面)",
+  "clicks": 2,
+  "typing": 0,
+  "run_to_toast_s": 0.08
+ },
+ {
+  "scenario": "O1",
+  "total": 1512,
+  "ok": 1512,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "tool": "扫地僧(界面)",
+  "clicks": 2,
+  "typing": 0,
+  "run_to_toast_s": 0.15
+ },
+ {
+  "scenario": "O2",
+  "total": 810,
+  "ok": 810,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 150,
+  "tool": "扫地僧(界面)",
+  "clicks": 3,
+  "typing": 0,
+  "run_to_toast_s": 0.25
+ }
+]
