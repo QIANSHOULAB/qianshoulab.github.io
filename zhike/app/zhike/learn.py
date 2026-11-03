@@ -28,11 +28,33 @@ PATTERNS = {
     "phone": r"\+?\d[\d\s\-()]{5,18}\d",
     "id": r"[A-Za-z0-9#][A-Za-z0-9_\-#/.]*",
     "number": r"-?\d[\d,]*(?:\.\d+)?",
+    # 数量：数字 + 单位（200 箱、500 reams、3 pcs）；进 Excel 是数字，单位放进单元格格式里
+    "qty": r"\d[\d,]*(?:\.\d+)?[ \t]?(?:[\u4e00-\u9fff]{1,2}|[A-Za-z]{1,8}\.?)(?![A-Za-z\u4e00-\u9fff])",
 }
 _RX = {k: re.compile(v) for k, v in PATTERNS.items()}
 _PHONE_HINT = re.compile(r"电话|手机|联系方式|Tel|Phone|Mobile|WhatsApp|微信", re.I)
 _LABEL_TAIL = re.compile(r"([^\s:：|｜,，;；]{1,20}(?:[ \t][A-Za-z][^\s:：|｜,，;；]{0,14}){0,2}[ \t]*[:：#＃][ \t]*)$")
 _SEP = re.compile(r"\s{2,}|\t|[|｜；;，,]")
+# 同一个字段的常见叫法：学到其中一种，其它几种也认（学来的写法优先）。
+SYNONYMS = [
+    ["订单号", "订单编号", "订单号码", "订单 No", "Order Number", "Order No", "Order #", "Order ID"],
+    ["发票号", "发票号码", "发票编号", "Invoice No", "Invoice Number", "Invoice #"],
+    ["实付金额", "实付款", "实付", "应付金额", "应付总额", "应付", "金额合计", "合计金额", "合计", "总金额", "总额", "总计",
+     "Amount Due", "Total Due", "Grand Total", "Total Amount", "Total", "Amount"],
+    ["付款期限", "到期日", "到期日期", "截止日期", "最后付款日", "Due Date", "Payment Due"],
+    ["下单时间", "下单日期", "订单日期", "Order Date", "Date Ordered"],
+    ["运单号", "快递单号", "物流单号", "运单编号", "快递单号码", "Tracking Number", "Tracking No", "Tracking #", "Tracking ID", "AWB"],
+    ["预计送达", "预计到达", "预计送达时间", "Estimated Delivery", "Expected Delivery", "ETA"],
+    ["联系电话", "电话", "手机", "手机号", "手机号码", "联系方式", "Phone", "Tel", "Mobile", "Contact Number"],
+    ["数量", "订购数量", "采购数量", "Quantity", "Qty"],
+    ["产品", "品名", "商品", "产品名称", "Product", "Item"],
+    ["收货人", "联系人", "收件人", "Recipient", "Contact"],
+]
+_SYN = {}
+for _g in SYNONYMS:
+    for _w in _g:
+        _SYN.setdefault(_w.lower(), _g)
+
 BUILTINS = {
     "@received": "收到时间",
     "@from": "发件人",
@@ -63,6 +85,8 @@ def infer_type(value: str, label: str = "") -> str:
         return "number" if ("." in v or "," in v or len(v) < 6) else "id"
     if v.startswith("+") and digits >= 7 and _full("phone", v):
         return "phone"
+    if _full("qty", v) and not re.search(rf"\d\s*{_MON}$", v, re.I) and not re.fullmatch(r"\d+[A-Za-z]{2,}", v):
+        return "qty"
     if _full("id", v) and digits:
         return "id"
     return "text"
@@ -230,10 +254,27 @@ def _skip(text, pos, next_line):
     return pos
 
 
-def to_typed(kind: str, raw: str):
-    """转成 Excel 里能算账的值：金额→数字，日期→日期，其它原样。"""
+class Qty(float):
+    """数量：本身是数字（Excel 里能求和），带着单位，写表时单位进单元格格式。"""
+    unit = ""
+
+    def __new__(cls, v, unit=""):
+        o = float.__new__(cls, v)
+        o.unit = unit
+        return o
+
+
+def to_typed(kind: str, raw: str, ref=None):
+    """转成 Excel 里能算账的值：金额→数字，日期→日期，数量→数字（单位留着），其它原样。
+    ref：收信时间，「11月5日」这种没写年份的日期按它补年份。"""
     v = raw.strip()
     try:
+        if kind == "qty":
+            m = re.match(r"(\d[\d,]*(?:\.\d+)?)\s*(.*)$", v)
+            if not m:
+                return v
+            n = float(m.group(1).replace(",", ""))
+            return Qty(n, m.group(2).strip().rstrip("."))
         if kind in ("money", "number"):
             num = re.sub(r"[^\d.\-]", "", v.replace(",", ""))
             if num in ("", "-", ".", "-."):
@@ -241,14 +282,28 @@ def to_typed(kind: str, raw: str):
             f = float(num)
             return int(f) if f.is_integer() and "." not in num else f
         if kind == "date":
-            return parse_date(v) or v
+            return parse_date(v, ref) or v
     except Exception:
         return v
     return v
 
 
-def parse_date(v: str):
+def parse_date(v: str, ref=None):
     s = re.sub(r"\s+", " ", v.strip())
+    m = re.fullmatch(r"(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]?", s)
+    if m:
+        # 没写年份：取离收信时间最近的那一年（12 月收到「1月5日」就是明年）
+        ref = ref or date.today()
+        ref = ref.date() if isinstance(ref, datetime) else ref
+        best = None
+        for y in (ref.year - 1, ref.year, ref.year + 1):
+            try:
+                d = date(y, int(m.group(1)), int(m.group(2)))
+            except ValueError:
+                continue
+            if best is None or abs((d - ref).days) < abs((best - ref).days):
+                best = d
+        return best
     s2 = re.sub(r"\s*[年月/.]\s*", "-", s).replace("日", "")
     s2 = re.sub(r"-\s+", "-", s2).strip("- ")
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
@@ -272,6 +327,39 @@ def parse_date(v: str):
     return None
 
 
+def _stem(label: str) -> str:
+    return re.sub(r"\s*[:：]$", "", _norm_label(label)).strip()
+
+
+def synonyms(labels: list) -> list:
+    """学来的标签之外，同一字段的其它常见叫法（长的在前，免得「电话」抢在「联系电话」前面）。"""
+    have = {_stem(x).lower() for x in labels}
+    out = []
+    for x in labels:
+        for w in _SYN.get(_stem(x).lower(), []):
+            if w.lower() not in have and w not in out:
+                out.append(w)
+    return sorted(out, key=len, reverse=True)
+
+
+def _syn_regex(word: str):
+    body = r"\s+".join(re.escape(p) for p in word.split())
+    body = body.replace(r"\#", r"\s*[#＃]")
+    # 左边不能紧挨着字母/汉字（「Subtotal」里的 Total、「联系电话」里的电话不算），右边冒号或空白都行
+    lead = r"(?<![A-Za-z\u4e00-\u9fff])"
+    return re.compile(lead + body + r"(?:[ \t]*[:：#＃]|(?=[ \t\n]))", re.I)
+
+
+def _by_labels(spec, text, labels, rx_of, next_line):
+    for label in labels:
+        for m in rx_of(label).finditer(text):
+            pos = _skip(text, m.end(), next_line)
+            r = _read_value(spec, text, pos)
+            if r:
+                return r
+    return None
+
+
 def extract(spec: dict, mail) -> dict | None:
     """返回 {"raw": 原文, "value": 可写进 Excel 的值, "span": [起, 止] 或 None}，找不到返回 None。"""
     b = spec.get("builtin")
@@ -279,16 +367,16 @@ def extract(spec: dict, mail) -> dict | None:
         return _builtin(b, mail)
     text = mail.text if hasattr(mail, "text") else mail
     labels = spec.get("labels") or []
-    found = None
-    for label in labels:
-        for m in _label_regex(label).finditer(text):
-            pos = _skip(text, m.end(), spec.get("next_line"))
-            r = _read_value(spec, text, pos)
-            if r:
-                found = r
-                break
-        if found:
-            break
+    found = _by_labels(spec, text, labels, _label_regex, spec.get("next_line"))
+    if not found and labels and spec["type"] != "text":
+        # 学来的写法都没对上：试同义叫法（只给有类型的值用，类型本身就是一道把关）
+        found = _by_labels(spec, text, synonyms(labels), _syn_regex, False)
+        if not found and spec.get("next_line"):
+            found = _by_labels(spec, text, synonyms(labels), _syn_regex, True)
+    elif not found and labels:
+        found = _by_labels(spec, text, synonyms(labels), lambda w: re.compile(
+            r"(?<![A-Za-z\u4e00-\u9fff])" + r"\s+".join(re.escape(p) for p in w.split()) + r"[ \t]*[:：]", re.I),
+            spec.get("next_line"))
     if not found and not labels and spec["type"] in _RX:
         ms = list(_RX[spec["type"]].finditer(text))
         n = spec.get("nth", 0)
@@ -297,7 +385,12 @@ def extract(spec: dict, mail) -> dict | None:
     if not found:
         return None
     raw = text[found[0]:found[1]]
-    return {"raw": raw, "value": to_typed(spec["type"], raw), "span": list(found)}
+    ref = None
+    try:
+        ref = datetime.fromisoformat(mail.date)
+    except Exception:
+        pass
+    return {"raw": raw, "value": to_typed(spec["type"], raw, ref), "span": list(found)}
 
 
 def _builtin(b, mail):
@@ -307,10 +400,11 @@ def _builtin(b, mail):
             return {"raw": d.strftime("%Y-%m-%d %H:%M"), "value": d.replace(tzinfo=None), "span": None}
         except Exception:
             return {"raw": mail.date, "value": mail.date, "span": None}
+    of = getattr(mail, "orig_from", "")   # 转发信：记原发件人、原主题
     v = {
-        "@from": mail.from_addr,
-        "@from_name": mail.from_name or mail.from_addr,
-        "@subject": mail.subject,
+        "@from": of or mail.from_addr,
+        "@from_name": (getattr(mail, "orig_from_name", "") or of) if of else (mail.from_name or mail.from_addr),
+        "@subject": getattr(mail, "orig_subject", "") or mail.subject,
         "@attachments": "; ".join(mail.attachments),
     }.get(b, "")
     return {"raw": v, "value": v, "span": None}
@@ -340,6 +434,9 @@ def suggest_fields(text: str, limit: int = 12) -> list:
         if not value or len(value) > 80 or label in seen:
             continue
         if re.fullmatch(r"https?|mailto|\d+", label, re.I):
+            continue
+        # 转发信里的信头（From/Date/To…）不是要收的字段
+        if re.fullmatch(r"From|To|Cc|Date|Sent|Subject|发件人|收件人|抄送|发送时间|主题", label, re.I):
             continue
         seen.add(label)
         s = m.start("value") + (len(m.group("value")) - len(m.group("value").lstrip()))

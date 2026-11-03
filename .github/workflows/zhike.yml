@@ -42,6 +42,7 @@ jobs:
           python -m PyInstaller --noconfirm --clean --onefile --windowed --name Zhike --icon zhike.ico `
             --add-data "ui;ui" --collect-all webview --hidden-import clr `
             --hidden-import keyring.backends.Windows --collect-submodules keyring.backends `
+            --collect-submodules pypdf `
             app.py
 
       - name: 冒烟测试：exe 自测（假 IMAP/SMTP → Excel / 转发 / 草稿 / 凭据管理器）
@@ -63,6 +64,27 @@ jobs:
           Get-Process Zhike | Stop-Process -Force
           Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "QianshouZhike" -ErrorAction SilentlyContinue
 
+      - name: 冒烟测试：自动更新换自己（改名正在跑的 exe → 起新的 → 删旧的）
+        shell: pwsh
+        run: |
+          $env:ZHIKE_HOME = "$env:RUNNER_TEMP\zhike-upd-home"
+          $d = "$env:RUNNER_TEMP\zhike-upd"
+          New-Item -ItemType Directory -Force $d | Out-Null
+          Copy-Item dist\Zhike.exe "$d\Zhike.exe"
+          Copy-Item dist\Zhike.exe "$d\Zhike.exe.new"
+          $sha = (Get-FileHash dist\Zhike.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path "$d\Zhike.exe.new.json" -Value ('{"version":"9.9.9","sha256":"' + $sha + '"}') -Encoding utf8NoBOM
+          $out = "$env:RUNNER_TEMP\probe.json"
+          Start-Process "$d\Zhike.exe" -ArgumentList "--update-probe","$out" -Wait
+          for ($i = 0; $i -lt 60 -and -not (Test-Path $out); $i++) { Start-Sleep -Milliseconds 500 }
+          if (-not (Test-Path $out)) { throw "relaunched exe did not run" }
+          Get-Content $out
+          $files = (Get-Content $out | ConvertFrom-Json).files
+          if ($files -contains "Zhike.exe.new" -or $files -contains "Zhike.exe.new.json") { throw "update files left behind" }
+          Start-Sleep -Seconds 2
+          if (Test-Path "$d\Zhike.exe.old") { throw "old exe not cleaned up" }
+          if (-not (Test-Path "$d\Zhike.exe")) { throw "exe missing after swap" }
+
       - uses: actions/upload-artifact@v4
         with:
           name: Zhike-exe
@@ -82,3 +104,10 @@ jobs:
           }
           gh release edit zhike-latest --title "知客僧 $v" --latest=false
           gh release upload zhike-latest dist/Zhike.exe --clobber
+          # version.json 最后传：程序看到新版本号时，新 exe 一定已经在了
+          $sha = (Get-FileHash dist\Zhike.exe -Algorithm SHA256).Hash.ToLower()
+          $size = (Get-Item dist\Zhike.exe).Length
+          $url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/zhike-latest/Zhike.exe"
+          $json = @{ version = $v; url = $url; sha256 = $sha; size = $size } | ConvertTo-Json -Compress
+          Set-Content -Path dist\version.json -Value $json -Encoding utf8NoBOM
+          gh release upload zhike-latest dist/version.json --clobber

@@ -97,6 +97,12 @@ def append_rows(path, sheet: str, columns: list, rows: list):
                 c.number_format = FMT["date"]
             elif t == "money" and isinstance(v, (int, float)):
                 c.number_format = FMT["money"]
+            elif isinstance(v, float) and getattr(v, "unit", None) is not None:
+                # 数量：格子里是数字（能求和），单位只是显示格式（200 箱）
+                base = "#,##0" if float(v).is_integer() else "#,##0.##"
+                u = str(v.unit).replace('"', "")[:12]
+                c.value = float(v)
+                c.number_format = f'{base} "{u}"' if u else base
     tmp = p.with_name(p.stem + ".zhike-tmp.xlsx")
     wb.save(tmp)
     try:

@@ -12,6 +12,37 @@ from .rules import new_rule
 SG = timezone(timedelta(hours=8))
 
 
+def make_pdf(lines: list) -> bytes:
+    """最小的文字 PDF（Helvetica，只放英文/数字），示例发票和测试用。"""
+    def esc(t):
+        return t.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    ops = ["BT", "/F1 12 Tf", "14 TL", "72 760 Td"]
+    for ln in lines:
+        ops.append(f"({esc(ln)}) Tj T*")
+    ops.append("ET")
+    stream = "\n".join(ops).encode("latin-1")
+    objs = [b"<< /Type /Catalog /Pages 2 0 R >>",
+            b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+            b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"]
+    out, offs = b"%PDF-1.4\n", []
+    for i, o in enumerate(objs, 1):
+        offs.append(len(out))
+        out += f"{i} 0 obj\n".encode() + o + b"\nendobj\n"
+    x = len(out)
+    out += f"xref\n0 {len(objs) + 1}\n0000000000 65535 f \n".encode()
+    out += b"".join(f"{o:010d} 00000 n \n".encode() for o in offs)
+    out += f"trailer\n<< /Size {len(objs) + 1} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n".encode()
+    return out
+
+
+INVOICE_PDF = make_pdf(["Lotus Supplies Pte Ltd", "TAX INVOICE", "", "Invoice No: INV-88213",
+                        "PO Number: PO-55107", "GST Reg No: 201912345K", "",
+                        "A4 copy paper 70g    40 boxes    S$1,800.00", "Toner cartridge    6 pcs    S$450.00",
+                        "", "Subtotal: S$2,250.00", "GST 8%: S$180.00", "Amount Due: S$2,430.00"])
+
+
 def _msg(i, frm, subj, text, when, html=None, atts=()):
     m = EmailMessage()
     m["From"] = frm
@@ -55,7 +86,7 @@ def raw_samples():
 <tr><td>Amount Due</td><td>S$2,430.00</td></tr>
 <tr><td>Due Date</td><td>30 Nov 2026</td></tr></table>
 <p>Thank you for your business.<br>Lotus Supplies Pte Ltd</p></body></html>""",
-             atts=[("INV-88213.pdf", b"%PDF-1.4 demo")]),
+             atts=[("INV-88213.pdf", INVOICE_PDF)]),
         _msg(4, "陈先生 <chen.k@example.com>", "想问下 A4 复印纸的批发价",
              "你好，\n\n我们公司每月大概要 200 箱 A4 复印纸（70g），想问下批发价和多久能送到。\n"
              "地址在裕廊东。方便的话给个报价单。\n\n谢谢\n陈先生\n电话：9123 4567", base - timedelta(hours=3)),
@@ -92,7 +123,7 @@ def demo_rules(ms=None):
 
     r2 = new_rule("发票")
     r2["conditions"] = {"from": ["@lotus-supplies.example"], "subject": ["invoice"], "body": []}
-    for name, v in [("发票号", "INV-88213"), ("应付", "S$2,430.00"), ("到期日", "30 Nov 2026")]:
+    for name, v in [("发票号", "INV-88213"), ("应付", "S$2,430.00"), ("到期日", "30 Nov 2026"), ("采购单号", "PO-55107")]:
         r2["fields"].append(learn.learn_field(name, [_pick(inv, v)]))
     r2["fields"].append({"name": "附件", "builtin": "@attachments", "type": "text"})
 

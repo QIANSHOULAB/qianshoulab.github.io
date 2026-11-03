@@ -12,16 +12,18 @@ import threading
 import uuid
 from pathlib import Path
 
-from . import VERSION, ai, learn, platform as P, rules as R
+from . import VERSION, ai, learn, oauth, platform as P, rules as R
 from .engine import Engine
 from .mailbox import PROVIDERS, AuthError, MailError, NetError, account_from, test_account
 from .secrets import Secrets
 from .store import Store
 
 
-def _mail_view(m, rule=None, with_text=True):
+def _mail_view(m, rule=None, with_text=True, rules=()):
     d = {"key": m.key(), "from_name": m.from_name, "from_addr": m.from_addr, "subject": m.subject,
-         "date": m.date, "attachments": m.attachments, "rule": None, "fields": {}}
+         "date": m.date, "attachments": m.attachments, "rule": None, "fields": {},
+         "orig": ({"from": m.orig_from, "from_name": m.orig_from_name, "subject": m.orig_subject, "by": m.fwd_by}
+                  if m.forwarded else None)}
     if with_text:
         d["text"] = m.text
         d["suggest"] = learn.suggest_fields(m.text)
@@ -29,6 +31,9 @@ def _mail_view(m, rule=None, with_text=True):
         d["rule"] = {"id": rule["id"], "name": rule["name"]}
         ex = learn.extract_all(rule["fields"], m)
         d["fields"] = {k: ({"raw": v["raw"], "span": v["span"]} if v else None) for k, v in ex.items()}
+        why = R.junk_reason(m, rules) if rules else ""
+        if why and (why == "lookalike" or not R.complete(rule, ex)):
+            d["junk"] = why
     return d
 
 
@@ -41,6 +46,7 @@ class Api:
         self.notify = notify or (lambda *a: None)
         self._rev = 0
         self._update = None
+        self.on_restart = None
 
     # ---------- 内部 ----------
     def _changed(self, kind, payload):
@@ -81,6 +87,7 @@ class Api:
             "settings": {"interval_sec": s.get("interval_sec", 120), "excel_path": s.get("excel_path"),
                          "autostart": P.autostart_enabled(), "ai_model": s.get("ai_model")},
             "has_ai_key": bool(self.secrets.get("ai:gemini")),
+            "ms_login": oauth.available(),
             "secret_where": self.secrets.where,
             "platform": sys.platform,
         }
@@ -97,7 +104,7 @@ class Api:
         rules = self._rules()
         out = []
         for m in self._mails():
-            out.append(_mail_view(m, R.first_match(rules, m)))
+            out.append(_mail_view(m, R.first_match(rules, m), rules=rules))
         out.sort(key=lambda x: x["date"], reverse=True)
         return out
 
@@ -112,7 +119,7 @@ class Api:
     # ---------- 规则 ----------
     def new_rule(self, mail_key=None, name=None):
         m = self.engine.find_mail(mail_key) if mail_key else None
-        r = R.new_rule(name or (m and _short(m.subject)) or "新规则")
+        r = R.new_rule(name or (m and _short(m.orig_subject or m.subject)) or "新规则")
         if m:
             r["conditions"] = R.propose_conditions([m])
         self._rules().insert(0, r)
@@ -216,8 +223,9 @@ class Api:
                     it = wb[sn].iter_rows(values_only=True)
                     head = [str(h) if h is not None else "" for h in next(it, [])]
                     cols = head or cols
+                    types = {f["name"]: f.get("type") for f in r["fields"]}
                     for row in it:
-                        rows.append({h: _cell(v) for h, v in zip(head, row)})
+                        rows.append({h: _cell(v, types.get(h)) for h, v in zip(head, row)})
                 wb.close()
         except Exception:
             pass
@@ -256,8 +264,11 @@ class Api:
             return {"ok": False, "code": "net"}
         except MailError as e:
             return {"ok": False, "code": "error", "detail": str(e)[:200]}
-        was_demo = self.demo
         self.secrets.set(f"pw:{acct['id']}", password)
+        return self._added(acct)
+
+    def _added(self, acct):
+        was_demo = self.demo
         self.store.accounts.append(acct)
         self.store.settings["demo"] = False
         if was_demo:
@@ -270,6 +281,46 @@ class Api:
         self.engine.start()
         self._rev += 1
         return {"ok": True, "account": acct, "samples": n}
+
+    def add_microsoft(self, email_addr):
+        """Outlook / Hotmail / Microsoft 365：打开浏览器走微软登录，不要密码。"""
+        if not oauth.available():
+            return {"ok": False, "code": "ms_soon"}
+        acct = account_from(email_addr, "outlook")
+        acct.update(id=uuid.uuid4().hex[:8], enabled=True, auth="oauth")
+        try:
+            tok = oauth.login(email_addr, open_browser=self._browser)
+        except oauth.OAuthError as e:
+            return {"ok": False, "code": {"net": "net", "timeout": "ms_timeout", "denied": "ms_denied"}.get(e.code, "ms_other"),
+                    "detail": e.detail[:200]}
+        oauth.TokenStore(self.secrets).save(acct["id"], tok)
+        try:
+            test_account(acct, tok["access_token"])
+        except AuthError:
+            self.secrets.delete(f"ms:{acct['id']}")
+            return {"ok": False, "code": "ms_imap"}
+        except NetError:
+            self.secrets.delete(f"ms:{acct['id']}")
+            return {"ok": False, "code": "net"}
+        except MailError as e:
+            self.secrets.delete(f"ms:{acct['id']}")
+            return {"ok": False, "code": "error", "detail": str(e)[:200]}
+        return self._added(acct)
+
+    def relogin_microsoft(self, acct_id):
+        acct = next(a for a in self.store.accounts if a["id"] == acct_id)
+        try:
+            tok = oauth.login(acct["email"], open_browser=self._browser)
+        except oauth.OAuthError as e:
+            return {"ok": False, "code": {"net": "net", "timeout": "ms_timeout", "denied": "ms_denied"}.get(e.code, "ms_other")}
+        oauth.TokenStore(self.secrets).save(acct_id, tok)
+        self.engine.status.pop(acct_id, None)
+        self.engine.wake()
+        return {"ok": True}
+
+    def _browser(self, url):
+        import webbrowser
+        webbrowser.open(url)
 
     def update_password(self, acct_id, password):
         acct = next(a for a in self.store.accounts if a["id"] == acct_id)
@@ -287,6 +338,7 @@ class Api:
     def remove_account(self, acct_id):
         self.store.config.data["accounts"] = [a for a in self.store.accounts if a["id"] != acct_id]
         self.secrets.delete(f"pw:{acct_id}")
+        self.secrets.delete(f"ms:{acct_id}")
         self.engine.status.pop(acct_id, None)
         self.store.config.save()
         self._rev += 1
@@ -332,6 +384,12 @@ class Api:
             return out
         return self.store.state.data["log"][:200]
 
+    def release(self, log_id):
+        """被当垃圾挡下的信：放行，照规则干活。"""
+        res = self.engine.release(log_id)
+        self._rev += 1
+        return bool(res)
+
     # ---------- AI ----------
     def set_ai_key(self, key):
         key = (key or "").strip()
@@ -375,10 +433,22 @@ class Api:
     def pick_excel(self):
         return None   # 由 app.py 用系统对话框覆盖
 
-    def check_update(self):
-        from .updates import check
-        self._update = check()
-        return self._update
+    def check_update(self, download=True):
+        """查新版；打包版有新版就在后台下好，下次启动自动换上（或点「重启」马上换）。"""
+        from . import updates
+        info = updates.check()
+        if info and info.get("newer") and info.get("can_self") and download:
+            ready = updates.pending() == info["latest"] or updates.download(info)
+            info["ready"] = bool(ready)
+        self._update = info
+        self._rev += 1
+        return info
+
+    def restart_update(self):
+        if self.on_restart:
+            threading.Timer(0.05, self.on_restart).start()
+            return True
+        return False
 
     def open_url(self, url):
         if url.startswith(("https://", "mailto:")):
@@ -395,13 +465,19 @@ class Api:
 
 def _short(s):
     import re
+    s = re.sub(r"^\s*(?:(?:fwd?|fw|re|转发|回复)\s*[:：]\s*)+", "", s or "", flags=re.I)
     s = re.split(r"[#＃:：\d\[\(（【]", s, maxsplit=1)[0].strip(" -—|·")
     return (s or "新规则")[:12]
 
 
-def _cell(v):
+def _cell(v, kind=None):
     if v is None:
         return ""
+    if isinstance(v, dict) and "$q" in v:
+        n = v["$q"]
+        return (f"{n:,.0f}" if float(n).is_integer() else f"{n:,.2f}") + (" " + v["u"] if v.get("u") else "")
+    if kind in ("qty", "number") and isinstance(v, (int, float)):
+        return f"{v:,.0f}" if float(v).is_integer() else f"{v:,.2f}"
     if isinstance(v, dict) and ("$dt" in v or "$d" in v):
         return (v.get("$dt") or v.get("$d")).replace("T", " ")[:16]
     if hasattr(v, "strftime"):

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>知客僧</title>
-<meta name="description" content="邮件分拣：订单号、金额、日期、联系人自动抽进 Excel，按规则自动转发，回信只起草不乱发。Windows 免费，双击就跑。">
+<meta name="description" content="邮件分拣：订单号、金额、日期、联系人自动抽进 Excel，同事转来的、PDF 发票里的也认，推销挡在门外；按规则自动转发，回信只起草不乱发。Windows 免费，双击就跑，自己更新。">
 <meta name="theme-color" content="#FBFBFD" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <style>
@@ -139,12 +139,22 @@ footer .mail{color:var(--fg);-webkit-user-select:text;user-select:text}
     <h2>收发室那点活，贫僧包了</h2>
     <p class="h2s">对标收费的邮件解析服务，信不出你的电脑。</p>
     <div class="grid">
-      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 4h6M9 20h6M12 4v16"/></svg></i><h3>点一下，就会了</h3><p>不写正则。挑封信，选中订单号，贫僧自己琢磨出规律，下一封照抽。好几种写法？多选两封就行。</p></div>
-      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg></i><h3>同一张 Excel</h3><p>金额是数字，日期是日期，拿去就能求和。Excel 正开着也不怕，排着队，你一关就补上。</p></div>
-      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l6 6-6 6"/><path d="M20 11H9a5 5 0 0 0-5 5v3"/></svg></i><h3>该转的转</h3><p>按发件人、主题、正文认信，自动转给财务、同事，附件一起带上。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 4h6M9 20h6M12 4v16"/></svg></i><h3>点一下，就会了</h3><p>不写正则。挑封信，选中订单号，贫僧自己琢磨出规律。「订单编号」「Order #」这些换个叫法的，自己认。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg></i><h3>同一张 Excel</h3><p>金额、数量是数字，日期是日期，拿去就能求和。「11月5日」没写年份也补上。Excel 正开着？排队，你一关就补。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l6 6-6 6"/><path d="M20 11H9a5 5 0 0 0-5 5v3"/></svg></i><h3>该转的转</h3><p>按发件人、主题、正文认信，自动转给财务、同事，附件一起带上。推销信主题蹭了关键词？挡下，不进表不转发。</p></div>
       <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.5H7A2.5 2.5 0 0 0 4.5 7v10A2.5 2.5 0 0 0 7 19.5h10a2.5 2.5 0 0 0 2.5-2.5v-7"/><path d="M18.5 3.5l2 2L12 14l-3 1 1-3z"/></svg></i><h3>回信只起草</h3><p>有 Gemini 免费钥匙就让 AI 写，没有就套模板。全进草稿箱，发不发你说了算。</p></div>
       <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></i><h3>关了窗口照样盯</h3><p>开机自启，托盘里蹲着。断网自己重试，密码错了停下等你，不会把邮箱撞锁。</p></div>
       <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></i><h3>信不出门</h3><p>邮件、密码、钥匙都在你电脑上。没有我们的服务器，想传也没地方传。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>0.2：刁钻的信，也收拾了</h2>
+    <p class="h2s">同一批 200 封刁钻信，字段错从 147 处降到 8 处，转发一封没错，垃圾一封没进表。</p>
+    <div class="grid">
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l6 6-6 6"/><path d="M20 11H9a5 5 0 0 0-5 5v3"/></svg></i><h3>转了三手也认得</h3><p>同事转来的、转了又转的，贫僧扒到最里层，按原发件人认，原信里的字段照抽。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5H7A2.5 2.5 0 0 0 4.5 6v12A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V9z"/><path d="M14 3.5V9h5.5M8.5 13h7M8.5 16.5h5"/></svg></i><h3>PDF 发票里的也抽</h3><p>附件里的发票号、金额、采购单号，跟正文一样点一下就收。在你电脑上读，PDF 不出门。</p></div>
+      <div class="f"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></i><h3>自己长本事</h3><p>新版在后台下好、验过，下次打开就是新的。不用你去官网找。</p></div>
     </div>
   </section>
 
@@ -166,14 +176,14 @@ footer .mail{color:var(--fg);-webkit-user-select:text;user-select:text}
       <div class="st"><b>连邮箱</b><p>填邮箱和应用专用密码（QQ、163 叫授权码），服务器贫僧自己认。</p></div>
       <div class="st"><b>挑封信，点选</b><p>选中要的字，点「收下」。之后同类的信自己进表。</p></div>
     </div>
-    <div class="boxes"><span>Gmail</span><span>QQ 邮箱</span><span>腾讯企业邮</span><span>163</span><span>126</span><span>iCloud</span><span>Yahoo</span><span>公司邮箱（IMAP）</span></div>
+    <div class="boxes"><span>Gmail</span><span>QQ 邮箱</span><span>腾讯企业邮</span><span>163</span><span>126</span><span>iCloud</span><span>Yahoo</span><span>公司邮箱（IMAP）</span><span>Outlook · 即将支持</span></div>
     <details>
       <summary>应用专用密码去哪拿</summary>
       <ul>
         <li>Gmail：先开两步验证，再到 <a href="https://myaccount.google.com/apppasswords">myaccount.google.com/apppasswords</a> 生成。</li>
         <li>QQ 邮箱：网页版 → 设置 → 账号 → 开启 IMAP/SMTP 服务 → 生成授权码。</li>
         <li>163 / 126：网页版 → 设置 → POP3/SMTP/IMAP → 开启 IMAP → 拿授权码。</li>
-        <li>Outlook / Hotmail：微软在收紧应用密码登录，个人邮箱可能连不上，下一版接微软登录。</li>
+        <li>Outlook / Hotmail / Microsoft 365：即将支持。微软不让用密码收信了，贫僧走微软登录，到时点一下登上就行。</li>
         <li>公司邮箱：问管理员要 IMAP / SMTP 地址，程序里点「自己填服务器」。</li>
       </ul>
     </details>
@@ -182,7 +192,7 @@ footer .mail{color:var(--fg);-webkit-user-select:text;user-select:text}
   <section class="privacy">
     <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></div>
     <h2>贫僧嘴严</h2>
-    <p class="h2s">密码进 Windows 凭据管理器，AI 钥匙同样。邮件直接从你电脑连你的邮箱，AI 起草时信直接发给你自己的 Google 钥匙，中间没有千手院。</p>
+    <p class="h2s">密码进 Windows 凭据管理器，AI 钥匙同样。邮件直接从你电脑连你的邮箱，AI 起草时信直接发给你自己的 Google 钥匙，中间没有千手院。查新版只是读一个版本号。</p>
   </section>
 
   <div class="end">
@@ -190,7 +200,7 @@ footer .mail{color:var(--fg);-webkit-user-select:text;user-select:text}
   </div>
 
   <footer>
-    <div>千手院 · 知客僧 0.1</div>
+    <div>千手院 · 知客僧 0.2</div>
     <div>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></div>
     <div><a href="https://qianshoulab.github.io/">千手院总舵 https://qianshoulab.github.io/</a></div>
   </footer>

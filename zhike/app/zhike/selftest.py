@@ -52,6 +52,16 @@ def run(out_path=None) -> int:
         assert res["steps"]["sheets"] == {"订单": 3, "发票": 1, "询价": 1}, res["steps"]["sheets"]
         assert len(smtp.sent) == 3
         assert len(imap.drafts) == 1
+        # PDF 附件里的字（打包时 pypdf 有没有漏掉）
+        from .mailparse import pdf_text, parse
+        assert "PO-55107" in pdf_text(samples.INVOICE_PDF)
+        res["steps"]["pdf"] = "ok"
+        # 转发信认原信
+        fw = parse(("From: a@ourco.example\r\nTo: b@ourco.example\r\nSubject: Fwd: x\r\n\r\n"
+                    "---------- Forwarded message ---------\r\nFrom: Shop <orders@shop.example>\r\n"
+                    "Date: Mon, 2 Nov 2026 09:00:00 +0800\r\nSubject: Order 1\r\n\r\nhi\r\n").encode())
+        assert fw.orig_from == "orders@shop.example", fw.orig_from
+        res["steps"]["forward_unwrap"] = "ok"
         res["steps"]["forwards"] = len(smtp.sent)
         res["steps"]["drafts"] = len(imap.drafts)
         if sys.platform == "win32":

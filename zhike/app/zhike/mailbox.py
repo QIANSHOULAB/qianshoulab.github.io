@@ -38,7 +38,7 @@ class QuotaError(MailError):
 PROVIDERS = {
     "gmail": {"imap": ("imap.gmail.com", 993, "ssl"), "smtp": ("smtp.gmail.com", 465, "ssl"), "domains": ["gmail.com", "googlemail.com"]},
     "outlook": {"imap": ("outlook.office365.com", 993, "ssl"), "smtp": ("smtp.office365.com", 587, "starttls"),
-                "domains": ["outlook.com", "hotmail.com", "live.com", "msn.com"]},
+                "domains": ["outlook.com", "hotmail.com", "live.com", "msn.com", "outlook.sg", "hotmail.co.uk", "live.cn"]},
     "qq": {"imap": ("imap.qq.com", 993, "ssl"), "smtp": ("smtp.qq.com", 465, "ssl"), "domains": ["qq.com", "foxmail.com"]},
     "exmail": {"imap": ("imap.exmail.qq.com", 993, "ssl"), "smtp": ("smtp.exmail.qq.com", 465, "ssl"), "domains": []},
     "163": {"imap": ("imap.163.com", 993, "ssl"), "smtp": ("smtp.163.com", 465, "ssl"), "domains": ["163.com"]},
@@ -155,7 +155,11 @@ class Imap:
         except Exception:
             pass
         try:
-            self.c.login(self.acct.get("username") or self.acct["email"], self.password)
+            user = self.acct.get("username") or self.acct["email"]
+            if self.acct.get("auth") == "oauth":   # 微软登录：密码位置放的是令牌
+                self.c.authenticate("XOAUTH2", lambda _: xoauth2(user, self.password).encode())
+            else:
+                self.c.login(user, self.password)
         except imaplib.IMAP4.abort as e:
             raise _neterr(e)
         except imaplib.IMAP4.error as e:
@@ -251,6 +255,29 @@ class Imap:
         return imap_utf7_decode(folder)
 
 
+def xoauth2(user: str, token: str) -> str:
+    return f"user={user}\x01auth=Bearer {token}\x01\x01"
+
+
+def _smtp_login(s, acct, password):
+    user = acct.get("username") or acct["email"]
+    if acct.get("auth") == "oauth":
+        import base64
+        s.ehlo_or_helo_if_needed()
+        code, resp = s.docmd("AUTH", "XOAUTH2 " + base64.b64encode(xoauth2(user, password).encode()).decode())
+        if code == 334:      # 服务器回了错误详情，按规矩回个空行收尾
+            code, resp = s.docmd("")
+        if code != 235:
+            raise AuthError(f"{code} {resp!r}")
+        return
+    try:
+        s.login(user, password)
+    except smtplib.SMTPAuthenticationError as e:
+        raise AuthError(str(e))
+    except smtplib.SMTPNotSupportedError:
+        pass
+
+
 class Smtp:
     def __init__(self, acct: dict, password: str, timeout: float = 30):
         self.acct, self.password, self.timeout = acct, password, timeout
@@ -268,11 +295,9 @@ class Smtp:
             raise _neterr(e)
         try:
             try:
-                s.login(self.acct.get("username") or self.acct["email"], self.password)
-            except smtplib.SMTPAuthenticationError as e:
-                raise AuthError(str(e))
-            except smtplib.SMTPNotSupportedError:
-                pass
+                _smtp_login(s, self.acct, self.password)
+            except (OSError, smtplib.SMTPServerDisconnected) as e:
+                raise _neterr(e)
             try:
                 s.send_message(msg)
             except smtplib.SMTPRecipientsRefused as e:
@@ -306,11 +331,7 @@ def test_account(acct: dict, password: str) -> dict:
     except (OSError, smtplib.SMTPException) as e:
         raise _neterr(e)
     try:
-        s.login(acct.get("username") or acct["email"], password)
-    except smtplib.SMTPAuthenticationError as e:
-        raise AuthError(str(e))
-    except smtplib.SMTPNotSupportedError:
-        pass
+        _smtp_login(s, acct, password)
     except (OSError, smtplib.SMTPServerDisconnected) as e:
         raise _neterr(e)
     finally:
@@ -343,7 +364,7 @@ def build_forward(mail, from_addr: str, to_addrs: list, note: str = "") -> Email
     head = [note.strip(), ""] if note.strip() else []
     head += ["---------- 转发的邮件 ----------",
              f"发件人：{mail.from_name} <{mail.from_addr}>".replace(" <", " <") if mail.from_name else f"发件人：{mail.from_addr}",
-             f"日期：{mail.date}", f"主题：{mail.subject}", "", mail.text]
+             f"日期：{mail.date}", f"主题：{mail.subject}", "", getattr(mail, "body", "") or mail.text]
     m.set_content("\n".join(head))
     for part in orig.walk():
         if part.is_multipart():
@@ -368,5 +389,5 @@ def build_draft(mail, from_addr: str, body: str) -> bytes:
         m["In-Reply-To"] = mail.message_id
         m["References"] = mail.references or mail.message_id
     m["X-Zhike"] = "draft"
-    m.set_content(body.rstrip() + "\n\n" + _quote(mail.text))
+    m.set_content(body.rstrip() + "\n\n" + _quote(getattr(mail, "body", "") or mail.text))
     return m.as_bytes()

@@ -4,6 +4,7 @@
   知客僧.exe              打开窗口
   知客僧.exe --tray       开机自启用：只进托盘，不弹窗口
   知客僧.exe --selftest out.json   冒烟自测（打包后 CI 用）
+  知客僧.exe --update-probe out.json   自动更新冒烟：换完自己、重启后写个文件就退（CI 用）
 """
 from __future__ import annotations
 
@@ -86,6 +87,25 @@ def main():
         i = args.index("--selftest")
         sys.exit(run(args[i + 1] if len(args) > i + 1 else None))
 
+    # 自动更新：上次下好的新版先换上、重启；新版起来后把旧的删掉
+    from zhike import updates
+    updates.cleanup(args)
+    if updates.apply_pending(args):
+        return
+    if "--update-probe" in args:
+        import json
+        from zhike import VERSION as V
+        i = args.index("--update-probe")
+        import time
+        exe = updates.exe_path()
+        for _ in range(40):
+            if not exe or not list(exe.parent.glob(exe.name + "*.old")):
+                break
+            time.sleep(0.5)
+        left = sorted(p.name for p in exe.parent.iterdir()) if exe else []
+        Path(args[i + 1]).write_text(json.dumps({"version": V, "files": left}), "utf-8")
+        return
+
     import webview
     import pystray
     from zhike import APP_NAME, VERSION
@@ -143,6 +163,15 @@ def main():
 
     api.pick_excel = pick_excel
 
+    def restart_for_update():
+        """「重启」按钮：换上下好的新版，起新的，自己退。"""
+        exe = updates.exe_path()
+        if exe and updates.pending(exe) and updates.swap(exe):
+            updates.relaunch(exe, [a for a in args if a != "--tray"])
+            quit_all()
+
+    api.on_restart = restart_for_update
+
     hidden = "--tray" in args
     win = webview.create_window(f"{APP_NAME}", resource("ui", "index.html"), js_api=js_facade(api),
                                 width=1180, height=760, min_size=(860, 560), hidden=hidden,
@@ -169,7 +198,17 @@ def main():
 
     if api.store.accounts:
         api.engine.start()
-    threading.Timer(8, api.check_update).start()
+    def update_loop():
+        import time
+        time.sleep(8)
+        while not state["quitting"]:
+            try:
+                api.check_update()
+            except Exception:
+                pass
+            time.sleep(6 * 3600)
+
+    threading.Thread(target=update_loop, daemon=True).start()
 
     # 第一次跑：默认开机自启（设置里可以关）
     from zhike import platform as P

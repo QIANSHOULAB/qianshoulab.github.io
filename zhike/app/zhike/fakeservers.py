@@ -32,6 +32,7 @@ class FakeImap:
         self.quota_full = False
         self.cut_after_login = False
         self.logins = 0
+        self.token = "ms-access-token"     # XOAUTH2 用（微软登录）
         self.lock = threading.RLock()
         self.srv = None
 
@@ -69,7 +70,7 @@ class FakeImap:
     # ---- 协议 ----
     def _session(self, h):
         w = lambda s: (h.wfile.write(s if isinstance(s, bytes) else s.encode()), h.wfile.flush())
-        w("* OK [CAPABILITY IMAP4rev1 ID UIDPLUS] fake ready\r\n")
+        w("* OK [CAPABILITY IMAP4rev1 ID UIDPLUS AUTH=XOAUTH2] fake ready\r\n")
         authed, selected = False, None
         while True:
             line = h.rfile.readline()
@@ -85,7 +86,7 @@ class FakeImap:
                 cmd = "UID " + sub.upper()
             with self.lock:
                 if cmd == "CAPABILITY":
-                    w("* CAPABILITY IMAP4rev1 ID UIDPLUS\r\n" + f"{tag} OK done\r\n")
+                    w("* CAPABILITY IMAP4rev1 ID UIDPLUS AUTH=XOAUTH2\r\n" + f"{tag} OK done\r\n")
                 elif cmd == "ID":
                     w('* ID ("name" "fake")\r\n' + f"{tag} OK ID done\r\n")
                 elif cmd == "NOOP":
@@ -93,6 +94,24 @@ class FakeImap:
                 elif cmd == "LOGOUT":
                     w("* BYE bye\r\n" + f"{tag} OK bye\r\n")
                     return
+                elif cmd == "AUTHENTICATE" and rest.upper().startswith("XOAUTH2"):
+                    import base64
+                    parts = rest.split()
+                    if len(parts) > 1:
+                        b64 = parts[1]
+                    else:
+                        w("+ \r\n")
+                        b64 = h.rfile.readline().decode().strip()
+                    try:
+                        sasl = base64.b64decode(b64).decode()
+                    except Exception:
+                        sasl = ""
+                    if sasl == f"user={self.user}\x01auth=Bearer {self.token}\x01\x01":
+                        authed = True
+                        self.logins += 1
+                        w(f"{tag} OK AUTHENTICATE completed\r\n")
+                    else:
+                        w(f"{tag} NO [AUTHENTICATIONFAILED] Invalid token\r\n")
                 elif cmd == "LOGIN":
                     args = _args(rest)
                     if len(args) == 2 and args[0] == self.user and args[1] == self.password:
@@ -187,6 +206,7 @@ class FakeSmtp:
     def __init__(self, user="me@test.local", password="app-pass"):
         self.user, self.password = user, password
         self.sent = []          # [(mail_from, rcpts, data)]
+        self.token = "ms-access-token"
         self.quota_full = False
         self.srv = None
 
@@ -224,7 +244,18 @@ class FakeSmtp:
             cmd = line.decode("utf-8", "replace").strip()
             up = cmd.upper()
             if up.startswith(("EHLO", "HELO")):
-                w("250-fake\r\n250-8BITMIME\r\n250-SMTPUTF8\r\n250-AUTH PLAIN\r\n250 OK\r\n")
+                w("250-fake\r\n250-8BITMIME\r\n250-SMTPUTF8\r\n250-AUTH PLAIN XOAUTH2\r\n250 OK\r\n")
+            elif up.startswith("AUTH XOAUTH2"):
+                parts = cmd.split()
+                try:
+                    sasl = base64.b64decode(parts[2]).decode() if len(parts) > 2 else ""
+                except Exception:
+                    sasl = ""
+                if sasl == f"user={self.user}\x01auth=Bearer {self.token}\x01\x01":
+                    authed = True
+                    w("235 2.7.0 Authentication successful\r\n")
+                else:
+                    w("535 5.7.3 Authentication unsuccessful\r\n")
             elif up.startswith("AUTH PLAIN"):
                 parts = cmd.split()
                 if len(parts) < 3:

@@ -37,6 +37,7 @@ const NAV = [["inbox", "inbox"], ["rules", "rules"], ["table", "table"], ["draft
 
 /* ---------- 小工具 ---------- */
 function toast(msg) {
+  document.querySelectorAll(".toast").forEach((x) => x.remove());
   const el = document.createElement("div");
   el.className = "toast";
   el.textContent = msg;
@@ -73,7 +74,7 @@ function renderSide() {
   let dot = "", line1 = "", line2 = "";
   const sts = Object.entries(tk.status || {});
   const accts = (S.boot && S.boot.accounts) || [];
-  if (tk.demo ?? S.boot?.demo) { line1 = t("st_demo"); }
+  if (S.boot?.demo ?? tk.demo) { line1 = t("st_demo"); }
   else {
     const bad = sts.find(([, s]) => s.state === "auth");
     const net = sts.find(([, s]) => s.state === "net");
@@ -93,10 +94,11 @@ function renderSide() {
     <div class="brand"><div class="brand-ico">${I.logo}</div><div><b>${t("app")}</b><span>${t("tagline")}</span></div></div>
     ${NAV.map(([v, ic]) => `<button class="nav-i ${S.view === v ? "on" : ""}" data-nav="${v}" title="${t("nav_" + v)}">${I[ic]}<span>${t("nav_" + v)}</span>${cnt[v] ? `<span class="cnt">${cnt[v]}</span>` : ""}</button>`).join("")}
     <div class="side-sp"></div>
+    ${tk.update && tk.update.ready ? `<button class="upd" data-act="restart">${I.refresh}<div><b>${esc(t("side_update", { v: tk.update.latest }))}</b>${t("btn_restart")}</div></button>` : ""}
     <button class="stat" data-nav="settings"><i class="dot ${dot}"></i><div><b>${esc(line1)}</b>${line2 ? esc(line2) : ""}</div></button>`;
 }
 function renderDemo() {
-  const demo = S.tick.demo ?? S.boot?.demo;
+  const demo = S.boot?.demo ?? S.tick.demo;
   $("#demo").innerHTML = demo && S.view !== "settings"
     ? `<div class="demo"><b>${t("demo_title")}</b><span>${t("demo_sub")}</span><button class="btn pri" data-nav="settings" data-focus="email">${t("demo_btn")}</button></div>` : "";
 }
@@ -145,13 +147,17 @@ function renderReader() {
     const kv = rule.fields.map((f) => {
       const v = m.fields[f.name];
       const sw = f.builtin ? "" : `<i class="sw${colorOf(rule.id, f.name)}"></i>`;
-      return `<div class="kv"><span>${sw}${esc(f.name)}</span><b class="${v && v.raw ? "" : "miss"}" title="${esc(v ? v.raw : "")}">${v && v.raw ? esc(v.raw) : t("field_missing")}</b></div>`;
+      if (v && v.raw) return `<div class="kv"><span>${sw}${esc(f.name)}</span><b title="${esc(v.raw)}">${esc(v.raw)}</b></div>`;
+      const on = S.want && S.want.rule === rule.id && S.want.name === f.name;
+      return `<div class="kv"><span>${sw}${esc(f.name)}</span>${f.builtin ? `<b class="miss">${t("field_missing")}</b>` : `<button class="miss want ${on ? "on" : ""}" data-want="${esc(f.name)}" title="${t("field_missing_tip")}">${t("field_missing")} ›</button>`}</div>`;
     }).join("");
-    const acts = [`<span class="chip green">${I.check}${t("act_excel")}</span>`];
+    let acts = [`<span class="chip green">${I.check}${t("act_excel")}</span>`];
     if (rule.forward.enabled && rule.forward.to.length) acts.push(`<span class="chip blue">${I.fwd}${esc(t("act_forward", { to: rule.forward.to.join("、") }))}</span>`);
     if (rule.reply.enabled) acts.push(`<span class="chip blue">${I.draft}${t("act_draft")}</span>`);
+    if (m.junk) acts = [`<span class="chip red">${t("junk_" + m.junk)}</span><span class="help">${t("junk_note")}</span>`];
     claim = `<div class="claim"><div class="claim-h"><div class="t">${esc(t("by_rule", { r: rule.name }))}</div><button class="btn ghost" data-goto-rule="${rule.id}">${t("nav_rules")} ›</button></div>
       <div class="claim-g">${kv}</div><div class="claim-a">${acts.join("")}</div></div>`;
+    if (S.want && S.want.rule === rule.id) claim += `<div class="want-bar">${I.cursor}<span>${esc(t("want_hint", { f: S.want.name }))}</span><button class="btn ghost" data-act="want-cancel">${t("want_cancel")}</button></div>`;
   } else {
     claim = `<div class="claim none"><div class="t"><b>${t("no_rule")}</b><span>${t("no_rule_s")}</span></div><button class="btn tint" data-act="rule-from">${I.plus}${t("btn_new_rule_from")}</button></div>`;
   }
@@ -159,6 +165,7 @@ function renderReader() {
   el.innerHTML = `
     <h2 class="r-subj">${esc(m.subject)}</h2>
     <div class="r-meta"><div class="avatar">${esc(init)}</div><div><b>${esc(m.from_name || m.from_addr)}</b> &lt;${esc(m.from_addr)}&gt;<br>${new Date(m.date).toLocaleString("zh-CN", { hour12: false })}</div></div>
+    ${m.orig ? `<div class="r-fwd">${I.fwd}<span>${esc(t("fwd_by", { who: m.from_name || m.from_addr }))}</span><b>${esc(t("fwd_orig", { who: (m.orig.from_name ? m.orig.from_name + " " : "") + (m.orig.from ? "<" + m.orig.from + ">" : "") }))}</b></div>` : ""}
     ${m.attachments.length ? `<div class="r-atts">${m.attachments.map((a) => `<span class="chip">${I.clip}${esc(a)}</span>`).join("")}</div>` : ""}
     ${claim}
     <div class="hint">${I.cursor}${t("pick_hint")}</div>
@@ -233,7 +240,8 @@ function openPop(m, s, e, rect, name) {
   pop.className = "pop";
   pop.innerHTML = `
     <div class="val">「<b>${esc(m.text.slice(s, e))}</b>」</div>
-    <label>${t("pop_name")}</label><input class="in" id="pname" value="${esc(name || guessName(m, s))}" maxlength="20" autocomplete="off">
+    <label>${t("pop_name")}</label>
+    <input class="in" id="pname" value="${esc(name || (S.want && m.rule && S.want.rule === m.rule.id ? S.want.name : "") || guessName(m, s))}" maxlength="20" autocomplete="off">
     <label>${t("pop_rule")}</label>
     <select class="in" id="prule">${opts.map((r) => `<option value="${r.id}" ${r.id === def ? "selected" : ""}>${esc(r.name)}</option>`).join("")}<option value="__new" ${def === "__new" ? "selected" : ""}>${t("pop_new_rule")}</option></select>
     <div class="pop-row"><button class="btn" data-act="pop-close">${t("btn_cancel")}</button><button class="btn pri" id="padd">${t("pop_add")}</button></div>
@@ -255,6 +263,7 @@ function openPop(m, s, e, rect, name) {
     }
     await safe(call("learn", rid, fname, m.key, s, e));
     toast(t("toast_field", { f: fname }));
+    S.want = null;
     // 规则也要重新拿：界面手里那份旧规则没有刚学的字段，接着改名/加条件会把它存回去、把新字段冲掉
     await reloadAll();
     render();
@@ -265,7 +274,7 @@ function openPop(m, s, e, rect, name) {
 function closePop() { document.querySelectorAll(".pop").forEach((p) => p.remove()); }
 
 /* ---------- 规则 ---------- */
-const TYPES = ["text", "id", "money", "date", "datetime", "email", "phone", "number"];
+const TYPES = ["text", "id", "money", "date", "datetime", "email", "phone", "number", "qty"];
 function viewRules() {
   bar(t("nav_rules"), `<button class="btn" data-act="new-rule">${I.plus}${t("btn_new_rule")}</button>`);
   const c = $("#content");
@@ -310,6 +319,7 @@ function renderRule() {
         <div class="row"><span class="k">${t("cond_from")}</span>${tagBox("conditions.from", r.conditions.from)}</div>
         <div class="row"><span class="k">${t("cond_subject")}</span>${tagBox("conditions.subject", r.conditions.subject)}</div>
         <div class="row"><span class="k">${t("cond_body")}</span>${tagBox("conditions.body", r.conditions.body)}</div>
+        <div class="row"><span class="k">${t("cond_exclude")}</span>${tagBox("conditions.exclude", r.conditions.exclude || (r.conditions.exclude = []))}</div>
       </div><div class="grp-f">${t("cond_note")}</div></div>
     <div class="grp"><div class="grp-h"><h2>${t("fields_h")}</h2><span class="help">${t("fields_note")}</span></div>
       <div class="box">${fields}</div>
@@ -373,7 +383,8 @@ async function viewLog() {
   const c = $("#content");
   if (!lg.length) { c.innerHTML = `<div class="empty"><div><div class="empty-ico">${I.log}</div><b>${t("log_empty")}</b></div></div>`; return; }
   const cell = (code, what) => code ? chip(code, what + " · " + t("s_" + code)) : "";
-  c.innerHTML = `<div class="tbl-wrap lg"><table><thead><tr><th>时间</th><th>主题</th><th>规则</th><th>干了啥</th></tr></thead><tbody>${lg.map((l) => `<tr><td>${fmtTime(l.time)}</td><td>${esc(l.subject)}</td><td>${l.rule ? esc(l.rule) : '<span class="help">—</span>'}</td><td>${cell(l.excel, t("act_excel"))}${cell(l.forward, "转发")}${cell(l.draft, "草稿")}${l.ai_error ? chip("pending", t("ai_fallback", { why: t("why_" + l.ai_error) })) : ""}</td></tr>`).join("")}</tbody></table></div>`;
+  const held = (l) => l.held ? `${chip("pending", t("held_" + (l.junk || "promo")))}${l.id ? `<button class="btn" data-release="${esc(l.id)}">${t("btn_release")}</button>` : ""}` : "";
+  c.innerHTML = `<div class="tbl-wrap lg"><table><thead><tr><th>时间</th><th>主题</th><th>规则</th><th>干了啥</th></tr></thead><tbody>${lg.map((l) => `<tr><td>${fmtTime(l.time)}</td><td>${esc(l.subject)}</td><td>${l.rule ? esc(l.rule) : l.held ? `<span class="help">${esc(l.held)}</span>` : '<span class="help">—</span>'}</td><td>${held(l)}${cell(l.excel, t("act_excel"))}${cell(l.forward, "转发")}${cell(l.draft, "草稿")}${l.ai_fields && l.ai_fields.length ? chip("demo", t("by_ai") + " · " + l.ai_fields.join("、")) : ""}${l.ai_error ? chip("pending", t("ai_fallback", { why: t("why_" + l.ai_error) })) : ""}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 /* ---------- 设置 ---------- */
@@ -390,7 +401,7 @@ function viewSettings() {
     const s = st[a.id] || {};
     const badge = s.state === "auth" ? chip("auth") : s.state === "net" ? chip("net") : s.state === "ok" ? chip("ok", "在盯") : "";
     return `<div class="row"><div class="l"><b>${esc(a.email)}</b><span>${esc(a.imap_host)} · ${s.last_check ? esc(t("st_checked", { t: ago(s.last_check) })) : ""}</span></div>${badge}
-      ${s.state === "auth" ? `<button class="btn" data-fixpw="${a.id}">${t("acc_fix_pw")}</button>` : ""}<button class="btn" data-samples="${a.id}">${t("acc_samples")}</button><button class="btn danger" data-rmacct="${a.id}">${t("acc_remove")}</button></div>`;
+      ${s.state === "auth" ? (a.auth === "oauth" ? `<button class="btn" data-relogin="${a.id}">${t("ms_relogin")}</button>` : `<button class="btn" data-fixpw="${a.id}">${t("acc_fix_pw")}</button>`) : ""}<button class="btn" data-samples="${a.id}">${t("acc_samples")}</button><button class="btn danger" data-rmacct="${a.id}">${t("acc_remove")}</button></div>`;
   }).join("");
   const iv = [1, 2, 5, 10, 30].map((n) => `<option value="${n * 60}" ${b.settings.interval_sec === n * 60 ? "selected" : ""}>${t("min", { n })}</option>`).join("");
   $("#content").innerHTML = `<div class="page">
@@ -399,6 +410,7 @@ function viewSettings() {
       <div class="box"><div class="form">
         <label>${t("acc_email")}</label><input class="in" id="aemail" type="email" placeholder="name@qq.com" autocomplete="off">
         <label id="apwl">${t("acc_pw")}</label><input class="in" id="apw" type="password" placeholder="${t("acc_pw_ph")}" autocomplete="off">
+        <div class="ms-only" hidden></div><div class="ms-only" hidden>${b.ms_login ? `<button class="btn pri" data-act="ms-login">${t("ms_btn")}</button>` : ""}</div>
         <div></div><div class="help" id="ahelp">${t("help_custom")}</div>
         <div></div><div><a class="link" data-act="adv" style="font-size:12.5px">${t("acc_custom")}</a></div>
         <div class="full" id="advbox" hidden>
@@ -418,7 +430,7 @@ function viewSettings() {
         <div class="row"><div class="l"><b>${t("excel_at")}</b><span class="path" style="max-width:none">${esc(b.settings.excel_path)}</span></div>${b.platform === "win32" ? `<button class="btn" data-act="pick-excel">${t("btn_change")}</button>` : ""}</div>
       </div></div>
     <div class="grp"><div class="grp-h"><h2>${t("set_about")}</h2></div>
-      <div class="box"><div class="row"><div class="l"><b>${t("version", { v: b.version })}</b><span id="upmsg"></span></div><button class="btn" data-act="update">${t("btn_update")}</button></div></div>
+      <div class="box"><div class="row"><div class="l"><b>${t("version", { v: b.version })}</b><span id="upmsg">${upMsg(S.tick.update)}</span></div>${S.tick.update && S.tick.update.ready ? `<button class="btn pri" data-act="restart">${t("btn_restart")}</button>` : `<button class="btn" data-act="update">${t("btn_update")}</button>`}</div></div>
       <div class="foot">${t("foot_name")} ${b.version}<br>${t("foot_mail")}<span class="mail">oilsongchengmin@gmail.com</span><br><a class="link" data-url="https://qianshoulab.github.io/">${t("foot_home")} https://qianshoulab.github.io/</a></div></div>
   </div>`;
   const em = $("#aemail");
@@ -428,10 +440,23 @@ function viewSettings() {
     const g = await call("guess", v);
     $("#ahelp").innerHTML = (HELP[g.provider] || HELP.custom)() + (g.imap_host ? `<br>${t("acc_server")}：${esc(g.imap_host)} / ${esc(g.smtp_host)}` : "");
     $("#apwl").textContent = ["qq", "exmail", "163", "126"].includes(g.provider) ? t("acc_pw_qq") : t("acc_pw");
+    // 微软家的邮箱：不要密码，走微软登录；还没接上时直说「即将支持」
+    const ms = g.provider === "outlook";
+    document.querySelectorAll(".ms-only").forEach((x) => (x.hidden = !(ms && b.ms_login)));
+    ["#apwl", "#apw"].forEach((q) => ($(q).hidden = ms));
+    $(".form [data-act=connect]").hidden = ms;
+    if (ms) $("#ahelp").innerHTML = esc(b.ms_login ? t("ms_note") : t("ms_soon"));
     if (g.provider === "custom") $("#advbox").hidden = false;
   }, 250);
   em.addEventListener("input", upd);
   if (S.focusEmail) { em.focus(); S.focusEmail = false; }
+}
+
+function upMsg(u) {
+  if (!u) return "";
+  if (!u.newer) return t("up_none");
+  if (u.ready) return esc(t("up_ready", { v: u.latest }));
+  return `${esc(t("up_new", { v: u.latest }))} · <a class="link" data-url="${esc(u.url)}">${t("btn_download")}</a>`;
 }
 
 /* ---------- 数据 ---------- */
@@ -441,7 +466,7 @@ async function reloadAll() { await loadBoot(); await loadMails(); }
 
 /* ---------- 事件 ---------- */
 document.addEventListener("click", async (ev) => {
-  const el = ev.target.closest("[data-nav],[data-mail],[data-act],[data-rule],[data-goto-rule],[data-tab],[data-untag],[data-delfield],[data-builtin],[data-mode],[data-move],[data-copy],[data-url],[data-rmacct],[data-fixpw],[data-samples],.sg");
+  const el = ev.target.closest("[data-nav],[data-mail],[data-act],[data-rule],[data-goto-rule],[data-tab],[data-untag],[data-delfield],[data-builtin],[data-mode],[data-move],[data-copy],[data-url],[data-rmacct],[data-fixpw],[data-relogin],[data-samples],[data-want],[data-release],.sg");
   if (!ev.target.closest(".pop") && !(el && el.classList.contains("sg"))) closePop();
   if (!el) return;
   const d = el.dataset;
@@ -452,6 +477,9 @@ document.addEventListener("click", async (ev) => {
     openPop(m, g.start, g.end, el.getBoundingClientRect(), g.name); return;
   }
   if (d.url) { call("open_url", d.url); return; }
+  if (d.want) { const m = S.mails.find((x) => x.key === S.sel); S.want = { rule: m.rule.id, name: d.want }; renderReader(); return; }
+  if (d.release) { el.disabled = true; const ok = await safe(call("release", d.release)); if (ok) toast(t("toast_saved")); await loadMails(); viewLog(); return; }
+  if (d.relogin) { el.disabled = true; el.innerHTML = `<i class="spin"></i>${t("ms_wait")}`; const res = await safe(call("relogin_microsoft", d.relogin)).finally(() => { el.disabled = false; el.textContent = t("ms_relogin"); }); toast(res.ok ? t("toast_saved") : t("err_" + res.code, { d: res.detail || "" })); return; }
   if (d.rule) { S.ruleSel = d.rule; viewRules(); return; }
   if (d.gotoRule) { S.ruleSel = d.gotoRule; S.view = "rules"; render(); return; }
   if (d.tab) { S.tableRule = d.tab; viewTable(); return; }
@@ -503,11 +531,25 @@ document.addEventListener("click", async (ev) => {
     }
     case "pick-excel": { const p = await call("pick_excel"); if (p) { await call("set_setting", "excel_path", p); await loadBoot(); viewSettings(); } break; }
     case "update": {
-      const u = await call("check_update");
-      $("#upmsg").innerHTML = !u ? t("up_fail") : u.newer ? `${esc(t("up_new", { v: u.latest }))} · <a class="link" data-url="${esc(u.url)}">${t("btn_download")}</a>` : t("up_none");
+      $("#upmsg").textContent = t("up_checking"); el.disabled = true;
+      const u = await call("check_update").finally(() => (el.disabled = false));
+      S.tick.update = u;
+      if (S.view === "settings") viewSettings();
+      if (!u) $("#upmsg").textContent = t("up_fail");
+      renderSide();
       break;
     }
     case "pop-close": closePop(); break;
+    case "want-cancel": S.want = null; renderReader(); break;
+    case "restart": el.disabled = true; call("restart_update"); break;
+    case "ms-login": {
+      const email = $("#aemail").value.trim(); if (!email) return;
+      el.disabled = true; el.innerHTML = `<i class="spin"></i>${t("ms_wait")}`;
+      const res = await safe(call("add_microsoft", email)).finally(() => { el.disabled = false; el.textContent = t("ms_btn"); });
+      if (res.ok) { await reloadAll(); render(); $("#amsg").innerHTML = `<div class="msg ok">${esc(t("acc_ok", { n: res.samples }))}</div>`; }
+      else $("#amsg").innerHTML = `<div class="msg bad">${esc(t("err_" + res.code, { d: res.detail || "" }))}</div>`;
+      break;
+    }
   }
 });
 document.addEventListener("mouseup", (ev) => {

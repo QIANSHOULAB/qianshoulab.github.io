@@ -38,6 +38,7 @@ class Engine:
         self._wake = threading.Event()
         self._thread = None
         self._demo = None
+        self._batch = None
 
     # ---------- 示例 ----------
     def demo(self):
@@ -91,6 +92,15 @@ class Engine:
 
     # ---------- 账号 ----------
     def password(self, acct):
+        """普通邮箱：应用密码 / 授权码。微软登录的邮箱：现拿的令牌（过期自动续）。"""
+        if acct.get("auth") == "oauth":
+            from . import oauth
+            try:
+                return oauth.TokenStore(self.secrets).access_token(acct["id"])
+            except oauth.OAuthError as e:
+                if e.code == "net":
+                    raise NetError(str(e))
+                raise AuthError("microsoft login expired: " + str(e.detail)[:120])
         return self.secrets.get(f"pw:{acct['id']}") or ""
 
     def connect_new(self, acct, recent: int = 20):
@@ -165,47 +175,131 @@ class Engine:
             new = im.uids_after(last)
             again = [int(u) for u, v in retry.items() if v.get("acct") == acct["id"] and int(u) <= last]
             mails = im.fetch(sorted(set(new + again))) if (new or again) else []
-        for m in mails:
-            self.process(acct, m)
-            if m.uid > int(st.get("last_uid", 0)):
-                st["last_uid"] = m.uid
-            self.store.state.save()
+        # 一批信的 Excel 行攒到最后一次写（每封都开关一次大表太慢）；行先进排队区，崩了也不丢
+        self._batch = []
+        try:
+            for m in mails:
+                self.process(acct, m)
+                if m.uid > int(st.get("last_uid", 0)):
+                    st["last_uid"] = m.uid
+                self.store.state.save()
+        finally:
+            batch, self._batch = self._batch, None
+            if batch:
+                r = self.flush_excel()
+                if r["waiting"]:
+                    for lg in batch:
+                        if self._has_pending_id(lg["rule_id"]):
+                            lg["excel"] = "pending"
         self._keep_samples(acct["id"], [m for m in mails if m.uid in new])
         return len(new)
 
     # ---------- 一封信 ----------
-    def process(self, acct, mail):
+    def extract(self, rule, mail):
+        """按规则抽字段；有 AI 钥匙时，规则没抽到的让 AI 兜底（值必须在原文里找得到）。"""
+        fields = learn.extract_all(rule["fields"], mail)
+        missing = [f for f in rule["fields"] if not f.get("builtin") and not fields.get(f["name"])]
+        key = self.secrets.get("ai:gemini") if missing else None
+        if key:
+            try:
+                spans = ai.extract_missing(key, mail, [f["name"] for f in missing],
+                                           self.store.settings.get("ai_model", "gemini-flash-latest"), base=self.ai_base)
+            except ai.AIError:
+                spans = {}
+            ref = None
+            try:
+                ref = datetime.fromisoformat(mail.date)
+            except Exception:
+                pass
+            for f in missing:
+                if f["name"] in spans:
+                    s, e = spans[f["name"]]
+                    raw = mail.text[s:e]
+                    fields[f["name"]] = {"raw": raw, "value": learn.to_typed(f.get("type", "text"), raw, ref),
+                                         "span": [s, e], "by": "ai"}
+        return fields
+
+    def _hold(self, acct, mail, rule, fields, reason):
+        """像垃圾：不进表、不转发、不起草，记一笔，用户点「放行」再干。"""
+        log = {"id": uuid.uuid4().hex[:10], "time": now_iso(), "acct": acct["id"], "key": mail.key(),
+               "subject": mail.subject, "from": mail.from_addr, "rule": None, "held": rule["name"],
+               "held_rule": rule["id"], "junk": reason,
+               "fields": {k: (v or {}).get("raw", "") for k, v in fields.items()},
+               "excel": None, "forward": None, "draft": None}
+        held = self.store.state.data.setdefault("held", {})
+        held[log["id"]] = {"acct": acct["id"], "uid": mail.uid, "rule": rule["id"],
+                           "raw": base64.b64encode(mail.raw).decode()}
+        for k in list(held)[:-50]:
+            held.pop(k, None)
+        self.store.mark_processed(mail.key())
+        self._upsert_log(log)
+        self.on_change("held", log)
+        return log
+
+    def release(self, log_id):
+        """被挡下的信放行：照规则正常干活。"""
+        with self.lock:
+            h = self.store.state.data.get("held", {}).pop(log_id, None)
+            if not h:
+                return None
+            acct = next((a for a in self.store.accounts if a["id"] == h["acct"]), None)
+            if not acct:
+                return None
+            mail = parse(base64.b64decode(h["raw"]), h.get("uid", 0))
+            lg = self.store.state.data["log"]
+            lg[:] = [e for e in lg if e.get("id") != log_id]
+            res = self.process(acct, mail, force_rule=h["rule"])
+            self.store.state.save()
+            return res
+
+    def process(self, acct, mail, force_rule=None):
         key = mail.key()
         retry = self.store.state.data.setdefault("retry", {})
         rkey = str(mail.uid)
         job = retry.get(rkey) if retry.get(rkey, {}).get("acct") == acct["id"] else None
         if job is None:
-            if self.store.is_processed(key) or mail.zhike_mark:
-                return None
-            rule = R.first_match(self.store.rules, mail)
-            if not rule:
-                self.store.mark_processed(key)
-                return None
+            if force_rule:
+                rule = next((r for r in self.store.rules if r["id"] == force_rule), None)
+                if not rule:
+                    return None
+            else:
+                if self.store.is_processed(key) or mail.zhike_mark:
+                    return None
+                rule = R.first_match(self.store.rules, mail)
+                if not rule:
+                    self.store.mark_processed(key)
+                    return None
             job = {"acct": acct["id"], "rule": rule["id"], "done": [], "tries": 0, "log": None}
         else:
             rule = next((r for r in self.store.rules if r["id"] == job["rule"]), None)
             if not rule:
                 retry.pop(rkey, None)
                 return None
+        fields = self.extract(rule, mail)
+        if job["tries"] == 0 and not force_rule:
+            why = R.junk_reason(mail, self.store.rules)
+            if why and (why == "lookalike" or not R.complete(rule, fields)):
+                return self._hold(acct, mail, rule, fields, why)
         job["tries"] += 1
-        fields = learn.extract_all(rule["fields"], mail)
         log = job["log"] or {
             "id": uuid.uuid4().hex[:10], "time": now_iso(), "acct": acct["id"], "key": key,
             "subject": mail.subject, "from": mail.from_addr, "rule": rule["name"],
             "fields": {k: (v or {}).get("raw", "") for k, v in fields.items()},
+            "ai_fields": [k for k, v in fields.items() if v and v.get("by") == "ai"],
             "excel": None, "forward": None, "draft": None,
         }
         net_fail = False
 
         if "excel" not in job["done"]:
             row = {k: (v["value"] if v else None) for k, v in fields.items()}
-            self._excel(rule, row)
-            log["excel"] = "pending" if self._has_pending(rule) else "ok"
+            log["rule_id"] = rule["id"]
+            if self._batch is not None:
+                self._queue_row(rule, row)
+                log["excel"] = "ok"
+                self._batch.append(log)
+            else:
+                self._excel(rule, row)
+                log["excel"] = "pending" if self._has_pending(rule) else "ok"
             job["done"].append("excel")
 
         fw = rule.get("forward") or {}
@@ -282,11 +376,16 @@ class Engine:
     def _has_pending(self, rule):
         return any(p["rule"] == rule["id"] for p in self.store.state.data["pending_rows"])
 
+    def _has_pending_id(self, rid):
+        return any(p["rule"] == rid for p in self.store.state.data["pending_rows"])
+
+    def _queue_row(self, rule, row):
+        self.store.state.data["pending_rows"].append({
+            "rule": rule["id"], "sheet": rule["name"], "columns": R.columns(rule),
+            "row": {k: _ser(v) for k, v in row.items()}, "path": self.store.settings["excel_path"]})
+
     def _excel(self, rule, row):
-        path = self.store.settings["excel_path"]
-        pend = self.store.state.data["pending_rows"]
-        pend.append({"rule": rule["id"], "sheet": rule["name"], "columns": R.columns(rule),
-                     "row": {k: _ser(v) for k, v in row.items()}, "path": path})
+        self._queue_row(rule, row)
         self.flush_excel()
 
     def flush_excel(self) -> dict:
@@ -341,6 +440,8 @@ class Engine:
 
 
 def _ser(v):
+    if isinstance(v, learn.Qty):
+        return {"$q": float(v), "u": v.unit}
     if isinstance(v, datetime):
         return {"$dt": v.isoformat()}
     if hasattr(v, "isoformat") and not isinstance(v, str):
@@ -356,6 +457,8 @@ def _deser(row, types):
             out[k] = datetime.fromisoformat(v["$dt"])
         elif isinstance(v, dict) and "$d" in v:
             out[k] = date.fromisoformat(v["$d"])
+        elif isinstance(v, dict) and "$q" in v:
+            out[k] = learn.Qty(v["$q"], v.get("u", ""))
         else:
             out[k] = v
     return out

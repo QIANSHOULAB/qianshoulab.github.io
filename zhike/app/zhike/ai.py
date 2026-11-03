@@ -36,6 +36,53 @@ def build_prompt(mail, fields: dict, hint: str) -> str:
     )
 
 
+def extract_prompt(mail, names: list) -> str:
+    keys = "、".join(names)
+    return (
+        "从下面这封邮件里找出这些信息：" + keys + "。\n"
+        "只输出一个 JSON 对象，键就用上面这些名字，值照抄邮件里的原文（一个字都别改），"
+        "邮件里没有的就给 null，不许猜。\n\n"
+        f"主题：{mail.subject}\n正文：\n{mail.text[:6000]}"
+    )
+
+
+def _loose(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def extract_missing(key: str, mail, names: list, model: str = "gemini-flash-latest", base: str = GEMINI_BASE,
+                    timeout: float = 30) -> dict:
+    """规则没抽到的字段让 AI 兜底找。AI 给的值必须在正文里原样出现，否则不要（防它编）。
+    返回 {字段名: (起, 止)}。"""
+    txt = gemini(key, extract_prompt(mail, names), model, base=base, timeout=timeout)
+    m = re.search(r"\{.*\}", txt, re.S)
+    if not m:
+        return {}
+    try:
+        data = json.loads(m.group(0))
+    except ValueError:
+        return {}
+    out = {}
+    for n in names:
+        v = data.get(n)
+        if v is None or isinstance(v, (dict, list)):
+            continue
+        v = _loose(str(v))
+        if not v or len(v) > 200:
+            continue
+        i = mail.text.find(v)
+        if i < 0:
+            # 空白不一样也认（AI 常把两个空格并成一个）
+            rx = re.compile(r"\s+".join(re.escape(p) for p in v.split(" ")))
+            mm = rx.search(mail.text)
+            if not mm:
+                continue
+            out[n] = mm.span()
+        else:
+            out[n] = (i, i + len(v))
+    return out
+
+
 def gemini(key: str, prompt: str, model: str = "gemini-flash-latest", base: str = GEMINI_BASE, timeout: float = 40) -> str:
     url = f"{base}/models/{model}:generateContent"
     body = json.dumps({"contents": [{"role": "user", "parts": [{"text": prompt}]}],

@@ -22,6 +22,7 @@ sys.path.insert(0, str(HERE))
 
 DATA, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 OUT.mkdir(parents=True, exist_ok=True)
+(OUT / "知客僧.xlsx").unlink(missing_ok=True)   # 上次的表别混进来
 os.environ["ZHIKE_HOME"] = tempfile.mkdtemp(prefix="zhike-bench-")
 os.environ["ZHIKE_NO_KEYRING"] = "1"
 
@@ -263,6 +264,22 @@ t1 = time.time()
 res = eng.run_once()
 run_sec = round(time.time() - t1, 2)
 
+# 同口径核心：解析 + 认规则（含按内容认、挡垃圾）+ 抽字段，不收信、不写表、不发信
+from zhike import learn as _L, rules as _R  # noqa: E402
+raws = [f.read_bytes() for f in test]
+best = None
+for _ in range(3):
+    tc = time.time()
+    for rb in raws:
+        mm = parse(rb)
+        rr = _R.first_match(store.rules, mm)
+        if rr:
+            ff = _L.extract_all(rr["fields"], mm)
+            _R.junk_reason(mm, store.rules) and _R.complete(rr, ff)
+    dt = time.time() - tc
+    best = dt if best is None else min(best, dt)
+core_sec = round(best, 2)
+
 pred = {}
 for lg in store.state.data["log"]:
     n = name_of.get(lg["key"])
@@ -289,12 +306,13 @@ for ws in wb.worksheets:
                 typed["date_cells"] += 1
                 typed["date_typed"] += hasattr(val, "year")
 
+json.dump(store.rules, open(OUT / "rules_zhike.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 json.dump(pred, open(OUT / "pred_zhike.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
-meta = {"actions": acts, "steps": steps, "build_sec": build_sec, "run_sec_200": run_sec, "run": res,
+meta = {"actions": acts, "steps": steps, "build_sec": build_sec, "run_sec_200": run_sec, "core_sec_200": core_sec, "run": res,
         "smtp_sent": len(smtp.sent), "excel": typed,
         "rules": {k: {"conditions": r["conditions"], "fields": [{x: f.get(x) for x in ("name", "type", "labels", "next_line", "builtin")} for f in r["fields"]]} for k, r in rules.items()}}
 json.dump(meta, open(OUT / "meta_zhike.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
-print(json.dumps({k: meta[k] for k in ("actions", "build_sec", "run_sec_200", "smtp_sent", "excel")}, ensure_ascii=False))
+print(json.dumps({k: meta[k] for k in ("actions", "build_sec", "run_sec_200", "core_sec_200", "smtp_sent", "excel")}, ensure_ascii=False))
 srv.shutdown()
 imap.stop()
 smtp.stop()
