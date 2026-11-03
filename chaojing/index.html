@@ -171,6 +171,11 @@ table.data tbody tr.sel td.n{color:var(--accent);font-weight:700}
 .pv-stage{margin:0 auto;transform-origin:top left}
 .pv-scale{transform-origin:top left}
 .pv-scale section.docx{background:#fff;box-shadow:var(--paper-shadow)!important;margin:0 0 18px!important}
+/* 预览纸上的字：黑体用系统的，宋体/楷体用跟 PDF 同一套（用到才下载），没下完先用系统的顶着 */
+.pv-scale [data-qf=s]{font-family:"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei",sans-serif!important}
+.pv-scale [data-qf=r]{font-family:QSerif,"Songti SC","STSong","SimSun","Noto Serif CJK SC",serif!important}
+.pv-scale .docx-tab-stop[data-qn]{word-spacing:0!important;font-size:0!important}
+.pv-scale [data-qf=k]{font-family:QKai,"Kaiti SC","STKaiti","KaiTi","LXGW WenKai",serif!important}
 .pv-err{padding:40px 20px;text-align:center;color:var(--fg2)}
 .pv-foot{display:flex;gap:8px;justify-content:center;padding:0 14px 16px}
 .pv-loading{opacity:.55;transition:opacity .2s}
@@ -415,7 +420,7 @@ const EXAMPLES = {
     ]},
 };
 
-const VER="0.2.0";
+const VER="0.2.1";
 /* ============ 小工具 ============ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -831,12 +836,25 @@ async function preview(){
   try{
     const bytes=fillDocx(S.row,false);
     const tmp=document.createElement("div");
-    await docx.renderAsync(bytes,tmp,null,PV_OPTS); fixLH(tmp);
+    await docx.renderAsync(prepDocx(bytes),tmp,null,PV_OPTS); fixLH(tmp);
     if(my!==pvToken)return;
     scale.replaceChildren(...tmp.childNodes);
+    for(const f of markFonts(window,scale))if(f!=="s")pageFaces(f);
+    refixPreview();
   }catch(e){console.warn(e);scale.innerHTML=`<div class="pv-err">${T.pvFail}</div>`}
   scale.classList.remove("pv-loading");
   fitPreview();
+}
+function refixPreview(){const sc=$("#pvScale"),t=sc.style.transform;sc.style.transform="none";fixNumTabs(window,sc);sc.style.transform=t}
+const PAGE_FACES={};
+function pageFaces(fam){ // 预览里用到宋体/楷体：挂上按字切块的 @font-face，浏览器只下载这页用到的块
+  if(PAGE_FACES[fam])return; PAGE_FACES[fam]=1; const F=FAMS[fam];
+  fontIndex(fam).then(()=>{
+    const st=document.createElement("style");
+    st.textContent=[400,700].map(w=>F.files.map((n,i)=>`@font-face{font-family:${F.css};font-weight:${w};font-display:swap;src:url(${F.dir}${w}/${n}.woff) format("woff");unicode-range:${F.ranges[i]}}`).join("\n")).join("\n");
+    document.head.appendChild(st);
+    setTimeout(()=>document.fonts.ready.then(refixPreview),50); // 宋体/楷体到了，编号后的空白按新字宽重算
+  }).catch(()=>{delete PAGE_FACES[fam]});
 }
 function fitPreview(){
   const body=$("#pvBody"), stage=$("#pvStage"), sc=$("#pvScale");
@@ -857,24 +875,55 @@ function fixLH(root){
 }
 const FB_FAMILY='"Noto Sans CJK SC","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei","WenQuanYi Zen Hei",sans-serif';
 const RCSS=`html,body{margin:0;background:#fff}#host{width:max-content}section.docx{margin:0!important;box-shadow:none!important;background:#fff}
-section.docx,section.docx *{font-family:QSans,${FB_FAMILY}!important;font-kerning:none!important;font-variant-ligatures:none!important;text-rendering:optimizeSpeed}
-.docx p{line-height:${LH}}`;
+section.docx,section.docx *{font-kerning:none!important;font-variant-ligatures:none!important;text-rendering:optimizeSpeed}
+section.docx,[data-qf=s]{font-family:QSans,${FB_FAMILY}!important}[data-qf=r]{font-family:QSerif,QSans,${FB_FAMILY}!important}[data-qf=k]{font-family:QKai,QSans,${FB_FAMILY}!important}
+.docx p{line-height:${LH}}.docx-tab-stop[data-qn]{word-spacing:0!important;font-size:0!important}`;
 let rendererReady=null, rendererWin=null;
 function ensureRenderer(){
   if(rendererReady)return rendererReady;
   rendererReady=(async()=>{
     const ifr=$("#renderer");
     await new Promise(ok=>{ifr.onload=ok;ifr.srcdoc=`<!doctype html><html><head><meta charset="utf-8"><style>${RCSS}</style><script src="lib/jszip.min.js"><\/script><script src="lib/docx-preview.min.js"><\/script></head><body><div id="host"></div></body></html>`});
-    const w=ifr.contentWindow; if(!w.docx)throw new Error("renderer"); rendererWin=w; applyBorderCss(w.document); FACES.clear(); ASC=0;
+    const w=ifr.contentWindow; if(!w.docx)throw new Error("renderer"); rendererWin=w; applyBorderCss(w.document); FACES.clear(); for(const k in ASC)delete ASC[k];
     return w;
   })();
   rendererReady.catch(()=>{rendererReady=null});
   return rendererReady;
 }
 
-/* ---- 字体：Noto Sans SC（OFL），按字切成小块，只搬用得上的块，搬过的存进浏览器缓存 ---- */
-const FONT={idx:null,cov:null,files:null,ranges:null,sfnt:{400:{},700:{}}};
-const FONT_CACHE="chaojing-font-1", FACES=new Set(); let ASC=0;
+/* ---- 字体：黑体 Noto Sans SC、宋体 Noto Serif SC、楷体 霞鹜文楷（都是 OFL）。按字切成小块，只搬用得上的块，搬过的存进浏览器缓存 ---- */
+// s=黑体 r=宋体 k=楷体。Word 里的字体名按「像哪种」归到这三套里（fontFam）
+const FAMS={s:{dir:"fonts/",css:"QSans",pdf:"NotoSansSC"},r:{dir:"fonts/serif/",css:"QSerif",pdf:"NotoSerifSC"},k:{dir:"fonts/kai/",css:"QKai",pdf:"LXGWWenKai"}};
+for(const f of Object.values(FAMS)){f.idx=null;f.sfnt={400:{},700:{}}}
+const FONT=FAMS.s; // 黑体兜底：别的字体里没有的字用它
+const FONT_CACHE="chaojing-font-1", FACES=new Set(), ASC={};
+const KAI_RE=/楷|kai|wenkai|文楷/, SERIF_RE=/宋|song|simsun|明朝|ming|mincho|仿|fang|serif|times|georgia|cambria|garamond|baskerville|palatino|bookantiqua|century|batang|myungjo/;
+const CJK_NAME=/[㐀-鿿]|simsun|simhei|kaiti|fangsong|yahei|dengxian|pingfang|hiragino|heiti|songti|^st[a-z]|mingliu|dfkai|biaukai|jhenghei|cjk|notosanssc|notoserifsc|sourcehan|wenquanyi|lxgw|^fz|mincho|gothic|batang|gulim|dotum|malgun/;
+function fontFam(list){
+  const names=String(list||"").split(",").map(x=>x.trim().replace(/^["']|["']$/g,"")).filter(Boolean);
+  if(!names.length)return "s";
+  for(const k in FAMS)if(names[0]===FAMS[k].css)return k;
+  const cls=n=>{n=n.toLowerCase().replace(/[\s_\-]/g,"");return KAI_RE.test(n)?"k":SERIF_RE.test(n)&&!/sans/.test(n)?"r":"s"};
+  const cjk=names.find(n=>CJK_NAME.test(n.toLowerCase().replace(/[\s_\-]/g,"")));
+  return cls(cjk||names[0]);
+}
+function fixNumTabs(win,root){ // 编号后的制表符：编号短于悬挂缩进就跳到文字起点，不然跳到下一个默认制表位（21 磅）
+  for(const m of root.querySelectorAll('span[id^="_qn"]')){
+    const p=m.closest("p"), w=m.nextElementSibling, tab=w&&(w.classList.contains("docx-tab-stop")?w:w.querySelector(".docx-tab-stop")); if(!p||!tab)continue;
+    tab.setAttribute("data-qn",""); tab.style.setProperty("padding-left","0px","important"); // 字距、字号归零靠样式表（docx-preview 稍后还会改行内样式）
+    const pr=p.getBoundingClientRect(), cl=pr.left+(parseFloat(win.getComputedStyle(p).paddingLeft)||0), x=tab.getBoundingClientRect().left, dt=28;
+    const to=x<cl-0.5?cl:cl+Math.ceil((x-cl+0.5)/dt)*dt;
+    tab.style.setProperty("padding-left",Math.max(0,to-x)+"px","important"); // 用左内边距撑宽：inline-block 会把行撑高
+  }
+}
+function markFonts(win,root){ // 给排好的每个元素标上用哪套字（先父后子，子元素没自己定字体就跟父元素走）
+  const out=new Set(["s"]);
+  for(const el of root.querySelectorAll("section.docx, section.docx *")){
+    if(el.tagName==="STYLE")continue;
+    const f=fontFam(win.getComputedStyle(el).fontFamily); el.setAttribute("data-qf",f); out.add(f);
+  }
+  return out;
+}
 async function cachedFetch(url){
   let c=null; try{c=await caches.open(FONT_CACHE)}catch(e){}
   if(c){try{const r=await c.match(url);if(r)return r}catch(e){}}
@@ -882,18 +931,19 @@ async function cachedFetch(url){
   if(c){try{await c.put(url,r.clone())}catch(e){}}
   return r;
 }
-function fontIndex(){
-  if(!FONT.idx){
-    FONT.idx=(async()=>{
-      const j=await (await cachedFetch("fonts/index.json")).json();
+function fontIndex(fam="s"){
+  const F=FAMS[fam];
+  if(!F.idx){
+    F.idx=(async()=>{
+      const j=await (await cachedFetch(F.dir+"index.json")).json();
       const cov=new Map(), ranges=j.files.map(()=>[]); let p=0;
       for(let i=0;i<j.r.length;i+=3){const a=p+j.r[i],b=a+j.r[i+1],s=j.r[i+2];for(let c=a;c<=b;c++)cov.set(c,s);ranges[s].push(a===b?a.toString(16):a.toString(16)+"-"+b.toString(16));p=b}
-      FONT.cov=cov; FONT.files=j.files; FONT.ranges=ranges.map(r=>r.map(x=>"U+"+x).join(",")); FONT.raw=j.r;
+      F.cov=cov; F.files=j.files; F.ranges=ranges.map(r=>r.map(x=>"U+"+x).join(",")); F.raw=j.r;
       return j;
     })();
-    FONT.idx.catch(()=>{FONT.idx=null});
+    F.idx.catch(()=>{F.idx=null});
   }
-  return FONT.idx;
+  return F.idx;
 }
 async function inflate(u8){return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer())}
 async function woffToSfnt(buf){ // WOFF 1.0 → 原始 TTF
@@ -907,26 +957,157 @@ async function woffToSfnt(buf){ // WOFF 1.0 → 原始 TTF
   ents.forEach((e,i)=>{const o=12+i*16;od.setUint32(o,e.tag);od.setUint32(o+4,e.ck);od.setUint32(o+8,off);od.setUint32(o+12,e.ol);out.set(datas[i].subarray(0,e.ol),off);off+=(e.ol+3)&~3});
   return out.buffer;
 }
-function fontSlices(w,ids){
-  const st=FONT.sfnt[w];
+function fontSlices(fam,w,ids){
+  const F=FAMS[fam], st=F.sfnt[w];
   return Promise.all([...ids].map(id=>{
-    if(!st[id]){st[id]=(async()=>woffToSfnt(await (await cachedFetch(`fonts/${w}/${FONT.files[id]}.woff`)).arrayBuffer()))();st[id].catch(()=>{delete st[id]})}
+    if(!st[id]){st[id]=(async()=>woffToSfnt(await (await cachedFetch(`${F.dir}${w}/${F.files[id]}.woff`)).arrayBuffer()))();st[id].catch(()=>{delete st[id]})}
     return st[id];
   }));
 }
-async function installFaces(win,w,ids){
+async function installFaces(win,fam,w,ids){
+  const F=FAMS[fam];
   for(const id of ids){
-    const key=w+":"+id; if(FACES.has(key))continue;
-    const f=new win.FontFace("QSans",await FONT.sfnt[w][id],{weight:String(w),unicodeRange:FONT.ranges[id]});
+    const key=fam+w+":"+id; if(FACES.has(key))continue;
+    const f=new win.FontFace(F.css,await F.sfnt[w][id],{weight:String(w),unicodeRange:F.ranges[id]});
     await f.load(); win.document.fonts.add(f); FACES.add(key);
   }
 }
-function measureAsc(win){
+function measureAsc(win,fam){ // 基线在字框里的位置（各套字不一样）
   const d=win.document, s=d.createElement("div");
-  s.style.cssText="position:absolute;left:0;top:0;font:400 100px QSans;line-height:normal;white-space:nowrap";
-  s.innerHTML='国<span style="display:inline-block;width:1px;height:0"></span>'; d.body.appendChild(s);
+  s.style.cssText=`position:absolute;left:0;top:0;font:400 100px ${FAMS[fam].css};line-height:normal;white-space:nowrap`;
+  s.innerHTML='x<span style="display:inline-block;width:1px;height:0"></span>'; d.body.appendChild(s);
   const r=d.createRange(); r.setStart(s.firstChild,0); r.setEnd(s.firstChild,1); const cr=r.getBoundingClientRect(); const base=s.lastChild.getBoundingClientRect().bottom;
   s.remove(); return cr.height?(base-cr.top)/cr.height:0.801;
+}
+const famIds=(fam,cps)=>{const F=FAMS[fam],ids=new Set([F.cov.get(32),F.cov.get(120)]);if(fam==="s")ids.add(0);for(const c of cps){const s=F.cov.get(c);if(s!=null)ids.add(s)}ids.delete(undefined);return ids};
+
+/* ---- 排版前处理（只给预览和 PDF 用，Word 成品不动）：
+   1. Word 自动编号（numbering.xml）自己算成真字，插在段首，缩进和制表位照 Word 的规矩补上；
+   2. 「与下段同页 / 段中不分页 / 孤行控制」做成书签记号，排好版后分页时认 ---- */
+const WNS="http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+const NUMCH="0123456789一二三四五六七八九十百千万零〇壹贰叁肆伍陆柒捌玖拾佰仟甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥ivxlcdmIVXLCDMabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ•▪◦●■□◆❖➢✓➔().、（）";
+const CN="零一二三四五六七八九", CNL="零壹贰叁肆伍陆柒捌玖";
+function cnNum(n,d,u){
+  if(n<=0)return d[0];
+  if(n>=10000){const hi=Math.floor(n/10000),lo=n%10000;return cnNum(hi,d,u)+"万"+(lo?(lo<1000?d[0]:"")+cnNum(lo,d,u):"")}
+  const ds=String(n).split("").map(Number), L=ds.length; let s="", zero=false;
+  ds.forEach((x,i)=>{const p=L-1-i;if(!x){zero=true;return}if(zero&&s)s+=d[0];zero=false;s+=(x===1&&p===1&&i===0&&u===CNU?"":d[x])+u[p]});
+  return s;
+}
+const CNU=["","十","百","千"], CNLU=["","拾","佰","仟"];
+function roman(n){if(n<=0||n>=4000)return String(n);const v=[1000,900,500,400,100,90,50,40,10,9,5,4,1],r=["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"];let s="";v.forEach((x,i)=>{while(n>=x){s+=r[i];n-=x}});return s}
+function fmtNum(n,f){
+  switch(f){
+    case "decimalZero":return n<10?"0"+n:String(n);
+    case "upperRoman":return roman(n); case "lowerRoman":return roman(n).toLowerCase();
+    case "upperLetter":case "lowerLetter":{const c=String.fromCharCode(65+(n-1)%26).repeat(Math.floor((n-1)/26)+1);return f==="upperLetter"?c:c.toLowerCase()}
+    case "chineseCounting":case "chineseCountingThousand":case "japaneseCounting":case "taiwaneseCounting":case "koreanCounting":return cnNum(n,CN,CNU);
+    case "ideographDigital":case "taiwaneseDigital":case "japaneseDigitalTenThousand":return String(n).split("").map(x=>"〇一二三四五六七八九"[x]).join("");
+    case "chineseLegalSimplified":case "ideographLegalTraditional":case "japaneseLegal":return cnNum(n,CNL,CNLU);
+    case "ideographTraditional":return "甲乙丙丁戊己庚辛壬癸"[(n-1)%10];
+    case "ideographZodiac":return "子丑寅卯辰巳午未申酉戌亥"[(n-1)%12];
+    case "decimalEnclosedCircle":case "decimalEnclosedCircleChinese":case "ideographEnclosedCircle":return n>=1&&n<=20?String.fromCharCode(0x245F+n):`(${n})`;
+    case "decimalEnclosedFullstop":return n>=1&&n<=20?String.fromCharCode(0x2487+n):n+".";
+    case "decimalEnclosedParen":return n>=1&&n<=20?String.fromCharCode(0x2473+n):`(${n})`;
+    case "decimalFullWidth":case "decimalFullWidth2":return String(n).replace(/\d/g,d=>String.fromCharCode(0xFF10+ +d));
+    case "ordinal":return n+(n%100>=11&&n%100<=13?"th":["th","st","nd","rd"][n%10]||"th");
+    case "none":return "";
+    default:return String(n);
+  }
+}
+const BULLET={0xF0B7:"•",0xF0A7:"▪",0xF0D8:"➢",0xF076:"❖",0xF0FC:"✓",0xF06C:"●",0xF06E:"■",0xF0A8:"□",0xF075:"◆",0xF0E8:"➔",0xF0D2:"◦",0xF09F:"•",0xF0A1:"○"};
+const bulletText=t=>[...String(t||"")].map(c=>{const p=c.codePointAt(0);return BULLET[p]||(p>=0xF000&&p<=0xF0FF?"•":c)}).join("");
+function prepDocx(u8){
+  const z=new PizZip(u8), DP=new DOMParser(), XS=new XMLSerializer();
+  const load=n=>{const f=z.file(n);return f?DP.parseFromString(f.asText(),"application/xml"):null};
+  const kid=(el,n)=>{if(!el)return null;for(let c=el.firstElementChild;c;c=c.nextElementSibling)if(c.localName===n&&c.namespaceURI===WNS)return c;return null};
+  const wv=(el,a="val")=>el?el.getAttributeNS(WNS,a):null;
+  const on=el=>{if(!el)return false;const v=wv(el);return !(v==="0"||v==="false"||v==="off")};
+  const mk=(doc,n)=>doc.createElementNS(WNS,"w:"+n);
+  const styles=load("word/styles.xml"), numbering=load("word/numbering.xml");
+  const ST={}; let defP=null, docP=null;
+  if(styles){
+    for(const s of styles.getElementsByTagNameNS(WNS,"style")){const id=wv(s,"styleId");ST[id]={type:wv(s,"type"),based:wv(kid(s,"basedOn")),pPr:kid(s,"pPr")};if(wv(s,"type")==="paragraph"&&/^(1|true|on)$/.test(wv(s,"default")||""))defP=id}
+    docP=kid(kid(kid(styles.documentElement,"docDefaults"),"pPrDefault"),"pPr");
+  }
+  const chain=id=>{const out=[];for(let g=0;id&&ST[id]&&g<20;g++){out.push(ST[id]);id=ST[id].based}return out};
+  const prop=(pPr,sid,n)=>{let e=kid(pPr,n);if(e)return e;for(const st of chain(sid)){e=kid(st.pPr,n);if(e)return e}return kid(docP,n)};
+  // 编号定义
+  const ABS={}, NUM={};
+  if(numbering){
+    for(const a of numbering.getElementsByTagNameNS(WNS,"abstractNum")){
+      const lv={}; for(const l of a.getElementsByTagNameNS(WNS,"lvl")){
+        const st=wv(kid(l,"start")), rs=kid(l,"lvlRestart");
+        lv[+wv(l,"ilvl")]={start:st!=null?+st:1,fmt:wv(kid(l,"numFmt"))||"decimal",text:wv(kid(l,"lvlText")),suff:wv(kid(l,"suff"))||"tab",pPr:kid(l,"pPr"),rPr:kid(l,"rPr"),lgl:!!kid(l,"isLgl"),restart:rs?+wv(rs):null,pStyle:wv(kid(l,"pStyle"))};
+      }
+      ABS[wv(a,"abstractNumId")]={id:wv(a,"abstractNumId"),lv,link:wv(kid(a,"numStyleLink"))};
+    }
+    for(const n of numbering.getElementsByTagNameNS(WNS,"num")){
+      const over={}; let has=false;
+      for(const o of n.getElementsByTagNameNS(WNS,"lvlOverride")){const so=kid(o,"startOverride"),l=kid(o,"lvl");over[+wv(o,"ilvl")]={start:so?+wv(so):null};if(so)has=true;if(l){const st=wv(kid(l,"start"));over[+wv(o,"ilvl")].lvl={fmt:wv(kid(l,"numFmt")),text:wv(kid(l,"lvlText")),start:st!=null?+st:undefined};has=true}}
+      NUM[wv(n,"numId")]={abs:wv(kid(n,"abstractNumId")),over,has};
+    }
+  }
+  const absOf=(aid,g=0)=>{const A=ABS[aid];if(!A||g>4)return A;if(A.link&&!Object.keys(A.lv).length){const st=ST[A.link];const np=st&&kid(st.pPr,"numPr");const nid=np&&wv(kid(np,"numId"));if(nid&&NUM[nid])return absOf(NUM[nid].abs,g+1)}return A};
+  let CNT={};
+  function number(numId,ilvl){
+    const N=NUM[numId]; if(!N)return null; const A=absOf(N.abs); if(!A)return null;
+    const lv=l=>{const b=A.lv[l]||{},o=N.over[l]&&N.over[l].lvl;if(!o)return b;const r={...b};for(const k in o)if(o[k]!=null)r[k]=o[k];return r};
+    const start=l=>{const o=N.over[l];return o&&o.start!=null?o.start:(lv(l).start!=null?lv(l).start:1)};
+    const L=lv(ilvl); if(L.text==null)return null;
+    const key=N.has?"n"+numId:"a"+A.id, c=CNT[key]||(CNT[key]=[]);
+    c[ilvl]=c[ilvl]!=null?c[ilvl]+1:start(ilvl);
+    for(let l=ilvl+1;l<9;l++){const r=lv(l).restart;if(r!==0&&(r==null||ilvl<r))c[l]=null}
+    const text=L.fmt==="bullet"?bulletText(L.text):L.text.replace(/%([1-9])/g,(m,d)=>{const l=d-1;return fmtNum(c[l]!=null?c[l]:start(l),L.lgl?"decimal":(lv(l).fmt||"decimal"))});
+    return {text,suff:L.suff,pPr:L.pPr,rPr:L.rPr};
+  }
+  let bm=0;
+  function part(name){
+    const doc=load(name); if(!doc)return;
+    for(const p of [...doc.getElementsByTagNameNS(WNS,"p")]){
+      let pPr=kid(p,"pPr"); const sid=wv(kid(pPr,"pStyle"))||defP;
+      if(defP&&!kid(pPr,"pStyle")){ // 没写样式的段落显式挂上默认样式：docx-preview 不然只给段落、不给字套「正文」的字号字体
+        if(!pPr){pPr=mk(doc,"pPr");p.insertBefore(pPr,p.firstChild)}
+        const ps=mk(doc,"pStyle");ps.setAttributeNS(WNS,"w:val",defP);pPr.insertBefore(ps,pPr.firstChild);
+      }
+      const flags=(on(prop(pPr,sid,"keepNext"))?"N":"")+(on(prop(pPr,sid,"keepLines"))?"L":"")+(on(prop(pPr,sid,"widowControl"))?"W":"");
+      // 编号：段落自己的 → 样式链上的；级别没写时看编号定义里哪一级挂了这个样式
+      let numId=null, ilvl=null; const dnp=kid(pPr,"numPr");
+      if(dnp){numId=wv(kid(dnp,"numId"));ilvl=wv(kid(dnp,"ilvl"));dnp.remove()}
+      if(numId==null||ilvl==null)for(const st of chain(sid)){const np=kid(st.pPr,"numPr");if(!np)continue;if(numId==null)numId=wv(kid(np,"numId"));if(ilvl==null)ilvl=wv(kid(np,"ilvl"));if(numId!=null&&ilvl!=null)break}
+      let res=null;
+      if(numId!=null&&numId!=="0"){
+        if(ilvl==null){const N=NUM[numId],A=N&&absOf(N.abs);ilvl=0;if(A)for(const l in A.lv)if(A.lv[l].pStyle&&A.lv[l].pStyle===sid)ilvl=+l}
+        res=number(numId,+ilvl||0);
+      }
+      if(!res&&!flags)continue;
+      if(!pPr){pPr=mk(doc,"pPr");p.insertBefore(pPr,p.firstChild)}
+      let at=pPr.nextSibling;
+      if(res&&(res.text||res.suff==="tab")){
+        const lind=kid(res.pPr,"ind"); let ind=kid(pPr,"ind");
+        if(lind){if(!ind){ind=lind.cloneNode(true);pPr.appendChild(doc.importNode(ind,true))}else for(const a of ["left","start","hanging","firstLine"])if(!ind.hasAttributeNS(WNS,a)&&lind.hasAttributeNS(WNS,a)&&!(a==="hanging"&&ind.hasAttributeNS(WNS,"firstLine"))&&!(a==="firstLine"&&ind.hasAttributeNS(WNS,"hanging")))ind.setAttributeNS(WNS,"w:"+a,lind.getAttributeNS(WNS,a))}
+        const ei=kid(pPr,"ind")||(()=>{for(const st of chain(sid)){const x=kid(st.pPr,"ind");if(x)return x}return null})();
+        const r=mk(doc,"r"), rPr=mk(doc,"rPr"), seen=new Map();
+        for(const src of [kid(pPr,"rPr"),res.rPr])if(src)for(let c=src.firstElementChild;c;c=c.nextElementSibling){if(/^(ins|del|rPrChange|rStyle|vanish|specVanish)$/.test(c.localName))continue;if(c.localName==="rFonts"&&/symbol|wingdings|webdings/i.test(wv(c,"ascii")||""))continue;const n2=doc.importNode(c,true);if(seen.has(c.localName))rPr.replaceChild(n2,seen.get(c.localName));else rPr.appendChild(n2);seen.set(c.localName,n2)}
+        if(rPr.firstChild)r.appendChild(rPr);
+        const t=mk(doc,"t"); t.setAttributeNS("http://www.w3.org/XML/1998/namespace","xml:space","preserve"); t.textContent=res.text+(res.suff==="space"?" ":""); r.appendChild(t);
+        p.insertBefore(r,at);
+        if(res.suff==="tab"){
+          const left=ei?+(wv(ei,"left")||wv(ei,"start")||0):0, hang=ei?+(wv(ei,"hanging")||0):0;
+          if(hang>0){let tabs=kid(pPr,"tabs");if(!tabs){tabs=mk(doc,"tabs");pPr.appendChild(tabs)}const tb=mk(doc,"tab");tb.setAttributeNS(WNS,"w:val","left");tb.setAttributeNS(WNS,"w:pos",String(left));tabs.appendChild(tb)}
+          const r2=mk(doc,"r"); if(rPr.firstChild)r2.appendChild(rPr.cloneNode(true)); r2.appendChild(mk(doc,"tab"));
+          const id=String(70000+ ++bm),b1=mk(doc,"bookmarkStart"),b2=mk(doc,"bookmarkEnd");b1.setAttributeNS(WNS,"w:id",id);b1.setAttributeNS(WNS,"w:name",`_qn${bm}`);b2.setAttributeNS(WNS,"w:id",id);
+          p.insertBefore(b1,at);p.insertBefore(b2,at);p.insertBefore(r2,at); // 记号：编号后面这个制表符的宽度排好后自己算（fixNumTabs）
+        }
+      }
+      if(flags){const id=String(70000+ ++bm),b1=mk(doc,"bookmarkStart"),b2=mk(doc,"bookmarkEnd");b1.setAttributeNS(WNS,"w:id",id);b1.setAttributeNS(WNS,"w:name",`_qk${flags}${bm}`);b2.setAttributeNS(WNS,"w:id",id);p.insertBefore(b1,pPr.nextSibling);p.insertBefore(b2,b1.nextSibling)}
+    }
+    z.file(name,XS.serializeToString(doc));
+  }
+  part("word/document.xml");
+  for(const n of Object.keys(z.files))if(/^word\/(header|footer)\d*\.xml$/.test(n)){CNT={};part(n)}
+  if(styles){for(const np of [...styles.getElementsByTagNameNS(WNS,"numPr")])np.remove();z.file("word/styles.xml",XS.serializeToString(styles))}
+  return z.generate({type:"uint8array",compression:"STORE"});
 }
 
 /* ---- 版面 → 一张「画什么、画在哪」的清单（单位 px，原点在纸的左上角） ---- */
@@ -940,7 +1121,7 @@ function info(win,el){
   const bg=rgb(cs.backgroundColor); v.bg=bg&&!(bg[0]>=254&&bg[1]>=254&&bg[2]>=254)&&el.tagName!=="SECTION"?bg:null;
   const bd=[]; for(const s of ["Top","Right","Bottom","Left"]){const st=cs[`border${s}Style`],wd=parseFloat(cs[`border${s}Width`]);if(st!=="none"&&st!=="hidden"&&wd>0){const c=rgb(cs[`border${s}Color`]);if(c)bd.push({s,w:wd,st,c})}}
   v.bd=bd.length?bd:null; v.col=/^T[DH]$/.test(el.tagName)&&cs.borderCollapse==="collapse";
-  v.c=rgb(cs.color)||[0,0,0]; v.size=parseFloat(cs.fontSize)||16; v.b=(parseInt(cs.fontWeight)||400)>=600; v.it=cs.fontStyle!=="normal";
+  v.c=rgb(cs.color)||[0,0,0]; v.size=parseFloat(cs.fontSize)||16; v.f=fontFam(cs.fontFamily); v.b=(parseInt(cs.fontWeight)||400)>=600; v.it=cs.fontStyle!=="normal";
   const dl=cs.textDecorationLine||""; const par=el.parentElement&&/^(SPAN|A|B|I|U|S|STRONG|EM|SUB|SUP)$/.test(el.tagName)?info(win,el.parentElement):null;
   v.u=dl.includes("underline")||!!(par&&par.u); v.st=dl.includes("line-through")||!!(par&&par.st);
   v.tx=!v.skip&&!!v.c;
@@ -976,11 +1157,16 @@ function glyphImg(win,cp,ti,r){ // 字体里没有的生僻字：用系统字画
 }
 function extractSection(win,sec){
   const R=sec.getBoundingClientRect(), ox=R.left, oy=R.top, items=[], d=win.document;
+  // 段落：分页时认「与下段同页 N / 段中不分页 L / 孤行控制 W」（prepDocx 插的书签记号）
+  const ps=[...sec.querySelectorAll("p")].filter(p=>!p.closest("header,footer")), pidx=new Map(ps.map((p,i)=>[p,i]));
+  const paras=ps.map(p=>({t:!!p.closest("table")}));
+  for(const m of sec.querySelectorAll('span[id^="_qk"]')){const i=pidx.get(m.closest("p"));if(i==null)continue;const f=m.id.slice(3).replace(/\d+$/,"");paras[i].N=f.includes("N");paras[i].L=f.includes("L");paras[i].W=f.includes("W")}
+  const pOf=el=>{const p=el.closest("p");return p?pidx.get(p):undefined};
   for(const el of sec.getElementsByTagName("*")){
     const inf=info(win,el); if(inf.skip)continue;
     if(el.tagName==="IMG"){
       const r=el.getBoundingClientRect(); if(r.width<1||r.height<1||!el.complete||!el.naturalWidth)continue;
-      const id=imgId(el); if(id!=null)items.push({t:"i",id,x:r.left-ox,y:r.top-oy,w:r.width,h:r.height,z:inf.z}); continue;
+      const id=imgId(el); if(id!=null)items.push({t:"i",id,x:r.left-ox,y:r.top-oy,w:r.width,h:r.height,z:inf.z,p:pOf(el)}); continue;
     }
     if(!inf.bg&&!inf.bd)continue;
     const r=el.getBoundingClientRect(); if(r.width<0.5&&r.height<0.5)continue;
@@ -1002,38 +1188,65 @@ function extractSection(win,sec){
   while((node=tw.nextNode())){
     const s=node.nodeValue; if(!s||!/[^\s　​﻿]/.test(s))continue;
     const el=node.parentElement; if(!el||el.tagName==="STYLE")continue; const ti=info(win,el); if(!ti.tx)continue;
-    let run=null;
+    let run=null; const pi=pOf(el), FF=FAMS[ti.f]||FONT, asc=ASC[ti.f]||ASC.s||0.801;
     for(let i=0;i<s.length;){
       const cp=s.codePointAt(i), L=cp>0xffff?2:1;
       if(cp<=32||cp===0xA0||cp===0x3000||cp===0x200B||cp===0xFEFF||cp===0xAD||(cp>=0xE000&&cp<=0xE002)){i+=L;continue}
       rg.setStart(node,i); rg.setEnd(node,i+L); const r=rg.getBoundingClientRect(); i+=L;
       if(r.width<0.01&&r.height<0.01)continue;
-      const x=r.left-ox, y=r.top-oy, fb=!FONT.cov.has(cp);
-      if(fb){
-        items.push({t:"t",w:ti.b?700:400,s:ti.size,c:ti.c,i:ti.it,top:y,h:r.height,y:y+r.height*0.8,ch:[cp],x:[x],r:x+r.width,z:ti.z,inv:1});
+      const x=r.left-ox, y=r.top-oy, f=FF.cov&&FF.cov.has(cp)?ti.f:FONT.cov.has(cp)?"s":null; // 这套字里没有 → 黑体 → 再没有就画成图
+      if(!f){
+        items.push({t:"t",f:"s",w:ti.b?700:400,s:ti.size,c:ti.c,i:ti.it,top:y,h:r.height,y:y+r.height*0.8,ch:[cp],x:[x],r:x+r.width,z:ti.z,inv:1,p:pi});
         items.push({t:"g",id:glyphImg(win,cp,ti,r),x,y,w:r.width,h:r.height,z:ti.z});
         if(run)run=null; if(ti.u||ti.st)deco.push(items[items.length-2]); continue;
       }
-      if(!run||Math.abs(run.top-y)>0.5||Math.abs(run.h-r.height)>0.5){run={t:"t",w:ti.b?700:400,s:ti.size,c:ti.c,i:ti.it,top:y,h:r.height,y:y+r.height*ASC,ch:[],x:[],r:0,z:ti.z,u:ti.u,st:ti.st};items.push(run);if(ti.u||ti.st)deco.push(run)}
+      if(!run||run.f!==f||Math.abs(run.top-y)>0.5||Math.abs(run.h-r.height)>0.5){run={t:"t",f,w:ti.b?700:400,s:ti.size,c:ti.c,i:ti.it,top:y,h:r.height,y:y+r.height*asc,ch:[],x:[],r:0,z:ti.z,u:ti.u,st:ti.st,p:pi};items.push(run);if(ti.u||ti.st)deco.push(run)}
       run.ch.push(cp); run.x.push(x); run.r=x+r.width;
     }
   }
   for(const t of deco){const lw=Math.max(0.6,t.s*0.06);if(t.u)items.push({t:"l",x1:t.x[0],y1:t.y+t.s*0.12,x2:t.r,y2:t.y+t.s*0.12,lw,c:t.c,z:t.z});if(t.st)items.push({t:"l",x1:t.x[0],y1:t.y-t.s*0.3,x2:t.r,y2:t.y-t.s*0.3,lw,c:t.c,z:t.z})}
-  return {items,h:sec.offsetHeight};
+  return {items,h:sec.offsetHeight,paras};
 }
 const top_=it=>it.t==="t"?it.top:it.t==="l"?Math.min(it.y1,it.y2)-it.lw/2:it.y;
 const bot_=it=>it.t==="t"?it.top+it.h:it.t==="l"?Math.max(it.y1,it.y2)+it.lw/2:it.y+it.h;
 function mv(it,dy){if(!dy)return it;const o={...it};if(o.t==="l"){o.y1+=dy;o.y2+=dy}else{o.y+=dy;if(o.t==="t")o.top+=dy}return o}
-function paginate(items,H,PH,mt,mb){ // 内容超过一页：在行与行之间切开，页眉页脚每页都有
+const atom=it=>it.t!=="r"&&it.t!=="l";
+function paraLines(body){ // 每段的行：同一段里纵向重叠的字算一行
+  const by=new Map();
+  for(const it of body)if(atom(it)&&it.p!=null){let a=by.get(it.p);if(!a)by.set(it.p,a=[]);a.push(it)}
+  const out=new Map();
+  for(const [p,a] of by){a.sort((x,y)=>top_(x)-top_(y));const L=[];for(const it of a){const t=top_(it),b=bot_(it),l=L[L.length-1];if(l&&t<l.b-0.5)l.b=Math.max(l.b,b);else L.push({t,b})}out.set(p,L.map(l=>l.t))}
+  return out;
+}
+function keepCut(cut,start,body,paras,PL){ // Word 的三条分页规矩：段中不分页、孤行控制、与下段同页
+  if(!paras)return cut;
+  let pi=null,best=Infinity; for(const it of body)if(atom(it)&&it.p!=null){const t=top_(it);if(Math.abs(t-cut)<0.6&&t<best){best=t;pi=it.p}}
+  const P=pi!=null&&paras[pi], L=P&&PL.get(pi); if(!P||P.t||!L)return cut;
+  const k=L.findIndex(t=>t>=cut-0.6); let c=cut;
+  if(k>0&&P.L)c=L[0];
+  else if(k>0&&P.W){if(k===1)c=L[0];else if(L.length-k===1)c=L[k-1]}
+  if(Math.abs(c-L[0])<0.6){ // 这段整段挪到下一页了：前面「与下段同页」的段跟着走
+    for(let q=pi-1;q>=0;q--){
+      const Q=paras[q], QL=PL.get(q); if(!Q||Q.t)break;
+      if(!QL){if(Q.N)continue;break}
+      if(!Q.N)break;
+      const nc=Q.L||QL.length===1||(Q.W&&QL.length<=3)?QL[0]:QL[QL.length-(Q.W?2:1)];
+      c=nc; if(Math.abs(nc-QL[0])>=0.6)break;
+    }
+  }
+  return c>start+1?c:cut; // 挪完这页就空了 → 不挪
+}
+function paginate(items,H,PH,mt,mb,paras){ // 内容超过一页：在行与行之间切开，页眉页脚每页都有
   const fixed=[],foot=[],body=[];
   for(const it of items)(it.z===1?fixed:it.z===2?foot:body).push(it);
   if(H<=PH+1)return [{fixed:fixed.concat(foot),body,clip:null}];
+  const PL=paraLines(body);
   const pages=[]; let start=0;
   for(let g=0;g<400;g++){
     const off=pages.length?start-mt:0, limit=off+PH-mb; let cut=Infinity;
-    for(const it of body)if(it.t!=="r"&&it.t!=="l"){const t=top_(it);if(t>=start-0.5&&bot_(it)>limit+0.5&&t<cut)cut=t}
-    const last=cut===Infinity; if(last)cut=H; else if(cut<=start+1)cut=limit;
-    const pb=[]; for(const it of body){const t=top_(it),b=bot_(it);const atom=it.t!=="r"&&it.t!=="l";if(atom?(t>=start-0.5&&t<cut):(b>start&&t<cut))pb.push(mv(it,-off))}
+    for(const it of body)if(atom(it)){const t=top_(it);if(t>=start-0.5&&bot_(it)>limit+0.5&&t<cut)cut=t}
+    const last=cut===Infinity; if(last)cut=H; else if(cut<=start+1)cut=limit; else cut=keepCut(cut,start,body,paras,PL);
+    const pb=[]; for(const it of body){const t=top_(it),b=bot_(it);if(atom(it)?(t>=start-0.5&&t<cut):(b>start&&t<cut))pb.push(mv(it,-off))}
     pages.push({fixed:fixed.concat(foot.map(it=>mv(it,PH-H))),body:pb,clip:[pages.length?mt:0,cut-off]});
     if(last)break; start=cut;
   }
@@ -1043,15 +1256,15 @@ function extractDoc(win,host){
   const pg=S.tpl.page, pages=[];
   for(const sec of host.querySelectorAll("section.docx")){
     const k=pg.w/sec.offsetWidth, cs=win.getComputedStyle(sec);
-    const {items,h}=extractSection(win,sec);
-    for(const p of paginate(items,h,pg.h/k,parseFloat(cs.paddingTop)||0,parseFloat(cs.paddingBottom)||0)){p.k=k;pages.push(p)}
+    const {items,h,paras}=extractSection(win,sec);
+    for(const p of paginate(items,h,pg.h/k,parseFloat(cs.paddingTop)||0,parseFloat(cs.paddingBottom)||0,paras)){p.k=k;pages.push(p)}
   }
   return {pages,W:pg.w,H:pg.h,border:S.tpl.pgb};
 }
 async function renderInto(win,host,bytes){
   host.innerHTML=""; INFO=new WeakMap();
-  await win.docx.renderAsync(new win.Uint8Array(bytes),host,null,PV_OPTS); // 跨 iframe 要换成它自己的 Uint8Array，不然 JSZip 不认
-  fixLH(host);
+  await win.docx.renderAsync(new win.Uint8Array(prepDocx(bytes)),host,null,PV_OPTS); // 跨 iframe 要换成它自己的 Uint8Array，不然 JSZip 不认
+  fixLH(host); host._fams=markFonts(win,host); await win.document.fonts.ready; fixNumTabs(win,host);
   await Promise.all([...host.querySelectorAll("img")].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
   await win.document.fonts.ready;
 }
@@ -1087,29 +1300,35 @@ function applyUnit(P,u){
 }
 function allXml(buf){const z=new PizZip(buf);return Object.keys(z.files).filter(f=>/^word\/(document|header\d*|footer\d*|styles|numbering)\.xml$/.test(f)).map(f=>z.file(f).asText()).join("")}
 async function pdfSession(units){
-  const win=await ensureRenderer(); await fontIndex();
+  const win=await ensureRenderer(); await fontIndex("s");
   const buf=groupBuf(), xml=allXml(buf), host=win.document.getElementById("host");
   const cps=new Set(); const addS=s=>{for(const ch of String(s))cps.add(ch.codePointAt(0))};
-  addS(textOfXml(xml)); for(const u of units)for(const i of S.units[u])for(const t of S.tpl.tags){const c=S.map[t];addS(c>=0?S.data.rows[i][c]:c===-1?`{{${t}}}`:"")}
-  const ids=new Set([0]); for(const c of cps){const s=FONT.cov.get(c);if(s!=null)ids.add(s)}
+  addS(textOfXml(xml)); addS(NUMCH); for(const m of xml.matchAll(/<w:lvlText w:val="([^"]*)"/g))addS(bulletText(decodeXml(m[1])));
+  for(const u of units)for(const i of S.units[u])for(const t of S.tpl.tags){const c=S.map[t];addS(c>=0?S.data.rows[i][c]:c===-1?`{{${t}}}`:"")}
   const bold=/<w:b\/>|<w:b w:val="(?:1|true|on)"\s*\/>|<w:bCs\/>/.test(xml);
-  const weights=bold?[400,700]:[400];
-  await Promise.all(weights.map(w=>fontSlices(w,ids)));
-  for(const w of weights)await installFaces(win,w,ids);
-  await win.document.fonts.ready; if(!ASC)ASC=measureAsc(win);
+  const weights=bold?[400,700]:[400], fonts=[], have=new Set();
+  const need=async fams=>{ // 用到哪套字才搬哪套（宋体、楷体只在模板里有的时候搬）
+    for(const f of fams){
+      if(have.has(f))continue; have.add(f); await fontIndex(f); const ids=famIds(f,cps);
+      await Promise.all(weights.map(w=>fontSlices(f,w,ids)));
+      for(const w of weights){await installFaces(win,f,w,ids);for(const id of ids)fonts.push({fam:f,w,id})}
+      await win.document.fonts.ready; if(!ASC[f])ASC[f]=measureAsc(win,f);
+    }
+  };
+  await need(["s"]);
   let P=null;
   if(!/\{\{\s*[#^\/]/.test(textOfXml(allXml(S.tpl.buf)))){ // 模板里没有自己写的循环/条件 → 只排一次
-    const vals={}; S.tpl.tags.forEach((t,i)=>vals[t]=""+i.toString(36)+"");
-    if(grouping())vals.__g=[Object.fromEntries(loopTags().map(t=>[t,""+S.tpl.tags.indexOf(t).toString(36)+""]))];
+    const vals={}; S.tpl.tags.forEach((t,i)=>vals[t]="\uE000"+i.toString(36)+"\uE001");
+    if(grouping())vals.__g=[Object.fromEntries(loopTags().map(t=>[t,"\uE002"+S.tpl.tags.indexOf(t).toString(36)+"\uE001"]))];
     const doc=makeDoc(buf); doc.render(vals);
     await renderInto(win,host,doc.getZip().generate({type:"uint8array"}));
+    await need(host._fams); fixNumTabs(win,host);
     P=wireProbe(win,host);
   }
   return {
-    fonts:weights.map(w=>[...ids].map(id=>({w,id}))).flat(),
-    fast:!!P,
+    fonts, fast:!!P,
     async layout(u){
-      if(P)applyUnit(P,u); else await renderInto(win,host,fillDocx(u,false));
+      if(P)applyUnit(P,u); else{await renderInto(win,host,fillDocx(u,false));await need(host._fams);fixNumTabs(win,host)}
       return extractDoc(win,host);
     }
   };
@@ -1118,11 +1337,12 @@ async function pdfSession(units){
 /* ---- 后台线程：拿清单写 PDF（字体按这一份用到的字现切子集） ---- */
 function pdfWorker(){
   "use strict";
-  const F={400:{},700:{}}, IMG=[], IMGZ=[]; let COV=null; const te=new TextEncoder();
+  const F={}, IMG=[], IMGZ=[], COVS={}; const te=new TextEncoder();
+  const NAME={s:"NotoSansSC",r:"NotoSerifSC",k:"LXGWWenKai"};
   onmessage=async e=>{
     const m=e.data;
-    if(m.type==="idx"){COV=new Map();let p=0;const r=m.r;for(let i=0;i<r.length;i+=3){const a=p+r[i],b=a+r[i+1],s=r[i+2];for(let c=a;c<=b;c++)COV.set(c,s);p=b}return}
-    if(m.type==="font"){F[m.w][m.id]=parseFont(m.buf);return}
+    if(m.type==="idx"){const C=COVS[m.fam]=new Map();let p=0;const r=m.r;for(let i=0;i<r.length;i+=3){const a=p+r[i],b=a+r[i+1],s=r[i+2];for(let c=a;c<=b;c++)C.set(c,s);p=b}return}
+    if(m.type==="font"){(F[m.fam+m.w]||(F[m.fam+m.w]={}))[m.id]=parseFont(m.buf);return}
     if(m.type==="img"){IMG[m.id]=m.img;return}
     if(m.type==="job"){try{const pdf=await buildPdf(m.pdf);postMessage({id:m.id,pdf},[pdf.buffer])}catch(err){postMessage({id:m.id,error:String(err&&err.stack||err)})}}
   };
@@ -1152,8 +1372,8 @@ function pdfWorker(){
     tags.forEach((k,i)=>{const d=t[k],o=12+i*16;for(let j=0;j<4;j++)out[o+j]=k.charCodeAt(j);dv.setUint32(o+4,csum(d));dv.setUint32(o+8,off);dv.setUint32(o+12,d.length);out.set(d,off);off+=(d.length+3)&~3});
     return out;
   }
-  function subset(w,cps){
-    const fonts=F[w], base=fonts[0]||Object.values(fonts)[0]; if(!base)return null;
+  function subset(fk,cps){
+    const fonts=F[fk]||{}, base=fonts[0]||Object.values(fonts)[0], COV=COVS[fk[0]]; if(!base)return null;
     const G=[{f:base,g:0,sid:0}], key=new Map(), gid=new Map();
     const add=(f,sid,g)=>{const k=sid+":"+g;let n=key.get(k);if(n==null){n=G.length;G.push({f,g,sid});key.set(k,n)}return n};
     for(const cp of cps){const sid=COV&&COV.get(cp),f=sid!=null?fonts[sid]:null,g=f?f.cmap.get(cp):null;gid.set(cp,g!=null?add(f,sid,g):G.push({empty:1})-1)}
@@ -1186,10 +1406,9 @@ function pdfWorker(){
   const u16=s=>{let h="FEFF";for(let i=0;i<s.length;i++)h+=s.charCodeAt(i).toString(16).padStart(4,"0");return `<${h}>`};
   const utf16hex=cp=>cp>0xFFFF?hex4(0xD800+((cp-0x10000)>>10))+hex4(0xDC00+((cp-0x10000)&0x3FF)):hex4(cp);
   async function buildPdf(P){
-    const W=P.W,H=P.H, has7=Object.keys(F[700]).length>0;
-    const use={400:new Set(),700:new Set()};
-    for(const pg of P.pages)for(const it of pg.fixed.concat(pg.body))if(it.t==="t"){const w=it.w===700&&has7?700:400;if(it.w===700&&!has7)it.syn=1;it.fw=w;for(const c of it.ch)use[w].add(c)}
-    const fonts={}; for(const w of [400,700])if(use[w].size)fonts[w]=subset(w,[...use[w]]);
+    const W=P.W,H=P.H, use={};
+    for(const pg of P.pages)for(const it of pg.fixed.concat(pg.body))if(it.t==="t"){const fam=it.f||"s",has7=F[fam+"700"]&&Object.keys(F[fam+"700"]).length>0;const w=it.w===700&&has7?700:400;if(it.w===700&&!has7)it.syn=1;it.fw=fam+w;for(const c of it.ch)(use[it.fw]||(use[it.fw]=new Set())).add(c)}
+    const fonts={}; for(const k in use){const f=subset(k,[...use[k]]);if(f)fonts[k]=f}
     const objs=[]; const alloc=()=>{objs.push(null);return objs.length};
     const put=(n,dict,stream)=>{objs[n-1]={dict,stream}};
     const sput=async(n,dict,raw)=>{const c=await z(raw);put(n,`<< ${dict} /Length ${(c||raw).length}${c?" /Filter /FlateDecode":""} >>`,c||raw)};
@@ -1198,12 +1417,12 @@ function pdfWorker(){
     for(const w in fonts){
       const f=fonts[w]; const t0=alloc(),cid=alloc(),fd=alloc(),ff=alloc(),tu=alloc();
       const tag=Array.from({length:6},()=>String.fromCharCode(65+Math.floor(Math.random()*26))).join("");
-      const name=`${tag}+NotoSansSC-${w==700?"Bold":"Regular"}`;
+      const name=`${tag}+${NAME[w[0]]}-${w.endsWith("700")?"Bold":"Regular"}`;
       put(t0,`<< /Type /Font /Subtype /Type0 /BaseFont /${name} /Encoding /Identity-H /DescendantFonts [${cid} 0 R] /ToUnicode ${tu} 0 R >>`);
       const ws=[]; for(let i=0;i<f.adv.length;i++)ws.push(Math.round(f.adv[i]*1000/f.upm));
       put(cid,`<< /Type /Font /Subtype /CIDFontType2 /BaseFont /${name} /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor ${fd} 0 R /CIDToGIDMap /Identity /DW 1000 /W [0 [${ws.join(" ")}]] >>`);
       const k=1000/f.upm;
-      put(fd,`<< /Type /FontDescriptor /FontName /${name} /Flags 4 /FontBBox [${f.bbox.map(v=>Math.round(v*k)).join(" ")}] /ItalicAngle 0 /Ascent ${Math.round(f.asc*k)} /Descent ${Math.round(f.desc*k)} /CapHeight 733 /StemV ${w==700?140:80} /FontFile2 ${ff} 0 R >>`);
+      put(fd,`<< /Type /FontDescriptor /FontName /${name} /Flags ${w[0]==="s"?4:6} /FontBBox [${f.bbox.map(v=>Math.round(v*k)).join(" ")}] /ItalicAngle 0 /Ascent ${Math.round(f.asc*k)} /Descent ${Math.round(f.desc*k)} /CapHeight 733 /StemV ${w.endsWith("700")?140:80} /FontFile2 ${ff} 0 R >>`);
       const fc=await z(f.bytes); put(ff,`<< /Length ${(fc||f.bytes).length} /Length1 ${f.bytes.length}${fc?" /Filter /FlateDecode":""} >>`,fc||f.bytes);
       let cm="/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n";
       const pairs=[]; f.uni.forEach((c,g)=>{if(c!=null)pairs.push(`<${hex4(g)}> <${utf16hex(c)}>`)});
@@ -1275,7 +1494,7 @@ function pool(){
   const url=URL.createObjectURL(new Blob([`(${pdfWorker.toString()})()`],{type:"text/javascript"}));
   const n=Math.max(2,Math.min(6,(navigator.hardwareConcurrency||4)-1));
   for(let i=0;i<n;i++){
-    const w=new Worker(url); w.q=new Map(); w.fonts=new Set(); w.imgs=0; w.idx=false;
+    const w=new Worker(url); w.q=new Map(); w.fonts=new Set(); w.imgs=0; w.idx=new Set();
     w.onmessage=e=>{const m=e.data,p=w.q.get(m.id);if(!p)return;w.q.delete(m.id);m.error?p.no(new Error(m.error)):p.ok(m.pdf)};
     w.onerror=e=>{for(const p of w.q.values())p.no(new Error(e.message||"worker"));w.q.clear()};
     POOL.ws.push(w);
@@ -1284,10 +1503,10 @@ function pool(){
 }
 function pdfJob(sess,list,title){
   const ws=pool(); const w=ws.reduce((a,b)=>b.q.size<a.q.size?b:a);
-  if(!w.idx){w.postMessage({type:"idx",r:FONT.raw});w.idx=true}
-  for(const {w:wt,id} of sess.fonts){const key=wt+":"+id;if(!w.fonts.has(key)){w.fonts.add(key);FONT.sfnt[wt][id].then(buf=>w.postMessage({type:"font",w:wt,id,buf}))}}
+  for(const fam in FAMS)if(FAMS[fam].raw&&!w.idx.has(fam)){w.postMessage({type:"idx",fam,r:FAMS[fam].raw});w.idx.add(fam)}
+  for(const {fam,w:wt,id} of sess.fonts){const key=fam+wt+":"+id;if(!w.fonts.has(key)){w.fonts.add(key);FAMS[fam].sfnt[wt][id].then(buf=>w.postMessage({type:"font",fam,w:wt,id,buf}))}}
   return (async()=>{
-    for(const {w:wt,id} of sess.fonts)await FONT.sfnt[wt][id]; // 字体先到，活儿后到（同一个线程里消息按顺序）
+    for(const {fam,w:wt,id} of sess.fonts)await FAMS[fam].sfnt[wt][id]; // 字体先到，活儿后到（同一个线程里消息按顺序）
     while(w.imgs<IMGS.length){w.postMessage({type:"img",id:w.imgs,img:IMGS[w.imgs]});w.imgs++}
     const id=++POOL.seq; list.title=title; list.producer=`${T.title} ${VER}`;
     return new Promise((ok,no)=>{w.q.set(id,{ok,no});w.postMessage({type:"job",id,pdf:list})});
@@ -1296,7 +1515,7 @@ function pdfJob(sess,list,title){
 const inflight=()=>POOL.ws.reduce((a,w)=>a+w.q.size,0);
 
 function prefetchFonts(){ // 选了 PDF 就先把常用字那一块搬过来，点生成时不用等
-  ensureRenderer().then(fontIndex).then(()=>Promise.all([fontSlices(400,[0]),fontSlices(700,[0])])).then(()=>pool()).catch(()=>{});
+  ensureRenderer().then(()=>fontIndex("s")).then(()=>Promise.all([fontSlices("s",400,[0]),fontSlices("s",700,[0])])).then(()=>pool()).catch(()=>{});
 }
 
 /* ============ 批量生成 ============ */

@@ -83,7 +83,7 @@ for kind in ("docx", "pdf"):
         if hit is None:
             errs["认不出是哪行"] += 1; errs["缺字"] += len(r["must"]); detail.append(f"行{i+1} 没找到成品（编号 {r['id']}）"); continue
         used.add(hit); n, t = texts[hit]; nt = norm(t)
-        for m in r["must"]:
+        for m in r["must"] + (r.get("pdf_must", []) if kind == "pdf" else []):  # pdf_must：Word 自动编号这类只在成品版面里出现的字
             if norm(m) not in nt:
                 errs["缺字"] += 1; detail.append(f"行{i+1} 缺「{m[:30]}」 [{os.path.basename(n)}]")
         if "{{" in t or "}}" in t: errs["残留空位"] += 1; detail.append(f"行{i+1} 残留 {{{{}}}}")

@@ -96,7 +96,7 @@ for key in ONLY:
     s = exp[key]; first = None
     dsname, table = register(key, s["data"])
     # 首列做文件名（和我们的默认规则对齐）
-    first_col = {"cert": "姓名", "invoice": "客户名称", "invoice_500": "客户名称", "contract": "合同编号", "payslip": "姓名"}[key]
+    first_col = {"cert": "姓名", "invoice": "客户名称", "invoice_500": "客户名称", "contract": "合同编号", "payslip": "姓名", "notice": "单位"}[key]
     tpl, nfields = build_template(key, s["template"], dsname, table)
     for fmt, filt in (("docx", "MS Word 2007 XML"), ("pdf", "writer_pdf_Export")):
         od = os.path.join(OUT, key, fmt); shutil.rmtree(od, ignore_errors=True); os.makedirs(od)

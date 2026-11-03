@@ -128,6 +128,108 @@ def payslip():
 
 cert(); invoice(); contract(); payslip()
 
+
+# ---------------- 通知（0.2.1 复赛加）：自动编号、宋体/仿宋/楷体、分页属性 ----------------
+# 编号全是 Word 自动编号（numbering.xml），正文里没有一个手打的「一、」「1.」；
+# 「标题」样式自带编号 + 与下段同页 + 段中不分页；长段落带段中不分页；正文孤行控制。
+from docx.oxml import parse_xml
+from docx.oxml.ns import qn, nsdecls
+from docx.enum.style import WD_STYLE_TYPE
+
+NUMBERING = [  # (abstractNumId, [(fmt, lvlText, suff, left, hanging)])
+    (101, [("chineseCounting", "%1、", "nothing", 0, 0), ("chineseCounting", "（%2）", "nothing", 0, 0),
+           ("decimal", "%3.", "tab", 840, 420), ("decimal", "(%4)", "tab", 1260, 420)]),
+    (102, [("chineseCounting", "第%1条", "space", 0, 0)]),
+    (103, [("decimal", "%1.", "tab", 420, 420), ("decimal", "%1.%2", "tab", 840, 420)]),
+]
+
+
+def add_numbering(d):
+    el = d.part.numbering_part.element
+    first_num = el.find(qn("w:num"))
+    for aid, lvls in NUMBERING:
+        x = f'<w:abstractNum {nsdecls("w")} w:abstractNumId="{aid}"><w:multiLevelType w:val="multilevel"/>'
+        for i, (fmt, txt, suff, left, hang) in enumerate(lvls):
+            x += (f'<w:lvl w:ilvl="{i}"><w:start w:val="1"/><w:numFmt w:val="{fmt}"/><w:suff w:val="{suff}"/><w:lvlText w:val="{txt}"/>'
+                  f'<w:lvlJc w:val="left"/><w:pPr><w:ind w:left="{left}" w:hanging="{hang}"/></w:pPr></w:lvl>')
+        x += "</w:abstractNum>"
+        first_num.addprevious(parse_xml(x))
+    for nid, aid, restart in ((201, 101, False), (202, 102, False), (203, 103, False), (204, 103, True)):
+        x = f'<w:num {nsdecls("w")} w:numId="{nid}"><w:abstractNumId w:val="{aid}"/>'
+        if restart: x += '<w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/></w:lvlOverride>'
+        el.append(parse_xml(x + "</w:num>"))
+
+
+def set_fonts(rpr_owner, east, ascii_=None):
+    rpr = rpr_owner.get_or_add_rPr(); f = rpr.find(qn("w:rFonts"))
+    if f is None: f = parse_xml(f'<w:rFonts {nsdecls("w")}/>'); rpr.insert(0, f)
+    f.set(qn("w:eastAsia"), east)
+    if ascii_: f.set(qn("w:ascii"), ascii_); f.set(qn("w:hAnsi"), ascii_)
+
+
+def ppr_add(p_or_style, xml):
+    ppr = p_or_style.get_or_add_pPr(); ppr.append(parse_xml(xml))
+
+
+def num(p, nid, ilvl):
+    ppr_add(p._p, f'<w:numPr {nsdecls("w")}><w:ilvl w:val="{ilvl}"/><w:numId w:val="{nid}"/></w:numPr>')
+
+
+def notice():
+    d = Document(); add_numbering(d)
+    normal = d.styles["Normal"]; normal.font.size = Pt(14)
+    set_fonts(normal.element, "仿宋_GB2312", "Times New Roman")
+    ppr_add(normal.element, f'<w:widowControl {nsdecls("w")}/>')
+    h = d.styles.add_style("公文标题", WD_STYLE_TYPE.PARAGRAPH); h.base_style = normal; h.font.bold = True; h.font.size = Pt(16)
+    set_fonts(h.element, "黑体")
+    ppr_add(h.element, f'<w:keepNext {nsdecls("w")}/>'); ppr_add(h.element, f'<w:keepLines {nsdecls("w")}/>')
+    ppr_add(h.element, f'<w:numPr {nsdecls("w")}><w:numId w:val="201"/></w:numPr>')  # 样式自带编号（一、二、三、）
+    s = d.sections[0]
+    runs(s.header.paragraphs[0], [("{{单位}} · 内部通知", {"size": 9})])
+    runs(s.footer.paragraphs[0], [("文号 {{文号}}", {"size": 9})])
+    p = d.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run("关于做好年度数据整理工作的通知"); r.bold = True; r.font.size = Pt(22); set_fonts(r._r, "方正小标宋简体")
+    p = d.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER; r = p.add_run("{{文号}}"); set_fonts(r._r, "宋体", "SimSun")
+    p = d.add_paragraph(); runs(p, [("{{单位}}", {"bold": True}), ("：", {})])
+    FILL = "各部门要按本通知要求逐项落实，形成台账，专人负责，按期报送，确保数据完整、口径一致、来源可查。"
+    def para(text, keep_lines=False):
+        p = d.add_paragraph(); p.paragraph_format.first_line_indent = Pt(28); runs(p, [(text, {})])
+        if keep_lines: ppr_add(p._p, f'<w:keepLines {nsdecls("w")}/>')
+        return p
+    def head(t): return d.add_paragraph(t, style="公文标题")
+    head("总体要求")
+    para("{{开头}}" + FILL)
+    for k in range(2): para(FILL * 3)
+    p = d.add_paragraph(); num(p, 201, 1); runs(p, [("工作目标：", {"bold": True}), ("全年数据当年清。", {})])
+    p = d.add_paragraph(); num(p, 201, 1); runs(p, [("工作原则：", {"bold": True}), ("谁产生、谁负责。", {})])
+    for t in ("数据要真实", "口径要统一"):
+        p = d.add_paragraph(); num(p, 201, 2); runs(p, [(t + "，" + FILL, {})])
+        p = d.add_paragraph(); num(p, 201, 3); runs(p, [("由 {{联系人}} 牵头核对。", {})])
+        p = d.add_paragraph(); num(p, 201, 3); runs(p, [("核对结果于 {{日期}} 前报送。", {})])
+    head("任务分工")
+    para("长段落·段中不分页起。" + "{{正文}}" + FILL * 4 + "长段落·段中不分页止。", keep_lines=True)
+    for k in range(3): para(FILL * 2)
+    for t in ("台账建立", "专人负责", "按期报送"):
+        p = d.add_paragraph(); num(p, 202, 0); runs(p, [(t + "：" + FILL, {})])
+    head("经费保障")
+    para("本项工作经费 {{金额}} 元，从部门预算列支。" + FILL * 2)
+    p = d.add_paragraph(); num(p, 203, 0); runs(p, [("材料清单" , {})])
+    p = d.add_paragraph(); num(p, 203, 1); runs(p, [("数据台账一份", {})])
+    p = d.add_paragraph(); num(p, 203, 1); runs(p, [("说明材料一份", {})])
+    p = d.add_paragraph(); num(p, 203, 0); runs(p, [("报送方式", {})])
+    p = d.add_paragraph(); num(p, 204, 0); runs(p, [("重新起号的清单第一项", {})])
+    head("其他事项")
+    para("长段落·二起。" + FILL * 5 + "长段落·二止。", keep_lines=True)
+    para(FILL * 3)
+    head("联系方式")
+    para("联系人：{{联系人}}。" + FILL)
+    p = d.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.RIGHT; r = p.add_run("{{单位}}办公室"); set_fonts(r._r, "楷体_GB2312", "KaiTi")
+    p = d.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.RIGHT; r = p.add_run("{{日期}}"); set_fonts(r._r, "KaiTi")
+    d.save(os.path.join(OUT, "notice.docx"))
+
+
+notice()
+
 # ---------------- 数据 ----------------
 # 名字：编的。刁钻行：生僻字、非法文件名字符、同名、空格子、超长、& < >
 NAMES = ["张伟明", "刘䶮", "𠮷祥云", "王龑喆", "陈/晓:明?", "张伟明", "李堃", "赵一", "周*小<雨>", "欧阳春晓"]
@@ -231,6 +333,21 @@ for i, n in enumerate(NAMES):
 buf = io.StringIO(); w = csv.writer(buf, lineterminator="\r\n"); w.writerow(H); w.writerows(rows)
 open(os.path.join(OUT, "payslip.csv"), "w", encoding="gb18030", newline="").write(buf.getvalue())
 expected["payslip"] = {"template": "payslip.docx", "data": "payslip.csv", "rows": exp}
+
+# 通知：xlsx；正文长短不一，让每份分页落点都不一样
+H = ["单位", "文号", "联系人", "日期", "金额", "开头", "正文"]
+rows, exp = [], []
+UNITS = ["示例市数据局", "刘䶮研究所", "𠮷祥区财政所", "北京某某科技有限公司", "陈/晓:明?工作室", "示例市数据局", "欧阳春晓事务所", "甲&乙<咨询>中心", "李堃办公室", "示例县统计站"]
+NUMS = ["一、", "二、", "三、", "四、", "五、", "（一）", "（二）", "1.", "2.", "(1)", "(2)", "第一条", "第二条", "第三条", "1.1", "1.2"]
+for i, u in enumerate(UNITS):
+    wen = f"示数〔2026〕{i+1:03d}号"; who = ["王一", "李二", "张三", "赵四", "", "钱五", "孙六", "周七", "吴八", "郑九"][i]
+    day = f"2026年12月{i+1}日"; amt = fmt_money([50000, 1200.5, 880000, 36000, 999, 50000, 7300, 0, 120000, 260000][i])
+    head = "根据上级部署，结合本单位实际，" * (1 + (i * 5) % 13)  # 长短拉开，让分页落点每份都不一样
+    body = "具体分工另行通知，各部门先行梳理家底。" * (2 + (i * 7) % 9)
+    rows.append([u, wen, who, day, amt, head, body])
+    exp.append({"must": [x for x in [u, wen, who, day, amt] if x], "pdf_must": NUMS, "file_key": u, "id": wen})  # 编号在 Word 里是 numbering.xml，只在 PDF 里查
+save_xlsx(os.path.join(OUT, "notice.xlsx"), H, rows, {})
+expected["notice"] = {"template": "notice.docx", "data": "notice.xlsx", "rows": exp}
 
 json.dump(expected, open(os.path.join(OUT, "expected.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print("ok ->", OUT)

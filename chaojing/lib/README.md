@@ -19,6 +19,10 @@
 |---|---|---|---|
 | fonts/400/*.woff、fonts/700/*.woff | @fontsource/noto-sans-sc@5.3.1（Noto Sans SC 常规/粗体，按 Google Fonts 的切法切成 102 块） | SIL OFL 1.1，见 `fonts/OFL.txt` | PDF 里的字：只搬这批文档用得上的块，浏览器缓存（Cache Storage `chaojing-font-1`） |
 | fonts/index.json | 自己用 fontTools 从各块 cmap 生成 | — | 哪个字在哪一块（13655 字；同一个字在多块里时优先 chinese-simplified） |
+| fonts/serif/400、700/*.woff + index.json | @fontsource/noto-serif-sc@5.3.1（Noto Serif SC，102 块，13686 字） | SIL OFL 1.1，见 `fonts/serif/OFL.txt` | 宋体、仿宋、明朝、Times 这类字体名（0.2.1 起） |
+| fonts/kai/400、700/*.woff + index.json | lxgw-wenkai-webfont@1.7.0（霞鹜文楷 常规/粗体，97 块，13786 字；woff2 用 fontTools 转 woff，删 AAT/GSUB/GPOS 表） | SIL OFL 1.1，见 `fonts/kai/OFL.txt` | 楷体（0.2.1 起） |
+
+`fonts/make_index.py` 生成各套的 index.json（对黑体重跑结果和原文件逐字节一致）。
 
 字体里没有的字（扩展A/B 区生僻字如 䶮 𠮷）：画成小图贴上，文字层照样写这个字（能选能搜）。
 

@@ -5,7 +5,7 @@ PDF 两种查法：有文字层的用文字层；另外三家 PDF 一律再过�
 """
 import sys, os, json, subprocess
 W = os.path.abspath(sys.argv[1]); E = os.path.join(W, "materials", "expected.json")
-SETS = sys.argv[2].split(",") if len(sys.argv) > 2 else ["cert", "invoice", "contract", "payslip"]
+SETS = sys.argv[2].split(",") if len(sys.argv) > 2 else ["cert", "invoice", "contract", "payslip", "notice"]
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
