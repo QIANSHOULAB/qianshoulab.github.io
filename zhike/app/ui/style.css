@@ -81,6 +81,9 @@ a:hover,.link:hover{text-decoration:underline}
 /* ---------- 右边内容 ---------- */
 .main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
 .scroll{flex:1;min-height:0;overflow:auto;background:var(--bg-group);position:relative}
+.scroll.col{display:flex;flex-direction:column}
+.scroll.col>.page{flex:1 0 auto;width:100%}
+p,.help,.grp-f{text-wrap:pretty}
 .bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;min-height:72px;padding:16px 32px 12px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line);flex:none}
 .bar-t{flex:1;min-width:0}
 .bar h1{margin:0;font-size:28px;line-height:1.15;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

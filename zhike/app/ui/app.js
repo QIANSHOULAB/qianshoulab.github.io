@@ -197,6 +197,7 @@ function wireForm(f) {
     $(".pwf", f).hidden = ms;
     $("[data-act=connect]", f).hidden = ms;
     if (g.provider === "custom") $(".adv", f).hidden = false;
+    $("[data-act=adv]", f).hidden = !$(".adv", f).hidden;      // 服务器那块已经摆出来了，「自己填服务器」就不用了
   }, 250);
   em.addEventListener("input", upd);
 }
@@ -277,8 +278,8 @@ function viewRecs() {
       <div class="rec-fw"><span>${t("rec_fw")}</span>${tagBox("rec:" + r.id, st.forward, t("rec_fw_ph"))}</div>
     </section>`;
   }).join("");
-  $("#main").innerHTML = `<div class="scroll">
-    ${head(rs.length === 1 ? t("recs_t", { n: 1 }) : t("recs_t", { n: rs.length }), "", esc(t("recs_s", { m })))}
+  $("#main").innerHTML = `<div class="scroll col">
+    ${head(t("recs_t", { n: rs.length }), "", esc(t("recs_s", { m })))}
     <div class="page narrow">${note()}${cards}</div>
     <footer class="dock"><span>${t("dock_hint")}</span><button class="btn pri" data-act="accept">${on ? t("btn_accept", { n: on }) : t("btn_accept_none")}</button></footer>
   </div>`;
