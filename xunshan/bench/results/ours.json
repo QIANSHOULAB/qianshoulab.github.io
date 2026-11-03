@@ -1,0 +1,185 @@
+{
+ "tool": "巡山僧 0.1.0",
+ "clicks": {
+  "W1": 5,
+  "W2": 5,
+  "W3": 5,
+  "W4": 2,
+  "W5": 4,
+  "W6": 5,
+  "W7": 4,
+  "W8": 5,
+  "W9-1": 5,
+  "W9-2": 5,
+  "W9-3": 5,
+  "W9-4": 5,
+  "W9-5": 5,
+  "W9-6": 5,
+  "W9-7": 5,
+  "W9-8": 5
+ },
+ "typed": {
+  "W1": 1,
+  "W2": 1,
+  "W3": 1,
+  "W4": 0,
+  "W5": 0,
+  "W6": 1,
+  "W7": 0,
+  "W8": 1,
+  "W9-1": 1,
+  "W9-2": 1,
+  "W9-3": 1,
+  "W9-4": 1,
+  "W9-5": 1,
+  "W9-6": 1,
+  "W9-7": 1,
+  "W9-8": 1
+ },
+ "steps": {
+  "W1": [
+   "same",
+   "change",
+   "alert",
+   "same",
+   "alert",
+   "change",
+   "alert"
+  ],
+  "W2": [
+   "same",
+   "alert",
+   "change",
+   "change",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W3": [
+   "same",
+   "same",
+   "alert",
+   "alert",
+   "change",
+   "same",
+   "alert"
+  ],
+  "W4": [
+   "alert",
+   "alert",
+   "alert",
+   "alert",
+   "alert",
+   "alert",
+   "alert"
+  ],
+  "W5": [
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W6": [
+   "same",
+   "same",
+   "err:gone",
+   "err:gone",
+   "err:gone",
+   "err:gone",
+   "err:gone"
+  ],
+  "W7": [
+   "same",
+   "alert",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same"
+  ],
+  "W8": [
+   "same",
+   "same",
+   "err:blocked",
+   "err:blocked",
+   "alert",
+   "err:blocked",
+   "same"
+  ],
+  "W9-1": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-2": [
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W9-3": [
+   "same",
+   "change",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-4": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-5": [
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-6": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-7": [
+   "same",
+   "same",
+   "change",
+   "alert",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-8": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ]
+ }
+}

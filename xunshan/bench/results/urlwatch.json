@@ -1,0 +1,149 @@
+{
+ "tool": "urlwatch 2.29（行家配置）",
+ "steps": {
+  "W1": [
+   "same",
+   "alert",
+   "alert",
+   "same",
+   "alert",
+   "alert",
+   "alert"
+  ],
+  "W2": [
+   "same",
+   "alert",
+   "alert",
+   "alert",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W3": [
+   "same",
+   "same",
+   "alert",
+   "alert",
+   "alert",
+   "same",
+   "alert"
+  ],
+  "W4": [
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W5": [
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W6": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "alert"
+  ],
+  "W7": [
+   "same",
+   "alert",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same"
+  ],
+  "W8": [
+   "same",
+   "same",
+   "alert",
+   "same",
+   "alert",
+   "alert",
+   "alert"
+  ],
+  "W9-1": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-2": [
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W9-3": [
+   "same",
+   "alert",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-4": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-5": [
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-6": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-7": [
+   "same",
+   "same",
+   "alert",
+   "alert",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-8": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ]
+ }
+}

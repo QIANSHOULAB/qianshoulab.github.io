@@ -71,8 +71,10 @@
 
   // 拦路页识别：验证码、人机检查、登录墙。只识别，不绕。
   function detectWall(html, status) {
-    const s = String(html || '').slice(0, 60000).toLowerCase();
-    if (status === 429 || /captcha|recaptcha|hcaptcha|turnstile|cf-challenge|challenge-platform|are you a robot|verify you are human|人机验证|滑动验证|安全验证/.test(s)) return 'blocked';
+    const s = String(html || '').slice(0, 200000).toLowerCase();
+    // 只看人眼看得见的字：很多正常页面为了评论区、登录框引了 recaptcha 脚本，不能当成被拦
+    const vis = s.replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1>/g, ' ').replace(/<[^>]+>/g, ' ');
+    if (status === 429 || /cf-challenge|challenge-platform|cf_chl_/.test(s) || /captcha|are you a robot|verify you are human|人机验证|滑动验证|安全验证/.test(vis)) return 'blocked';
     if (status === 401) return 'login';
     if (status === 403) return /cloudflare|access denied|forbidden/.test(s) ? 'blocked' : 'login';
     return null;
