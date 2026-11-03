@@ -1,0 +1,34 @@
+{
+ "plain": {
+  "acts": 514,
+  "secs": 781.0
+ },
+ "react": {
+  "acts": 417,
+  "secs": 583.2
+ },
+ "dd": {
+  "acts": 162,
+  "secs": 277.6
+ },
+ "iframe": {
+  "acts": 320,
+  "secs": 433.0
+ },
+ "wizard": {
+  "acts": 496,
+  "secs": 813.9
+ },
+ "ajax": {
+  "acts": 304,
+  "secs": 418.1
+ },
+ "valid": {
+  "acts": 270,
+  "secs": 372.9
+ },
+ "date": {
+  "acts": 160,
+  "secs": 252.4
+ }
+}
