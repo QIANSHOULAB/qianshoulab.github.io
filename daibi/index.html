@@ -88,10 +88,10 @@ footer .mail{user-select:text;-webkit-user-select:text;color:var(--fg2)}
     <p class="tag">施主喝茶，贫僧代笔</p>
     <p class="lede">Excel 里的每一行，替你一格一格写进网页表单。录订单、录系统、报名登记，二十行十秒。</p>
     <div class="cta">
-      <a class="btn pri" href="dist/daibi-0.2.1.zip" download>下载插件</a>
+      <a class="btn pri" href="dist/daibi-0.2.2.zip" download>下载插件</a>
       <a class="btn ghost" href="#install">怎么装 ›</a>
     </div>
-    <p class="meta">0.2.1 · Chrome / Edge · 免费 · 表格不出你的电脑</p>
+    <p class="meta">0.2.2 · Chrome / Edge · 免费 · 表格不出你的电脑</p>
     <div class="shot"><img src="img/hero.jpg" width="1360" height="944" alt="左边网页表单已经填好第 1 行，右边是代笔僧侧栏：字段已自动对上，下面是 20 行的进度"></div>
   </header>
 
@@ -101,17 +101,17 @@ footer .mail{user-select:text;-webkit-user-select:text;color:var(--fg2)}
     <div class="grid">
       <div class="card"><div class="k">📄</div><h3>放表</h3><p>拖进 .xlsx 或 .csv，或者贴一个 Google 表格链接，表更新了点「刷新」。GBK、Excel 日期、多个工作表都认。</p></div>
       <div class="card"><div class="k">🧲</div><h3>对字段</h3><p>看网页上的标签、提示字、name，表头自动配对。没把握的标黄，点一下输入框就绑上。</p></div>
-      <div class="card"><div class="k">✍️</div><h3>开填</h3><p>文本、下拉、单选、复选、日期、上传文件都会填；网站拿 div 自己画的下拉，点开就选；只能点日历的日期框，按格式直接写；嵌在 iframe 里的表单也进得去。默认填完等你点提交，打开「自动提交」一路填到底。</p></div>
+      <div class="card"><div class="k">✍️</div><h3>开填</h3><p>文本、下拉、单选、复选、日期、上传文件都会填。AntD、Element、MUI、select2 的下拉，单选多选点开就选；只认日历格子的日期框，翻到那个月点那一格；iframe 和 Shadow DOM 里的表单也进得去。默认填完等你点提交，打开「自动提交」一路填到底。</p></div>
       <div class="card"><div class="k">🧾</div><h3>记账</h3><p>每行标完成或出错，网页弹框说了什么就记什么，单独列出来能重试，结果能导出。碰到验证码就停下等你。</p></div>
     </div>
   </section>
 
   <section>
-    <h2>实测：744 格，一个不错。</h2>
-    <p class="sub">真把插件装进浏览器，8 种网站各填同一张 20 行的表：普通表单、框架表单、自己画的下拉、嵌在 iframe 里的表、三页向导、不跳页的、带校验的、只能点日历的。服务器收到的每一格都核对过。</p>
+    <h2>实测：1138 格，一个不错。</h2>
+    <p class="sub">真把插件装进浏览器，13 种网站各填同一张 20 行的表：普通表单、框架表单、自己画的下拉、iframe、三页向导、不跳页的、带校验的、只能点日历的，外加真 AntD、Element Plus、MUI、select2 和 Shadow DOM。服务器收到的每一格都核对过；100 行 5500 格，也是零。</p>
     <div class="nums">
-      <div class="num"><b>0 / 744</b><span>错的格子 / 该填的格子</span></div>
-      <div class="num"><b>7.9 秒</b><span>单页订单表，20 行自动提交</span></div>
+      <div class="num"><b>0 / 1138</b><span>错的格子 / 该填的格子</span></div>
+      <div class="num"><b>8.1 秒</b><span>单页订单表，20 行自动提交</span></div>
       <div class="num"><b>7 下</b><span>第一次：放表到填完，含授权</span></div>
       <div class="num"><b>2 下</b><span>再来同一个网站：放表、连填</span></div>
     </div>
@@ -133,7 +133,7 @@ footer .mail{user-select:text;-webkit-user-select:text;color:var(--fg2)}
     <h2>怎么装</h2>
     <p class="sub">商店还在路上。先用开发者模式装，一分钟。</p>
     <ol class="steps">
-      <li><div>下载 <a href="dist/daibi-0.2.1.zip" download>daibi-0.2.1.zip</a>，解压成一个文件夹。<small>放个不会被误删的地方，删了插件就没了。</small></div></li>
+      <li><div>下载 <a href="dist/daibi-0.2.2.zip" download>daibi-0.2.2.zip</a>，解压成一个文件夹。<small>放个不会被误删的地方，删了插件就没了。</small></div></li>
       <li><div>地址栏打开扩展页：Edge 输入 <code>edge://extensions</code>，Chrome 输入 <code>chrome://extensions</code>。</div></li>
       <li><div>打开「开发人员模式」（Chrome 叫「开发者模式」）。<small>Edge 在左下角，Chrome 在右上角。</small></div></li>
       <li><div>点「加载解压缩的扩展」（Chrome 叫「加载已解压的扩展程序」），选刚才解压的文件夹。</div></li>

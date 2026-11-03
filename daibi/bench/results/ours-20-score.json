@@ -5,7 +5,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 7.9,
+  "secs": 8.1,
   "detail": []
  },
  "react": {
@@ -23,7 +23,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 16.3,
+  "secs": 19.5,
   "detail": []
  },
  "iframe": {
@@ -32,7 +32,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 7.8,
+  "secs": 8,
   "detail": []
  },
  "wizard": {
@@ -41,7 +41,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 24.8,
+  "secs": 25.4,
   "detail": []
  },
  "ajax": {
@@ -59,7 +59,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 7,
+  "secs": 7.1,
   "detail": []
  },
  "date": {
@@ -68,7 +68,52 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 7.9,
+  "secs": 9.9,
+  "detail": []
+ },
+ "antd": {
+  "cells": 80,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 32.9,
+  "detail": []
+ },
+ "element": {
+  "cells": 80,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 37.2,
+  "detail": []
+ },
+ "mui": {
+  "cells": 80,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 25.4,
+  "detail": []
+ },
+ "select2": {
+  "cells": 64,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 7.6,
+  "detail": []
+ },
+ "shadow": {
+  "cells": 90,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 13.8,
   "detail": []
  }
 }

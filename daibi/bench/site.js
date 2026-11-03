@@ -8,13 +8,18 @@
  *   +6 valid  必填校验：姓名/手机/邮箱必填，手机 11 位，备注最多 100 字
  *   +7 date   日期控件：只读文本框 + 弹出日历（像 flatpickr），只能点日历选
  *   +8 iframe 里面那张表
+ *   +9..+13 真组件库（先 cd real && npm ci && node build.js）：antd · element（Element Plus）· mui · select2 · shadow（Shadow DOM）
+ *           每页：联系人/姓名、产品版本（单选下拉）、所在城市（可搜下拉）、客户标签（多选下拉）、交付日期（日历控件）；shadow 页是原生控件但整张表在 shadowRoot 里
  * GET /api/log 看收到的提交；POST /api/reset 清空。端口：PORT 环境变量，默认 18800。
  */
 const http = require('http');
 const { URL } = require('url');
 const qs = require('querystring');
 const BASE = +(process.env.PORT || 18800);
-const SITES = ['plain', 'react', 'dd', 'iframe', 'wizard', 'ajax', 'valid', 'date', 'inner'];
+const SITES = ['plain', 'react', 'dd', 'iframe', 'wizard', 'ajax', 'valid', 'date', 'inner', 'antd', 'element', 'mui', 'select2', 'shadow'];
+const REAL = require('path').join(__dirname, 'real', 'build');
+const TAGS = ['新客户', '老客户', '加急', '大客户', '需发票', '海外'];
+
 let log = [];
 const wiz = {};
 
@@ -36,6 +41,12 @@ button{background:#2563eb;color:#fff;border:0;border-radius:6px;padding:8px 22px
 .cal button{margin:0;padding:2px 8px;background:#eee;color:#333}
 iframe{width:100%;height:330px;border:1px dashed #ccd;border-radius:8px}`;
 const page = (title, body) => `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body><div class="wrap">${body}</div></body></html>`;
+// 真组件页不吃上面那套全局 input/button 样式（会把组件库的样式搞乱），只留外框
+const realCss = css.split('\n').filter(l => !/^(input|textarea|button|\.dd|\.cal|iframe)/.test(l)).join('\n') +
+  `.plain input:not([type=hidden]),.plain select{border:1px solid #ccd;border-radius:6px;padding:6px 8px;font:inherit;min-width:260px}
+.plain button{background:#2563eb;color:#fff;border:0;border-radius:6px;padding:8px 22px;font:inherit;cursor:pointer;margin-top:12px}`;
+const realPage = (site, title, sub, body = '<div id="app"></div>', cssFile) => `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>${title}</title><style>${realCss}</style>
+  ${cssFile ? `<link rel="stylesheet" href="/real/${cssFile}">` : ''}</head><body><div class="wrap"><h1>${title}</h1><p class="sub">${sub}</p>${body}</div><script src="/real/${site}.js"></script></body></html>`;
 const PROD = `<option value="">请选择</option><option value="std">标准版</option><option value="pro">专业版</option><option value="max">旗舰版</option>`;
 const CITIES = ['北京', '上海', '广州', '深圳', '杭州', '成都', '新加坡', '南京', '武汉', '西安'];
 const CITY = `<option value="">--</option>` + CITIES.map(c => `<option>${c}</option>`).join('');
@@ -163,6 +174,19 @@ const H = {
   </script>`),
 };
 
+Object.assign(H, {
+  antd: () => realPage('antd', '商机登记', 'Ant Design 5 · Select / 多选 / DatePicker（只读框，只能点日历格子）'),
+  element: () => realPage('element', '订单申请', 'Element Plus · el-select / 多选 / el-date-picker', undefined, 'element.css'),
+  mui: () => realPage('mui', 'Customer intake', 'MUI · Select / 多选 / DatePicker（分段输入框）'),
+  select2: (q) => realPage('select2', '询价单', 'jQuery + select2：原生下拉藏起来，外面一层 select2', `${banner(q.ok)}<form method="post" action="/submit" id="sf" class="plain">
+    <div class="row"><label for="s0">联系人</label><input id="s0" name="name"></div>
+    <div class="row"><label for="s1">产品版本</label><select id="s1" name="product"><option></option>${PROD.replace('<option value="">请选择</option>', '')}</select></div>
+    <div class="row"><label for="s2">所在城市</label><select id="s2" name="city"><option></option>${CITIES.map(c => `<option>${c}</option>`).join('')}</select></div>
+    <div class="row"><label for="s3">客户标签</label><select id="s3" name="tags" multiple>${TAGS.map(c => `<option>${c}</option>`).join('')}</select></div>
+    <button type="submit">提交询价</button></form>`, 'select2.css'),
+  shadow: () => realPage('shadow', '活动报名', '整张表在 Web Component 的 Shadow DOM 里，「手机」再套一层', '<qs-signup></qs-signup>'),
+});
+
 const W = [
   () => `<div class="row"><label for="w1">姓名</label><input id="w1" name="name" required></div>
          <div class="row"><label for="w2">手机号</label><input id="w2" name="phone"></div>`,
@@ -189,6 +213,12 @@ SITES.forEach((site, k) => {
     if (u.pathname === '/api/log') return send(res, 200, JSON.stringify(log), 'application/json');
     if (u.pathname === '/api/reset' && req.method === 'POST') { log = []; return send(res, 200, '{}', 'application/json'); }
     if (u.pathname === '/favicon.ico') return send(res, 204, '');
+    if (u.pathname.startsWith('/real/')) {
+      const f = require('path').join(REAL, require('path').basename(u.pathname));
+      if (!require('fs').existsSync(f)) return send(res, 404, '先 cd real && npm ci && node build.js');
+      return send(res, 200, require('fs').readFileSync(f), f.endsWith('.css') ? 'text/css' : 'text/javascript; charset=utf-8');
+    }
+    if (req.method === 'POST' && /^\/api\/(antd|element|mui|shadow)$/.test(u.pathname)) { const id = rec(u.pathname.slice(5), JSON.parse(await body(req))); return send(res, 200, JSON.stringify({ id }), 'application/json'); }
     if (req.method === 'POST' && u.pathname === '/api/react') { const id = rec('react', JSON.parse(await body(req))); return send(res, 200, JSON.stringify({ id }), 'application/json'); }
     if (req.method === 'POST' && u.pathname === '/api/ajax') { const id = rec('ajax', qs.parse(await body(req))); return send(res, 200, JSON.stringify({ id }), 'application/json'); }
     if (site === 'wizard') {

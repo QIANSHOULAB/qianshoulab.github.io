@@ -8,7 +8,7 @@
 # 按「姓名」把收到的记录和表里的行对上（每行姓名唯一）。
 import json, sys, os
 HERE = os.path.dirname(os.path.abspath(__file__))
-KEY = {'姓名': 'name', '手机': 'phone', '邮箱': 'email', '公司': 'company', '产品': 'product', '数量': 'qty', '城市': 'city', '交付日期': 'due', '备注': 'memo'}
+KEY = {'姓名': 'name', '手机': 'phone', '邮箱': 'email', '公司': 'company', '产品': 'product', '数量': 'qty', '城市': 'city', '交付日期': 'due', '备注': 'memo', '标签': 'tags'}
 
 def score(res, n):
     ans = json.load(open(os.path.join(HERE, 'data', 'answers.json')))[str(n)]
@@ -31,6 +31,7 @@ def score(res, n):
             if f is None: wrong += len(a); missing_rows += 1; detail.append(f'{i+1}行没交上'); continue
             for h, v in a.items():
                 g = f.get(KEY[h], '')
+                if h == '标签': g, v = ','.join(sorted(g.split(','))), ','.join(sorted(v.split(',')))  # 多选不计顺序
                 if g != v: wrong += 1; detail.append(f'{i+1}行{h}：要「{v[:20]}」收到「{g[:20]}」')
         wrong += extra + len(got)  # 名字对不上的记录（姓名填错了）
         if got: detail.append(f'对不上姓名的记录 {len(got)} 条')

@@ -1,6 +1,6 @@
 /* 代笔僧上场：真装插件（Playwright 的 Chromium，--load-extension），8 个网站各用 20 行表自动连填，
  * 服务器收到什么记进 results/ours-<N>.json，交给 score.py 判。
- * 跑法：cd daibi/bench && python3 gen.py && xvfb-run -a node run_ours.js [20|100] [网站,网站…]
+ * 跑法：cd daibi/bench && python3 gen.py && (cd real && npm ci && node build.js) && xvfb-run -a node run_ours.js [20|100] [网站,网站…]
  * 和 daibi/test/e2e.js 一样：侧栏当普通标签页开（panel.html?tab=<id>），测试副本 manifest 预给 127.0.0.1 权限（真用户这里点一次「允许」，算进动手次数）。
  */
 const { chromium } = require('playwright');
@@ -10,10 +10,11 @@ const fs = require('fs'), path = require('path'), os = require('os');
 const N = process.argv[2] || '20';
 const ONLY = process.argv[3] ? process.argv[3].split(',') : null;
 const PORT = 18800;
-const SITES = ['plain', 'react', 'dd', 'iframe', 'wizard', 'ajax', 'valid', 'date'];
+const SITES = ['plain', 'react', 'dd', 'iframe', 'wizard', 'ajax', 'valid', 'date', 'antd', 'element', 'mui', 'select2', 'shadow'];
+const PORTOF = { plain: 0, react: 1, dd: 2, iframe: 3, wizard: 4, ajax: 5, valid: 6, date: 7, antd: 9, element: 10, mui: 11, select2: 12, shadow: 13 }; // +8 是 iframe 里那张表
 const URLS = { wizard: '/w/1' };
 const NEED = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'answers.json'), 'utf8'));
-const COLS = { plain: 9, react: 6, dd: 3, iframe: 4, wizard: 8, ajax: 4, valid: 5, date: 2 };
+const COLS = { plain: 9, react: 6, dd: 3, iframe: 4, wizard: 8, ajax: 4, valid: 5, date: 2, antd: 5, element: 5, mui: 5, select2: 4, shadow: 5 };
 // 自动没对上时，人会去网页上点哪个元素（点选）
 const PICK = {
   dd: { 产品: '.dd[data-name=product]', 城市: '.dd[data-name=city]' },
@@ -34,7 +35,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   fs.writeFileSync(path.join(ext, 'manifest.json'), JSON.stringify(mf));
   const ctx = await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.tmpdir(), 'daibi-prof-')), {
     headless: false, viewport: { width: 900, height: 820 }, locale: 'zh-CN',
-    args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`]
+    args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`, '--disable-backgrounding-occluded-windows', '--window-position=0,0']
   });
   let [sw] = ctx.serviceWorkers(); if (!sw) sw = await ctx.waitForEvent('serviceworker');
   const extId = sw.url().split('/')[2];
@@ -42,13 +43,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   web.on('dialog', d => d.dismiss().catch(() => {}));
   const errors = [];
   web.on('pageerror', e => errors.push('web: ' + e.message));
-  const panel = await ctx.newPage();
+  if (process.env.DBGWEB) web.on('console', m => /DAIBIDBG/.test(m.text()) && console.log('   ', m.text()));
+  await web.goto(`http://127.0.0.1:${PORT}/`);
+  // 侧栏单开一个窗口：网页标签留在前台，跟真用户（侧栏 + 网页并排）一样。
+  // 0.2.1 以前侧栏是同一窗口里的另一个标签，网页在后台，动画和 requestAnimationFrame 不走——自建表单无所谓，组件库的下拉/日历会卡住。
+  const tmp = await ctx.newPage();
+  await tmp.goto(`chrome-extension://${extId}/panel.html`);
+  const tabId = await tmp.evaluate(async () => (await chrome.tabs.query({ url: 'http://127.0.0.1/*' }))[0].id);
+  const [panel] = await Promise.all([ctx.waitForEvent('page'), tmp.evaluate(u => chrome.windows.create({ url: u, left: 910, top: 0, width: 400, height: 860 }), `chrome-extension://${extId}/panel.html?tab=${tabId}`)]);
+  await tmp.close();
+  await web.bringToFront();
   panel.on('pageerror', e => errors.push('panel: ' + e.message));
   await panel.setViewportSize({ width: 380, height: 820 });
-  await web.goto(`http://127.0.0.1:${PORT}/`);
-  await panel.goto(`chrome-extension://${extId}/panel.html`);
-  const tabId = await panel.evaluate(async () => (await chrome.tabs.query({ url: 'http://127.0.0.1/*' }))[0].id);
-  await panel.goto(`chrome-extension://${extId}/panel.html?tab=${tabId}`);
   await panel.waitForSelector('#btnMain');
 
   const st = () => panel.evaluate(() => window.__daibi.S().st);
@@ -61,7 +67,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const results = ONLY && fs.existsSync(RF) ? JSON.parse(fs.readFileSync(RF, 'utf8')) : {};
 
   for (const site of SITES.filter(s => !ONLY || ONLY.includes(s))) {
-    const k = SITES.indexOf(site);
+    const k = PORTOF[site];
     console.log(`\n[${site}]`);
     await reset();
     await web.goto(`http://127.0.0.1:${PORT + k}${URLS[site] || '/'}`);

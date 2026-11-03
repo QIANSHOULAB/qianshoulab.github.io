@@ -58,8 +58,9 @@
   }
 
   // 照框的格式写日期：placeholder 写了 YYYY/MM/DD 就照它，写了个样例日期就照样例，都没有用 YYYY-MM-DD
-  function fmtFor(el) {
-    const ph = String(el.getAttribute('placeholder') || '').trim();
+  function fmtFor(el, box) {
+    let ph = String(el.getAttribute('placeholder') || '').trim();
+    if (!ph && box && box !== el) ph = (box.innerText || '').replace(/\s+/g, '').trim();   // MUI 分段框里写着 MM/DD/YYYY
     if (/y{2,4}/i.test(ph) && /m{1,2}/i.test(ph) && /d{1,2}/i.test(ph)) return ph.replace(/[^ymdhs:\-/.年月日 ]/gi, '').trim();
     const ex = /\d{4}([-/.年])\d{1,2}([-/.月])\d{1,2}(日)?/.exec(ph + ' ' + (el.value || ''));
     if (ex) return 'YYYY' + ex[1] + 'MM' + ex[2] + 'DD' + (ex[3] || '');
@@ -96,7 +97,7 @@
     const d = Object.getOwnPropertyDescriptor(proto, 'value');
     d && d.set ? d.set.call(el, v) : (el.value = v);
   }
-  const fire = (el, ...types) => types.forEach(t => el.dispatchEvent(new Event(t, { bubbles: true })));
+  const fire = (el, ...types) => types.forEach(t => el.dispatchEvent(new Event(t, { bubbles: true, composed: true }))); // composed：Shadow DOM 外面的组件也听得到
   function typeIn(el, v) {
     try { el.focus({ preventScroll: true }); } catch (e) {}
     setNative(el, v);
@@ -109,47 +110,239 @@
     if (el.checked !== on) { el.checked = on; fire(el, 'input', 'change'); }
   }
 
-  /* ---------- 自定义下拉：点开 → 找选项 → 点中 ---------- */
+  /* ---------- 自定义下拉：点开 → 找选项 → 点中（多选逐个点） ---------- */
   function press(el, kinds) {
-    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, view: window, button: 0, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
+    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, composed: true, view: window, button: 0, buttons: 1, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
     kinds.forEach(k => el.dispatchEvent(k.startsWith('pointer') ? new PointerEvent(k, { ...o, pointerType: 'mouse', isPrimary: true }) : new MouseEvent(k, o)));
   }
-  const key1 = (el, k) => ['keydown', 'keyup'].forEach(t => el.dispatchEvent(new KeyboardEvent(t, { key: k, code: k, bubbles: true, cancelable: true })));
+  const CLICK = ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'];
+  const key1 = (el, k) => ['keydown', 'keyup'].forEach(t => el.dispatchEvent(new KeyboardEvent(t, { key: k, code: k, bubbles: true, cancelable: true, composed: true })));
   async function until(fn, ms) { const t0 = Date.now(); let x; while (!(x = fn()) && Date.now() - t0 < ms) await sleep(30); return x; }
   const handleOf = root => root.querySelector('.ant-select-selector,.el-select__wrapper,.el-input__wrapper,.el-input__inner,.select2-selection,.vs__dropdown-toggle,.n-base-selection-label,.ivu-select-selection,[role=combobox]') || root;
-  const openOpts = root => P.optionsOf(root, true);
+  const SELD = /\b(ant-select-item-option-selected|is-selected|selected|Mui-selected|select2-results__option--selected|vs__dropdown-option--selected|multiselect__option--selected)\b/;
+  const isSel = o => o.getAttribute('aria-selected') === 'true' || SELD.test(o.className || '');
+  let stale = new Set(), openFor = null; // 点开之前就看得见的选项（上一个下拉正在收起的菜单），不算这个下拉的
+  const openOpts = root => P.optionsOf(root, true).filter(o => !stale.has(o) || root.contains(o));
   async function openCombo(root) {
     const h = handleOf(root);
     try { h.scrollIntoView({ block: 'nearest' }); } catch (e) {}
-    let os = openOpts(root); if (os.length) return os;
+    const expanded = [root, ...root.querySelectorAll('[aria-expanded]')].some(e => e.getAttribute('aria-expanded') === 'true');
+    let os = (openFor === root || expanded) ? openOpts(root) : [];
+    if (os.length) return os;
+    stale = new Set(P.optionsOf(document.body, true)); openFor = root;
     press(h, ['pointerdown', 'mousedown', 'pointerup', 'mouseup']);   // AntD / MUI 按下就开
-    if ((os = await until(() => { const x = openOpts(root); return x.length && x; }, 200))) return os;
+    if ((os = await until(() => { const x = openOpts(root); return x.length && x; }, 250))) return os;
     press(h, ['click']);                                              // Element / 自家组件 点了才开
     if ((os = await until(() => { const x = openOpts(root); return x.length && x; }, 500))) return os;
     try { h.focus(); } catch (e) {} key1(document.activeElement || h, 'ArrowDown'); // 键盘开
     return (await until(() => { const x = openOpts(root); return x.length && x; }, 300)) || [];
   }
-  async function closeCombo(root) {
+  async function closeCombo(root, picked) {
+    openFor = null;
+    const shut = () => !openOpts(root).length || [root, ...root.querySelectorAll('[aria-expanded]')].some(e => e.getAttribute('aria-expanded') === 'false');
+    if (picked && await until(shut, 300)) return;   // 单选点中了一般自己收起；aria-expanded 先变，不等收起动画
+    if (!openOpts(root).length) return;
     key1(document.activeElement || root, 'Escape');
-    await sleep(30);
-    if (openOpts(root).length) { press(handleOf(root), ['click']); await sleep(30); }
-    if (openOpts(root).length) press(document.body, ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
+    if (await until(shut, 250)) return;
+    await sleep(40);
+    if (openOpts(root).length) { press(handleOf(root), ['click']); await sleep(40); }
+    if (openOpts(root).length) press(document.body, CLICK);
   }
-  async function fillCombo(root, v, col) {
-    const shown = () => (root.innerText || '').replace(/\s+/g, ' ').trim();
+  // 选项太多只画看得见的那几条（虚拟列表，AntD 默认就是）：往下滚着找
+  async function scrollFind(root, v) {
+    let os = openOpts(root);
+    const box = os[0] && (function up(n) { while (n && n !== document.body) { const cs = getComputedStyle(n); if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 4) return n; n = n.parentElement; } return null; })(os[0].parentElement);
+    if (!box) return -1;
+    box.scrollTop = 0; box.dispatchEvent(new Event('scroll')); await sleep(40);
+    for (let k = 0; k < 40; k++) {
+      os = openOpts(root);
+      const i = matchOption(os.map(P.optInfo), v); if (i >= 0) return i;
+      if (box.scrollTop + box.clientHeight >= box.scrollHeight - 2) break;
+      box.scrollTop += Math.max(40, box.clientHeight * 0.8); box.dispatchEvent(new Event('scroll')); await sleep(60);
+    }
+    return -1;
+  }
+  async function findOpt(root, v) {
     let os = await openCombo(root);
     let i = matchOption(os.map(P.optInfo), v);
     if (i < 0) { // 能搜的下拉：打字再找
-      const inp = root.querySelector('input:not([type=hidden]):not([readonly])') || (document.activeElement && document.activeElement.matches('input:not([readonly])') && document.activeElement);
-      if (inp && P.visible(inp)) { setNative(inp, v); fire(inp, 'input'); os = await until(() => { const x = openOpts(root); return matchOption(x.map(P.optInfo), v) >= 0 && x; }, 800) || openOpts(root); i = matchOption(os.map(P.optInfo), v); }
+      const inp = root.querySelector('input:not([type=hidden]):not([readonly]):not([aria-hidden=true])') || (document.activeElement && document.activeElement.matches('input:not([readonly])') && root.contains(document.activeElement) && document.activeElement);
+      if (inp && P.visible(inp)) {
+        setNative(inp, v); fire(inp, 'input');
+        await until(() => matchOption(openOpts(root).map(P.optInfo), v) >= 0, 800);
+        i = matchOption(openOpts(root).map(P.optInfo), v);
+        if (i < 0) { setNative(inp, ''); fire(inp, 'input'); await sleep(60); if (!openOpts(root).length) await openCombo(root); } // 搜不到：把搜索词清掉，别把列表留成空的
+      }
     }
-    if (i < 0) { await closeCombo(root); return { col, err: os.length ? 'NO_OPTION' : 'FAILED', v }; }
-    const opt = os[i], txt = P.optInfo(opt).text;
+    if (i < 0) i = await scrollFind(root, v);
+    os = openOpts(root);
+    return { os, i };
+  }
+  async function clickOpt(root, opt) {
     try { opt.scrollIntoView({ block: 'nearest' }); } catch (e) {}
-    press(opt, ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
-    const ok = await until(() => shown().includes(txt) || opt.getAttribute('aria-selected') === 'true', 400);
-    if (openOpts(root).length && !root.matches('[aria-multiselectable=true]')) await closeCombo(root);
+    press(opt, CLICK);
+  }
+  async function fillCombo(root, v, col) {
+    const shown = () => (root.innerText || '').replace(/\s+/g, ' ').trim();
+    // 先整格当一个选项找；找不到、又能拆成几个，就当多选
+    let { os, i } = await findOpt(root, v);
+    const parts = v.split(/[,，;；、|\/]+/).map(x => x.trim()).filter(Boolean);
+    const exact = i >= 0 && (o => o.text === v || o.value === v || key(o.text) === key(v))(P.optInfo(os[i]));
+    if (i >= 0 && (exact || parts.length < 2)) {
+      const opt = os[i], txt = P.optInfo(opt).text;
+      if (!isSel(opt) || !shown().includes(txt)) await clickOpt(root, opt);
+      const ok = await until(() => shown().includes(txt) || isSel(opt), 500);
+      await closeCombo(root, true);
+      return ok ? { col, ok: true } : { col, err: 'FAILED', v };
+    }
+    if (parts.length < 2) { await closeCombo(root); return { col, err: os.length ? 'NO_OPTION' : 'FAILED', v }; }
+    // 多选：先把不要的勾掉，再逐个点要的
+    const want = new Set();
+    for (const p of parts) {
+      let r = await findOpt(root, p);
+      if (r.i < 0) { await closeCombo(root); return { col, err: r.os.length ? 'NO_OPTION' : 'FAILED', v: p }; }
+      const opt = r.os[r.i]; want.add(P.optInfo(opt).text);
+      if (!isSel(opt) && !shown().includes(P.optInfo(opt).text)) { await clickOpt(root, opt); await sleep(60); }
+    }
+    for (const o of openOpts(root)) if (isSel(o) && !want.has(P.optInfo(o).text)) { await clickOpt(root, o); await sleep(60); }
+    const s = shown();
+    const ok = [...want].every(t => s.includes(t)) || [...want].every(t => openOpts(root).some(o => P.optInfo(o).text === t && isSel(o)));
+    await closeCombo(root);
     return ok ? { col, ok: true } : { col, err: 'FAILED', v };
+  }
+
+  /* ---------- 日历控件：点开 → 翻到那个月 → 点那一格 ---------- */
+  const MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const OUTDAY = /prev-month|next-month|other-month|outside|out-of|adjacent|prevMonthDay|nextMonthDay|dayOutsideMonth|not-current|old\b|new\b|disabled/i;
+  function parseYM(t) {
+    t = String(t || '');
+    const y = /(?:^|\D)((?:19|20)\d{2})(?:\D|$)/.exec(t); if (!y) return null;
+    let m = /(\d{1,2})\s*月/.exec(t);
+    if (m) return { y: +y[1], m: +m[1] };
+    m = new RegExp('\\b(' + MON.join('|') + ')[a-z]*\\.?\\b', 'i').exec(t);
+    if (m) return { y: +y[1], m: MON.indexOf(m[1].toLowerCase()) + 1 };
+    m = /(?:19|20)\d{2}\s*[-/.]\s*(\d{1,2})(?!\d)/.exec(t) || /(?:^|\D)(\d{1,2})\s*[-/.]\s*(?:19|20)\d{2}/.exec(t);
+    return m ? { y: +y[1], m: +m[1] } : null;
+  }
+  function attrDate(c) {
+    for (let n = c, k = 0; n && k < 3; n = n.parentElement, k++) {
+      const ts = n.getAttribute('data-timestamp'); if (ts && /^\d{12,}$/.test(ts)) { const d = new Date(+ts); return { y: d.getFullYear(), mo: d.getMonth() + 1, d: d.getDate() }; }
+      for (const a of ['data-date', 'data-value', 'datetime', 'title', 'aria-label', 'data-iso']) {
+        const v = n.getAttribute(a); if (!v || !/\d/.test(v)) continue;
+        let d = toDate(v);
+        if (!d) { const ym = parseYM(v), dm = /(?:^|\D)(\d{1,2})(?:st|nd|rd|th|日)?(?:\D|$)/.exec(v.replace(/(?:19|20)\d{2}/, '')); if (ym && dm) d = { y: ym.y, mo: ym.m, d: +dm[1] }; }
+        if (d && d.mo >= 1 && d.mo <= 12) return d;
+      }
+    }
+    return null;
+  }
+  // 看得见的「日子格」：字是 1–31，最里层
+  function dayCells(scope) {
+    const out = [];
+    scope.querySelectorAll('td,[role=gridcell],button,a,span,div,li').forEach(c => {
+      if (c.closest('[data-qs-ui]')) return;
+      const t = (c.textContent || '').trim();
+      if (!/^\d{1,2}$/.test(t) || +t < 1 || +t > 31) return;
+      if ([...c.children].some(x => (x.textContent || '').trim() === t)) return;
+      if (!P.shown(c)) return;
+      out.push(c);
+    });
+    return out;
+  }
+  const lca = els => { let a = els[0]; while (a && !els.every(e => a.contains(e))) a = a.parentElement; return a; };
+  function navBtn(pop, dir, year) {
+    const RX = year
+      ? (dir < 0 ? /super-prev|d-arrow-left|prev-?year|previous year|上一?年|前一年|«/i : /super-next|d-arrow-right|next-?year|next year|下一?年|后一年|»/i)
+      : (dir < 0 ? /prev|previous|上一?个?月|前一?月|‹|<|←|left/i : /next|下一?个?月|后一?月|›|>|→|right/i);
+    const NOT = year ? null : /super|d-arrow|year|年|«|»/i;
+    return [...pop.querySelectorAll('button,[role=button],a,span,i,th,div')].filter(b => P.shown(b) && b.children.length <= 3).find(b => {
+      const s = [b.getAttribute('aria-label'), b.getAttribute('title'), b.className && b.className.baseVal == null ? b.className : '', b.children.length ? '' : b.textContent].join(' ');
+      return RX.test(s) && !(NOT && NOT.test(s)) && !/^\d+$/.test((b.textContent || '').trim());
+    }) || null;
+  }
+  function headerOf(pop) {
+    const hs = [...pop.querySelectorAll('[class*=header i],[class*=caption i],[class*=title i],[aria-live],[class*=label i]')].filter(P.shown);
+    for (const h of hs) { const ym = parseYM(h.innerText); if (ym) return ym; }
+    return parseYM(pop.innerText);
+  }
+  async function openCal(el) {
+    const before = new Set(dayCells(document.body));
+    const btn = el.matches('input') ? null : el.querySelector('button[aria-label],button');
+    const targets = [el.matches('input') ? el : null, btn, el].filter(Boolean);
+    for (const t of targets) {
+      try { t.focus({ preventScroll: true }); } catch (e) {}
+      press(t, CLICK);
+      const fresh = await until(() => { const c = dayCells(document.body).filter(x => !before.has(x)); return c.length >= 28 && c; }, 600);
+      if (fresh) { let pop = lca(fresh); while (pop.parentElement && pop.parentElement !== document.body && !pop.parentElement.contains(el)) pop = pop.parentElement; return pop; } // 往上到弹层的最外层（含月份标题和翻页钮）
+    }
+    return null;
+  }
+  async function pickDate(el, d) {
+    const pop = await openCal(el);
+    if (!pop) return false;
+    for (let step = 0; step < 150; step++) {
+      const cells = dayCells(pop);
+      let c = cells.find(x => { const a = attrDate(x); return a && a.y === d.y && a.mo === d.mo && a.d === d.d; });
+      const ym = headerOf(pop) || (() => { const a = cells.map(attrDate).filter(Boolean); return a.length ? { y: a[Math.floor(a.length / 2)].y, m: a[Math.floor(a.length / 2)].mo } : null; })();
+      if (!c && ym && ym.y === d.y && ym.m === d.mo) {
+        const inMonth = cells.filter(x => !attrDate(x) && !OUTDAY.test(x.className + ' ' + (x.closest('td,[role=gridcell]') || x).className) && x.getAttribute('aria-disabled') !== 'true');
+        const hits = inMonth.filter(x => +x.textContent.trim() === d.d);
+        c = d.d <= 15 ? hits[0] : hits[hits.length - 1];   // 没标「不是本月」的日历：月初取第一个，月底取最后一个
+      }
+      if (c) {
+        press(c, CLICK);
+        await sleep(80);
+        const ok = [...pop.querySelectorAll('button')].find(b => P.shown(b) && /^(确定|确认|ok|apply|done|完成)$/i.test(b.textContent.trim()));
+        if (ok) press(ok, CLICK);
+        return true;
+      }
+      if (!ym) return false;
+      const diff = (d.y - ym.y) * 12 + d.mo - ym.m;
+      const b = (Math.abs(diff) >= 12 && navBtn(pop, diff, true)) || navBtn(pop, diff, false);
+      if (!b) return false;
+      const sig = pop.innerText;
+      press(b, CLICK);
+      await until(() => pop.innerText !== sig, 600);
+      await sleep(20);
+    }
+    return false;
+  }
+  // 日期框现在显示的是哪天
+  const shownDate = el => {
+    const t = el.matches('input') ? el.value : ((el.querySelector('input') || {}).value || el.innerText || '');
+    return toDate(String(t).replace(/\s+/g, ''));
+  };
+  const same = (a, b) => a && b && a.y === b.y && a.mo === b.mo && a.d === b.d;
+  async function fillDateText(el, v, col) {
+    const d = toDate(v);
+    const inp = el.matches('input') ? el : null;
+    if (!d || d.mo < 1 || d.mo > 12 || d.d < 1 || d.d > 31) {
+      if (!inp || inp.readOnly) return { col, err: 'BAD_DATE', v };
+      typeIn(inp, v); return { col, ok: true };
+    }
+    if (same(shownDate(el), d)) return { col, ok: true };
+    const fmtEl = inp || el.querySelector('input') || el;
+    const s = fmtDate(d, fmtFor(fmtEl, el));
+    // 1) 能打字的框：照框的格式写进去，回车，等框架重画一轮，值还在才算
+    if (inp && !inp.readOnly) {
+      try { inp.focus({ preventScroll: true }); } catch (e) {}
+      setNative(inp, s); fire(inp, 'input', 'change'); key1(inp, 'Enter');
+      await sleep(60); try { inp.blur(); } catch (e) {} key1(inp, 'Escape');
+      if (await until(() => same(shownDate(el), d), 250)) { await sleep(60); if (same(shownDate(el), d)) return { col, ok: true }; }
+    } else if (!inp) {
+      // 分段日期框（MUI）：藏着的 input 接受整串粘贴
+      const h = el.querySelector('input');
+      if (h) { setNative(h, s); fire(h, 'input', 'change'); if (await until(() => same(shownDate(el), d), 250)) return { col, ok: true }; }
+    }
+    // 2) 只读框 / 写进去不认：点开日历，翻到那个月，点那一格
+    const picked = await pickDate(el, d);
+    if (picked && await until(() => same(shownDate(el), d), 600)) { key1(inp || el, 'Escape'); try { (inp || document.activeElement).blur(); } catch (e) {} return { col, ok: true }; }
+    // 3) 都不行：老办法硬写（有的只读框写 value 就认）
+    if (inp) {
+      typeIn(inp, s); key1(inp, 'Escape');
+      if (inp.value === s) return { col, ok: true };
+    }
+    return { col, err: 'FAILED', v };
   }
 
   async function fillOne(it) {
@@ -160,7 +353,12 @@
   async function fillOne0(it) {
     const v = it.v == null ? '' : String(it.v);
     if (v.trim() === '') return { col: it.col, skip: 'empty' };
-    const found = P.find(it.css);
+    let found = P.find(it.css);
+    // 选择器找到的框，名字跟绑的时候对不上（网站改版、前面多了个提示条）：按名字在这页上重找，唯一的才用
+    if (it.label && (!found || P.describe([].concat(found)[0]).label !== it.label)) {
+      const alt = P.fields().filter(f => f.label === it.label);
+      if (alt.length === 1) found = P.find(alt[0].sel);
+    }
     if (!found) return { col: it.col, skip: 'absent' };
     const els = [].concat(found);
     const el = els[0];
@@ -168,14 +366,7 @@
     const kind = P.describe(el).kind;
     try {
       if (kind === 'combo') return await fillCombo(el, v.trim(), it.col);
-      if (kind === 'datetext') {
-        const d = toDate(v);
-        if (!d || d.mo < 1 || d.mo > 12 || d.d < 1 || d.d > 31) { if (el.readOnly) return { col: it.col, err: 'BAD_DATE', v }; typeIn(el, v); return { col: it.col, ok: true }; }
-        const s = fmtDate(d, fmtFor(el));
-        typeIn(el, s); key1(el, 'Escape');
-        if (el.value !== s) return { col: it.col, err: 'FAILED', v };
-        return { col: it.col, ok: true };
-      }
+      if (kind === 'datetext') return await fillDateText(el, v, it.col);
       if (kind === 'file') {
         const files = it.files || [];
         if (!files.length) return { col: it.col, skip: 'empty' };
@@ -239,7 +430,8 @@
 
   /* ---------- 提交按钮 ---------- */
   const SUBMIT_TXT = /^(提交|下一步|下一页|保存|确定|确认|完成|发送|报名|登记|创建|添加|新增|submit|next|continue|save|send|create|add|register|sign\s*up|apply|confirm|done|ok)/i;
-  function btnText(b) { return (b.value || b.textContent || b.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim(); }
+  // AntD 会在两个汉字的按钮中间塞空格（「提 交」），去掉再认
+  function btnText(b) { return (b.value || b.textContent || b.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().replace(/([\u4e00-\u9fff]) (?=[\u4e00-\u9fff])/g, '$1'); }
   function findSubmit(sels) {
     const els = sels.map(s => [].concat(P.find(s) || [])[0]).filter(Boolean).map(e => e.form ? e : (e.closest('form') || e));
     const form = els.map(e => e.form || e.closest('form')).find(Boolean);
@@ -273,7 +465,8 @@
   document.addEventListener('submit', told, true);
   document.addEventListener('click', e => {
     if (!e.isTrusted) return;
-    const b = e.target.closest && e.target.closest('button,input[type=submit],input[type=button],[role=button]');
+    const t = (e.composedPath && e.composedPath()[0]) || e.target;
+    const b = t.closest && t.closest('button,input[type=submit],input[type=button],[role=button]');
     if (b && SUBMIT_TXT.test(btnText(b))) setTimeout(told, 0);
   }, true);
 

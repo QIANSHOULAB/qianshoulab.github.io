@@ -226,7 +226,7 @@
     if (!sc) sc = await scan();
     addNewMatches();
     const items = [];
-    H.forEach((h, ci) => { const b = m.b[h]; if (b && !run.seen.has(b.sel)) items.push({ col: h, sel: b.sel, v: row[ci], num: isNumCol(ci) }); });
+    H.forEach((h, ci) => { const b = m.b[h]; if (b && !run.seen.has(b.sel)) items.push({ col: h, sel: b.sel, v: row[ci], num: isNumCol(ci), label: b.label }); });
     // 上传框：按单元格里的文件名去附件袋里取
     const missing = [];
     for (const it of items) {

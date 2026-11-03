@@ -5,7 +5,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 42.6,
+  "secs": 46.2,
   "detail": []
  },
  "react": {
@@ -14,7 +14,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 70.2,
+  "secs": 73,
   "detail": []
  },
  "dd": {
@@ -23,7 +23,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 82.2,
+  "secs": 103.8,
   "detail": []
  },
  "iframe": {
@@ -32,7 +32,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 40.4,
+  "secs": 46.2,
   "detail": []
  },
  "wizard": {
@@ -41,7 +41,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 123.7,
+  "secs": 147.1,
   "detail": []
  },
  "ajax": {
@@ -50,7 +50,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 74,
+  "secs": 75.7,
   "detail": []
  },
  "valid": {
@@ -59,7 +59,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 37.5,
+  "secs": 44.9,
   "detail": []
  },
  "date": {
@@ -68,7 +68,52 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 39.6,
+  "secs": 55.7,
+  "detail": []
+ },
+ "antd": {
+  "cells": 380,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 183.6,
+  "detail": []
+ },
+ "element": {
+  "cells": 380,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 203.2,
+  "detail": []
+ },
+ "mui": {
+  "cells": 380,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 148.6,
+  "detail": []
+ },
+ "select2": {
+  "cells": 304,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 48.6,
+  "detail": []
+ },
+ "shadow": {
+  "cells": 430,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 72.1,
   "detail": []
  }
 }

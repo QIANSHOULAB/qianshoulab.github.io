@@ -1,0 +1,21 @@
+{
+  "name": "daibi-bench-real",
+  "private": true,
+  "description": "代笔僧比武：真组件库测试页（antd / element-plus / MUI / select2 / Shadow DOM）。npm ci && node build.js → build/",
+  "scripts": { "build": "node build.js" },
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/material": "9.5.0",
+    "@mui/x-date-pickers": "9.17.0",
+    "antd": "5.29.3",
+    "dayjs": "1.11.23",
+    "element-plus": "2.14.7",
+    "esbuild": "0.28.2",
+    "jquery": "3.7.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "select2": "4.0.13",
+    "vue": "3.5.44"
+  }
+}

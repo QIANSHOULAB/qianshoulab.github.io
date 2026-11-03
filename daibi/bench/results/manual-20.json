@@ -30,5 +30,25 @@
  "date": {
   "acts": 160,
   "secs": 252.4
+ },
+ "antd": {
+  "acts": 240,
+  "secs": 417.7
+ },
+ "element": {
+  "acts": 240,
+  "secs": 417.7
+ },
+ "mui": {
+  "acts": 240,
+  "secs": 417.7
+ },
+ "select2": {
+  "acts": 192,
+  "secs": 333.7
+ },
+ "shadow": {
+  "acts": 262,
+  "secs": 449.4
  }
 }

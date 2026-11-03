@@ -1,12 +1,15 @@
 # 代笔僧比武：生成测试表 + 标准答案
 #   python3 gen.py            → data/表20.xlsx（入库的小样本）、data/表100.xlsx（不入库）、data/answers.json
 # 刁钻的地方：中文、空格子、只有空格的格子、日期写法不一（真日期单元格/斜杠/年月日/点/月日年/8 位数字）、
-#             下拉里没有的值（企业版、拉萨）、超长备注（多行）、带千分位的数量。
+#             下拉里没有的值（企业版、拉萨）、超长备注（多行）、带千分位的数量；
+#             0.2.2 加「标签」列给多选下拉：分隔符混用（、，; 和逗号），也有选项里没有的（VIP）。
 # 名字是随机拼的假名字，公司是「示例××」，邮箱都在 example.com。
 import openpyxl, datetime, json, os, random
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = os.path.join(HERE, 'data'); os.makedirs(D, exist_ok=True)
-H = ['姓名', '手机', '邮箱', '公司', '产品', '数量', '城市', '交付日期', '备注']
+H = ['姓名', '手机', '邮箱', '公司', '产品', '数量', '城市', '交付日期', '备注', '标签']
+TAGS = ['新客户', '老客户', '加急', '大客户', '需发票', '海外']
+TAGV = ['加急、大客户', '新客户', '', '需发票, 海外', '老客户；加急；需发票', '大客户', '加急、VIP', '海外']
 SUR = '林陈黄周吴郑王冯何吕施孔曹严华金魏陶姜谢邹喻苏潘葛范彭郎鲁韦昌马苗凤花方俞任袁柳'
 GIV = '晓一子文宇思嘉若安亦可清明远星禾川岚舟言知夏秋'
 PROD = ['标准版', '专业版', '旗舰版']; PCODE = {'标准版': 'std', '专业版': 'pro', '旗舰版': 'max'}
@@ -35,6 +38,7 @@ def make(n, seed):
             '城市': '拉萨' if i % 19 == 0 else CITY[i % 10],
             '交付日期': date, '_iso': d.isoformat(),
             '备注': [ '', '加急', LONG, '', '电话先联系，再送货', '含"引号"和,逗号'][i % 6],
+            '标签': TAGV[i % 8],
         })
     return rows
 
@@ -59,7 +63,14 @@ SITES = {
     'ajax':   ['姓名', '邮箱', '公司', '备注'],
     'valid':  ['姓名', '手机', '邮箱', '公司', '备注'],
     'date':   ['姓名', '交付日期'],
+    # 0.2.2 真组件库
+    'antd':    ['姓名', '产品', '城市', '标签', '交付日期'],
+    'element': ['姓名', '产品', '城市', '标签', '交付日期'],
+    'mui':     ['姓名', '产品', '城市', '标签', '交付日期'],
+    'select2': ['姓名', '产品', '城市', '标签'],
+    'shadow':  ['姓名', '手机', '产品', '城市', '交付日期'],
 }
+import re
 def answer(site, r):
     a = {}
     for h in SITES[site]:
@@ -71,6 +82,10 @@ def answer(site, r):
             if v not in CITY: return None
             a[h] = v
         elif h == '数量': a[h] = qty(v)
+        elif h == '标签':                    # 多选：顺序不计，判卷时排序比
+            t = [x.strip() for x in re.split(r'[、，,；;|/]+', v) if x.strip()]
+            if any(x not in TAGS for x in t): return None
+            a[h] = ','.join(t)
         elif h == '交付日期': a[h] = r['_iso']
         else: a[h] = txt(v)
     if site == 'valid':                      # 必填：姓名、手机、邮箱；备注最多 100 字

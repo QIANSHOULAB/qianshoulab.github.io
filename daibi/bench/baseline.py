@@ -5,25 +5,28 @@
 #   文本框：点 Excel 格(1) + Ctrl+C(1) + 点网页框(1) + Ctrl+V(1) = 4 下；    时间 M+P+K+P+K
 #   下拉（原生或自定义）：点开(1) + 点选项(1) = 2 下；                          时间 M+P+P
 #   原生日期框：点框(1) + 打 8 位数字(1) = 2 下（日期写法不一，复制粘贴进不去，只能看着打）；时间 M+P+8 字
-#   日历控件：点框(1) + 翻月(平均 1) + 点日子(1) = 3 下；                       时间 M+3P
+#   日历控件：点框(1) + 翻月(平均 1) + 点日子(1) = 3 下；                       时间 M+3P（date 和 antd/element/mui 的日期框）
+#   多选下拉（标签）：点开(1) + 每个选项点一下 + 点别处收起(1)；                  时间 M+(2+n)P
 #   空格子：0 下，但要看一眼（M）
 # 每行：点提交 1 下（向导每页 1 下）；成功页回表单 1 下（向导）；下拉里没有的值、必填空 → 这行跳过，看一眼（M）。
 # 准：假定人一格不错（偏向对手的假定），所以「准」这一项我们最多打平。
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 P, K, M, CH = 1.3, 0.56, 1.35, 0.28
-KIND = {'产品': 'select', '城市': 'select', '交付日期': 'date'}
+KIND = {'产品': 'select', '城市': 'select', '交付日期': 'date', '标签': 'multi'}
+CAL = ('date', 'antd', 'element', 'mui')
 PAGES = {'wizard': 3}
 
 def cell(site, h, v):
     k = KIND.get(h, 'text')
     if site == 'dd' and k == 'select': k = 'select'
-    if site == 'date' and h == '交付日期': k = 'cal'
+    if site in CAL and h == '交付日期': k = 'cal'
     if v == '': return 0, M
     if k == 'text': return 4, M + P + K + P + K
     if k == 'select': return 2, M + 2 * P
     if k == 'date': return 2, M + P + 8 * CH
     if k == 'cal': return 3, M + 3 * P
+    if k == 'multi': n = len(v.split(',')); return 2 + n, M + (2 + n) * P
 
 def run(n):
     ans = json.load(open(os.path.join(HERE, 'data', 'answers.json')))[str(n)]
