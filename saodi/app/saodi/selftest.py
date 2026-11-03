@@ -256,7 +256,10 @@ def run(out_path: str | None = None) -> int:
         from . import text
         base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         text.load(os.path.join(base, "ui"))
-        assert text.T("tray_quit") == "退出" and "{" not in text.T("n_one", name="a", to="b")
+        assert text.Tl("zh", "tray_quit") == "退出" and "{" not in text.T("n_one", name="a", to="b")
+        # 0.4.0：英文那套也打包进去了，分出来的文件夹名跟着语言
+        assert text.Tl("en", "tray_quit") == "Quit" and text.Tl("en", "n_many", name="a", more=2, to="b") == "a and 2 more → b"
+        assert organize.type_dir(".pdf", "en") == "Documents" and organize.type_dir(".pdf", "zh") == "文档"
         assert os.path.exists(os.path.join(base, "ui", "icon.svg"))
         if os.name == "nt":
             from PIL import Image
@@ -276,7 +279,7 @@ def run(out_path: str | None = None) -> int:
                      ("busy_file", t_busy), ("bad_chars", t_bad_chars), ("exif_organize", t_exif_organize),
                      ("recycle_bin", t_trash), ("watch", t_watch), ("download_resume", t_download),
                      ("tags_copy_unzip_content", t_v02), ("v03_watch_downloads", t_v03_watch),
-                     ("v03_autostart_registry", t_v03_autostart), ("v03_bundle", t_v03_bundle)]:
+                     ("v03_autostart_registry", t_v03_autostart), ("v03_bundle_v04_lang", t_v03_bundle)]:
         check(name, fn)
     ok = all(v == "ok" for v in res["checks"].values())
     res["ok"] = ok

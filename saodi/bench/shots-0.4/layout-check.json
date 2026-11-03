@@ -1,0 +1,40 @@
+{
+ "en-1-empty": [],
+ "en-x-rename-light": [],
+ "en-3-result": [],
+ "en-x-rename-dark": [],
+ "en-x-sort": [],
+ "en-4-error": [],
+ "en-2-working": [],
+ "en-x-watch": [],
+ "en-x-min-900x600": [],
+ "en-x-min-900x600-bottom": [],
+ "zh-1-empty": [],
+ "zh-x-rename-light": [],
+ "zh-3-result": [],
+ "zh-x-rename-dark": [],
+ "zh-x-sort": [],
+ "zh-4-error": [],
+ "zh-2-working": [],
+ "zh-x-watch": [],
+ "zh-x-min-900x600": [],
+ "zh-x-min-900x600-bottom": [],
+ "en-intro-390": [
+  "meta {\"title\": \"Jiechi · File Sweeper\", \"desc\": \"The cure for desktop clutter. Batch-download, rename, and send every file to the folder it belongs in. Free for Windows. Your files never leave your PC.\", \"lang\": \"en\"}"
+ ],
+ "en-intro-1280": [
+  "meta {\"title\": \"Jiechi · File Sweeper\", \"desc\": \"The cure for desktop clutter. Batch-download, rename, and send every file to the folder it belongs in. Free for Windows. Your files never leave your PC.\", \"lang\": \"en\"}"
+ ],
+ "en-intro-1280-dark": [
+  "meta {\"title\": \"Jiechi · File Sweeper\", \"desc\": \"The cure for desktop clutter. Batch-download, rename, and send every file to the folder it belongs in. Free for Windows. Your files never leave your PC.\", \"lang\": \"en\"}"
+ ],
+ "zh-intro-390": [
+  "meta {\"title\": \"戒尺僧 · 凡尘乱档，统统归位\", \"desc\": \"专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。Windows 电脑程序，免费，文件不出你电脑。\", \"lang\": \"zh-CN\"}"
+ ],
+ "zh-intro-1280": [
+  "meta {\"title\": \"戒尺僧 · 凡尘乱档，统统归位\", \"desc\": \"专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。Windows 电脑程序，免费，文件不出你电脑。\", \"lang\": \"zh-CN\"}"
+ ],
+ "zh-intro-1280-dark": [
+  "meta {\"title\": \"戒尺僧 · 凡尘乱档，统统归位\", \"desc\": \"专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。Windows 电脑程序，免费，文件不出你电脑。\", \"lang\": \"zh-CN\"}"
+ ]
+}

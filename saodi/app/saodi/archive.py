@@ -14,6 +14,7 @@ import uuid
 import zipfile
 
 from . import fsutil as fs
+from . import text as _text
 
 MAX_TOTAL = 20 * 1024 ** 3   # 20 GB
 MAX_FILES = 100_000
@@ -123,7 +124,7 @@ def extract(src: str, dest_parent: str, want_name: str | None = None) -> str:
         if len(inside) == 1 and os.path.isdir(fs.lp(os.path.join(tmp, inside[0]))):
             root = os.path.join(tmp, inside[0])
             name = inside[0]
-        final = os.path.join(dest_parent, fs.bump(fs.sanitize(name) or "解压", fs.names_in(dest_parent)))
+        final = os.path.join(dest_parent, fs.bump(fs.sanitize(name) or _text.T("unz_dir"), fs.names_in(dest_parent)))
         os.rename(fs.lp(root), fs.lp(final))
         if root != tmp:
             os.rmdir(fs.lp(tmp))

@@ -1,0 +1,349 @@
+# 戒尺僧 0.4.0 英文文字（从 app/ui/strings.js 导出）。一行一条：键<Tab>字。{n} 是填进去的数，{n?file|files} 按数挑单复数；| 隔开的是一串示例文件名。
+
+html_lang	en
+app	Jiechi
+win_title	Jiechi · File Sweeper
+tagline	File Sweeper
+nav_rename	Rename
+nav_sort	Organize
+nav_dl	Download
+nav_watch	Watch
+nav_hist	History
+side_today	{n} today
+foot_mail_pre	Write to the abbot: 
+foot_home	QIANSHOU LAB
+lang_label	Language
+upd_t	v{v} is out
+upd_go	Get it
+
+## 第一次开头那句话
+intro_t	Downloads: handled.
+intro_s	New files get sorted by type as they land. Starts with Windows.
+intro_pile	Sort old ones ({n})
+intro_on	Watching
+intro_ok	Got it
+
+## 选文件夹
+pick_title	Drop a folder here
+pick_sub_rename	A thousand files renamed in a blink.
+pick_sub_sort	Photos with photos. Docs with docs.
+pick_btn	Choose Folder
+demo	Try a sample
+recent	Recent
+pick_paste	Or paste a path and press Enter
+change	Change
+open_folder	Open
+nofolder	Can’t find that folder.
+nofolder_fix	Check the path, or just drag the folder in.
+drop_here	Let go
+loading0	Looking…
+
+## 改名
+r_title	Rename
+r_add	Add a rule
+r_last	Same as last time
+r_clear	Clear
+r_recent	Recent rules
+q_number	Number
+q_replace	Replace
+q_date	Date
+q_taken	Date taken
+q_case	Case
+q_trim	Trim spaces
+q_insert	Add text
+q_remove	Cut chars
+q_ext	Extension
+q_music	Artist - Title
+q_attr	Width × Height
+rule_number	Number
+rule_replace	Replace
+rule_date	Date
+rule_case	Case
+rule_trim	Trim spaces
+rule_insert	Add text
+rule_remove	Cut chars
+rule_ext	Extension
+rule_tpl	Template
+f_find	Find
+f_to	With
+f_regex	Regex
+f_matchcase	Match case
+f_start	Start
+f_step	Step
+f_digits	Digits
+f_where	Put
+at_start	Before
+at_end	After
+at_name	Instead
+f_sep	Separator
+f_source	Use
+s_modified	Modified
+s_created	Created
+s_taken	Date taken
+s_today	Today
+f_fmt	Format
+f_text	Text
+f_first	From start
+f_last	From end
+f_chars	chars
+c_lower	lowercase
+c_upper	UPPERCASE
+c_title	Title Case
+c_sentence	Sentence case
+e_lower	lower
+e_upper	UPPER
+e_set	Change to
+rule_on	On
+rule_off	Off
+rule_up	Move up
+rule_del	Remove
+rules_empty	Add a rule below. New names show up on the right as you type.
+opt_title	Scope
+opt_sub	Include subfolders
+opt_ext	Only these types
+opt_ext_ph	jpg, png
+opt_kw	Name contains
+opt_kw_ph	keyword
+opt_sort	Order
+sort_name	Name
+sort_mtime	Modified
+sort_taken	Date taken
+col_old	Now
+col_new	Becomes
+stat	{total} {total?file|files}, {changed} to rename
+stat_bump	, {n} name {n?clash|clashes}
+stat_err	, {n} can’t be renamed
+stat_notaken	, {n} with no date taken
+n_bumped	Taken, added (2)
+n_fixed	Fixed bad characters
+n_notaken	Used modified date
+n_notaken_skip	No date taken
+f_fallback	No date taken? Use modified date
+n_empty	Blank name, skipped
+n_nometa	Info missing
+n_badregex	Bad regex
+more_rows	{n} more not shown. They get renamed too.
+run_rename	Rename {n}
+nothing	Nothing to change
+done_rename	{n} {n?file|files} renamed
+done_failed	{n} failed
+undo	Undo
+undo_n	Undo {n}
+undone	Undone. {n} {n?file is|files are} back.
+undo_skip	 Skipped {n}: moved or in use.
+tpl_music	{artist} - {title}
+tpl_attr	{name}_{width}x{height}
+tpl_vars	name,folder,size,modified,taken,camera,width,height,artist,title,album,track,year,n
+demo_find	IMG_
+demo_to	Summer-
+
+## 分文件夹
+s_title	Organize
+s_how	How
+s_scheme	Sort by
+scheme_custom	Custom
+scheme_custom_d	Name, content, extension, date, size
+sd_type	Each file type to its own folder
+sd_month	By month modified, 2026/2026-10
+sd_taken	Photos by month taken, nothing else
+act_move	Move
+act_copy	Copy
+act_unzip	Unpack archives too (zip, tar)
+s_watch	Sort new arrivals too
+s_watch_on	Watching. New files sort themselves.
+by_type	By type
+by_content	Content has
+by_date	By date
+by_kw	Name has
+by_ext	Extension is
+by_size	Bigger than
+to_folder	Into
+rest	The rest
+rest_stay	Stay put
+rest_to	Into
+add_rule	Add a rule
+mb	MB
+ph_kw	invoice, receipt
+ph_content	contract, invoice
+ph_ext	pdf, docx
+ph_folder	Folder name
+groups	{n} {n?folder|folders}
+stay_n	{n} staying put
+inplace	Renamed in place
+unz_grp	Unpacked
+unz_n	{n} {n?archive|archives} to unpack
+stat_move	{total} {total?file|files}, {changed} to move
+stat_copy	{total} {total?file|files}, {changed} to copy
+run_sort	Sort {n}
+run_copy	Copy {n}
+done_sort	{n} sorted
+done_copy	{n} copied
+done_unz	{n} {n?archive|archives} unpacked
+w_unz	Unpacked 
+w_copy	Copied 
+
+## 分出来的文件夹名（Python 读）：已经分好的旧文件夹不改名，换了语言以后新来的进新语言的文件夹
+t_img	Images
+t_video	Videos
+t_audio	Audio
+t_doc	Documents
+t_sheet	Spreadsheets
+t_slides	Presentations
+t_archive	Archives
+t_app	Installers
+t_code	Code
+other	Other
+big	Large files
+unz_dir	Unpacked
+dl_file	file
+my_scheme	My rules
+p_type	By type
+p_month	By month
+p_taken	Photos by month taken
+
+## 「用示例试试」造的乱文件（Python 读）：| 隔开
+demo_dir	Jiechi sample-
+demo_files	Invoice - Uber  2026-09.pdf|Q3 report FINAL.xlsx|Contract (final) (2).docx|Screenshot 2026-10-01 at 10.21.png|setup.exe|meeting notes .txt|guest list.csv|offsite rehearsal.mp4
+demo_zip	stuff.zip
+demo_zip_in	readme.txt
+
+## 出错：一句人话 + 怎么办
+fail_head	{n} failed: 
+err_busy	Open in another app
+fix_busy	Close whatever has it open (Excel, a photo viewer), then try again.
+err_gone	File’s gone
+fix_gone	Probably just moved. Open the folder again.
+err_exists	Name’s taken
+fix_exists	Try again and I’ll pick another name.
+err_toolong	Path too long
+fix_toolong	Move it somewhere shallower and try again.
+err_diskfull	Disk full
+fix_diskfull	Free up some space and try again.
+err_oserror	Windows said no
+fix_oserror	It may be read-only or need admin rights.
+err_password	Archive has a password
+fix_password	That one’s yours to open.
+err_badarchive	Archive is broken
+fix_badarchive	Download a fresh copy and try again.
+err_toobig	Archive too big
+fix_toobig	Over 20 GB or 100,000 files inside. Not risking it.
+err_notarchive	Not an archive
+fix_notarchive	The extension lied. Ignore it.
+err_changed	Copy was edited, left alone
+err_nothing	Nothing to undo
+err_already	Already undone
+retry	Try Again
+
+## 盯着
+w_title	Watch
+w_today	{n} sorted today
+w_today0	On watch
+w_off	Off duty
+w_gone	Folder’s gone
+downloads_name	Downloads
+w_add	Watch another folder
+w_add_ph	Paste a folder path, press Enter
+w_remove	Stop watching
+w_auto	Start with Windows
+w_auto_s	Keeps watching from the tray after you close the window
+w_notify	Notify after sorting
+w_notify_s	Only while the window is hidden
+w_log	Just sorted
+w_log_empty	Nothing new yet. Download something and watch.
+w_undone	Undone
+w_busy	In use. Sorting once it’s free.
+w_inplace	Renamed in place
+w_toast	{name} → {to}
+w_toast_n	{name} and {more} more → {to}
+sep_list	, 
+sep_clause	, 
+
+## 下载
+d_title	Download
+d_ph	Paste links here. One per line, or buried in a wall of text. I’ll dig them out.
+d_found	{n} {n?link|links} found
+d_found0	No links yet
+d_folder	Save to
+d_naming	Names
+nm_keep	Original
+nm_number	Numbered
+nm_custom	All named
+nm_custom_ph	Contract
+d_go	Download {n}
+d_go0	Download
+d_retry	Retry failed
+d_cancel	Stop
+d_clear	Clear
+d_stat	{done}/{total} done
+d_failed_n	, {n} failed
+st_wait	Queued
+st_run	Downloading
+st_retry	Dropped, resuming (try {n})
+st_done	Done
+st_failed	Failed
+st_cancel	Stopped
+nourl	No links found
+d_fix	Bad link, or the site said no. “Retry failed” has another go.
+
+## 记录
+h_title	History
+h_sub	Every batch can be undone in one go.
+h_empty	Nothing done yet. Enjoy the calm.
+k_rename	Rename
+k_organize	Organize
+k_watch	Auto-sort
+h_line	{n} {n?file|files}
+h_undone	Undone
+
+## 托盘、冒泡（Python 读）
+tray_open	Open Jiechi
+tray_watch_dl	Watch Downloads
+tray_quit	Quit
+tray_tip_on	Jiechi · Watching Downloads
+tray_tip_off	Jiechi · Off duty
+tray_first	Still watching Downloads from down here. Right-click the broom to quit.
+n_title	Jiechi · {folder}
+n_one	{name} → {to}
+n_many	{name} and {more} more → {to}
+
+## 介绍页 saodi/index.html
+i_title	Jiechi · File Sweeper
+i_desc	The cure for desktop clutter. Batch-download, rename, and send every file to the folder it belongs in. Free for Windows. Your files never leave your PC.
+i_home	QIANSHOU LAB
+i_dl	Download
+i_tag	Your files, disciplined.
+i_lede	The cure for desktop clutter. Batch-download, rename, and send every file to the folder it belongs in. Order restored, no lecture.
+i_dl_btn	Download for Windows
+i_meta	{v} · 19 MB · Windows 10 / 11 · Free · No installer
+i_alt	Jiechi window: the Rename page, rules on the left, old and new names side by side
+i_s1	You download. It files.
+i_s1_sub	Watches Downloads from the first launch. Don’t want that? One switch.
+i_f1	Downloads sorts itself
+i_f1_p	New files go to Images, Documents, Spreadsheets. Half-finished downloads, hidden files and Office temp files stay put.
+i_f2	On duty from startup
+i_f2_p	Close the window and it keeps watching from the tray. Anything that came in while it was off gets sorted next time.
+i_f3	Oops? Undo the batch
+i_f3_p	Every batch is logged. One click puts it all back, and it won’t touch those files again.
+i_f4	Rename in a click
+i_f4_p	Numbers, find and replace, dates, date taken, Artist - Title. New names preview live. Your rules are remembered.
+i_f5	Sort into folders
+i_f5_p	By type, by month, photos by date taken, or by what’s in the name or the file. Move or copy, and unpack archives on the way.
+i_f6	Nothing leaves your PC
+i_f6_p	Everything happens on your machine. Nothing gets uploaded, nothing gets deleted. Worst case, the Recycle Bin.
+i_s2	Benchmarked, not boasted
+i_s2_sub	Same nasty test files, head to head with KRename, organize and aria2.
+i_n1	0 errors
+i_n1_p	5,042 files and 52 links: name clashes, overlong names, locked files, half-done downloads
+i_n2	0.11 s
+i_n2_p	To number 1,000 files, from click to done (KRename: 1.26 s)
+i_n3	0.27 s
+i_n3_p	52 links, dropped connections picked up where they left off (aria2: 0.51 s, and it lost one)
+i_s3	Three steps
+i_st1	Download
+i_st1_p	Hit the button above. You get {exe}.
+i_st2	Run it
+i_st2_p	No installer. If Windows objects, click <code>More info</code> → <code>Run anyway</code>.
+i_st3	Walk away
+i_st3_p	Downloads is handled. To rename a batch, drag the folder into the window.
+i_foot	QIANSHOU LAB · Jiechi
+i_foot_home	QIANSHOU LAB home

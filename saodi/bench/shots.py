@@ -65,6 +65,7 @@ class Dev:
     def start(self):
         self.port = port_free()
         env = dict(os.environ, SAODI_HOME=self.home, SAODI_DOWNLOADS=self.dl, NO_PROXY="*", PYTHONIOENCODING="utf-8")
+        env.setdefault("SAODI_LANG", "zh")  # 0.3 的截图是中文的；0.4 的中英截图见 shots-0.4.py
         for k in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
             env.pop(k, None)
         self.proc = subprocess.Popen([sys.executable, "main.py", "--dev", str(self.port)], cwd=APP, env=env,

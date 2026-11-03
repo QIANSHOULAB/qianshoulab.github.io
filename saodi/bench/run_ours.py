@@ -11,6 +11,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "app"))
 os.environ.setdefault("SAODI_HOME", tempfile.mkdtemp(prefix="saodi-home-"))
+os.environ.setdefault("SAODI_LANG", "zh")  # 0.4.0 起新装默认英文；答案是中文文件夹名，不给就按中文比
 
 from saodi.api import Api  # noqa: E402
 import score  # noqa: E402

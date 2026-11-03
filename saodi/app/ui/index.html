@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>戒尺僧</title>
+<title>Jiechi · File Sweeper</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
 /* 令牌照 _ops/设计规范.md，主色换成戒尺僧橄榄（#6E9A24 上白字不到 4.5:1，按钮加深到 #567A1C） */
@@ -24,6 +24,8 @@
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
   color-scheme:light;
 }
+/* 英文界面：西文字体排前面（不然 Windows 上用雅黑的西文字形，连字符还会被画成全角），中文字体垫后 */
+html[lang="en"]{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",sans-serif}
 @media (prefers-color-scheme:dark){:root{
   --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
   --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
@@ -66,10 +68,18 @@ svg{flex:none}
 .nav .end{margin-left:auto;font-size:13px;color:var(--fg-2);display:flex;align-items:center;gap:8px;font-weight:400}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--fg-3);flex:none}
 .dot.on{background:var(--ok)}
-.side-foot{margin-top:auto;padding:16px 8px 0;font-size:12px;color:var(--fg-3);line-height:1.6}
+.side-foot{margin-top:auto;padding:16px 8px 0;font-size:12px;color:var(--fg-3);line-height:1.6;overflow-wrap:anywhere}
 .side-foot a,.side-foot .lnk{color:var(--fg-2)}
 .side-foot a:hover{color:var(--link)}
-.upd{display:inline-flex;align-items:center;gap:4px;margin-bottom:8px;height:28px;padding:0 12px;border-radius:var(--r-chip);background:var(--accent-tint);color:var(--link);font-size:13px;font-weight:600}
+.upd{display:block;width:100%;text-align:left;margin-bottom:12px;padding:8px 12px;border-radius:var(--r-btn);background:var(--accent-tint);transition:background var(--t) var(--ease)}
+.upd:hover{background:var(--fill-2)}
+.upd b{display:block;color:var(--link);font-size:13px;font-weight:600}
+.upd span{display:block;color:var(--fg-2);font-size:12px;line-height:1.4;margin-top:2px}
+/* 左下角 EN / 中文 */
+.lang{display:inline-flex;gap:2px;padding:2px;margin-bottom:12px;border-radius:var(--r-chip);background:var(--fill)}
+.lang button{min-width:40px;height:28px;padding:0 8px;border-radius:6px;font:600 12px/1 var(--font);color:var(--fg-2);transition:background var(--t) var(--ease),color var(--t) var(--ease)}
+.lang button:hover{color:var(--fg)}
+.lang button[aria-pressed="true"]{background:var(--seg-on);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.1),0 0 0 .5px rgba(0,0,0,.04)}
 
 /* ---------- 右边 ---------- */
 .main{display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
@@ -166,7 +176,7 @@ button.row:hover{background:var(--fill)}
 /* ---------- 两栏：左边规则，右边预览 ---------- */
 .pane-l{width:360px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--bg-group)}
 .pane-l .scroll{flex:1;padding:24px 16px 32px}
-@media (max-width:1040px){.pane-l{width:300px}}
+@media (max-width:1040px){.pane-l{width:300px}.rule .seg button{padding:0 8px}}  /* 最小窗口：英文的分段别撑出卡片 */
 .pane-r{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
 .lbl{font-size:13px;color:var(--fg-2);margin:0 4px 8px;display:flex;align-items:center;gap:8px}
 .lbl .sp{flex:1}

@@ -34,7 +34,25 @@ def bump_ok(final, want):
     return bool(re.fullmatch(re.escape(ws) + r"\s?[\(\[_\-~ .]?\d{1,4}[\)\]]?", fs_))
 
 
+def _loc(w):
+    """0.4.0：英文界面（SAODI_LANG=en）分进 Images / Documents / Other：答案里的中文文件夹名换成英文的再对。"""
+    if os.environ.get("SAODI_LANG") != "en":
+        return w
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app"))
+    from saodi import organize, text
+    m = {text.Tl("zh", "t_" + k): text.Tl("en", "t_" + k) for k, _ in organize.TYPES}
+    m[text.Tl("zh", "other")] = text.Tl("en", "other")
+    for pre in ("*bump*", "*prefix*", ""):
+        if w.startswith(pre):
+            head, sep, rest = w[len(pre):].partition("/")
+            if sep and head in m:
+                return pre + m[head] + "/" + rest
+            return w
+    return w
+
+
 def judge(final, wants, orig):
+    wants = [w if w == orig else _loc(w) for w in wants]  # 原来就在「文档」里的（旧文件夹）该原地不动，不换名
     for w in wants:
         if w.startswith("*bump*"):
             if bump_ok(final, w[6:]):

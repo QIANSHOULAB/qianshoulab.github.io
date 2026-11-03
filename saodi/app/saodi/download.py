@@ -23,6 +23,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from . import fsutil as fs
 from . import VERSION
+from . import text as _text
 
 UA = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Saodi/{VERSION}"
 CHUNK = 1024 * 1024
@@ -118,7 +119,7 @@ class Downloader:
             name = f"{n.get('prefix', '')}{str(k).zfill(int(n.get('digits', 3)))}-{server_name}"
         elif mode == "custom":
             k = int(n.get("start", 1)) + it.idx
-            name = f"{n.get('text') or '文件'}-{str(k).zfill(int(n.get('digits', 2)))}{ext}"
+            name = f"{n.get('text') or _text.T('dl_file')}-{str(k).zfill(int(n.get('digits', 2)))}{ext}"
         else:
             name = server_name
         return fs.sanitize(name) or server_name

@@ -1,10 +1,24 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>戒尺僧 · 凡尘乱档，统统归位</title>
-<meta name="description" content="专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。Windows 电脑程序，免费，文件不出你电脑。">
+<!-- 字全在 app/ui/strings.js（i_ 开头），跟程序共用一份。这里的标题和简介只是给不跑脚本的（搜索引擎、链接预览）看的英文底子 -->
+<title>Jiechi · File Sweeper</title>
+<meta name="description" content="The cure for desktop clutter. Batch-download, rename, and send every file to the folder it belongs in. Free for Windows. Your files never leave your PC.">
+<script src="app/ui/strings.js"></script>
+<script>
+/* 挑语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage saodi.lang）> 默认英文。不跟浏览器语言走（Song 11-03 22:19）。
+   画页面之前就把 <html lang>、标题、简介换好，免得先闪一下英文 */
+(function () {
+  var q = (location.search.match(/[?&]lang=(en|zh)/) || [])[1], s = null;
+  try { s = localStorage.getItem("saodi.lang"); } catch (e) {}
+  LANG = q || (s === "zh" || s === "en" ? s : "en");
+  document.documentElement.lang = t("html_lang");
+  document.title = t("i_title");
+  document.querySelector('meta[name="description"]').content = t("i_desc");
+})();
+</script>
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -23,6 +37,8 @@
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
   color-scheme:light;
 }
+/* 英文：西文字体排前面（Windows 上不然会用雅黑的西文字形），中文字体垫后 */
+html[lang="en"]{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",sans-serif}
 @media (prefers-color-scheme:dark){:root{
   --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
   --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
@@ -43,10 +59,17 @@ nav{position:sticky;top:0;z-index:10;background:var(--glass);-webkit-backdrop-fi
 nav .wrap{display:flex;align-items:center;height:48px;gap:12px}
 nav .back{font-size:15px;color:var(--fg-2);display:flex;align-items:center;gap:4px;min-height:44px}
 nav .back:hover{color:var(--link);text-decoration:none}
-nav .me{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+nav .me{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;white-space:nowrap}
 nav .me img{width:24px;height:24px}
 nav .dl{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:var(--r-btn);background:var(--accent);color:var(--on-accent);font-size:13px;font-weight:600}
 nav .dl:hover{background:var(--accent-press);text-decoration:none}
+/* 右上角 EN / 中文 */
+.lang{display:inline-flex;gap:2px;padding:2px;border-radius:var(--r-chip);background:var(--fill);flex:none}
+.lang button{position:relative;min-width:36px;height:28px;padding:0 8px;border:0;border-radius:6px;background:none;font:600 12px/1 var(--font);color:var(--fg-2);cursor:pointer;transition:background var(--t) var(--ease),color var(--t) var(--ease)}
+.lang button::after{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}
+.lang button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px var(--line)}
+@media (prefers-color-scheme:dark){.lang button[aria-pressed="true"]{background:#636366;box-shadow:none}}
+html[lang="en"] .tag{letter-spacing:-.01em}
 
 .hero{text-align:center;padding:64px 0 32px}
 .hero .icon{width:96px;height:96px;margin:0 auto 24px;display:block;filter:drop-shadow(0 8px 24px rgba(86,122,28,.28))}
@@ -96,90 +119,119 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
   .feats,.nums,.steps{grid-template-columns:1fr;gap:32px}
   .nums{gap:12px}
   nav .me span{display:none}
+  nav .wrap{gap:8px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <nav><div class="wrap">
-  <a class="back" href="https://qianshoulab.github.io/"><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5 1.5 7.5l6 6"/></svg>千手院</a>
-  <span class="me"><img src="icon.svg" alt=""><span>戒尺僧</span></span>
-  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.1/SaodiSeng-0.3.1.exe">下载</a>
+  <a class="back" href="https://qianshoulab.github.io/"><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5 1.5 7.5l6 6"/></svg><span data-t="i_home"></span></a>
+  <span class="me"><img src="icon.svg" alt=""><span data-t="app"></span></span>
+  <span class="lang" id="lang" role="group"></span>
+  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.1/SaodiSeng-0.3.1.exe" data-t="i_dl"></a>
 </div></nav>
 
 <main class="wrap">
   <section class="hero">
     <img class="icon" src="icon.svg" alt="">
-    <h1>戒尺僧</h1>
-    <p class="tag">凡尘乱档，统统归位</p>
-    <p class="lede">专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。</p>
+    <h1 data-t="app"></h1>
+    <p class="tag" data-t="i_tag"></p>
+    <p class="lede" data-t="i_lede"></p>
     <div class="cta">
-      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.1/SaodiSeng-0.3.1.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>下载 Windows 版</a>
-      <span class="meta" id="meta">0.3.1 · 19 MB · Windows 10 / 11 · 免费 · 不用装，双击就跑</span>
+      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.1/SaodiSeng-0.3.1.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span data-t="i_dl_btn"></span></a>
+      <span class="meta tn" id="meta"></span>
     </div>
     <div class="shot">
       <picture>
-        <source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)">
-        <img src="img/app-light.webp" width="1180" height="780" alt="戒尺僧窗口：改名页，左边规则，右边新旧名字对照">
+        <source id="shotDark" srcset="img/en/app-dark.webp" media="(prefers-color-scheme: dark)">
+        <img id="shot" src="img/en/app-light.webp" width="1180" height="780" alt="">
       </picture>
     </div>
   </section>
 
   <section class="sec">
-    <h2>开着电脑，它就在扫</h2>
-    <p class="sub">第一次打开就盯上「下载」。不想要，一个开关关掉。</p>
+    <h2 data-t="i_s1"></h2>
+    <p class="sub" data-t="i_s1_sub"></p>
     <div class="feats">
       <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
-        <h3>「下载」自己归位</h3><p>新下的按类型进图片、文档、表格。没下完的、隐藏的、Office 临时文件，一概不碰。</p></div>
+        <h3 data-t="i_f1"></h3><p data-t="i_f1_p"></p></div>
       <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/></svg>
-        <h3>开机就在岗</h3><p>关了窗口，它在右下角托盘里接着盯。关机那阵下的，开机自己补上。</p></div>
+        <h3 data-t="i_f2"></h3><p data-t="i_f2_p"></p></div>
       <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
-        <h3>手滑？整批撤回</h3><p>每一批都记账，点一下原样回来。撤回来的，贫僧不再碰。</p></div>
+        <h3 data-t="i_f3"></h3><p data-t="i_f3_p"></p></div>
       <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>
-        <h3>改名，一点就有</h3><p>序号、替换、日期、拍摄时间、歌手 - 歌名。右边实时看新名字，改法记住，下回直接用。</p></div>
+        <h3 data-t="i_f4"></h3><p data-t="i_f4_p"></p></div>
       <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5Z"/><path d="M8 13h8M8 16h5"/></svg>
-        <h3>分文件夹</h3><p>按类型、按月份、照片按拍摄时间，或者名字、内容里有啥。挪过去或复制一份，压缩包顺手解开。</p></div>
+        <h3 data-t="i_f5"></h3><p data-t="i_f5_p"></p></div>
       <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-        <h3>文件不出门</h3><p>全在你电脑上过手，不传任何服务器。从不删东西，真要扔也进回收站。</p></div>
+        <h3 data-t="i_f6"></h3><p data-t="i_f6_p"></p></div>
     </div>
   </section>
 
   <section class="sec">
-    <h2>比过了才说</h2>
-    <p class="sub">同一批刁钻文件，跟 KRename、organize、aria2 实打实比的。</p>
+    <h2 data-t="i_s2"></h2>
+    <p class="sub" data-t="i_s2_sub"></p>
     <div class="nums">
-      <div class="n"><b class="tn">0 错</b><span>5,042 个文件、52 个网址：撞名、超长名、被占着、下到一半</span></div>
-      <div class="n"><b class="tn">0.11 秒</b><span>1,000 个文件加序号，点下去到改完（KRename 1.26 秒）</span></div>
-      <div class="n"><b class="tn">0.27 秒</b><span>52 个网址，断了的照样接着下完（aria2 0.51 秒，还丢 1 个）</span></div>
+      <div class="n"><b class="tn" data-t="i_n1"></b><span data-t="i_n1_p"></span></div>
+      <div class="n"><b class="tn" data-t="i_n2"></b><span data-t="i_n2_p"></span></div>
+      <div class="n"><b class="tn" data-t="i_n3"></b><span data-t="i_n3_p"></span></div>
     </div>
   </section>
 
   <section class="sec">
-    <h2>三步上手</h2>
+    <h2 data-t="i_s3"></h2>
     <div class="steps">
-      <div class="s"><b>01</b><h3>下载</h3><p>点上面的按钮，拿到 <code id="exeName">SaodiSeng-0.3.1.exe</code>。</p></div>
-      <div class="s"><b>02</b><h3>双击</h3><p>不用安装。Windows 拦一下就点 <code>更多信息</code> → <code>仍要运行</code>。</p></div>
-      <div class="s"><b>03</b><h3>去玩</h3><p>「下载」它自己盯着。要改名，把文件夹拖进窗口。</p></div>
+      <div class="s"><b>01</b><h3 data-t="i_st1"></h3><p id="st1"></p></div>
+      <div class="s"><b>02</b><h3 data-t="i_st2"></h3><p data-h="i_st2_p"></p></div>
+      <div class="s"><b>03</b><h3 data-t="i_st3"></h3><p data-t="i_st3_p"></p></div>
     </div>
   </section>
 </main>
 
 <footer><div class="wrap">
-  <span>千手院 · 戒尺僧</span>
-  <span>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></span>
-  <a href="https://qianshoulab.github.io/">千手院总舵</a>
+  <span data-t="i_foot"></span>
+  <span><span data-t="foot_mail_pre"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
+  <a href="https://qianshoulab.github.io/" data-t="i_foot_home"></a>
 </div></footer>
 <script>
-/* 下载链接跟着 version.json 走：以后出新版只改 version.json 不用改页面 */
-fetch("version.json", { cache: "no-store" }).then(r => r.json()).then(v => {
-  if (!v.version || v.version === "0.3.1") return;
-  const u = `https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v${v.version}/SaodiSeng-${v.version}.exe`;
-  document.getElementById("dlBtn").href = u;
-  document.getElementById("dlTop").href = u;
-  document.getElementById("exeName").textContent = `SaodiSeng-${v.version}.exe`;
-  const m = document.getElementById("meta");
-  m.textContent = m.textContent.replace("0.3.1", v.version);
-}).catch(() => {});
+/* 字从 app/ui/strings.js 拿；右上角 EN / 中文 一点就换，记在 localStorage；
+   下载链接跟着 version.json 走：以后出新版只改 version.json 不用改页面 */
+(function () {
+  var V = "0.3.1";
+  var $ = function (s) { return document.querySelector(s); };
+  var exe = function () { return "SaodiSeng-" + V + ".exe"; };
+  var url = function () { return "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v" + V + "/" + exe(); };
+  function draw() {
+    document.documentElement.lang = t("html_lang");
+    document.title = t("i_title");
+    document.querySelector('meta[name="description"]').content = t("i_desc");
+    document.querySelectorAll("[data-t]").forEach(function (el) { el.textContent = t(el.dataset.t); });
+    document.querySelectorAll("[data-h]").forEach(function (el) { el.innerHTML = t(el.dataset.h); });
+    $("#st1").innerHTML = t("i_st1_p", { exe: '<code id="exeName"></code>' });
+    $("#exeName").textContent = exe();
+    $("#meta").textContent = t("i_meta", { v: V });
+    $("#dlBtn").href = $("#dlTop").href = url();
+    var dir = LANG === "en" ? "img/en/" : "img/";
+    $("#shot").src = dir + "app-light.webp"; $("#shotDark").srcset = dir + "app-dark.webp"; $("#shot").alt = t("i_alt");
+    var ls = $("#lang");
+    ls.setAttribute("aria-label", t("lang_label"));
+    ls.innerHTML = [["en", "EN", "en"], ["zh", "中文", "zh-CN"]].map(function (x) {
+      return '<button type="button" data-l="' + x[0] + '" lang="' + x[2] + '" aria-pressed="' + (x[0] === LANG) + '">' + x[1] + "</button>";
+    }).join("");
+  }
+  $("#lang").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-l]");
+    if (!b || b.dataset.l === LANG) return;
+    LANG = b.dataset.l;
+    try { localStorage.setItem("saodi.lang", LANG); } catch (err) {}
+    draw();
+  });
+  draw();
+  fetch("version.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (v) {
+    if (v.version && v.version !== V) { V = v.version; draw(); }
+  }).catch(function () {});
+})();
 </script>
 </body>
 </html>

@@ -93,7 +93,7 @@ def main(argv: list[str]) -> int:
     tray_mode = "--tray" in argv
     smoke_out = argv[argv.index("--smoke-ui") + 1] if "--smoke-ui" in argv else None
     smoke_tray = argv[argv.index("--smoke-tray") + 1] if "--smoke-tray" in argv else None
-    st = {"win": None, "icon": None, "quitting": False, "visible": not tray_mode, "shows": 0}
+    st = {"win": None, "icon": None, "quitting": False, "visible": not tray_mode, "shows": 0, "tip": lambda: T("app")}
 
     def show():
         st["shows"] += 1
@@ -118,7 +118,21 @@ def main(argv: list[str]) -> int:
         except Exception:
             pass
 
-    api = Api(notify=notify)
+    def on_lang(_lang):
+        """左下角换了语言：窗口标题、托盘菜单、托盘提示跟着换（菜单的字是现取的，重画一下就行）。"""
+        if st["win"]:
+            try:
+                st["win"].set_title(T("win_title"))
+            except Exception:
+                pass
+        if st["icon"]:
+            try:
+                st["icon"].update_menu()
+                st["icon"].title = st["tip"]()
+            except Exception:
+                pass
+
+    api = Api(notify=notify, on_lang=on_lang)
     api.boot()
 
     # 第一次跑：默认开机自启（盯着那页一个开关就能关）；exe 挪了地方也跟着改
@@ -136,7 +150,7 @@ def main(argv: list[str]) -> int:
 
     dark = winsys.system_dark()
     win = webview.create_window(
-        T("app"), os.path.join(ui_dir(), "index.html"), js_api=api,
+        T("win_title"), os.path.join(ui_dir(), "index.html"), js_api=api,
         width=1180, height=780, min_size=(900, 600), hidden=tray_mode,
         background_color="#000000" if dark else "#FFFFFF", text_select=True,
     )
@@ -165,11 +179,12 @@ def main(argv: list[str]) -> int:
             w = dl_watch()
             return T("tray_tip_on") if w and w["on"] else T("tray_tip_off")
 
-        menu = pystray.Menu(
-            pystray.MenuItem(T("tray_open"), lambda: show(), default=True),
-            pystray.MenuItem(T("tray_watch_dl"), toggle_dl, checked=lambda item: bool((dl_watch() or {}).get("on"))),
+        st["tip"] = tip
+        menu = pystray.Menu(  # 字给成函数：换了语言 update_menu() 一下就是新字
+            pystray.MenuItem(lambda item: T("tray_open"), lambda: show(), default=True),
+            pystray.MenuItem(lambda item: T("tray_watch_dl"), toggle_dl, checked=lambda item: bool((dl_watch() or {}).get("on"))),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem(T("tray_quit"), lambda: quit_all()),
+            pystray.MenuItem(lambda item: T("tray_quit"), lambda: quit_all()),
         )
         icon = pystray.Icon("saodi", Image.open(asset("icon-64.png")), tip(), menu)
         st["icon"] = icon
@@ -203,7 +218,7 @@ def main(argv: list[str]) -> int:
             c["told_tray"] = True
             save_cfg(c)
             try:
-                st["icon"].notify(T("tray_first"), T("app"))
+                st["icon"].notify(T("tray_first"), T("win_title"))
             except Exception:
                 pass
         return False
@@ -331,13 +346,23 @@ def _smoke_tray(api, st, out: str, quit_all) -> None:
         if winsys.IS_WIN:
             import ctypes
             ctypes.windll.kernel32.SetFileAttributesW(hid, 0x2)
-        check("sorted_after_download", wait(lambda: os.path.exists(os.path.join(dl, "文档", "报价单.pdf")), 30), os.listdir(dl))
+        from saodi import organize
+        res["lang"] = text.lang()  # 新装的默认英文：分进「Documents」
+        docs = organize.type_dir(".pdf")
+        check("sorted_after_download", wait(lambda: os.path.exists(os.path.join(dl, docs, "报价单.pdf")), 30), os.listdir(dl))
         time.sleep(5)
         check("placeholder_untouched", os.path.exists(os.path.join(dl, "合同.docx")) and os.path.exists(os.path.join(dl, "合同.docx.part")), os.listdir(dl))
         check("hidden_untouched", os.path.exists(hid), os.listdir(dl))
         if winsys.IS_WIN:
             cmd = winsys.autostart_command() or ""
             check("autostart_cmd", "--tray" in cmd, cmd)
+        # 托盘菜单的字跟着语言：切到中文再切回来，菜单现取的字跟着变
+        items = list(st["icon"].menu.items) if st["icon"] is not None else []
+        if items:
+            api.set_lang("zh")
+            zh = items[0].text
+            api.set_lang("en")
+            check("tray_menu_lang", zh == text.Tl("zh", "tray_open") and items[0].text == text.Tl("en", "tray_open"), (zh, items[0].text))
         res["ready_for_second"] = True
         with open(out + ".ready", "w", encoding="utf-8") as f:
             f.write("ready")

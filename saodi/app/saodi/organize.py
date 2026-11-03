@@ -1,5 +1,6 @@
 """分文件夹：按类型 / 日期 / 关键词 / 扩展名，把文件夹第一层的文件分进子文件夹。
 
+分出来的文件夹名（图片 / Images……）、现成分法的名字跟着界面语言，字在 ui/strings.js。
 方案（scheme）= 有序规则表，第一条命中的说了算；都不中的看 "rest"：留在原地或进某个文件夹。
   "action": "move"(默认，挪过去) | "copy"(复制一份过去，原件不动)
   "unzip": true  压缩包（zip/tar）顺手解压到原地一个同名文件夹，压缩包本身照规则处理
@@ -15,21 +16,30 @@ import datetime as _dt
 import os
 
 from . import fsutil as fs
-from . import archive, content
+from . import archive, content, text
 from .rename import list_files, _taken, apply_rules, PHOTO_EXT
 
+# 分出来的文件夹名跟着界面语言（strings.js 的 t_ 开头那些）：中文「图片」，英文「Images」。
+# 换了语言，已经分好的旧文件夹不动、不改名，以后新来的进新语言的文件夹。
 TYPES = [
-    ("图片", "jpg jpeg png gif bmp webp heic heif tif tiff svg ico raw dng cr2 cr3 nef arw psd ai"),
-    ("视频", "mp4 mov avi mkv wmv flv webm m4v 3gp mts"),
-    ("音频", "mp3 wav flac aac m4a ogg wma amr opus"),
-    ("文档", "pdf doc docx txt rtf md odt pages wps epub"),
-    ("表格", "xls xlsx csv xlsm ods numbers et"),
-    ("演示", "ppt pptx key odp dps"),
-    ("压缩包", "zip rar 7z tar gz bz2 xz tgz iso"),
-    ("安装包", "exe msi dmg pkg apk appx msix"),
-    ("代码", "py js ts html css json xml yml yaml java c cpp cs go rs sh bat ps1 sql"),
+    ("img", "jpg jpeg png gif bmp webp heic heif tif tiff svg ico raw dng cr2 cr3 nef arw psd ai"),
+    ("video", "mp4 mov avi mkv wmv flv webm m4v 3gp mts"),
+    ("audio", "mp3 wav flac aac m4a ogg wma amr opus"),
+    ("doc", "pdf doc docx txt rtf md odt pages wps epub"),
+    ("sheet", "xls xlsx csv xlsm ods numbers et"),
+    ("slides", "ppt pptx key odp dps"),
+    ("archive", "zip rar 7z tar gz bz2 xz tgz iso"),
+    ("app", "exe msi dmg pkg apk appx msix"),
+    ("code", "py js ts html css json xml yml yaml java c cpp cs go rs sh bat ps1 sql"),
 ]
-EXT_TYPE = {("." + e): name for name, exts in TYPES for e in exts.split()}
+EXT_TYPE = {("." + e): key for key, exts in TYPES for e in exts.split()}
+
+
+def type_dir(ext: str, lang: str | None = None) -> str | None:
+    """这个扩展名按类型分进哪个文件夹（当前语言）；认不出给 None。"""
+    key = EXT_TYPE.get(ext.lower())
+    return text.Tl(lang or text.lang(), "t_" + key) if key else None
+
 
 DATE_DIRS = {
     "YYYY/MM": ("%Y", "%m"),
@@ -39,11 +49,53 @@ DATE_DIRS = {
     "YYYY/MM/DD": ("%Y", "%m", "%d"),
 }
 
-PRESETS = [
-    {"name": "按类型", "rules": [{"by": "type"}], "rest": "其他"},
-    {"name": "按月份", "rules": [{"by": "date", "source": "modified", "fmt": "YYYY/YYYY-MM"}], "rest": ""},
-    {"name": "照片按拍摄月份", "rules": [{"by": "date", "source": "taken", "fmt": "YYYY/YYYY-MM", "only": "photo"}], "rest": ""},
+# 三个现成的分法：规则跟语言无关，名字和「其他」文件夹跟着语言
+_PRESETS = [
+    ("p_type", [{"by": "type"}], True),
+    ("p_month", [{"by": "date", "source": "modified", "fmt": "YYYY/YYYY-MM"}], False),
+    ("p_taken", [{"by": "date", "source": "taken", "fmt": "YYYY/YYYY-MM", "only": "photo"}], False),
 ]
+
+
+def presets(lang: str | None = None) -> list[dict]:
+    lang = lang or text.lang()
+    return [{"name": text.Tl(lang, k), "rules": [dict(r) for r in rules], "rest": text.Tl(lang, "other") if rest else ""}
+            for k, rules, rest in _PRESETS]
+
+
+def __getattr__(name):
+    if name == "PRESETS":  # 老代码、测试、比武脚本用的 organize.PRESETS：中文那套（0.3 存下来的就是这个样子）
+        return presets("zh")
+    raise AttributeError(name)
+
+
+def _bare(rules):
+    return [{k: v for k, v in r.items() if k not in ("fallback", "off")} for r in rules or []]
+
+
+def localize(scheme: dict | None, lang: str | None = None) -> dict | None:
+    """存下来的现成分法（不管当时是哪种语言存的）换成当前语言的名字和「其他」文件夹；自己定的原样不动。"""
+    if not scheme:
+        return scheme
+    lang = lang or text.lang()
+    for k, rules, rest in _PRESETS:
+        if scheme.get("name") in text.every(k) and _bare(scheme.get("rules")) == rules:
+            r0 = scheme.get("rest") or ""
+            if r0 and r0 not in text.every("other"):
+                return scheme
+            out = dict(scheme)
+            out["name"] = text.Tl(lang, k)
+            out["rest"] = text.Tl(lang, "other") if r0 else ""
+            return out
+    return scheme
+
+
+def localize_name(name: str, lang: str | None = None) -> str:
+    """记录里存的分法名字（「按类型」「By type」）照当前语言显示。"""
+    for k, _, _ in _PRESETS:
+        if name in text.every(k):
+            return text.Tl(lang or text.lang(), k)
+    return name
 
 
 def _split(s: str) -> list[str]:
@@ -61,7 +113,7 @@ def target_of(f: dict, scheme: dict) -> list[str] | None:
             continue
         if by == "type":
             if ext in EXT_TYPE:
-                return [EXT_TYPE[ext]]
+                return [type_dir(ext)]
         elif by == "ext":
             if ext.lstrip(".") in {e.lower().lstrip(".") for e in _split(r.get("ext", ""))}:
                 return [r.get("to") or ext.lstrip(".").upper()]
@@ -85,13 +137,14 @@ def target_of(f: dict, scheme: dict) -> list[str] | None:
         elif by == "size":
             mb = f["size"] / 1048576
             if mb >= float(r.get("mb", 100)):
-                return [r.get("to") or "大文件"]
+                return [r.get("to") or text.T("big")]
     rest = scheme.get("rest")
     return [rest] if rest else None
 
 
 def plan(folder: str, scheme: dict, files: list[dict] | None = None) -> dict:
     folder = os.path.abspath(folder)
+    scheme = localize(scheme)
     files = files if files is not None else list_files(folder, False)
     files = sorted(files, key=lambda f: fs.natural_key(f["name"]))
     rename_rules = scheme.get("rename") or []
@@ -107,7 +160,7 @@ def plan(folder: str, scheme: dict, files: list[dict] | None = None) -> dict:
     items = []
     for i, f in enumerate(files):
         if unzip and archive.kind(f["name"]):
-            want = fs.sanitize(archive.stem_of(f["name"])) or "解压"
+            want = fs.sanitize(archive.stem_of(f["name"])) or text.T("unz_dir")
             final = fs.bump(want, taken(f["dir"]))
             taken(f["dir"]).add(final.casefold())
             items.append({"old": f["name"], "dir": f["dir"], "to": "", "new": final, "op": "extract",

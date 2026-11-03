@@ -1,0 +1,310 @@
+{
+ "old": {
+  "R1": {
+   "wall": [
+    0.33,
+    0.27,
+    0.26,
+    0.27
+   ],
+   "inpage": [
+    68,
+    67,
+    66,
+    67
+   ],
+   "wrong": 0,
+   "clicks": 3,
+   "typing": 1,
+   "wall_med": 0.27,
+   "inpage_med": 67
+  },
+  "R2": {
+   "wall": [
+    0.08,
+    0.12,
+    0.1,
+    0.08
+   ],
+   "inpage": [
+    26,
+    24,
+    26,
+    28
+   ],
+   "wrong": 0,
+   "clicks": 4,
+   "typing": 2,
+   "wall_med": 0.1,
+   "inpage_med": 26
+  },
+  "R3": {
+   "wall": [
+    0.13,
+    0.12,
+    0.11,
+    0.12
+   ],
+   "inpage": [
+    26,
+    24,
+    26,
+    26
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.12,
+   "inpage_med": 26
+  },
+  "R4": {
+   "wall": [
+    0.15,
+    0.15,
+    0.16,
+    0.16
+   ],
+   "inpage": [
+    56,
+    57,
+    59,
+    58
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.16,
+   "inpage_med": 58
+  },
+  "R5": {
+   "wall": [
+    0.12,
+    0.12,
+    0.1,
+    0.1
+   ],
+   "inpage": [
+    21,
+    33,
+    23,
+    21
+   ],
+   "wrong": 0,
+   "clicks": 3,
+   "typing": 0,
+   "wall_med": 0.12,
+   "inpage_med": 23
+  },
+  "R6": {
+   "wall": [
+    0.12,
+    0.11,
+    0.08,
+    0.09
+   ],
+   "inpage": [
+    24,
+    22,
+    31,
+    17
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.11,
+   "inpage_med": 24
+  },
+  "O1": {
+   "wall": [
+    0.24,
+    0.23,
+    0.23,
+    0.22
+   ],
+   "inpage": [
+    114,
+    94,
+    96,
+    105
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.23,
+   "inpage_med": 105
+  },
+  "O2": {
+   "wall": [
+    0.23,
+    0.22,
+    0.22,
+    0.23
+   ],
+   "inpage": [
+    127,
+    90,
+    90,
+    98
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.23,
+   "inpage_med": 98
+  }
+ },
+ "new": {
+  "R1": {
+   "wall": [
+    0.26,
+    0.25,
+    0.26,
+    0.27
+   ],
+   "inpage": [
+    68,
+    66,
+    66,
+    79
+   ],
+   "wrong": 0,
+   "clicks": 3,
+   "typing": 1,
+   "wall_med": 0.26,
+   "inpage_med": 68
+  },
+  "R2": {
+   "wall": [
+    0.07,
+    0.11,
+    0.14,
+    0.07
+   ],
+   "inpage": [
+    32,
+    26,
+    28,
+    30
+   ],
+   "wrong": 0,
+   "clicks": 4,
+   "typing": 2,
+   "wall_med": 0.11,
+   "inpage_med": 30
+  },
+  "R3": {
+   "wall": [
+    0.12,
+    0.12,
+    0.08,
+    0.15
+   ],
+   "inpage": [
+    31,
+    25,
+    29,
+    25
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.12,
+   "inpage_med": 29
+  },
+  "R4": {
+   "wall": [
+    0.16,
+    0.16,
+    0.24,
+    0.15
+   ],
+   "inpage": [
+    60,
+    59,
+    87,
+    59
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.16,
+   "inpage_med": 60
+  },
+  "R5": {
+   "wall": [
+    0.12,
+    0.1,
+    0.11,
+    0.13
+   ],
+   "inpage": [
+    23,
+    20,
+    21,
+    23
+   ],
+   "wrong": 0,
+   "clicks": 3,
+   "typing": 0,
+   "wall_med": 0.12,
+   "inpage_med": 23
+  },
+  "R6": {
+   "wall": [
+    0.1,
+    0.1,
+    0.09,
+    0.09
+   ],
+   "inpage": [
+    19,
+    18,
+    18,
+    18
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.1,
+   "inpage_med": 18
+  },
+  "O1": {
+   "wall": [
+    0.22,
+    0.23,
+    0.23,
+    0.23
+   ],
+   "inpage": [
+    99,
+    102,
+    128,
+    96
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.23,
+   "inpage_med": 102
+  },
+  "O2": {
+   "wall": [
+    0.23,
+    0.23,
+    0.24,
+    0.23
+   ],
+   "inpage": [
+    90,
+    88,
+    93,
+    96
+   ],
+   "wrong": 0,
+   "clicks": 2,
+   "typing": 0,
+   "wall_med": 0.23,
+   "inpage_med": 93
+  }
+ }
+}

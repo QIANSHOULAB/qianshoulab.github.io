@@ -64,6 +64,7 @@ class Sandbox:
         self.port = port_free()
         env = dict(os.environ, HOME=self.home, USERPROFILE=self.home, SAODI_HOME=self.saodi_home,
                    SAODI_DOWNLOADS=self.dl, NO_PROXY="*", PYTHONIOENCODING="utf-8")
+        env.setdefault("SAODI_LANG", "zh")  # 0.4.0 起新装默认英文；步骤账照中文界面记的
         for k in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
             env.pop(k, None)
         self.proc = subprocess.Popen([sys.executable, "main.py", "--dev", str(self.port)], cwd=self.app, env=env,

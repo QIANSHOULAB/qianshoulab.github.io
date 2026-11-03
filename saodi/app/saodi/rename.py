@@ -12,7 +12,7 @@
   {"type": "remove",  "first": 0, "last": 0}   砍掉开头/结尾 N 个字
   {"type": "ext",     "mode": "lower"|"upper"|"set", "to": ".jpg"}
   {"type": "tpl",     "tpl": "{歌手} - {标题}", "where": "name"|"start"|"end", "sep": " "}
-      模板变量见 TPL_VARS：文件属性、照片信息、音乐标签。读不到的变量留空并提示。
+      模板变量见 TPL_VARS：文件属性、照片信息、音乐标签。读不到的变量留空并提示。英文名（{artist} - {title}）见 TPL_EN，两套都认。
 """
 from __future__ import annotations
 
@@ -95,6 +95,9 @@ PHOTO_EXT = {".jpg", ".jpeg", ".heic", ".heif", ".tif", ".tiff", ".dng", ".cr2",
 
 TPL_VARS = ["原名", "文件夹", "大小", "修改日期", "拍摄日期", "相机", "宽", "高",
             "歌手", "标题", "专辑", "音轨", "年份", "序号"]
+# 0.4.0 英文界面用英文变量名（strings.js 的 tpl_vars），两套都认：中文存的模板换到英文界面照样能用
+TPL_EN = dict(zip(["name", "folder", "size", "modified", "taken", "camera", "width", "height",
+                   "artist", "title", "album", "track", "year", "n"], TPL_VARS))
 _TPL_RE = re.compile(r"\{([^{}]+)\}")
 
 
@@ -125,7 +128,8 @@ def render_tpl(f: dict, idx: int, tpl: str, total: int = 0) -> tuple[str, list[s
     missing: list[str] = []
 
     def val(name: str) -> str:
-        name = name.strip()
+        shown = name.strip()
+        name = TPL_EN.get(shown.lower(), shown)
         if name == "原名":
             return stem
         if name == "文件夹":
@@ -140,9 +144,9 @@ def render_tpl(f: dict, idx: int, tpl: str, total: int = 0) -> tuple[str, list[s
         v = _meta(f).get(name)
         if v is None:
             if name in TPL_VARS:
-                missing.append(name)
+                missing.append(shown)
             else:
-                return "{" + name + "}"
+                return "{" + shown + "}"
             return ""
         return v
 

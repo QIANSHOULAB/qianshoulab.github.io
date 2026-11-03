@@ -1,0 +1,64 @@
+{
+ "saodi": [
+  {
+   "ok": 52,
+   "total": 52,
+   "wrong_name": 0,
+   "missing_or_corrupt": 0,
+   "junk_files": 0,
+   "big_resumed": true,
+   "elapsed_s": 0.24
+  },
+  {
+   "ok": 52,
+   "total": 52,
+   "wrong_name": 0,
+   "missing_or_corrupt": 0,
+   "junk_files": 0,
+   "big_resumed": true,
+   "elapsed_s": 0.25
+  },
+  {
+   "ok": 52,
+   "total": 52,
+   "wrong_name": 0,
+   "missing_or_corrupt": 0,
+   "junk_files": 0,
+   "big_resumed": true,
+   "elapsed_s": 0.24
+  }
+ ],
+ "aria2": [
+  {
+   "ok": 51,
+   "total": 52,
+   "wrong_name": 0,
+   "missing_or_corrupt": 1,
+   "junk_files": 2,
+   "big_resumed": true,
+   "elapsed_s": 0.47
+  },
+  {
+   "ok": 51,
+   "total": 52,
+   "wrong_name": 0,
+   "missing_or_corrupt": 1,
+   "junk_files": 2,
+   "big_resumed": true,
+   "elapsed_s": 0.46
+  },
+  {
+   "ok": 51,
+   "total": 52,
+   "wrong_name": 0,
+   "missing_or_corrupt": 1,
+   "junk_files": 2,
+   "big_resumed": true,
+   "elapsed_s": 0.46
+  }
+ ],
+ "median_s": {
+  "saodi": 0.24,
+  "aria2": 0.46
+ }
+}

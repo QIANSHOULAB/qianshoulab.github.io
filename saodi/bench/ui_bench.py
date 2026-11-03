@@ -81,6 +81,7 @@ def main():
             # 每个场景一个新装的程序（0.3.0 会记住上回的改法，比武按第一次用算，跟 0.2.x 一样）
             s = socket.socket(); s.bind(("127.0.0.1", 0)); port = s.getsockname()[1]; s.close()
             env = dict(os.environ, SAODI_HOME=tempfile.mkdtemp(prefix="saodi-ui-"), NO_PROXY="*")
+            env.setdefault("SAODI_LANG", "zh")  # 0.4.0 起新装默认英文；答案是中文文件夹名
             for k in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "SAODI_DOWNLOADS"):
                 env.pop(k, None)
             proc = subprocess.Popen([sys.executable, "main.py", "--dev", str(port)], cwd=APP, env=env,

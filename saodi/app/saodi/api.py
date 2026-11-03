@@ -16,7 +16,7 @@ import urllib.request
 
 from . import VERSION
 from . import fsutil as fs
-from . import ops, rename, organize, watch, download, winsys
+from . import ops, rename, organize, watch, download, winsys, text
 from .text import T
 
 UPDATE_URL = "https://qianshoulab.github.io/saodi/version.json"
@@ -41,6 +41,18 @@ def save_cfg(c: dict) -> None:
     fs.write_json(_cfg_path(), c, pretty=True)
 
 
+def _lang_of(c: dict) -> str:
+    """界面语言：选过的照选的；没选过的新用户英文（Song 11-03 22:19：默认英文，第二语言中文）；
+    0.3.x 用过的老用户（只有中文那会儿装的）接着中文，免得一升级「下载」里冒出一套英文文件夹。
+    SAODI_LANG 只给开发、测试、比武用（设置文件里还没有 lang 时才看）。"""
+    if c.get("lang") in text.LANGS:
+        return c["lang"]
+    env = os.environ.get("SAODI_LANG")
+    if env in text.LANGS:
+        return env
+    return "zh" if c.get("v03") else "en"
+
+
 def _same(a: str, b: str) -> bool:
     return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
 
@@ -55,8 +67,10 @@ def _rules_key(rules) -> str:
 
 
 class Api:
-    def __init__(self, notify=None):
+    def __init__(self, notify=None, on_lang=None):
         self._window = None  # pywebview 窗口，开发服务器下为 None
+        self._on_lang = on_lang  # 换了语言：窗口标题、托盘菜单跟着换，由 main.py 给
+        text.set_lang(_lang_of(load_cfg()))
         self._watchers: dict[str, watch.Watcher] = {}
         self._dl: download.Downloader | None = None
         self._busy = threading.Lock()
@@ -68,12 +82,15 @@ class Api:
     def boot(self, auto_downloads: bool = True):
         """程序一开（开机自启进托盘也算）就调：0.3.0 第一次开把「下载」盯上；接着盯上次在盯的，关着时来的补分。"""
         c = load_cfg()
+        if c.get("lang") not in text.LANGS:  # 定下来记进设置文件，以后就照它（先定语言再标 v03）
+            c["lang"] = text.set_lang(_lang_of(c))
+            save_cfg(c)
         if not c.get("v03"):
             c["v03"] = True
             c["intro"] = True  # 顶上那句话，人点掉或者动过开关就不再说
             dl = fs.downloads_dir()
             if auto_downloads and os.path.isdir(fs.lp(dl)) and not any(_same(x["folder"], dl) for x in c["watch"]):
-                c["watch"].append({"folder": os.path.abspath(dl), "scheme": organize.PRESETS[0], "on": True})
+                c["watch"].append({"folder": os.path.abspath(dl), "scheme": organize.presets()[0], "on": True})
             save_cfg(c)
         self.watch_resume()
         return True
@@ -83,8 +100,8 @@ class Api:
         c = load_cfg()
         dl = fs.downloads_dir()
         return {
-            "version": VERSION, "platform": sys.platform, "cfg": c,
-            "presets": organize.PRESETS, "types": [t[0] for t in organize.TYPES],
+            "version": VERSION, "platform": sys.platform, "cfg": c, "lang": text.lang(),
+            "presets": organize.presets(), "types": [organize.type_dir("." + e.split()[0]) for _, e in organize.TYPES],
             "date_formats": list(rename.DATE_FORMATS), "dir_formats": list(organize.DATE_DIRS),
             "downloads": dl,
             "autostart": self._autostart(c),
@@ -103,7 +120,7 @@ class Api:
         if not os.path.isdir(fs.lp(folder)):
             return {"folder": folder, "n": 0, "groups": []}
         ent = next((x for x in load_cfg()["watch"] if _same(x["folder"], folder)), None)
-        scheme = ent["scheme"] if ent else organize.PRESETS[0]
+        scheme = organize.localize(ent["scheme"] if ent else organize.presets()[0])
         p = organize.plan(folder, scheme)
         return {"folder": folder, "n": p["changed"], "groups": p["groups"][:4], "scheme": scheme}
 
@@ -122,13 +139,36 @@ class Api:
         c = load_cfg()
         key = os.path.normcase(os.path.abspath(folder))
         if key in c.get("sort_by_folder", {}):
-            return {"scheme": c["sort_by_folder"][key], "from": "folder"}
+            return {"scheme": organize.localize(c["sort_by_folder"][key]), "from": "folder"}
         files = rename.list_files(folder) if os.path.isdir(fs.lp(folder)) else []
         if len(files) >= 5 and sum(1 for f in files if fs.split_ext(f["name"])[1].lower() in rename.PHOTO_EXT) >= 0.8 * len(files):
-            return {"scheme": organize.PRESETS[2], "from": "guess"}
+            return {"scheme": organize.presets()[2], "from": "guess"}
         if c.get("sort_last"):
-            return {"scheme": c["sort_last"], "from": "last"}
-        return {"scheme": organize.PRESETS[0], "from": "preset"}
+            return {"scheme": organize.localize(c["sort_last"]), "from": "last"}
+        return {"scheme": organize.presets()[0], "from": "preset"}
+
+    def set_lang(self, lang):
+        """左下角 EN / 中文：记进设置文件，下次打开照旧。存着的现成分法换成新语言的名字（以后新分的进新语言的文件夹，旧文件夹不动）。"""
+        if lang not in text.LANGS:
+            return self.hello()
+        with self._wlock:
+            text.set_lang(lang)
+            c = load_cfg()
+            c["lang"] = lang
+            for x in c["watch"]:
+                x["scheme"] = organize.localize(x["scheme"])
+            if c.get("sort_last"):
+                c["sort_last"] = organize.localize(c["sort_last"])
+            c["sort_by_folder"] = {k: organize.localize(v) for k, v in c.get("sort_by_folder", {}).items()}
+            save_cfg(c)
+            for w in self._watchers.values():
+                w.scheme = organize.localize(w.scheme)
+        if self._on_lang:
+            try:
+                self._on_lang(lang)
+            except Exception:
+                pass
+        return self.hello()
 
     def set_pref(self, key, value):
         if key not in PREFS:
@@ -182,7 +222,8 @@ class Api:
             with urllib.request.urlopen(req, timeout=6) as r:
                 info = json.loads(r.read().decode("utf-8"))
             newer = _vtuple(info.get("version", "0")) > _vtuple(VERSION)
-            self._update = {"newer": newer, "version": info.get("version"), "url": info.get("url") or PAGE_URL}
+            # notes：这一版干了啥，{"en": …, "zh": …}（0.4.0 起），界面照当前语言挑一句放在「有新版」下面
+            self._update = {"newer": newer, "version": info.get("version"), "url": info.get("url") or PAGE_URL, "notes": info.get("notes")}
         except Exception:
             self._update = {"newer": False}
         return self._update
@@ -191,15 +232,14 @@ class Api:
         """「用示例试试」：在临时文件夹里造一堆乱文件，一点就有东西可改可分。"""
         import datetime as dt
         import zipfile
-        d = tempfile.mkdtemp(prefix="戒尺僧示例-")
+        d = tempfile.mkdtemp(prefix=T("demo_dir"))
         for i in range(4):
             fs.make_jpeg_with_exif(os.path.join(d, f"IMG_{2041 + i}.JPG"), dt.datetime(2026, 7, 3 + i, 9, 30 + i), "iPhone 15")
-        for n in ["发票-滴滴  2026-09.pdf", "Q3 报表 final.xlsx", "合同（终版）.docx", "截图 2026-10-01 10.21.png",
-                  "setup.exe", "会议纪要 .txt", "名单.csv", "年会 彩排.mp4"]:
+        for n in T("demo_files").split("|"):
             with open(os.path.join(d, n), "w", encoding="utf-8") as f:
                 f.write(n)
-        with zipfile.ZipFile(os.path.join(d, "资料.zip"), "w") as z:
-            z.writestr("说明.txt", "示例")
+        with zipfile.ZipFile(os.path.join(d, T("demo_zip")), "w") as z:
+            z.writestr(T("demo_zip_in"), T("demo_zip_in"))
         return self.check_folder(d)
 
     # ------------------------------------------------------------ 改名
@@ -293,7 +333,7 @@ class Api:
 
     def save_scheme(self, scheme):
         c = load_cfg()
-        name = (scheme.get("name") or "").strip() or "我的方案"
+        name = (scheme.get("name") or "").strip() or T("my_scheme")
         scheme["name"] = name
         c["schemes"] = [s for s in c["schemes"] if s["name"] != name] + [scheme]
         save_cfg(c)
@@ -319,7 +359,11 @@ class Api:
         return r
 
     def history(self):
-        return ops.history(30)
+        h = ops.history(30)
+        for x in h:
+            if x.get("kind") != "rename" and x.get("label"):
+                x["label"] = organize.localize_name(x["label"])
+        return h
 
     # ------------------------------------------------------------ 盯文件夹
     def _make_watcher(self, folder, scheme, include_existing=False, fresh=False):
@@ -369,8 +413,8 @@ class Api:
                 for r in ok:
                     if (r["to"] or ".") not in dirs:
                         dirs.append(r["to"] or ".")
-                to = "、".join(d if d != "." else T("w_inplace") for d in dirs[:3])
-                msg = T("n_one", name=ok[0]["old"], to=to) if len(ok) == 1 else T("n_many", name=ok[0]["old"], n=len(ok), to=to)
+                to = T("sep_list").join(d if d != "." else T("w_inplace") for d in dirs[:3])
+                msg = T("n_one", name=ok[0]["old"], to=to) if len(ok) == 1 else T("n_many", name=ok[0]["old"], n=len(ok), more=len(ok) - 1, to=to)
                 name = T("downloads_name") if _same(w.folder, fs.downloads_dir()) else (os.path.basename(w.folder) or w.folder)
                 try:
                     self._notify(T("n_title", folder=name), msg)
@@ -449,7 +493,7 @@ class Api:
             f = os.path.abspath(x["folder"])
             w = self._watchers.get(f)
             log = w.log[:50] if w else []
-            out.append({"folder": f, "name": os.path.basename(f) or f, "scheme": x["scheme"], "on": bool(w and w.running),
+            out.append({"folder": f, "name": os.path.basename(f) or f, "scheme": organize.localize(x["scheme"]), "on": bool(w and w.running),
                         "exists": os.path.isdir(fs.lp(f)), "log": log,
                         "today": sum(1 for r in (w.log if w else []) if r.get("ok") and not r.get("undone") and (r.get("ts") or "").startswith(today)),
                         "count": sum(1 for r in (w.log if w else []) if r.get("ok"))})
