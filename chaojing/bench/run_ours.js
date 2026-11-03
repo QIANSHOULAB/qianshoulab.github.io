@@ -1,5 +1,5 @@
 // 跑我们的抄经僧：node run_ours.js <材料目录> <输出目录>   （先在仓库根起 python3 -m http.server 8765）
-// 每套材料：上传模板 → 上传数据 → 选「都要」→ 生成 → 存 zip；记录点击数、用时、截图。
+// 每套材料：一次选模板 + 表格 → 选格式 → 下载 → 存 zip；记录点击数、用时、截图。每套用新的浏览器（等于第一次用）。
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 const [MAT, OUT] = process.argv.slice(2);
@@ -20,11 +20,9 @@ fs.mkdirSync(OUT, { recursive: true });
       page.on('pageerror', e => errs.push(String(e))); page.on('console', m => { if (m.type() === 'error') errs.push(m.text()) });
       await page.goto(URL); await page.waitForLoadState('networkidle');
       let clicks = 0;
-      // 上传模板：点按钮 + 文件框里选文件 = 2 下
-      const [fc1] = await Promise.all([page.waitForEvent('filechooser'), page.click('#bUpTpl')]); await fc1.setFiles(path.join(MAT, set.template)); clicks += 2;
-      await page.waitForTimeout(800);
-      const [fc2] = await Promise.all([page.waitForEvent('filechooser'), page.click('#bUpData')]); await fc2.setFiles(path.join(MAT, set.data)); clicks += 2;
-      await page.waitForFunction(() => window.__S && window.__S.data && window.__S.data.rows.length > 0, null, { timeout: 30000 });
+      // 0.3.0：模板和表格一次选：点「选文件」+ 文件框里一起选两个 = 2 下（0.2.1 是分两次上传，4 下）
+      const [fc1] = await Promise.all([page.waitForEvent('filechooser'), page.click('.js-pick:visible')]); await fc1.setFiles([path.join(MAT, set.template), path.join(MAT, set.data)]); clicks += 2;
+      await page.waitForFunction(() => window.__S && window.__S.data && window.__S.data.rows.length > 0 && window.__S.tpl, null, { timeout: 30000 });
       await page.waitForTimeout(1500);
       const map = await page.evaluate(() => ({ tags: __S.tpl.tags, map: __S.map, headers: __S.data.headers, rows: __S.data.rows.length, rule: __S.rule }));
       const unmatched = map.tags.filter(t => map.map[t] < 0);

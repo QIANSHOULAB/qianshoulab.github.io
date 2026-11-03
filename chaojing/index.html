@@ -4,210 +4,247 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>抄经僧</title>
-<meta name="description" content="批量出文档：表格一行出一份证书、发票、合同。Word 模板 + Excel 表格，一键打包 Word / PDF。全在浏览器里干，不上传。">
-<meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+<meta name="description" content="批量出文档：Word 模板配一张表，一行抄一份证书、发票、合同，打包 Word / PDF。全在浏览器里干，不上传。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="抄经僧">
 <style>
-/* 布局：电脑左栏四张步骤卡（模板/表格/对号入座/出货）+ 右栏粘性预览纸；手机单列，预览插在表格后面 */
+/* 千手院设计规范（_ops/设计规范.md）：一个主色（抄经僧红），其余全是灰。
+   布局：没文件时一屏一件事（丢文件）；有了文件，电脑左栏 文件 / 对号入座 / 出货，右栏预览纸；手机单列，下载钮贴底 */
 :root{
-  --bg:#F5F5F7; --card:#FFFFFF; --fill:rgba(118,118,128,.12); --fill2:rgba(118,118,128,.2);
-  --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#AEAEB2; --sep:rgba(60,60,67,.14);
-  --accent:#0071E3; --accent-tint:rgba(0,113,227,.10); --on-accent:#FFFFFF;
-  --good:#1F7A36; --good-tint:rgba(52,199,89,.16); --bad:#D70015; --bad-tint:rgba(255,59,48,.10);
-  --amber-ink:#A85100; --amber-tint:rgba(255,149,0,.14);
-  --desk:#E8E8ED; --paper-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.10);
-  --glass:rgba(245,245,247,.8); --scrim:rgba(0,0,0,.32);
-  --toast-bg:rgba(29,29,31,.92); --toast-fg:#F5F5F7;
-  --shadow:0 1px 1px rgba(0,0,0,.03),0 6px 20px rgba(0,0,0,.05);
-  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
-  --f-num:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,"PingFang SC",sans-serif;
-  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --r:18px; color-scheme:light;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --bg:#ffffff; --bg-group:#f5f5f7; --card:#ffffff; --card-2:#fbfbfd;
+  --fg:#1d1d1f; --fg-2:#6e6e73; --fg-3:#86868b;
+  --line:rgba(0,0,0,.08); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.2);
+  --ok:#34c759; --warn:#ff9f0a; --bad:#ff3b30; --bad-ink:#d70015; --doubt:rgba(255,204,0,.22);
+  --accent:#D63A40; --accent-fill:#D63A40; --accent-tint:rgba(229,72,77,.10); --on-accent:#ffffff;
+  --r-card:18px; --r-btn:12px; --r-big:14px; --r-field:10px; --r-chip:8px;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
+  --desk:#f5f5f7; --dz:#f5f5f7; --paper-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);
+  --glass:rgba(255,255,255,.72); --scrim:rgba(0,0,0,.32); --toast-bg:rgba(29,29,31,.92); --toast-fg:#f5f5f7;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#000000; --card:#1C1C1E; --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.34);
-    --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
-    --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
-    --good:#30D158; --good-tint:rgba(48,209,88,.20); --bad:#FF6961; --bad-tint:rgba(255,69,58,.18);
-    --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
-    --desk:#111113; --paper-shadow:0 0 0 .5px rgba(255,255,255,.08),0 12px 36px rgba(0,0,0,.6);
-    --glass:rgba(18,18,20,.72); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(58,58,60,.95);
-    --shadow:none; color-scheme:dark;
-  }
-}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
+  --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
+  --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
+  --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --bad-ink:#ff6961; --shadow:none;
+  --accent:#FF6369; --accent-tint:rgba(255,99,105,.16);
+  --desk:#000000; --dz:#1c1c1e; --paper-shadow:0 0 0 .5px rgba(255,255,255,.1);
+  --glass:rgba(22,22,23,.72); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(58,58,60,.96);
+  color-scheme:dark;
+}}
 :root[data-theme="dark"]{
-  --bg:#000000; --card:#1C1C1E; --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.34);
-  --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
-  --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
-  --good:#30D158; --good-tint:rgba(48,209,88,.20); --bad:#FF6961; --bad-tint:rgba(255,69,58,.18);
-  --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
-  --desk:#111113; --paper-shadow:0 0 0 .5px rgba(255,255,255,.08),0 12px 36px rgba(0,0,0,.6);
-  --glass:rgba(18,18,20,.72); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(58,58,60,.95);
-  --shadow:none; color-scheme:dark;
+  --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
+  --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
+  --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
+  --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --bad-ink:#ff6961; --shadow:none;
+  --accent:#FF6369; --accent-tint:rgba(255,99,105,.16);
+  --desk:#000000; --dz:#1c1c1e; --paper-shadow:0 0 0 .5px rgba(255,255,255,.1);
+  --glass:rgba(22,22,23,.72); --scrim:rgba(0,0,0,.6); --toast-bg:rgba(58,58,60,.96);
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.45 var(--f-text);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
-button,input,select{font:inherit;color:inherit}
+body{margin:0;background:var(--bg-group);color:var(--fg);font:400 15px/1.5 var(--font);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body.empty{background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
 button{background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-appearance:none;appearance:none}
 a{color:var(--accent);text-decoration:none}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
 [hidden]{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:1ms!important;transition-duration:1ms!important}}
 
-.wrap{max-width:1180px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) 40px max(16px,env(safe-area-inset-right))}
-header.top{padding:44px 4px 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:14px}
-.logo{width:52px;height:52px;border-radius:14px;background:linear-gradient(160deg,#3A3A3C,#1D1D1F);display:grid;place-items:center;color:#F5D79E;font:600 26px/1 "Songti SC","STSong","Noto Serif SC","SimSun",serif;box-shadow:0 4px 14px rgba(0,0,0,.18)}
-h1{margin:0;font-size:34px;line-height:1.15;font-weight:700;letter-spacing:.01em}
-.tagline{margin:4px 0 0;color:var(--fg2);font-size:15px}
-.privacy{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--fg2);background:var(--fill);padding:6px 12px;border-radius:999px}
-.privacy svg{width:13px;height:13px}
+/* 顶栏：毛玻璃 */
+.bar-top{position:sticky;top:0;z-index:40;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line)}
+.bar-in{max-width:1120px;margin:0 auto;height:52px;padding:0 max(16px,env(safe-area-inset-left)) 0 max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600;color:var(--fg)}
+.brand img{width:28px;height:28px;display:block}
+.privacy{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--fg-2)}
+.privacy svg{width:14px;height:14px}
 
-.grid{display:grid;grid-template-columns:400px minmax(0,1fr);gap:24px;align-items:start;
-  grid-template-areas:"tpl pv" "data pv" "map pv" "out pv" ". pv"}
-#cTpl{grid-area:tpl}#cData{grid-area:data}#cMap{grid-area:map}#cOut{grid-area:out}#cPv{grid-area:pv}
-.left-stack{display:contents}
+.wrap{max-width:1120px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) 48px max(16px,env(safe-area-inset-right))}
+
+/* 空状态：一句大标题、一句副标题、丢文件 */
+.hero{max-width:980px;margin:0 auto;padding:72px 0 32px;text-align:center}
+.hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.01em}
+.hero p{margin:16px auto 0;max-width:620px;font-size:21px;line-height:1.4;color:var(--fg-2)}
+.dropzone{max-width:640px;margin:0 auto;background:var(--dz);border-radius:var(--r-card);padding:48px 24px;text-align:center;transition:background var(--t) var(--ease),box-shadow var(--t) var(--ease)}
+.dropzone .di{width:56px;height:56px;margin:0 auto 16px;color:var(--accent)}
+.dropzone>b{display:block;font-size:22px;font-weight:600;line-height:1.25}
+.dropzone .ds{margin:8px 0 24px;color:var(--fg-2);font-size:15px}
+.dropzone .acts{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}
+.dropzone .err{margin:24px auto 0;font-size:15px}
+.samples-line{margin-top:24px;font-size:13px;color:var(--fg-3)}
+.samples-line button{color:var(--accent);font-size:13px;padding:12px 4px}
+body.dragging .dropzone{background:var(--accent-tint);box-shadow:inset 0 0 0 2px var(--accent)}
+@media (max-width:640px){.hero{padding:48px 0 24px}.hero p{font-size:17px}.dropzone{padding:32px 16px}}
+
+/* 干活界面 */
+.grid{display:grid;grid-template-columns:380px minmax(0,1fr);gap:24px;align-items:start;padding-top:32px;
+  grid-template-areas:"files pv" "map pv" "out pv" ". pv"}
+#cFiles{grid-area:files}#cMap{grid-area:map}#cOut{grid-area:out}#cPv{grid-area:pv}
 @media (max-width:900px){
-  .grid{grid-template-columns:minmax(0,1fr);gap:16px;grid-template-areas:"tpl" "data" "pv" "map" "out"}
-  header.top{padding:28px 4px 18px}
-  h1{font-size:30px}
+  body{font-size:17px}
+  .grid{grid-template-columns:minmax(0,1fr);gap:24px;padding-top:24px;grid-template-areas:"files" "pv" "map" "out"}
 }
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 4px 8px}
+.sec-h h2{margin:0;font-size:13px;font-weight:400;color:var(--fg-2)}
+.sec-h .meta{font-size:13px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.sec-h .meta.warn{color:var(--fg)}
+.card{background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow);overflow:hidden}
 
-.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
-.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;min-height:28px}
-.card-h h2{margin:0;font-size:19px;font-weight:700;display:flex;align-items:center;gap:10px}
-.step{width:22px;height:22px;border-radius:50%;background:var(--fg);color:var(--bg);font:700 12px/22px var(--f-num);text-align:center;flex:none}
-.meta{font-size:13px;color:var(--fg2);font-variant-numeric:tabular-nums;white-space:nowrap}
-.hint{margin:10px 0 0;font-size:13px;color:var(--fg2)}
-.hint code,.mono{font-family:var(--f-mono);font-size:12.5px;background:var(--fill);padding:1px 5px;border-radius:5px}
+/* 分组列表（iOS 设置） */
+.row{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;position:relative}
+.row+.row::before,.row+.sub::before,.sub+.row::before{content:"";position:absolute;top:0;left:60px;right:0;border-top:.5px solid var(--line)}
+.row.plain+.row::before{left:16px}
+.ficon{width:32px;height:32px;flex:none;color:var(--fg-2)}
+.ficon.on{color:var(--accent)}
+.rt{flex:1;min-width:0}
+.rt b{display:block;font-weight:400;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt span{display:block;font-size:13px;color:var(--fg-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt span.missing{color:var(--fg-3)}
+@media (max-width:900px){.rt b{font-size:17px}}
+.row .tool{flex:none}
+.sub{position:relative;padding:0 16px 16px 60px}
+.restore{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:var(--fg-2);padding:12px 16px;border-top:.5px solid var(--line)}
+.links{display:flex;flex-wrap:wrap;gap:4px 16px;padding:4px 16px 8px}
+.link{display:inline-flex;align-items:center;min-height:44px;color:var(--accent);font-size:15px}
+.link.sm{font-size:13px;min-height:32px}
 
-.file{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--fill);margin-bottom:12px;min-height:52px}
-.ficon{width:30px;height:36px;border-radius:5px;flex:none;display:grid;place-items:center;font:700 9px/1 var(--f-text);color:#fff;letter-spacing:.02em}
-.ficon.w{background:#2B579A}.ficon.x{background:#1E7145}.ficon.e{background:var(--accent)}
-.fname{flex:1;min-width:0}
-.fname b{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fname span{font-size:12.5px;color:var(--fg2)}
-.chip{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--fill);color:var(--fg2);white-space:nowrap}
-.chip.demo{background:var(--accent-tint);color:var(--accent)}
-.chip.ok{background:var(--good-tint);color:var(--good)}
-.chip.bad{background:var(--bad-tint);color:var(--bad)}
-.chip.warn{background:var(--amber-tint);color:var(--amber-ink)}
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:var(--r-btn);font-size:15px;font-weight:600;background:var(--fill);color:var(--fg);transition:background var(--t) var(--ease),opacity var(--t) var(--ease),transform 120ms var(--ease);white-space:nowrap}
+.btn:hover{background:var(--fill-2)}
+.btn:active{transform:scale(.98)}
+.btn svg{width:18px;height:18px}
+.btn.primary{background:var(--accent-fill);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.big{width:100%;height:52px;font-size:17px;border-radius:var(--r-big)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.text{background:none;color:var(--accent);padding:0 8px}
+.btn.sm{height:32px;padding:0 12px;font-size:13px;border-radius:var(--r-chip)}
 
-.samples{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.pill{height:30px;padding:0 13px;border-radius:999px;background:var(--fill);font-size:13px;font-weight:600;color:var(--fg2);transition:background .15s}
-.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
-.pill:hover{background:var(--fill2)}.pill[aria-pressed="true"]:hover{background:var(--fg)}
-.btns{display:flex;gap:8px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;background:var(--fill);color:var(--accent);transition:transform .12s,background .15s;white-space:nowrap}
-.btn:hover{background:var(--fill2)}
-.btn:active{transform:scale(.97)}
-.btn svg{width:15px;height:15px}
-.btn.primary{background:var(--accent);color:var(--on-accent)}
-.btn.big{width:100%;height:52px;font-size:17px;border-radius:14px}
-.btn.big:disabled{opacity:.45;cursor:default;transform:none}
-.btn.ghost{background:none;padding:0 8px}
+/* 分段控件 */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;padding:2px;border-radius:var(--r-field);background:var(--fill)}
+.seg button{height:32px;border-radius:8px;font-size:13px;font-weight:600;color:var(--fg);transition:background var(--t) var(--ease)}
+.seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px var(--line)}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{background:var(--fill-2)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{background:#636366}}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{background:#636366}
 
-/* table */
-.tbl-wrap{max-height:244px;overflow:auto;border-radius:12px;box-shadow:inset 0 0 0 .5px var(--sep);overscroll-behavior:contain}
+/* 下拉：重画 */
+.pick{position:relative;display:block;min-width:0}
+.pick select{width:100%;height:32px;border-radius:var(--r-chip);border:0;background:var(--fill);padding:0 28px 0 12px;font-size:13px;-webkit-appearance:none;appearance:none;cursor:pointer;text-overflow:ellipsis;color:var(--fg)}
+.pick::after{content:"";position:absolute;right:12px;top:11px;width:6px;height:6px;border-right:1.5px solid var(--fg-2);border-bottom:1.5px solid var(--fg-2);transform:rotate(45deg);pointer-events:none}
+
+/* 表格 */
+.tbl-wrap{max-height:196px;overflow:auto;border-top:.5px solid var(--line);overscroll-behavior:contain}
 table.data{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px;font-variant-numeric:tabular-nums}
-table.data th,table.data td{padding:7px 12px;text-align:left;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--sep)}
-table.data th{position:sticky;top:0;background:var(--card);font-weight:600;color:var(--fg2);z-index:1}
-table.data td.n,table.data th.n{color:var(--fg3);width:1%;padding-right:4px;text-align:right}
+table.data th,table.data td{padding:8px 12px;text-align:left;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--line)}
+table.data th{position:sticky;top:0;background:var(--card);font-weight:600;color:var(--fg-2);z-index:1}
+table.data td.n,table.data th.n{color:var(--fg-3);width:1%;padding-right:4px;text-align:right}
 table.data tbody tr{cursor:pointer}
 table.data tbody tr:hover td{background:var(--fill)}
 table.data tbody tr.sel td{background:var(--accent-tint)}
-table.data tbody tr.sel td.n{color:var(--accent);font-weight:700}
-.more{padding:8px 12px;font-size:12.5px;color:var(--fg2)}
+table.data tbody tr.sel td.n{color:var(--accent);font-weight:600}
+.more{padding:8px 12px;font-size:13px;color:var(--fg-2)}
 
-/* map */
-.maplist{display:flex;flex-direction:column}
-.mrow{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 0;border-top:.5px solid var(--sep)}
-.mrow:first-child{border-top:0}
-.tagname{font-family:var(--f-mono);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.arrow{color:var(--fg3);width:14px;height:14px}
-.sel-wrap{position:relative}
-.sel-wrap select{width:100%;height:32px;border-radius:9px;border:0;background:var(--fill);padding:0 26px 0 10px;font-size:13.5px;-webkit-appearance:none;appearance:none;cursor:pointer;text-overflow:ellipsis}
-.sel-wrap::after{content:"";position:absolute;right:11px;top:12px;width:6px;height:6px;border-right:1.6px solid var(--fg2);border-bottom:1.6px solid var(--fg2);transform:rotate(45deg);pointer-events:none}
-.mrow.bad .sel-wrap select{background:var(--bad-tint);color:var(--bad)}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
-.mrow.bad .dot{background:var(--bad)}
-.mrow.blank .dot{background:var(--fg3)}
-.mapsum{font-size:13px;font-weight:600}
-.mapsum.ok{color:var(--good)}.mapsum.bad{color:var(--bad)}
-.unused{margin-top:10px;font-size:12.5px;color:var(--fg2)}
-.grp{margin-top:10px;padding:8px 6px 8px 12px;border-radius:12px;background:var(--accent-tint);color:var(--accent);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.grp.off{background:var(--fill);color:var(--fg2)}
-.grp .btn{height:28px;font-size:13px;flex:none}
+/* 对号入座 */
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr);align-items:center;gap:8px;min-height:44px;padding:6px 16px;position:relative}
+.mrow+.mrow::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.mrow.doubt{background:var(--doubt)}
+.tagname{font-family:var(--mono);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arrow{color:var(--fg-3);width:14px;height:14px}
+.foot{padding:12px 16px;font-size:13px;color:var(--fg-2);border-top:.5px solid var(--line)}
+.foot .btn{margin-left:4px}
+.grp{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mrow.fold{display:flex;justify-content:space-between}
+.mline{min-width:0;font-size:13px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mapnone{padding:16px;font-size:13px;color:var(--fg-2)}
 
-/* output */
-.field{margin-bottom:14px}
-.field label{display:block;font-size:13px;font-weight:600;color:var(--fg2);margin:0 0 6px 2px}
-.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;padding:2px;border-radius:10px;background:var(--fill)}
-.seg button{height:32px;border-radius:8px;font-size:14px;font-weight:600;color:var(--fg2)}
-.seg button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.inp{width:100%;height:38px;border-radius:10px;border:0;background:var(--fill);padding:0 12px;font-family:var(--f-mono);font-size:13.5px;outline:none}
+/* 出货 */
+.out-in{padding:16px}
+.fld{margin-bottom:16px}
+.fld label{display:block;font-size:13px;color:var(--fg-2);margin:0 0 8px 4px}
+.inp{width:100%;height:40px;border-radius:var(--r-field);border:0;background:var(--fill);padding:0 12px;font-family:var(--mono);font-size:13px;outline:none;color:var(--fg)}
 .inp:focus{box-shadow:0 0 0 2px var(--accent)}
-.namepv{margin:6px 2px 0;font-size:12.5px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.namepv{margin:8px 4px 0;font-size:13px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.memo{margin:8px 4px 0;font-size:12px;color:var(--fg-3)}
 .prog{margin-top:12px}
-.bar{height:6px;border-radius:3px;background:var(--fill);overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .15s}
-.prog-t{display:flex;justify-content:space-between;margin-top:6px;font-size:12.5px;color:var(--fg2);font-variant-numeric:tabular-nums}
-.done{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--good-tint);color:var(--good);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.done .btn{background:var(--card);height:30px;font-size:13px}
+.pbar{height:4px;border-radius:2px;background:var(--fill);overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width 200ms var(--ease)}
+.prog-t{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.done{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px;animation:rise var(--t) var(--ease)}
+.done .ok{display:inline-flex;align-items:center;gap:8px}
+.done .ok svg{width:20px;height:20px;color:var(--ok)}
+.done .ok svg path{stroke-dasharray:24;stroke-dashoffset:24;animation:draw 360ms var(--ease) 80ms forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.err{display:flex;gap:8px;align-items:flex-start;text-align:left;font-size:13px;color:var(--fg);background:var(--fill);border-radius:var(--r-field);padding:12px;max-width:520px}
+.err svg{width:16px;height:16px;flex:none;color:var(--bad);margin-top:2px}
+.err b{font-weight:600}
+.card .err{margin:0 16px 16px;background:var(--fill)}
+@media (max-width:900px){
+  .dock{position:fixed;left:0;right:0;bottom:0;z-index:45;padding:12px max(16px,env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom));background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line)}
+  body.work{padding-bottom:150px}
+  .out-in .dock .done,.out-in .dock .prog{margin-top:8px}
+}
 
-/* preview */
-#cPv{position:sticky;top:16px;padding:0;overflow:hidden;background:var(--desk)}
-.pv-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--card);border-bottom:.5px solid var(--sep)}
-.pv-h h2{margin:0;font-size:15px;font-weight:700}
-.rownav{display:flex;align-items:center;gap:4px}
-.rn-b{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--accent);background:var(--fill)}
-.rn-b:disabled{color:var(--fg3);cursor:default}
-.rn-b svg{width:8px;height:13px}
-.rn-t{min-width:92px;text-align:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
-.rn-t span{display:block;font-size:11.5px;font-weight:400;color:var(--fg2);max-width:120px;margin:0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pv-body{padding:24px;min-height:300px;max-height:calc(100vh - 110px);overflow:auto;overscroll-behavior:contain}
-@media (max-width:900px){#cPv{position:static}.pv-body{padding:14px;max-height:none}}
+/* 预览 */
+#cPv{position:sticky;top:76px;background:var(--card)}
+@media (min-width:901px){.pv-body{min-height:320px}}
+.pv-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 8px 16px;border-bottom:.5px solid var(--line)}
+.pv-h .tt{min-width:0;font-size:13px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.pv-h .tt b{display:block;font-size:15px;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rownav{display:flex;align-items:center;gap:4px;flex:none}
+.rn-b{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--accent)}
+.rn-b:hover{background:var(--fill)}
+.rn-b:disabled{color:var(--fg-3);cursor:default;background:none}
+.rn-b svg{width:9px;height:15px}
+.pv-body{padding:24px;min-height:120px;max-height:calc(100vh - 210px);overflow:auto;overscroll-behavior:contain;background:var(--desk)}
+@media (max-width:900px){#cPv{position:static}.pv-body{padding:16px;max-height:none}}
 .pv-stage{margin:0 auto;transform-origin:top left}
-.pv-scale{transform-origin:top left}
-.pv-scale section.docx{background:#fff;box-shadow:var(--paper-shadow)!important;margin:0 0 18px!important}
-/* 预览纸上的字：黑体用系统的，宋体/楷体用跟 PDF 同一套（用到才下载），没下完先用系统的顶着 */
+.pv-scale{transform-origin:top left;transition:opacity 200ms var(--ease)}
+.pv-scale section.docx{background:#fff;box-shadow:var(--paper-shadow)!important;margin:0 0 16px!important}
 .pv-scale [data-qf=s]{font-family:"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei",sans-serif!important}
 .pv-scale [data-qf=r]{font-family:QSerif,"Songti SC","STSong","SimSun","Noto Serif CJK SC",serif!important}
 .pv-scale .docx-tab-stop[data-qn]{word-spacing:0!important;font-size:0!important}
 .pv-scale [data-qf=k]{font-family:QKai,"Kaiti SC","STKaiti","KaiTi","LXGW WenKai",serif!important}
-.pv-err{padding:40px 20px;text-align:center;color:var(--fg2)}
-.pv-foot{display:flex;gap:8px;justify-content:center;padding:0 14px 16px}
-.pv-loading{opacity:.55;transition:opacity .2s}
+.pv-err,.pv-empty{padding:48px 24px;text-align:center;color:var(--fg-2);font-size:15px}
+.pv-foot{display:flex;gap:16px;justify-content:center;padding:4px 16px;border-top:.5px solid var(--line)}
+.pv-loading{opacity:.5}
 
-/* footer */
-footer{margin-top:40px;padding:22px 4px 0;border-top:.5px solid var(--sep);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--fg2)}
-footer .mail{-webkit-user-select:text;user-select:text;font-family:var(--f-text)}
+footer{max-width:1120px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left)) 32px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--fg-3)}
+footer a{color:var(--fg-2)}
+footer .mail{-webkit-user-select:text;user-select:text}
 
-/* sheet (editor / paste) */
-.scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;animation:fade .2s}
+/* 浮层（在线编辑 / 粘贴） */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;animation:fade var(--t) var(--ease)}
 @keyframes fade{from{opacity:0}}
-.sheet{background:var(--card);border-radius:20px;width:min(1000px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:rise .28s cubic-bezier(.2,.8,.2,1)}
-@keyframes rise{from{transform:translateY(24px);opacity:.5}}
+.sheet{background:var(--card);border-radius:var(--r-card);width:min(1000px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.3);animation:rise 280ms var(--ease)}
+@keyframes rise{from{transform:translateY(16px);opacity:0}}
 .sheet.small{width:min(560px,100%)}
-.sh-h{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 12px;border-bottom:.5px solid var(--sep)}
-.sh-h b{font-size:16px}
+.sh-h{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:4px 8px;min-height:52px;border-bottom:.5px solid var(--line);background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+.sh-h b{font-size:17px;font-weight:600}
 .sh-h .l{justify-self:start}.sh-h .r{justify-self:end}
 @media (max-width:640px){.scrim{padding:0;align-items:stretch}.sheet{border-radius:0;height:100%}}
-.toolbar{display:flex;gap:4px;padding:8px 10px;border-bottom:.5px solid var(--sep);overflow-x:auto;scrollbar-width:none;align-items:center}
+.toolbar{display:flex;gap:4px;padding:8px;border-bottom:.5px solid var(--line);overflow-x:auto;scrollbar-width:none;align-items:center}
 .toolbar::-webkit-scrollbar{display:none}
-.tb{height:32px;min-width:32px;padding:0 9px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--fg);display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;flex:none}
+.tb{height:36px;min-width:36px;padding:0 8px;border-radius:var(--r-chip);font-size:13px;font-weight:600;color:var(--fg);display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;flex:none}
 .tb:hover{background:var(--fill)}
-.tb.on{background:var(--fill2)}
+.tb.on{background:var(--fill-2)}
 .tb svg{width:16px;height:16px}
-.tb.fld{background:var(--accent-tint);color:var(--accent)}
-.tbsep{width:.5px;height:20px;background:var(--sep);margin:0 4px;flex:none}
-.sw{width:18px;height:18px;border-radius:50%;box-shadow:0 0 0 1px var(--sep)}
-.ed-desk{flex:1;overflow:auto;background:var(--desk);padding:24px}
+.tb.ins{color:var(--accent)}
+.tbsep{width:.5px;height:20px;background:var(--line);margin:0 4px;flex:none}
+.sw{width:18px;height:18px;border-radius:50%;box-shadow:0 0 0 1px var(--line)}
+.ed-desk{flex:1;overflow:auto;background:var(--bg-group);padding:24px}
 @media (max-width:640px){.ed-desk{padding:12px}}
 .ed-stage{margin:0 auto;transform-origin:top left}
-.page{background:#fff;color:#1d1d1f;box-shadow:var(--paper-shadow);transform-origin:top left;outline:none;font-family:Arial,"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;font-size:16px;line-height:1.5;caret-color:#0071E3}
-.page{position:relative}
+.page{background:#fff;color:#1d1d1f;box-shadow:var(--paper-shadow);transform-origin:top left;outline:none;font-family:Arial,"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;font-size:16px;line-height:1.5;caret-color:#D63A40;position:relative}
 .page.bordered::before{content:"";position:absolute;inset:37px;border:6px double var(--bd);pointer-events:none}
 .page.portrait{width:794px;min-height:1123px;padding:96px}
 .page.landscape{width:1123px;min-height:794px;padding:76px 96px}
@@ -221,98 +258,115 @@ footer .mail{-webkit-user-select:text;user-select:text;font-family:var(--f-text)
 .page table{border-collapse:collapse;width:100%;margin-bottom:12px}
 .page td,.page th{border:1px solid #D1D1D6;padding:6px 8px;text-align:left;font-size:16px;vertical-align:top}
 .page th{background:#F2F2F7;font-weight:700}
-.menu{position:fixed;z-index:60;background:var(--card);border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.25),0 0 0 .5px var(--sep);padding:6px;min-width:180px;max-height:300px;overflow:auto}
-.menu button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:7px;font-size:14px}
+.menu{position:fixed;z-index:60;background:var(--card);border-radius:var(--r-btn);box-shadow:0 12px 40px rgba(0,0,0,.24),0 0 0 .5px var(--line);padding:4px;min-width:200px;max-height:320px;overflow:auto}
+.menu button{display:block;width:100%;text-align:left;padding:0 12px;min-height:36px;border-radius:8px;font-size:13px}
 .menu button:hover{background:var(--fill)}
-.menu .mono{background:none;padding:0}
-textarea.paste{flex:1;min-height:260px;margin:14px;border-radius:12px;border:0;background:var(--fill);padding:12px;font:13px/1.5 var(--f-mono);resize:none;outline:none}
-.sh-foot{padding:0 14px 14px;font-size:12.5px;color:var(--fg2)}
+.menu .mono{font-family:var(--mono)}
+.menu .newf{display:flex;gap:4px;padding:4px}
+.menu .newf input{flex:1;min-width:0;height:32px;border:0;border-radius:var(--r-chip);background:var(--fill);padding:0 8px;font-size:13px;outline:none}
+textarea.paste{flex:1;min-height:260px;margin:16px;border-radius:var(--r-field);border:0;background:var(--fill);padding:12px;font:13px/1.5 var(--mono);resize:none;outline:none;color:var(--fg)}
+.sh-foot{padding:0 16px 16px;font-size:13px;color:var(--fg-2)}
 
-.drop{position:fixed;inset:0;z-index:70;background:rgba(0,113,227,.12);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:grid;place-items:center;pointer-events:none}
-.drop div{background:var(--card);padding:22px 30px;border-radius:18px;font-size:19px;font-weight:700;box-shadow:0 20px 60px rgba(0,0,0,.2);border:2px dashed var(--accent)}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-fg);padding:11px 18px;border-radius:999px;font-size:14px;font-weight:500;z-index:80;max-width:calc(100% - 32px);text-align:center;animation:rise .25s}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:var(--toast-bg);color:var(--toast-fg);padding:8px 8px 8px 16px;min-height:44px;border-radius:var(--r-btn);font-size:13px;z-index:80;max-width:calc(100% - 32px);animation:rise var(--t) var(--ease)}
+.toast.plain{padding-right:16px}
+.toast button{color:#FF8A8E;font-weight:600;font-size:13px;height:32px;padding:0 8px}
+@media (max-width:900px){body.work .toast{bottom:calc(96px + env(safe-area-inset-bottom))}}
 #renderer{position:fixed;left:-30000px;top:0;width:2400px;height:1600px;border:0;pointer-events:none}
 </style>
 </head>
-<body>
+<body class="empty">
+<header class="bar-top"><div class="bar-in">
+  <a class="brand" href="./"><img src="icon.svg" alt="" width="28" height="28"><span data-t="title"></span></a>
+  <span class="privacy"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span data-t="privacy"></span></span>
+</div></header>
+
 <div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <div class="logo" aria-hidden="true">抄</div>
-      <div><h1 data-t="title"></h1><p class="tagline" data-t="tagline"></p></div>
+  <section id="vEmpty">
+    <div class="hero"><h1 data-t="heroT"></h1><p data-t="heroS"></p></div>
+    <div class="dropzone" id="dz">
+      <svg class="di" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="20" y="6" width="26" height="33" rx="4" opacity=".45"/><rect x="10" y="14" width="26" height="33" rx="4"/><path d="M16 24h14M16 31h14M16 38h8"/></svg>
+      <b data-t="dropT"></b>
+      <p class="ds" data-t="dropS"></p>
+      <div class="acts">
+        <button class="btn primary js-pick" id="bPick0"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13V3M6 7l4-4 4 4M3 13v3.5h14V13"/></svg><span data-t="pick"></span></button>
+        <button class="btn" id="bTry" data-t="tryIt"></button>
+      </div>
+      <div class="err" id="err0" hidden></div>
+      <p class="samples-line"><span data-t="noTpl"></span><button id="bEdit0" data-t="editOne"></button> · <span data-t="haveClip"></span><button id="bPaste0" data-t="pasteOne"></button></p>
     </div>
-    <div class="privacy"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 12 6h-.5V4.5A3.5 3.5 0 0 0 8 1Zm-2 5V4.5a2 2 0 1 1 4 0V6H6Z"/></svg><span data-t="privacy"></span></div>
-  </header>
+  </section>
 
-  <main class="grid">
-    <section class="card" id="cTpl">
-      <div class="card-h"><h2><span class="step">1</span><span data-t="tplTitle"></span></h2><span class="meta" id="tplMeta"></span></div>
-      <div class="samples" id="samples" role="group"></div>
-      <div class="file"><div class="ficon w" id="tplIcon">DOCX</div><div class="fname"><b id="tplName"></b><span id="tplSub"></span></div><span class="chip demo" id="tplChip" data-t="demo"></span></div>
-      <div class="btns">
-        <button class="btn primary" id="bUpTpl"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2M4.5 5.5 8 2l3.5 3.5M2.5 11v2.5h11V11"/></svg><span data-t="upWord"></span></button>
-        <button class="btn" id="bEdit"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 2.5 3 3L6 13H3v-3z"/></svg><span data-t="editOnline"></span></button>
-        <button class="btn ghost" id="bDlTpl" data-t="dlTpl"></button>
+  <main class="grid" id="vWork" hidden>
+    <section id="cFiles">
+      <div class="sec-h"><h2 data-t="filesTitle"></h2><button class="btn text sm js-pick" id="bPick" data-t="repick"></button></div>
+      <div class="card">
+        <div class="row" id="rTpl">
+          <svg class="ficon" id="tplIcon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h10l6 6v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M19 4v6h6M11.5 17h9M11.5 22h6"/></svg>
+          <div class="rt"><b id="tplName"></b><span id="tplSub"></span></div>
+          <button class="btn sm tool" id="bEdit" data-t="edit"></button>
+        </div>
+        <div class="row" id="rData">
+          <svg class="ficon" id="dataIcon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="6" width="22" height="20" rx="3"/><path d="M5 12.5h22M5 19h22M13 6v20"/></svg>
+          <div class="rt"><b id="dataName"></b><span id="dataSub"></span></div>
+          <span class="pick tool" id="sheetWrap" hidden><select id="sheetSel"></select></span>
+          <button class="btn sm tool" id="bPaste" data-t="paste"></button>
+        </div>
+        <div class="sub" id="samplesBox" hidden><div class="seg" id="samples" role="group"></div></div>
+        <div class="err" id="err1" hidden></div>
+        <div class="tbl-wrap" id="tblWrap"></div>
+        <div class="restore" id="restore" hidden><span id="restoreT"></span><span><button class="btn text sm" id="bDlTpl" data-t="dlTpl"></button><button class="btn text sm" id="bForget" data-t="forget"></button></span></div>
       </div>
-      <p class="hint" data-t="tplHint"></p>
-      <input type="file" id="fTpl" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
     </section>
 
-    <section class="card" id="cData">
-      <div class="card-h"><h2><span class="step">2</span><span data-t="dataTitle"></span></h2><span class="meta" id="dataMeta"></span></div>
-      <div class="file"><div class="ficon x" id="dataIcon">XLSX</div><div class="fname"><b id="dataName"></b><span id="dataSub"></span></div><span class="chip demo" id="dataChip" data-t="demo"></span></div>
-      <div class="btns" style="margin-bottom:12px">
-        <button class="btn primary" id="bUpData"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2M4.5 5.5 8 2l3.5 3.5M2.5 11v2.5h11V11"/></svg><span data-t="upData"></span></button>
-        <button class="btn" id="bPaste" data-t="paste"></button>
-        <span class="sel-wrap" id="sheetWrap" hidden><select id="sheetSel" aria-label="sheet"></select></span>
+    <section id="cMap">
+      <div class="sec-h"><h2 data-t="mapTitle"></h2><span class="meta" id="mapSum"></span></div>
+      <div class="card">
+        <div id="mapList"></div>
+        <div class="foot grp" id="grp" hidden><span id="grpT"></span><button class="btn text sm" id="bGrp"></button></div>
+        <div class="foot" id="unused" hidden></div>
       </div>
-      <div class="tbl-wrap" id="tblWrap"></div>
-      <p class="hint" data-t="dataHint"></p>
-      <input type="file" id="fData" accept=".xlsx,.xls,.csv,.tsv,.txt,.ods,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden>
     </section>
 
-    <section class="card" id="cMap">
-      <div class="card-h"><h2><span class="step">3</span><span data-t="mapTitle"></span></h2><span class="mapsum" id="mapSum"></span></div>
-      <div class="maplist" id="mapList"></div>
-      <p class="unused" id="unused" hidden></p>
-      <div class="grp" id="grp" hidden><span id="grpT"></span><button class="btn ghost" id="bGrp"></button></div>
-    </section>
-
-    <section class="card" id="cOut">
-      <div class="card-h"><h2><span class="step">4</span><span data-t="outTitle"></span></h2></div>
-      <div class="field"><label data-t="fmt"></label>
-        <div class="seg" id="fmtSeg"><button data-v="docx">Word</button><button data-v="pdf">PDF</button><button data-v="both" data-t="both"></button></div>
-      </div>
-      <div class="field"><label for="nameRule" data-t="nameRule"></label>
-        <input class="inp" id="nameRule" spellcheck="false" autocomplete="off">
-        <p class="namepv" id="namePv"></p>
-      </div>
-      <button class="btn primary big" id="bGo"></button>
-      <div class="prog" id="prog" hidden><div class="bar"><i id="barI"></i></div><div class="prog-t"><span id="progT"></span><button class="btn ghost" id="bStop" data-t="stop" style="height:22px;font-size:12.5px"></button></div></div>
-      <div class="done" id="done" hidden><span id="doneT"></span><button class="btn" id="bAgain" data-t="again"></button></div>
+    <section id="cOut">
+      <div class="sec-h"><h2 data-t="outTitle"></h2></div>
+      <div class="card"><div class="out-in">
+        <div class="fld"><label data-t="fmt"></label>
+          <div class="seg" id="fmtSeg" role="group"><button data-v="docx">Word</button><button data-v="pdf">PDF</button><button data-v="both" data-t="both"></button></div>
+        </div>
+        <div class="fld"><label for="nameRule" data-t="nameRule"></label>
+          <input class="inp" id="nameRule" spellcheck="false" autocomplete="off">
+          <p class="namepv" id="namePv"></p>
+          <p class="memo" id="memo"></p>
+        </div>
+        <div class="dock">
+          <button class="btn primary big" id="bGo"></button>
+          <div class="prog" id="prog" hidden><div class="pbar"><i id="barI"></i></div><div class="prog-t"><span id="progT"></span><button class="btn text sm" id="bStop" data-t="stop"></button></div></div>
+          <div class="done" id="done" hidden><span class="ok"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10.5 8.5 14.5 15.5 6"/></svg><span id="doneT" class="num"></span></span><button class="btn text sm" id="bAgain" data-t="again"></button></div>
+        </div>
+      </div></div>
     </section>
 
     <section class="card" id="cPv">
       <div class="pv-h">
-        <h2 data-t="pvTitle"></h2>
+        <div class="tt"><b id="pvName"></b><span id="pvOf"></span></div>
         <div class="rownav">
-          <button class="rn-b" id="bPrev" aria-label="上一行"><svg viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 1.5 6.5l5 5"/></svg></button>
-          <div class="rn-t" id="rnT"></div>
-          <button class="rn-b" id="bNext" aria-label="下一行"><svg viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m1.5 1.5 5 5-5 5"/></svg></button>
+          <button class="rn-b" id="bPrev"><svg viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 1.5 1.5 7.5l6 6"/></svg></button>
+          <button class="rn-b" id="bNext"><svg viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 6 6-6 6"/></svg></button>
         </div>
       </div>
       <div class="pv-body" id="pvBody"><div class="pv-stage" id="pvStage"><div class="pv-scale" id="pvScale"></div></div></div>
-      <div class="pv-foot"><button class="btn" id="bOneDocx" data-t="oneDocx"></button><button class="btn" id="bOnePdf" data-t="onePdf"></button></div>
+      <div class="pv-foot" id="pvFoot"><button class="link sm" id="bOneDocx" data-t="oneDocx"></button><button class="link sm" id="bOnePdf" data-t="onePdf"></button></div>
     </section>
   </main>
-
-  <footer>
-    <span><a href="https://qianshoulab.github.io/" data-t="home"></a> · <span data-t="title"></span></span>
-    <span><span data-t="findAbbot"></span><span class="mail">oilsongchengmin@gmail.com</span> · <span id="ver"></span></span>
-  </footer>
 </div>
 
+<footer>
+  <span><a href="https://qianshoulab.github.io/" data-t="home"></a> · <span data-t="title"></span> <span id="ver" class="num"></span></span>
+  <span><span data-t="findAbbot"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
+</footer>
+
 <div id="layer"></div>
+<input type="file" id="fAny" multiple accept=".docx,.xlsx,.xls,.xlsm,.csv,.tsv,.txt,.ods,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" hidden>
 <iframe id="renderer" title="renderer" aria-hidden="true" tabindex="-1"></iframe>
 
 <script src="lib/jszip.min.js"></script>
@@ -324,52 +378,63 @@ textarea.paste{flex:1;min-height:260px;margin:14px;border-radius:12px;border:0;b
 /* ============ 界面文字：全在这儿，以后加英文就再抄一份 ============ */
 const T = {
   title:"抄经僧",
-  tagline:"名单丢来，你去喝茶，贫僧一行抄一份",
   privacy:"文件不出这台电脑",
-  demo:"示例",
-  tplTitle:"模板", dataTitle:"表格", mapTitle:"对号入座", outTitle:"出货", pvTitle:"预览",
-  upWord:"上传 Word", editOnline:"在线编辑", dlTpl:"下载模板",
-  tplHint:"Word 里写 {{姓名}} 这样的空位，贫僧自己认。",
-  upData:"上传 Excel / CSV", paste:"粘贴",
-  dataHint:"第一行当表头。点哪行，右边就预览哪行。",
+  heroT:"名单丢来，你去喝茶",
+  heroS:"Word 模板配一张表，一行抄一份证书、发票、合同。500 份 PDF 几秒抄完。",
+  dropT:"模板和表格一起丢进来",
+  dropS:"Word 里写 {{姓名}} 这样的空位，贫僧自己认、自己对。",
+  pick:"选文件", tryIt:"用示例试试",
+  noTpl:"没模板？", editOne:"在线写一个", haveClip:"表在剪贴板里？", pasteOne:"粘贴",
+  filesTitle:"文件", repick:"换文件", edit:"编辑", paste:"粘贴", dlTpl:"下载模板", forget:"清掉",
+  mapTitle:"对号入座", outTitle:"出货",
   fmt:"格式", both:"都要", nameRule:"文件名",
-  go:n=>`生成 ${n} 份`, goNone:"表里没东西", stop:"停",
-  again:"再下一次",
-  oneDocx:"下载这份 Word", onePdf:"下载这份 PDF",
+  go:(n,f)=>`下载 ${n} 份${f==="pdf"?" PDF":f==="both"?" Word + PDF":" Word"}`, goNone:"表里没东西", goNoData:"还差一张表", goNoTpl:"还差 Word 模板",
+  stop:"停", again:"再下一次",
+  oneDocx:"只下这份 Word", onePdf:"只下这份 PDF",
+  prev:"上一份", next:"下一份",
   home:"千手院", findAbbot:"找方丈：",
   samples:{cert:"结业证书", invoice:"发票", offer:"录用通知"},
   tplSubTags:n=>`认出 ${n} 个空位`,
   tplSubNone:"一个 {{空位}} 都没找到",
-  fromEditor:"在线编辑", fromWord:"Word 模板",
+  needTpl:"还差 Word 模板", needTplSub:"丢进来，或者点「编辑」在线写一个",
+  needData:"还差一张表", needDataSub:"Excel / CSV 丢进来，或者粘贴",
+  fromEditor:"在线写的", fromWord:"Word", fromExample:"示例",
   dataSub:(r,c)=>`${r} 行 · ${c} 列`,
-  moreRows:n=>`还有 ${n} 行没列出来，生成时一行不落。`,
+  moreRows:n=>`还有 ${n} 行没列出来，下载时一行不落。`,
   mapAllOk:n=>`${n} 个全对上了`,
   mapBad:n=>`${n} 个没对上`,
   mapNone:"模板里没有空位",
-  optUnmapped:"— 没对上 —", optBlank:"留空",
+  mapOpen:"改",
+  mapWait:"表来了自动对",
+  optUnmapped:"没对上（原样留着）", optBlank:"留空",
   unused:list=>`表里没用上的列：${list}`,
   rowOf:(i,n)=>`第 ${i} / ${n} 份`,
+  tplOnly:"模板原样，表来了就填上",
   progress:(i,n,s)=>`已抄 ${i} / ${n} 份 · ${s} 秒`,
   packing:"正在打包…",
-  doneMsg:(n,s)=>`${n} 份抄完，用时 ${s} 秒`,
-  stopped:"停了，抄好的那些照样给你",
-  badTpl:"这个 Word 打不开，确定是 .docx？",
-  badTplSyntax:m=>`模板里的花括号没配对：${m}`,
-  badData:"这表读不出来，换个 xlsx 或 csv 试试",
-  emptyData:"表里一行数据都没有",
-  dropHere:"松手，贫僧接着",
-  dropWhat:"只认 .docx 模板和 Excel / CSV 表格",
-  pvFail:"这份预览不出来，但生成照样能用 Word 打开",
+  doneMsg:(n,s)=>`${n} 份抄完，${s} 秒`,
+  stopped:n=>`停了，抄好的 ${n} 份照样给你`,
+  memoNew:"格式、文件名、对号，下回都记着。",
+  memoUsed:"格式和文件名按上回的，改了也记着。",
+  restored:"接着上回的",
+  forgot:"上回的文件清掉了", undo:"撤销",
+  errTpl:["这个 Word 打不开。","换一份 .docx 试试；.doc 老格式先在 Word 里另存为 .docx。"],
+  errTplSyntax:m=>["模板里的花括号没配对。",`${m}。在 Word 里把它改成 {{名字}} 这样再丢一次。`],
+  errData:["这张表读不出来。","换成 .xlsx 或 .csv 再丢一次。"],
+  errEmpty:["表里一行数据都没有。","第一行是表头，下面每行出一份。"],
+  errWhat:n=>[`「${n}」不认识。`,"只认 .docx 模板和 Excel / CSV 表格。"],
+  errGen:m=>["没抄完。",`${m}。再点一次试试；还不行就换成 Word 格式。`],
+  pvFail:"这份预览不出来，下载的 Word 照样能打开",
+  pvWait:"等 Word 模板",
   edTitle:"在线编辑", cancel:"取消", use:"用这个",
-  edField:"插入空位", edNewField:"新空位…", edNewFieldAsk:"空位叫什么？", edHr:"分隔线",
+  edField:"插入空位", edNewField:"新空位", edAdd:"加", edHr:"分隔线",
   edH1:"大标题", edH2:"标题", edH3:"小标题", edP:"正文", edSmall:"小字",
   edPortrait:"竖版", edLandscape:"横版", edBorder:"花边",
   pasteTitle:"粘贴表格", pasteHint:"从 Excel、WPS、飞书表格里整块复制过来，第一行是表头。", pasteOk:"用这个",
-  editorName:"在线编辑的模板",
+  editorName:"在线写的模板",
   pasted:"粘贴的表格",
   noHeaderCol:i=>`第${i}列`,
   pdfNote:"头一回出 PDF，先搬一套中文字体，就这一次",
-  fontFail:"字体没搬来，网通了再点一次",
   grouped:(col,n,m)=>`「${col}」相同的行并成一份：${n} 行 → ${m} 份`,
   groupOff:col=>`同一个「${col}」的几行，可以并成一份`,
   split:"拆开", merge:"并起来",
@@ -420,13 +485,13 @@ const EXAMPLES = {
     ]},
 };
 
-const VER="0.2.1";
+const VER="0.3.0";
 /* ============ 小工具 ============ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const tick=()=>new Promise(r=>setTimeout(r,0));
-function toast(msg,ms=2600){const d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),ms)}
+function toast(msg,ms=2600,act,fn){document.querySelectorAll(".toast").forEach(x=>x.remove());const d=document.createElement("div");d.className="toast";d.setAttribute("role","status");const s=document.createElement("span");s.textContent=msg;d.appendChild(s);if(!act)d.classList.add("plain");if(act){const b=document.createElement("button");b.textContent=act;b.onclick=()=>{d.remove();fn()};d.appendChild(b)}document.body.appendChild(d);setTimeout(()=>d.remove(),ms)}
 function download(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
 const loaded={};
 function loadScript(src){return loaded[src]||(loaded[src]=new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>{delete loaded[src];no(new Error("load "+src))};document.head.appendChild(s)}))}
@@ -437,7 +502,7 @@ const S={
   tpl:null,   // {name, buf:ArrayBuffer, tags:[], source:'example'|'word'|'editor', html, orient, sample}
   data:null,  // {name, headers:[], rows:[[]], source, sheets?, wb?}
   map:{},     // tag -> col index | -1 没对上 | -2 留空
-  row:0, fmt:"docx", rule:"", ruleTouched:false, busy:false, stop:false, lastZip:null
+  row:0, fmt:"docx", rule:"", ruleTouched:false, busy:false, stop:false, lastZip:null, restored:false, err:null
 };
 
 /* ============ Word 模板：认空位 ============ */
@@ -656,14 +721,31 @@ function htmlToDocx(html,orient,border){
   return z.generate({type:"arraybuffer",compression:"DEFLATE"});
 }
 
+/* ============ 记性：格式、文件名规则、手动对过的号（localStorage）；上回的模板和表格（IndexedDB）。都只在这台电脑的浏览器里 ============ */
+const MEM_KEY="chaojing.mem.v1";
+const M=(()=>{try{return JSON.parse(localStorage.getItem(MEM_KEY))||{}}catch(e){return {}}})();
+M.rules=M.rules||{}; M.maps=M.maps||{};
+function memSave(){try{localStorage.setItem(MEM_KEY,JSON.stringify(M))}catch(e){}}
+function tplKey(){return S.tpl?S.tpl.name+"|"+[...S.tpl.tags].sort().join(","):""}
+let idbP=null;
+function idb(){return idbP||(idbP=new Promise((ok,no)=>{const r=indexedDB.open("chaojing",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}))}
+async function kv(k,v){ // kv(k) 读；kv(k,null) 删；kv(k,v) 存
+  try{const db=await idb();return await new Promise((ok,no)=>{const tx=db.transaction("kv",v===undefined?"readonly":"readwrite"),st=tx.objectStore("kv");
+    const q=v===undefined?st.get(k):v===null?st.delete(k):st.put(v,k);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})}
+  catch(e){return undefined}
+}
+function keepTpl(){const t=S.tpl;if(!t||t.source==="example")return;kv("tpl",{name:t.name,buf:t.buf,source:t.source,html:t.html||null,orient:t.orient||null,border:t.border||null,at:Date.now()})}
+function keepData(){const d=S.data;if(!d||d.source==="example")return;kv("data",{name:d.name,headers:d.headers,rows:d.rows,source:d.source,at:Date.now()})}
+
 /* ============ 套模板 / 套表格 ============ */
 function setTemplate(t){
   const err=tplSyntaxError(t.buf);
-  if(err){toast(T.badTplSyntax(err),4200);return false}
+  if(err){showErr(T.errTplSyntax(err));return false}
   t.tags=extractTags(t.buf); t.page=pageSize(t.buf); t.pgb=pageBorder(t.buf); t.trs=trTags(t.buf);
-  S.tpl=t; autoMap(); applyBorderCss(document); if(rendererWin)applyBorderCss(rendererWin.document);
-  if(!S.ruleTouched||t.source==="example")resetRule();
-  renderTpl(); renderMap(); renderOut(); preview();
+  S.tpl=t; S.mapOpen=false; if(t.source!=="example"&&S.data&&S.data.source==="example")S.data=null; // 换成自己的模板，示例表格就撤下
+  autoMap(); applyBorderCss(document); if(rendererWin)applyBorderCss(rendererWin.document);
+  resetRule(); showErr(null); keepTpl();
+  renderAll(); preview();
   return true;
 }
 function setData(d){
@@ -671,27 +753,35 @@ function setData(d){
   const seen={};
   d.headers=d.headers.map((h,i)=>{let s=String(h??"").trim()||T.noHeaderCol(i+1);if(seen[s]){seen[s]++;s=s+seen[s]}else seen[s]=1;return s});
   d.rows=d.rows.filter(r=>r.some(c=>String(c??"").trim()!=="")).map(r=>d.headers.map((_,i)=>String(r[i]??"")));
-  S.data=d; S.row=0; S.noGroup=false; autoMap(); renderData(); renderMap(); renderOut(); preview();
+  if(d.source!=="example"&&S.tpl&&S.tpl.source==="example")S.tpl=null; // 换成自己的表，示例模板就撤下
+  S.data=d; S.row=0; S.noGroup=false; autoMap(); if(!S.ruleTouched)resetRule();
+  showErr(d.rows.length?null:T.errEmpty); keepData();
+  renderAll(); preview();
 }
 function loadExample(key){
-  const e=EXAMPLES[key];
+  const e=EXAMPLES[key]; S.restored=false;
+  S.data=null; S.tpl=null;
   const ok=setTemplate({name:e.file+".docx",buf:htmlToDocx(e.html,e.orient,e.border),source:"example",html:e.html,orient:e.orient,border:e.border||null,sample:key,rule:e.rule});
-  if(ok){S.ruleTouched=false;resetRule();setData({name:e.file+"名单.xlsx",headers:[...e.headers],rows:e.rows.map(r=>[...r]),source:"example"})}
+  if(ok)setData({name:e.file+"名单.xlsx",headers:[...e.headers],rows:e.rows.map(r=>[...r]),source:"example"});
 }
 function autoMap(){
-  if(!S.tpl||!S.data)return; const H=S.data.headers.map(norm); const old=S.map; S.map={};
+  if(!S.tpl||!S.data){S.map={};computeUnits();return}
+  const H=S.data.headers, HN=H.map(norm); const old=S.map; S.map={}; const mem=M.maps[tplKey()]||{};
   for(const t of S.tpl.tags){
-    const n=norm(t);
-    let c=H.indexOf(n);
-    if(c<0&&n.length>=2)c=H.findIndex(h=>h&&(h.includes(n)||n.includes(h))&&Math.min(h.length,n.length)>=2);
-    if(c<0&&old[t]!=null&&old[t]<S.data.headers.length)c=old[t];
-    S.map[t]=c>=0?c:-1;
+    const n=norm(t); let c=-1;
+    if(mem[t]!=null){c=mem[t]===""?-2:H.indexOf(mem[t])} // 上回手动对过的，照旧
+    if(c===-1)c=HN.indexOf(n);
+    if(c===-1&&n.length>=2)c=HN.findIndex(h=>h&&(h.includes(n)||n.includes(h))&&Math.min(h.length,n.length)>=2);
+    if(c===-1&&old[t]!=null&&old[t]<H.length)c=old[t];
+    S.map[t]=c>=0||c===-2?c:-1;
   }
   computeUnits();
 }
 function resetRule(){
-  const t=S.tpl; if(!t)return;
-  if(t.rule){S.rule=t.rule}
+  const t=S.tpl; if(!t)return; const mem=M.rules[tplKey()];
+  S.ruleTouched=false; S.ruleFromMem=!!mem;
+  if(mem)S.rule=mem;
+  else if(t.rule)S.rule=t.rule;
   else{const base=t.name.replace(/\.docx$/i,""); const first=(S.data&&S.data.headers[0])||t.tags[0]; S.rule=first?`{{${first}}}-${base}`:base}
   $("#nameRule").value=S.rule;
 }
@@ -702,7 +792,7 @@ async function readTable(file){
   const isText=/\.(csv|tsv|txt)$/i.test(file.name)||/text\//.test(file.type);
   if(isText){
     let text; try{text=new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){text=new TextDecoder("gb18030").decode(buf)}
-    text=text.replace(/^﻿/,"");
+    text=text.replace(/^\uFEFF/,"");
     return parseText(text,file.name);
   }
   await loadScript("lib/xlsx.full.min.js");
@@ -736,78 +826,113 @@ function parseText(text,fname){
   return{name:fname,headers:rows[hi].map(s=>s.trim()),rows:rows.slice(hi+1)};
 }
 
-/* ============ 渲染：卡片 ============ */
-function applyT(){document.querySelectorAll("[data-t]").forEach(el=>{const v=T[el.dataset.t];if(typeof v==="string")el.textContent=v})}
+
+/* ============ 渲染 ============ */
+function applyT(){
+  document.querySelectorAll("[data-t]").forEach(el=>{const v=T[el.dataset.t];if(typeof v==="string"){const sp=el.querySelector("span[data-t]");if(!sp)el.textContent=v}});
+  $("#bPrev").setAttribute("aria-label",T.prev); $("#bNext").setAttribute("aria-label",T.next);
+}
+const ERR_ICON='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.8v3.6M8 11.1v.1"/></svg>';
+function showErr(e){ // 出错：一句人话 + 怎么办，放在丢文件的地方
+  S.err=e||null;
+  for(const id of ["#err0","#err1"]){const b=$(id);if(!e){b.hidden=true;b.innerHTML="";continue}b.innerHTML=`${ERR_ICON}<span><b>${esc(e[0])}</b> ${esc(e[1])}</span>`;b.hidden=false}
+}
+function renderAll(){
+  const empty=!S.tpl&&!S.data;
+  document.body.classList.toggle("empty",empty); document.body.classList.toggle("work",!empty);
+  $("#vEmpty").hidden=!empty; $("#vWork").hidden=empty;
+  if(empty)return;
+  renderTpl(); renderData(); renderMap(); renderOut(); renderRestore();
+}
 function renderSamples(){
-  const box=$("#samples");box.innerHTML="";
-  for(const k in EXAMPLES){const b=document.createElement("button");b.className="pill";b.textContent=T.samples[k];b.setAttribute("aria-pressed",String(!!(S.tpl&&S.tpl.sample===k)));b.onclick=()=>loadExample(k);box.appendChild(b)}
+  const box=$("#samples"), on=S.tpl&&S.tpl.source==="example"; $("#samplesBox").hidden=!on; box.innerHTML="";
+  if(!on)return;
+  for(const k in EXAMPLES){const b=document.createElement("button");b.textContent=T.samples[k];b.setAttribute("aria-pressed",String(S.tpl.sample===k));b.onclick=()=>loadExample(k);box.appendChild(b)}
 }
 function renderTpl(){
   const t=S.tpl; renderSamples();
+  $("#tplIcon").classList.toggle("on",!!t);
+  if(!t){$("#tplName").textContent=T.needTpl;$("#tplSub").textContent=T.needTplSub;$("#tplSub").className="missing";return}
   $("#tplName").textContent=t.name;
-  $("#tplSub").textContent=(t.source==="word"?T.fromWord:t.source==="editor"?T.fromEditor:T.fromEditor)+" · "+(t.tags.length?T.tplSubTags(t.tags.length):T.tplSubNone);
-  $("#tplIcon").className="ficon "+(t.source==="word"?"w":"e"); $("#tplIcon").textContent=t.source==="word"?"DOCX":"编辑";
-  $("#tplChip").hidden=t.source!=="example";
-  $("#tplMeta").textContent=t.orient==="landscape"||t.page&&t.page.w>t.page.h?T.edLandscape:T.edPortrait;
+  const from=t.source==="word"?T.fromWord:t.source==="example"?T.fromExample:T.fromEditor;
+  const orient=t.orient==="landscape"||t.page&&t.page.w>t.page.h?T.edLandscape:T.edPortrait;
+  $("#tplSub").textContent=[from,orient,t.tags.length?T.tplSubTags(t.tags.length):T.tplSubNone].join(" · "); $("#tplSub").className="";
 }
 const MAXSHOW=300;
 function renderData(){
-  const d=S.data;
-  $("#dataName").textContent=d.name; $("#dataSub").textContent=T.dataSub(d.rows.length,d.headers.length);
-  $("#dataChip").hidden=d.source!=="example";
-  $("#dataIcon").textContent=/\.csv$/i.test(d.name)?"CSV":d.source==="paste"?"粘贴":"XLSX";
-  $("#dataMeta").textContent="";
+  const d=S.data, tw=$("#tblWrap");
+  $("#dataIcon").classList.toggle("on",!!d);
+  if(!d){$("#dataName").textContent=T.needData;$("#dataSub").textContent=T.needDataSub;$("#dataSub").className="missing";$("#sheetWrap").hidden=true;tw.innerHTML="";tw.hidden=true;return}
+  $("#dataName").textContent=d.name; $("#dataSub").textContent=T.dataSub(d.rows.length,d.headers.length); $("#dataSub").className="";
   const sw=$("#sheetWrap");
   if(d.sheets&&d.sheets.length>1){sw.hidden=false;$("#sheetSel").innerHTML=d.sheets.map(n=>`<option${n===d.sheet?" selected":""}>${esc(n)}</option>`).join("")}else sw.hidden=true;
-  const n=Math.min(d.rows.length,MAXSHOW);
+  const n=Math.min(d.rows.length,MAXSHOW); tw.hidden=!d.rows.length;
   let h=`<table class="data"><thead><tr><th class="n">#</th>${d.headers.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>`;
   for(let i=0;i<n;i++)h+=`<tr data-i="${i}"><td class="n">${i+1}</td>${d.rows[i].map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`;
   h+="</tbody></table>"; if(d.rows.length>MAXSHOW)h+=`<div class="more">${T.moreRows(d.rows.length-MAXSHOW)}</div>`;
-  const tw=$("#tblWrap"); tw.innerHTML=h; tw.scrollLeft=0; tw.scrollTop=0;
+  tw.innerHTML=h; tw.scrollLeft=0; tw.scrollTop=0;
+}
+function renderRestore(){
+  const r=$("#restore"), mine=S.tpl&&S.tpl.source!=="example";
+  r.hidden=!(S.restored||S.tpl&&S.tpl.source==="editor");
+  $("#restoreT").textContent=S.restored?T.restored+(S.restoredAt?" · "+new Date(S.restoredAt).toLocaleDateString("zh-CN",{month:"long",day:"numeric"}):""):"";
+  $("#bForget").hidden=!S.restored; $("#bDlTpl").hidden=!S.tpl||S.tpl.source==="word";
 }
 function markRow(){
   document.querySelectorAll("#tblWrap tr.sel").forEach(r=>r.classList.remove("sel"));
-  const rows=(S.units&&S.units[S.row])||[S.row];
+  if(!S.units||!S.units.length)return;
+  const rows=S.units[S.row]||[S.row];
   rows.forEach((ri,j)=>{if(j)document.querySelector(`#tblWrap tr[data-i="${ri}"]`)?.classList.add("sel")});
   const tr=document.querySelector(`#tblWrap tr[data-i="${rows[0]}"]`); if(tr){tr.classList.add("sel");const w=$("#tblWrap");const top=tr.offsetTop-30;if(top<w.scrollTop||top>w.scrollTop+w.clientHeight-60)w.scrollTop=Math.max(0,top-60)}
 }
 function renderMap(){
-  if(!S.tpl||!S.data)return;
-  const tags=S.tpl.tags, H=S.data.headers; const list=$("#mapList"); list.innerHTML="";
-  let bad=0;
-  for(const t of tags){
-    const c=S.map[t]; if(c===-1)bad++;
-    const row=document.createElement("div"); row.className="mrow"+(c===-1?" bad":c===-2?" blank":"");
-    row.innerHTML=`<span class="tagname" title="{{${esc(t)}}}">{{${esc(t)}}}</span><svg class="arrow" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 7h10M8.5 3.5 12 7l-3.5 3.5"/></svg><span class="sel-wrap"><select aria-label="${esc(t)}"><option value="-1">${T.optUnmapped}</option><option value="-2">${T.optBlank}</option>${H.map((h,i)=>`<option value="${i}">${esc(h)}</option>`).join("")}</select></span><span class="dot"></span>`;
+  const list=$("#mapList"), sum=$("#mapSum"); list.innerHTML="";
+  $("#cMap").hidden=!S.tpl;
+  if(!S.tpl)return;
+  const tags=S.tpl.tags;
+  if(!S.data||!tags.length){list.innerHTML=`<div class="mapnone">${!tags.length?T.mapNone:T.mapWait}</div>`;sum.textContent="";$("#grp").hidden=true;$("#unused").hidden=true;return}
+  const H=S.data.headers; const bad=tags.filter(t=>S.map[t]===-1).length;
+  if(!bad&&!S.mapOpen){ // 全对上了就收起来：一行说清对了啥，点「改」展开
+    const line=tags.map(t=>S.map[t]===-2?`{{${t}}} 留空`:norm(H[S.map[t]])===norm(t)?t:`${t} ← ${H[S.map[t]]}`).join("、");
+    list.innerHTML=`<div class="mrow fold"><span class="mline">${esc(line)}</span><button class="btn text sm" id="bMapOpen">${T.mapOpen}</button></div>`;
+    $("#bMapOpen").onclick=()=>{S.mapOpen=true;renderMap()};
+  }
+  else for(const t of tags){
+    const c=S.map[t];
+    const row=document.createElement("div"); row.className="mrow"+(c===-1?" doubt":"");
+    row.innerHTML=`<span class="tagname" title="{{${esc(t)}}}">{{${esc(t)}}}</span><svg class="arrow" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h10M8.5 3.5 12 7l-3.5 3.5"/></svg><span class="pick"><select aria-label="${esc(t)}"><option value="-1">${T.optUnmapped}</option><option value="-2">${T.optBlank}</option>${H.map((h,i)=>`<option value="${i}">${esc(h)}</option>`).join("")}</select></span>`;
     const sel=row.querySelector("select"); sel.value=String(c);
-    sel.onchange=()=>{S.map[t]=+sel.value;computeUnits();S.row=Math.min(S.row,S.units.length-1);renderMap();renderOut();preview()};
+    sel.onchange=()=>{
+      S.map[t]=+sel.value; const k=tplKey(); (M.maps[k]=M.maps[k]||{})[t]=S.map[t]===-2?"":S.map[t]>=0?H[S.map[t]]:undefined; memSave(); // 手动对的记下来，下回同一个模板照旧
+      computeUnits();S.row=Math.min(S.row,S.units.length-1);renderMap();renderOut();preview()};
     list.appendChild(row);
   }
-  const sum=$("#mapSum");
-  if(!tags.length){sum.textContent=T.mapNone;sum.className="mapsum"}
-  else if(bad){sum.textContent=T.mapBad(bad);sum.className="mapsum bad"}
-  else{sum.textContent=T.mapAllOk(tags.length);sum.className="mapsum ok"}
+  if(bad){sum.textContent=T.mapBad(bad);sum.className="meta warn"}
+  else{sum.textContent=T.mapAllOk(tags.length);sum.className="meta"}
   const used=new Set(Object.values(S.map)); const un=H.filter((_,i)=>!used.has(i));
-  const u=$("#unused"); u.hidden=!un.length||!tags.length; u.textContent=T.unused(un.join("、"));
+  const u=$("#unused"); u.hidden=!un.length; u.textContent=T.unused(un.join("、"));
   const g=S.group, gb=$("#grp"); gb.hidden=!g;
-  if(g){gb.className="grp"+(g.off?" off":"");$("#grpT").textContent=g.off?T.groupOff(g.col):T.grouped(g.col,g.rows,g.units);$("#bGrp").textContent=g.off?T.merge:T.split}
+  if(g){$("#grpT").textContent=g.off?T.groupOff(g.col):T.grouped(g.col,g.rows,g.units);$("#bGrp").textContent=g.off?T.merge:T.split}
 }
 function renderOut(){
   if(!S.busy&&S.lastSig!==sig()){$("#done").hidden=true}
   document.querySelectorAll("#fmtSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===S.fmt)));
   const n=S.units?S.units.length:0;
-  const go=$("#bGo"); go.textContent=n?T.go(n):T.goNone; go.disabled=!n||S.busy;
+  const go=$("#bGo"); go.textContent=!S.tpl?T.goNoTpl:!S.data?T.goNoData:n?T.go(n,S.fmt):T.goNone; go.disabled=!S.tpl||!n||S.busy; go.hidden=S.busy; // 抄的时候只留进度条
+  $("#memo").textContent=S.fmtFromMem||S.ruleFromMem?T.memoUsed:T.memoNew;
   renderNamePv(); renderNav();
 }
 function renderNamePv(){
-  if(!S.data||!S.data.rows.length){$("#namePv").textContent="";return}
+  if(!S.tpl||!S.data||!S.data.rows.length){$("#namePv").textContent="";return}
   const ext=S.fmt==="pdf"?".pdf":".docx";
   $("#namePv").textContent="→ "+fileBase(S.row)+ext;
 }
 function renderNav(){
-  const n=S.units?S.units.length:0;
-  $("#rnT").innerHTML=n?`${T.rowOf(S.row+1,n)}<span>${esc(fileBase(S.row))}</span>`:"";
-  $("#bPrev").disabled=S.row<=0; $("#bNext").disabled=S.row>=n-1;
+  const n=S.units?S.units.length:0, has=!!(S.tpl&&S.data&&n);
+  $("#pvName").textContent=has?fileBase(S.row):S.tpl?S.tpl.name.replace(/\.docx$/i,""):"";
+  $("#pvOf").textContent=has?T.rowOf(S.row+1,n):S.tpl?T.tplOnly:"";
+  $("#bPrev").disabled=!has||S.row<=0; $("#bNext").disabled=!has||S.row>=n-1;
+  $("#pvFoot").hidden=!has;
 }
 
 function sig(){return [S.tpl&&S.tpl.name,S.tpl&&S.tpl.tags.length,S.data&&S.data.name,S.data&&S.data.rows.length,S.units&&S.units.length,S.fmt,JSON.stringify(S.map)].join("|")}
@@ -815,7 +940,7 @@ function sig(){return [S.tpl&&S.tpl.name,S.tpl&&S.tpl.tags.length,S.data&&S.data
 /* ============ 文件名 ============ */
 function fileBase(u){
   const i=S.units&&S.units[u]?S.units[u][0]:u;
-  const r=S.data.rows[i]||[]; const H=S.data.headers; let tags=0, filled=0;
+  if(!S.data)return ""; const r=S.data.rows[i]||[]; const H=S.data.headers; let tags=0, filled=0;
   const val=k=>{k=k.trim();let c=S.map[k];if(c==null||c<0)c=H.indexOf(k);if(c<0){const nk=norm(k);c=H.findIndex(h=>norm(h)===nk)}const v=c>=0?String(r[c]??"").trim():"";tags++;if(v)filled++;return v};
   let s=(S.rule||"").replace(TAG_RE,(m,k)=>val(k));
   if(tags&&!filled){let first=true;s=(S.rule||"").replace(TAG_RE,()=>first?(first=false,`第${u+1}份`):"")} // 命名的列全空：退成「第 N 份」
@@ -828,13 +953,14 @@ function fileBase(u){
 let pvToken=0;
 const PV_OPTS={className:"docx",inWrapper:false,ignoreWidth:false,ignoreHeight:false,breakPages:true,ignoreLastRenderedPageBreak:true,experimental:true,renderHeaders:true,renderFooters:true,renderFootnotes:true,useBase64URL:true};
 async function preview(){
-  if(!S.tpl||!S.data)return; const my=++pvToken; S.row=Math.max(0,Math.min(S.row,(S.units||[]).length-1));
-  renderNav(); renderNamePv(); markRow();
   const scale=$("#pvScale");
+  if(!S.tpl){++pvToken;scale.innerHTML=S.data?`<div class="pv-empty">${T.pvWait}</div>`:"";renderNav();fitPreview();return}
+  const my=++pvToken, has=!!(S.data&&S.units&&S.units.length); S.row=Math.max(0,Math.min(S.row,(S.units||[]).length-1));
+  renderNav(); renderNamePv(); markRow();
   scale.classList.add("pv-loading");
   await tick(); if(my!==pvToken)return;
   try{
-    const bytes=fillDocx(S.row,false);
+    const bytes=has?fillDocx(S.row,false):new Uint8Array(S.tpl.buf);
     const tmp=document.createElement("div");
     await docx.renderAsync(prepDocx(bytes),tmp,null,PV_OPTS); fixLH(tmp);
     if(my!==pvToken)return;
@@ -1521,7 +1647,7 @@ function prefetchFonts(){ // 选了 PDF 就先把常用字那一块搬过来，�
 /* ============ 批量生成 ============ */
 async function generate(){
   if(S.busy||!S.data||!S.units.length)return;
-  S.busy=true; S.stop=false; renderOut();
+  S.busy=true; S.stop=false; showErr(null); renderOut();
   const units=S.units.map((_,i)=>i), n=units.length, fmt=S.fmt, wantDocx=fmt!=="pdf", wantPdf=fmt!=="docx";
   $("#done").hidden=true; $("#prog").hidden=false; $("#bStop").hidden=false;
   const bar=$("#barI"), pt=$("#progT"); const t0=performance.now();
@@ -1555,10 +1681,10 @@ async function generate(){
       const zname=`${tname}-${made}份.zip`;
       S.lastZip={blob,name:zname};
       download(blob,zname);
-      $("#doneT").textContent=S.stop?T.stopped:T.doneMsg(made,sec()); $("#done").hidden=false; S.lastSig=sig();
+      $("#doneT").textContent=S.stop?T.stopped(made):T.doneMsg(made,sec()); $("#done").hidden=false; S.lastSig=sig();
       window.__lastRun={n:made,seconds:+sec(),fmt,bytes:blob.size,threads:POOL.ws.length,fast:sess?sess.fast:null};
     }
-  }catch(e){console.error(e);toast(e.message||String(e),4000)}
+  }catch(e){console.error(e);showErr(T.errGen(e.message||String(e)))}
   $("#prog").hidden=true; S.busy=false; renderOut();
 }
 
@@ -1573,47 +1699,66 @@ async function downloadOne(kind){
       const sess=await pdfSession([u]); const pdf=await pdfJob(sess,await sess.layout(u),base); clearTimeout(slow);
       download(new Blob([pdf],{type:"application/pdf"}),base+".pdf");
     }
-  }catch(e){console.error(e);toast(e.message||String(e),4000)}
+  }catch(e){console.error(e);showErr(T.errGen(e.message||String(e)))}
 }
 async function docxToPdf(u){const sess=await pdfSession([u]);return pdfJob(sess,await sess.layout(u),fileBase(u))}
 
-/* ============ 上传 ============ */
+/* ============ 丢文件：模板和表格一起丢、一起选，按后缀自己分 ============ */
 async function onTemplateFile(file){
   try{
     const buf=await file.arrayBuffer(); new PizZip(buf).file("word/document.xml").asText();
-    S.ruleTouched=false;
-    setTemplate({name:file.name,buf,source:"word"});
-  }catch(e){console.warn(e);toast(T.badTpl)}
+    S.restored=false;
+    return setTemplate({name:file.name,buf,source:"word"});
+  }catch(e){console.warn(e);showErr(T.errTpl);return false}
 }
 async function onDataFile(file){
-  try{const d=await readTable(file);d.source="file";if(!d.rows.length){toast(T.emptyData);}setData(d);if(!S.ruleTouched)resetRule();renderOut()}
-  catch(e){console.warn(e);toast(T.badData)}
+  try{const d=await readTable(file);d.source="file";S.restored=false;setData(d);return true}
+  catch(e){console.warn(e);showErr(T.errData);return false}
 }
-function routeFile(file){
-  if(/\.docx$/i.test(file.name))return onTemplateFile(file);
-  if(/\.(xlsx|xls|xlsm|csv|tsv|txt|ods)$/i.test(file.name))return onDataFile(file);
-  toast(T.dropWhat);
+async function takeFiles(list){
+  const fs=[...list]; if(!fs.length)return;
+  const docs=fs.filter(f=>/\.docx$/i.test(f.name)), tabs=fs.filter(f=>/\.(xlsx|xls|xlsm|csv|tsv|txt|ods)$/i.test(f.name)), other=fs.filter(f=>!docs.includes(f)&&!tabs.includes(f));
+  if(docs.length)await onTemplateFile(docs[0]); // 先模板后表格：对号一次到位
+  if(tabs.length)await onDataFile(tabs[0]);
+  if(other.length&&!docs.length&&!tabs.length)showErr(T.errWhat(other[0].name));
 }
-$("#bUpTpl").onclick=()=>$("#fTpl").click();
-$("#bUpData").onclick=()=>$("#fData").click();
-$("#fTpl").onchange=e=>{const f=e.target.files[0];if(f)onTemplateFile(f);e.target.value=""};
-$("#fData").onchange=e=>{const f=e.target.files[0];if(f)onDataFile(f);e.target.value=""};
+document.addEventListener("click",e=>{if(e.target.closest(".js-pick"))$("#fAny").click()});
+$("#fAny").onchange=e=>{takeFiles(e.target.files);e.target.value=""};
 $("#sheetSel").onchange=e=>{const d=S.data;if(!d.wb)return;const nd=sheetToData(d.wb,e.target.value,d.name);nd.source="file";setData(nd)};
 $("#bDlTpl").onclick=()=>download(new Blob([S.tpl.buf],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}),S.tpl.name);
+$("#bTry").onclick=()=>loadExample("cert");
+// 整页都能丢，拖进来整页高亮
 let dragN=0;
-addEventListener("dragenter",e=>{if(!e.dataTransfer||![...e.dataTransfer.types].includes("Files"))return;e.preventDefault();if(dragN++===0){const d=document.createElement("div");d.className="drop";d.id="dropOv";d.innerHTML=`<div>${T.dropHere}</div>`;document.body.appendChild(d)}});
+addEventListener("dragenter",e=>{if(!e.dataTransfer||![...e.dataTransfer.types].includes("Files"))return;e.preventDefault();if(dragN++===0)document.body.classList.add("dragging")});
 addEventListener("dragover",e=>e.preventDefault());
-addEventListener("dragleave",()=>{if(--dragN<=0){dragN=0;$("#dropOv")?.remove()}});
-addEventListener("drop",e=>{e.preventDefault();dragN=0;$("#dropOv")?.remove();[...(e.dataTransfer?.files||[])].forEach(routeFile)});
+addEventListener("dragleave",()=>{if(--dragN<=0){dragN=0;document.body.classList.remove("dragging")}});
+addEventListener("drop",e=>{e.preventDefault();dragN=0;document.body.classList.remove("dragging");takeFiles(e.dataTransfer?.files||[])});
+
+/* 上回的文件：开机自己接上；「清掉」能撤销 */
+async function restoreLast(){
+  const t=await kv("tpl"), d=await kv("data");
+  if(!t&&!d)return false;
+  S.restored=true; S.restoredAt=Math.max(t?.at||0,d?.at||0);
+  if(t)setTemplate({name:t.name,buf:t.buf,source:t.source,html:t.html,orient:t.orient,border:t.border});
+  if(d)setData({name:d.name,headers:d.headers,rows:d.rows,source:d.source});
+  S.restored=true; renderAll();
+  return true;
+}
+$("#bForget").onclick=async()=>{
+  const t=await kv("tpl"), d=await kv("data");
+  await kv("tpl",null); await kv("data",null);
+  S.tpl=null; S.data=null; S.restored=false; S.map={}; computeUnits(); showErr(null); renderAll();
+  toast(T.forgot,6000,T.undo,async()=>{if(t)await kv("tpl",t);if(d)await kv("data",d);restoreLast()});
+};
 
 /* ============ 交互 ============ */
-$("#tblWrap").addEventListener("click",e=>{const tr=e.target.closest("tr[data-i]");if(!tr)return;const i=+tr.dataset.i;S.row=Math.max(0,S.units.findIndex(u=>u.includes(i)));preview()});
+$("#tblWrap").addEventListener("click",e=>{const tr=e.target.closest("tr[data-i]");if(!tr||!S.tpl)return;const i=+tr.dataset.i;S.row=Math.max(0,S.units.findIndex(u=>u.includes(i)));preview()});
 $("#bPrev").onclick=()=>{if(S.row>0){S.row--;preview()}};
 $("#bNext").onclick=()=>{if(S.row<S.units.length-1){S.row++;preview()}};
 $("#bGrp").onclick=()=>{S.noGroup=!S.noGroup;S.row=0;computeUnits();renderMap();renderOut();preview()};
 addEventListener("keydown",e=>{if($("#layer").childElementCount||/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==="ArrowLeft")$("#bPrev").click();if(e.key==="ArrowRight")$("#bNext").click()});
-$("#fmtSeg").onclick=e=>{const b=e.target.closest("button");if(!b||S.busy)return;S.fmt=b.dataset.v;renderOut();if(S.fmt!=="docx")prefetchFonts()};
-$("#nameRule").oninput=e=>{S.rule=e.target.value;S.ruleTouched=true;renderNamePv();renderNav()};
+$("#fmtSeg").onclick=e=>{const b=e.target.closest("button");if(!b||S.busy)return;S.fmt=b.dataset.v;M.fmt=S.fmt;memSave();renderOut();if(S.fmt!=="docx")prefetchFonts()};
+$("#nameRule").oninput=e=>{S.rule=e.target.value;S.ruleTouched=true;const k=tplKey();if(k){M.rules[k]=S.rule;memSave()}renderNamePv();renderNav()};
 $("#bGo").onclick=generate;
 $("#bStop").onclick=()=>{S.stop=true};
 $("#bAgain").onclick=()=>{if(S.lastZip)download(S.lastZip.blob,S.lastZip.name)};
@@ -1621,13 +1766,14 @@ $("#bOneDocx").onclick=()=>downloadOne("docx");
 $("#bOnePdf").onclick=()=>downloadOne("pdf");
 
 /* ============ 粘贴表格 ============ */
-$("#bPaste").onclick=()=>{
+function openPaste(){
   const L=$("#layer");
-  L.innerHTML=`<div class="scrim"><div class="sheet small" role="dialog" aria-label="${T.pasteTitle}"><div class="sh-h"><button class="btn ghost l" id="pX">${T.cancel}</button><b>${T.pasteTitle}</b><button class="btn primary r" id="pOk" style="height:32px">${T.pasteOk}</button></div><textarea class="paste" id="pTa" spellcheck="false" placeholder="姓名\t课程\t日期&#10;林小满\tExcel 入门\t2026-11-02"></textarea><div class="sh-foot">${T.pasteHint}</div></div></div>`;
+  L.innerHTML=`<div class="scrim"><div class="sheet small" role="dialog" aria-label="${T.pasteTitle}"><div class="sh-h"><button class="btn text l" id="pX">${T.cancel}</button><b>${T.pasteTitle}</b><button class="btn primary sm r" id="pOk">${T.pasteOk}</button></div><textarea class="paste" id="pTa" spellcheck="false" placeholder="姓名\t课程\t日期&#10;林小满\tExcel 入门\t2026-11-02"></textarea><div class="sh-foot">${T.pasteHint}</div></div></div>`;
   const close=()=>L.innerHTML=""; $("#pX").onclick=close; L.querySelector(".scrim").onclick=e=>{if(e.target.classList.contains("scrim"))close()};
   $("#pTa").focus();
-  $("#pOk").onclick=()=>{const v=$("#pTa").value;if(!v.trim()){close();return}const d=parseText(v.replace(/^﻿/,""),T.pasted);d.source="paste";close();setData(d);if(!S.ruleTouched)resetRule();renderOut()};
-};
+  $("#pOk").onclick=()=>{const v=$("#pTa").value;if(!v.trim()){close();return}const d=parseText(v.replace(/^﻿/,""),T.pasted);d.source="paste";close();S.restored=false;setData(d)};
+}
+$("#bPaste").onclick=openPaste; $("#bPaste0").onclick=openPaste;
 
 /* ============ 在线编辑器 ============ */
 const ICON={
@@ -1642,13 +1788,13 @@ function openEditor(){
   let orient=t&&t.html?(t.orient||"portrait"):"portrait"; let border=t&&t.html?t.border||null:null;
   const sw=c=>`<button class="tb" data-color="${c}" title="${c}"><span class="sw" style="background:${c}"></span></button>`;
   L.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-label="${T.edTitle}" style="height:100%">
-    <div class="sh-h"><button class="btn ghost l" id="eX">${T.cancel}</button><b>${T.edTitle}</b><button class="btn primary r" id="eOk" style="height:32px">${T.use}</button></div>
+    <div class="sh-h"><button class="btn text l" id="eX">${T.cancel}</button><b>${T.edTitle}</b><button class="btn primary sm r" id="eOk">${T.use}</button></div>
     <div class="toolbar" id="eTb">
-      <button class="tb fld" id="eField">{{ }} ${T.edField}</button><span class="tbsep"></span>
+      <button class="tb ins" id="eField">{{ }} ${T.edField}</button><span class="tbsep"></span>
       <button class="tb" data-block="h1">${T.edH1}</button><button class="tb" data-block="h2">${T.edH2}</button><button class="tb" data-block="h3">${T.edH3}</button><button class="tb" data-block="p">${T.edP}</button><button class="tb" data-block="h6">${T.edSmall}</button><span class="tbsep"></span>
       <button class="tb" data-cmd="bold">${ICON.b}</button><button class="tb" data-cmd="italic">${ICON.i}</button><button class="tb" data-cmd="underline">${ICON.u}</button><span class="tbsep"></span>
       <button class="tb" data-cmd="justifyLeft">${ICON.l}</button><button class="tb" data-cmd="justifyCenter">${ICON.c}</button><button class="tb" data-cmd="justifyRight">${ICON.r}</button><span class="tbsep"></span>
-      ${sw(INK)}${sw(GOLD)}${sw("#0071E3")}${sw("#C0392B")}${sw("#8E8E93")}<span class="tbsep"></span>
+      ${sw(INK)}${sw(GOLD)}${sw("#D63A40")}${sw("#C0392B")}${sw("#8E8E93")}<span class="tbsep"></span>
       <button class="tb" id="eHr">${T.edHr}</button><button class="tb" id="eBd">${T.edBorder}</button><button class="tb" id="eOr"></button>
     </div>
     <div class="ed-desk" id="eDesk"><div class="ed-stage" id="eStage"><div class="page" id="ePage" contenteditable="true" spellcheck="false"></div></div></div>
@@ -1681,27 +1827,31 @@ function openEditor(){
     keep(); const r=e.currentTarget.getBoundingClientRect();
     const m=document.createElement("div"); m.className="menu"; m.style.left=Math.min(r.left,innerWidth-200)+"px"; m.style.top=r.bottom+6+"px";
     const cols=S.data?S.data.headers:[];
-    m.innerHTML=cols.map((h,i)=>`<button data-i="${i}"><span class="mono">{{${esc(h)}}}</span></button>`).join("")+`<button data-new="1" style="color:var(--accent)">${T.edNewField}</button>`;
+    m.innerHTML=cols.map((h,i)=>`<button data-i="${i}"><span class="mono">{{${esc(h)}}}</span></button>`).join("")+`<div class="newf"><input id="eNew" placeholder="${T.edNewField}" spellcheck="false"><button class="btn primary sm" id="eNewOk">${T.edAdd}</button></div>`;
     document.body.appendChild(m);
     const off=ev=>{if(!m.contains(ev.target)){m.remove();document.removeEventListener("mousedown",off,true)}};
     setTimeout(()=>document.addEventListener("mousedown",off,true));
-    m.addEventListener("mousedown",ev=>ev.preventDefault());
-    m.onclick=ev=>{const b=ev.target.closest("button");if(!b)return;m.remove();document.removeEventListener("mousedown",off,true);
-      if(b.dataset.new){const k=prompt(T.edNewFieldAsk);if(k&&k.trim())insert(`{{${k.trim()}}}`)}else insert(`{{${cols[+b.dataset.i]}}}`)};
+    m.addEventListener("mousedown",ev=>{if(!ev.target.closest("input"))ev.preventDefault()});
+    const addNew=()=>{const k=$("#eNew").value.trim();m.remove();document.removeEventListener("mousedown",off,true);if(k)insert(`{{${k}}}`)};
+    $("#eNew").onkeydown=ev=>{if(ev.key==="Enter"){ev.preventDefault();addNew()}};
+    m.onclick=ev=>{const b=ev.target.closest("button");if(!b)return;if(b.id==="eNewOk"){addNew();return}m.remove();document.removeEventListener("mousedown",off,true);
+      insert(`{{${cols[+b.dataset.i]}}}`)};
   };
   $("#eOk").onclick=()=>{
     const html=page.innerHTML; document.removeEventListener("selectionchange",keep);
     const name=t&&t.source!=="word"?t.name:T.editorName+".docx";
-    const ok=setTemplate({name,buf:htmlToDocx(html,orient,border),source:"editor",html,orient,border,rule:t&&t.html?S.rule:null});
+    S.restored=false; const ok=setTemplate({name,buf:htmlToDocx(html,orient,border),source:"editor",html,orient,border,rule:t&&t.html?S.rule:null});
     if(ok)close();
   };
 }
-$("#bEdit").onclick=openEditor;
+$("#bEdit").onclick=openEditor; $("#bEdit0").onclick=openEditor;
 
-/* ============ 开机 ============ */
+/* ============ 开机：上回的文件和选过的格式自己接上；第一次来就是空的，丢文件或点示例 ============ */
 applyT(); $("#ver").textContent=T.ver(VER);
-loadExample("cert");
-window.__S=S; window.__api={htmlToDocx,extractTags,fillDocx,docxToPdf,setData,generate,computeUnits,pdfSession};
+if(M.fmt&&/^(docx|pdf|both)$/.test(M.fmt)){S.fmt=M.fmt;S.fmtFromMem=true}
+renderAll();
+restoreLast().then(ok=>{S.booted=true;if(!ok)renderAll()});
+window.__S=S; window.__M=M; window.__api={htmlToDocx,extractTags,fillDocx,docxToPdf,setData,generate,computeUnits,pdfSession,loadExample,takeFiles};
 </script>
 </body>
 </html>
