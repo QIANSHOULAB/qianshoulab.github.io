@@ -5,7 +5,8 @@
 - 每尊罗汉一个文件夹：yijing、chaojing、zhike、saodi、huayuan、xunshan、daibi、baozuseng……网址是 https://qianshoulab.github.io/<文件夹>/ 。
 - Windows 电脑程序（zhike、saodi）由各自的 .github/workflows/<文件夹>.yml 出 exe，发到 GitHub Releases。
 - 提交作者：QIANSHOULAB <oilsongchengmin@gmail.com>。
-- 派活、认领、进度都在 _ops/：总施工单.md、认领/<文件夹>.md、进度.md。几个会话同时干时，各自 clone 到单独目录（比如 /home/user/work-<文件夹>），互不共用工作区。
+- 派活、认领、进度都在 _ops/：施工单队列.md、各轮施工单、认领/、进度.md。
+- 几尊同时干时，每尊开一个子代理，用 Agent 工具的 isolation: "worktree"：它在仓库的 .claude/worktrees/ 下拿到单独一份，互不共用工作区。推送用 git pull --rebase origin main 再 git push origin HEAD:main。
 - 产品设计记录写进 Song 的 Google 网盘「产品设计记录」文件夹（id 1l_EO2KIOb1lruVjJ0aW4zopXQpMKmxUi）下各尊的子文件夹。
 
 ## 仓库主人的授权
@@ -14,6 +15,11 @@
 - 从官方源装比武要用的对手软件（比如 aria2、LibreOffice、OpenRefine）比速度、比准；
 - 跑 Playwright 真流程，打包插件 zip，跑 Windows 发版工作流出 exe；
 - 在他网盘「产品设计记录」里建记录。
+
+## 少惹弹窗（Song 在手机上，每弹一次都要他点）
+- 只在会话的工作目录里干活（子代理用上面的 worktree），不 clone 到 /home/user/work-* 这类外面的目录。
+- 要装的 npm / pip 包，先写进本尊 bench/ 或本尊自己的 package.json、requirements.txt，再照清单装；不临时 npm i 一串没写进清单的包。
+- 被拦了换个正当做法，不硬试同一条；同一件事连着被拦两次就跳过、写进报告。
 
 ## 底线（授权不包括这些）
 - 不注册任何账号，不买东西，不对外发邮件，不提交任何商店审核，不 --force 推送。
