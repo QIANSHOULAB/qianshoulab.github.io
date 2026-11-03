@@ -5,7 +5,7 @@ python3 or_run.py [case...]
 动手次数按下面 COST 表数（界面上要点的次数 + 打字框次数），见 比武报告.md。"""
 import json, os, sys, time, requests
 
-BASE = 'http://127.0.0.1:3333'
+BASE = os.environ.get('OR_URL', 'http://127.0.0.1:3333')
 D = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 OUT = os.path.join(D, 'out')
 ENG = {'facets': [], 'mode': 'row-based'}
@@ -23,6 +23,8 @@ COST = {
     'rmrows': 7,        # 列菜单、分面、自定义文本分面 isBlank、点 true、全部菜单、编辑行、删除匹配行
     'reorder_base': 4,  # 全部菜单、编辑列、重排/删除列、确定（每个目标列另 +1 拖动）
     'export': 2,        # 导出、CSV
+    'sort': 4,          # 列菜单、排序…、选「空值放最后」、确定
+    'reorder_rows': 2,  # 排序菜单、永久重排行
 }
 
 
@@ -34,6 +36,9 @@ def tf(col, expr): return ({'op': 'core/text-transform', 'engineConfig': ENG, 'c
 def add(base, name, expr, at=0): return ({'op': 'core/column-addition', 'engineConfig': ENG, 'baseColumnName': base, 'expression': 'grel:' + expr, 'onError': 'set-to-blank', 'newColumnName': name, 'columnInsertIndex': at}, 'add')
 def filldown(col): return ({'op': 'core/fill-down', 'engineConfig': ENG, 'columnName': col}, 'filldown')
 def reorder(cols): return ({'op': 'core/column-reorder', 'columnNames': cols}, ('reorder', len(cols)))
+def rowsort(cols):
+    crit = [{'valueType': 'string', 'reverse': False, 'blankPosition': 2, 'errorPosition': 1, 'caseSensitive': False, 'column': c} for c in cols]
+    return [({'op': 'core/row-reorder', 'mode': 'row-based', 'sorting': {'criteria': crit}}, 'reorder_rows')] + [(None, 'sort')] * len(cols)
 def rmblank(col):
     eng = {'mode': 'row-based', 'facets': [{'type': 'list', 'name': col, 'columnName': col, 'expression': 'isBlank(value)', 'omitBlank': False, 'omitError': False,
             'selection': [{'v': {'v': True, 'l': 'true'}}], 'selectBlank': False, 'selectError': False, 'invert': False}]}
@@ -87,12 +92,30 @@ COA_OPS = [
     tf('期初余额', 'with(value.trim(), v, if(v == "", "", if(v.startsWith("("), "-" + v.replace(/[^0-9.]/, ""), v.replace(/[^0-9.\\-]/, ""))))'),
     rename('科目代码', 'Code'), rename('科目名称', 'Name'), rename('类别', 'Type'), rename('科目全名', 'Description'), rename('期初余额', 'Opening Balance'), reorder(COA_T)]
 
+# 0.2.1 加：打乱行顺序的 Shopify 导出。专家路线：先按 Handle、Title（空的放后面）、Variant SKU（空的放后面）排序并永久重排，再走原来的向下填充
+SPF_SHUF_OPS = rowsort(['Handle', 'Title', 'Variant SKU']) + SPF_OPS
+# 0.2.1 加：英文网店表，标签整列空格分隔、有多词标签。专家先用分面看出有哪些多词标签（这步不计），再写一条 GREL 把它们先粘住、按空格拆、拼回去
+PHR = ['summer sale', 'new arrival', 'back to school', 'limited edition', 'free shipping', 'gift set']
+TAGS_EN = 'value' + ''.join(f'.replace("{p}", "{p.replace(" ", "~")}")' for p in PHR) + '.split(" ").join(", ").replace("~", " ")'
+def shop_en_ops(tags):
+    st = 'if(inArray(["active", "published"], value.trim().toLowercase()), "active", "draft")'
+    return [add('SKU', 'Handle', 'value.toLowercase()'), add('Status', 'Published', 'if(inArray(["active", "published"], value.trim().toLowercase()), "TRUE", "FALSE")'),
+            tf('Status', st)] + ([tf('Tags', TAGS_EN)] if tags else []) + [
+            tf('Weight', 'with(value.toLowercase().replace(" ", ""), w, if(w.endsWith("kg"), (w.replace(/[^0-9.]/, "").toNumber() * 1000).round().toString(), w.replace(/[^0-9.]/, "")))'),
+            tf('Price', MONEY),
+            rename('Product Name', 'Title'), rename('Description', 'Body (HTML)'), rename('Brand', 'Vendor'), rename('Category', 'Type'), rename('SKU', 'Variant SKU'),
+            rename('Weight', 'Variant Grams'), rename('Stock', 'Variant Inventory Qty'), rename('Price', 'Variant Price'), rename('Compare Price', 'Variant Compare At Price'),
+            rename('Barcode', 'Variant Barcode'), rename('Image', 'Image Src'), reorder(SHOP_T)]
+
 CASES = {
     'crm': ('crm_src.csv', {'ignoreLines': 2, 'trimStrings': True}, ['import', 'ignore', 'noblank', 'trim'], CRM_OPS),
     'crm_gbk': ('crm_src_gbk.csv', {'ignoreLines': 2, 'encoding': 'GBK', 'trimStrings': True}, ['import', 'ignore', 'noblank', 'enc', 'trim'], CRM_OPS),
     'shop_cn2shopify': ('shop_cn_src.csv', {}, ['import'], SHOP_OPS),
     'shopify2shop_cn': ('shopify_src.csv', {'trimStrings': True}, ['import', 'trim'], SPF_OPS),
     'coa': ('coa_src_gbk.csv', {'ignoreLines': 2, 'encoding': 'GBK'}, ['import', 'ignore', 'enc'], COA_OPS),
+    'shopify_shuf2shop_cn': ('shopify_shuf_src.csv', {'trimStrings': True}, ['import', 'trim'], SPF_SHUF_OPS),
+    'shop_en2shopify': ('shop_en_src.csv', {}, ['import'], shop_en_ops(True)),
+    'shop_en12shopify': ('shop_en1_src.csv', {}, ['import'], shop_en_ops(False)),
     'crm_100k': ('crm_100k.csv', {}, ['import', 'noblank'], CRM_OPS),
 }
 
@@ -113,7 +136,7 @@ def run(name, f, opt, imp, ops):
                           files={'project-file': (f, fh)}, data={'project-name': 'bench-' + name, 'format': 'text/line-based/*sv', 'options': json.dumps(o)}, allow_redirects=False)
     pid = r.headers['Location'].split('project=')[1]
     T1 = time.time()
-    r = requests.post(f'{BASE}/command/core/apply-operations?project={pid}&csrf_token={tok()}', data={'operations': json.dumps([x[0] for x in ops])})
+    r = requests.post(f'{BASE}/command/core/apply-operations?project={pid}&csrf_token={tok()}', data={'operations': json.dumps([x[0] for x in ops if x[0]])})
     assert r.json().get('code') in ('ok', 'pending'), r.text[:300]
     while requests.get(f'{BASE}/command/core/get-processes?project={pid}').json().get('processes'): time.sleep(.2)
     T2 = time.time()

@@ -224,7 +224,7 @@ tr:last-child td{border-bottom:0}
 .vmap .f-row.rule .ar{text-align:right}
 .tidy{background:var(--card)}
 .tidy .f-row{min-height:62px}
-.tidy .li b,.tidy .li small{white-space:normal}
+.list.tidy .li b,.list.tidy .li small{white-space:normal}
 .tidy .li{gap:2px}
 .pv{font-size:13px}
 .pv .f-row{min-height:38px;font-variant-numeric:tabular-nums}
@@ -303,7 +303,8 @@ const STR = {
   smartName: '按姓名规矩排', smartNameS: '中文姓在前不加空格，英文名在前姓在后',
   ccByOp: h => `国家码看「${h}」`, cc: '默认国家码', ccBy: '看哪列的国家', ccByNone: '不看', ccAuto: '号码自己会说话', ccAutoS: '11 位 1 开头按 +86，8 位按 +65', style: '写法', e164: '+8613800138000', spaced: '+86 13800138000', digits: '8613800138000',
   dec: '小数', decKeep: '原样', thou: '千分位', unit: '换算成', unitKeep: '不换算',
-  listJoin: '拼成', listS: '按 | ， ; 、 换行拆开；中文还按空格拆。去重后拼回去。',
+  listJoin: '拼成', listS: '按 | ， ; 、 换行拆开，去重后拼回去。',
+  listSpace: '按空格拆', listPhr: ps => `粘在一起不拆：${ps.slice(0, 3).join('、')}${ps.length > 3 ? ` 等 ${ps.length} 个` : ''}`, listSpOff: '中英文都不按空格拆，一格里有空格也算一个。', listSpAuto: '中文按空格拆；英文看过整列，空格不像分隔符，没拆。', listSpOn: '中文、英文都按空格拆。',
   fill: '空格照抄上一行', fillS: g => g ? `只在同一个「${g}」里抄` : '',
   mapKeep: '没填的保持原样', mapNone: '这列是空的，没东西可换',
   mModes: { v: '填值', nil: '留空', rule: '按条件' }, mNil: '（留空）', mRuleBy: '看', mRulePre: '开头是', mRuleEls: '不然',
@@ -323,10 +324,10 @@ const STR = {
   sheetNote: n => `有 ${n} 个工作表，用的第一个有数据的`,
   prof: n => `${n} 导出`,
   tidyH: '顺手整理',
-  tidyFill: g => `同一个「${g}」的空格往下补`, tidyFillS: (cs, n) => `${cs.slice(0, 4).join('、')}${n > 4 ? ` 等 ${n} 列` : ''}`,
+  tidyFill: g => `同一个「${g}」的空格往下补`, tidyGroup: g => `同一个「${g}」排回一起，空格补齐`, tidyFillS: (cs, n) => `${cs.slice(0, 4).join('、')}${n > 4 ? ` 等 ${n} 列` : ''}`,
   tidyDrop: (h, n) => `跳过「${h}」为空的 ${fmtInt(n)} 行`, tidyDropS: t => `目标的「${t}」必填，这些行导过去也是废行`,
   rcOut: (a, b) => `${fmtInt(a)} 行进 · ${fmtInt(b)} 行出`,
-  footApp: '千手院 · 译经僧 0.2.0', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
+  footApp: '千手院 · 译经僧 0.2.1', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
 };
 
 /* ================= 小工具 ================= */
@@ -406,10 +407,10 @@ function conceptOf(h) {
 // 选项值同义词（男/女 → M/F 之类）
 const VS = [
   ['m', '男', '男性', 'male', 'man', '先生', '公'], ['f', '女', '女性', 'female', 'woman', '女士', '母'],
-  ['true', '是', 'yes', 'y', '1', '已上架', '上架', '在售', '发布', '已发布', '启用', 'on', '显示'],
-  ['false', '否', 'no', 'n', '0', '已下架', '下架', '停售', '未发布', '禁用', 'off', '隐藏', '仓库中', '未上架'],
-  ['active', '在售', '上架', '已上架', '启用', '正常', '销售中', '出售中', 'enabled'],
-  ['draft', '下架', '已下架', '草稿', '停售', '仓库中', '未上架', 'disabled', 'inactive'],
+  ['true', '是', 'yes', 'y', '1', '已上架', '上架', '在售', '发布', '已发布', '启用', 'on', '显示', 'active', 'published', 'publish', 'live'],
+  ['false', '否', 'no', 'n', '0', '已下架', '下架', '停售', '未发布', '禁用', 'off', '隐藏', '仓库中', '未上架', 'draft', 'hidden', 'unpublished', 'private', 'inactive'],
+  ['active', '在售', '上架', '已上架', '启用', '正常', '销售中', '出售中', 'enabled', 'published', 'publish', 'live'],
+  ['draft', '下架', '已下架', '草稿', '停售', '仓库中', '未上架', 'disabled', 'inactive', 'hidden', 'unpublished', 'private'],
   ['archived', '归档', '已归档', '删除', '已删除'],
   ['上架', '在售', '已上架', 'active', '启用', '出售中', '销售中', 'true', 'yes', '是'], ['下架', '已下架', '停售', 'draft', 'inactive', '仓库中', 'archived', '归档', '已归档', 'false', 'no', '否'],
   ['asset', '资产', '资产类', 'assets'], ['liability', '负债', '负债类', 'liabilities'], ['equity', '所有者权益', '权益', '所有者权益类', 'owners equity'],
@@ -742,13 +743,80 @@ function parseNum(s, unitTo) {
   if (mul !== 1) n = +(n * mul).toPrecision(12);
   return neg ? -n : n;
 }
-// 多值：按强分隔符拆；没有强分隔符时，中文按空格拆
-function splitList(v) {
+// 多值：按强分隔符拆；没有强分隔符时看空格规矩 sp：{cjk, en, phr}。中文按空格拆；英文看整列定（listPlan），多词标签（summer sale）按 phr 粘回一个
+const LSEP = /[|，,;；、\n\t]/, LSEPS = /[|，,;；、\n\t]+/;
+function splitList(v, sp) {
   if (!v) return [];
-  const p = /[|，,;；、\n\t]/.test(v) ? v.split(/[|，,;；、\n\t]+/) : CJK.test(v) ? v.split(/\s+/) : [v];
+  let p;
+  if (LSEP.test(v)) p = v.split(LSEPS);
+  else if (!/\s/.test(v) || !sp) p = [v];
+  else if (CJK.test(v)) p = sp.cjk ? v.split(/\s+/) : [v];
+  else if (sp.en) p = glue(v.split(/\s+/), sp.phr);
+  else if (sp.known) { const u = glue(v.split(/\s+/), sp.phr); p = u.length > 1 && u.every(x => { x = x.toLowerCase(); return sp.known.has(x) || sp.phr.has(x); }) ? u : [v]; }
+  else p = [v];
   const out = [], seen = new Set();
   for (let x of p) { x = x.trim(); if (x && !seen.has(x)) { seen.add(x); out.push(x); } }
   return out;
+}
+// 按已知多词标签贪心粘：最长的先粘
+function glue(w, phr) {
+  if (!phr || !phr.size) return w;
+  const out = [], L = phr.max || 4;
+  for (let i = 0; i < w.length;) {
+    let k = Math.min(L, w.length - i);
+    for (; k > 1; k--) if (phr.has(w.slice(i, i + k).join(' ').toLowerCase())) break;
+    out.push(w.slice(i, i + k).join(' ')); i += k;
+  }
+  return out;
+}
+// 看一整列英文多值：空格是不是分隔符（auto），哪些词总粘在一起算一个标签（phr）
+// 规矩：只看没有 | , ; 这类分隔符、又不含中文的格子。出现 ≥2 次的词里，前后邻居都至少换过两种的叫「自由词」；
+// 自由词占一半以上、至少 2 个 → 这列是空格分隔的多个标签。
+// 多词标签：别的格子里用 | , ; 分开的、带空格的片段；或者 a 后面总是 b、b 前面总是 a（≥2 次），或者 a 后面总是 b（≥5 次）。
+const LPLAN = new Map();
+function listPlan(j) {
+  const ck = j + '|' + (S.src && S.src.name) + '|' + (S.src ? S.src.rows.length : 0);
+  if (LPLAN.has(ck)) return LPLAN.get(ck);
+  const vals = j >= 0 ? colSample(j, 3000) : [], phr = new Set(), known = new Set(), cnt = new Map(), nx = new Map(), pv = new Map(), pair = new Map();
+  const add = (m, k, x) => { let s = m.get(k); if (!s) m.set(k, s = new Set()); s.add(x); };
+  let cells = 0; const ws = [];
+  for (const v of vals) {
+    if (CJK.test(v)) continue;
+    if (LSEP.test(v)) { for (const x of v.split(LSEPS)) { const t = x.trim().toLowerCase().replace(/\s+/g, ' '); if (t.includes(' ')) phr.add(t); else if (t) known.add(t); } continue; }
+    if (!/\s/.test(v)) { known.add(v.toLowerCase()); continue; }
+    cells++;
+    const w = v.toLowerCase().split(/\s+/); ws.push(w);
+    for (let i = 0; i < w.length; i++) { cnt.set(w[i], (cnt.get(w[i]) || 0) + 1); if (i) { const k = w[i - 1] + ' ' + w[i]; pair.set(k, (pair.get(k) || 0) + 1); } }
+  }
+  // 两两粘：a→b；再把链接起来（a b c）
+  const nxt = new Map();
+  for (const [k, c] of pair) {
+    const [a, b] = k.split(' '), ca = cnt.get(a), cb = cnt.get(b);
+    if ((c >= 2 && c === ca && c === cb) || (c >= 5 && (c === ca || c === cb))) nxt.set(a, b);
+  }
+  const hasPrev = new Set(nxt.values());
+  for (const a of nxt.keys()) {
+    if (hasPrev.has(a)) continue;
+    const ch = [a]; let x = a; while (nxt.has(x) && ch.length < 6) { x = nxt.get(x); if (ch.includes(x)) break; ch.push(x); }
+    phr.add(ch.join(' '));
+  }
+  phr.max = Math.max(2, ...[...phr].map(x => x.split(' ').length));
+  // 粘好以后再数自由词：多词标签算一个
+  const uc = new Map();
+  for (const w0 of ws) {
+    const w = glue(w0, phr);
+    for (let i = 0; i < w.length; i++) { const u = w[i]; uc.set(u, (uc.get(u) || 0) + 1); add(pv, u, w[i - 1] || '^'); add(nx, u, w[i + 1] || '$'); }
+  }
+  let rep = 0, free = 0;
+  for (const [u, c] of uc) { if (c < 2) continue; rep++; if (pv.get(u).size >= 2 && nx.get(u).size >= 2) free++; }
+  const auto = cells > 0 && free >= 2 && free >= rep * .5;
+  const r = { auto, phr, cells, known };
+  LPLAN.set(ck, r); if (LPLAN.size > 50) LPLAN.clear();
+  return r;
+}
+function listSp(op, j) {
+  const P = listPlan(j), on = op.space;
+  return { cjk: on !== false, en: on == null ? P.auto : !!on, phr: P.phr, known: on == null ? P.known : null, plan: P };
 }
 function fmtNum(n, dec, thou) {
   let s = dec === 'keep' ? String(+n.toPrecision(15)) : n.toFixed(+dec);
@@ -837,7 +905,7 @@ function compile(m, tc) {
       f = row => { const v = get(row), h = mp.get(v); return h ? h(row) : v; };
       break;
     }
-    case 'list': { const sep = op.sep ?? ', '; f = row => splitList(get(row)).join(sep); break; }
+    case 'list': { const sep = op.sep ?? ', ', sp = listSp(op, m.cnst == null && m.src.length ? m.src[0] : -1); f = row => splitList(get(row), sp).join(sep); break; }
     case 'case': {
       const md = op.mode || 'lower';
       f = md === 'lower' ? row => get(row).toLowerCase() : md === 'upper' ? row => get(row).toUpperCase()
@@ -957,16 +1025,18 @@ function keyCol() {
   const tc = S.tgt.cols[0], m = S.maps[0];
   return tc && tc.req && m && m.cnst == null && m.src.length === 1 ? m.src[0] : -1;
 }
-// 分组列：每格都有值、同值连成一段、有成段重复；空格多出现在每段后几行的列往下补
+// 分组列：每格都有值、有成段重复。同值连成一段（Shopify 原样导出）时，空格多出现在每段后几行的列往下补；
+// 同组的行被打乱了（排过序、拼过表）时，按「每组最多一个值」认列，组里空格用这组的值补，导出时同组排回一起（按第一次出现的顺序）
 function detectGroup(rows) {
   const H = S.src.headers, n = rows.length;
   if (n < 6) return null;
+  const cand = [];
   for (let j = 0; j < H.length; j++) {
     let rep = 0, ok = true; const seen = new Set();
     for (let r = 0; r < n; r++) {
       const v = rows[r][j]; if (blank(v)) { ok = false; break; }
       if (r && v === rows[r - 1][j]) { rep++; continue; }
-      if (seen.has(v)) { ok = false; break; } seen.add(v);
+      if (seen.has(v)) { ok = false; cand.push(j); break; } seen.add(v);
     }
     if (!ok || seen.size < 2 || rep < n * .1) continue;
     const fc = [];
@@ -977,6 +1047,32 @@ function detectGroup(rows) {
       if (n1 >= 3 && f0 >= n0 * .9 && f1 <= n1 * .1) fc.push(k);
     }
     if (fc.length) return { j, fc };
+  }
+  // 打乱的：分组列每组平均不超过 20 行（先拿前 2000 行粗筛掉「国家」「性别」这种只有几个值的列）
+  for (const j of cand) {
+    const m = Math.min(n, 2000), sm = new Set();
+    for (let r = 0; r < m; r++) sm.add(rows[r][j]);
+    if (sm.size < m / 20) continue;
+    const seen = new Map(), gid = new Int32Array(n); let ok = true;
+    for (let r = 0; r < n; r++) {
+      const v = rows[r][j]; if (blank(v)) { ok = false; break; }
+      let g = seen.get(v); if (g === undefined) seen.set(v, g = seen.size); gid[r] = g;
+    }
+    const ng = seen.size, n1 = n - ng;
+    if (!ok || ng < 3 || ng < n / 20 || n1 < n * .1 || n1 < 3) continue;
+    const fc = [];
+    for (let k = 0; k < H.length; k++) {
+      if (k === j) continue;
+      const val = new Map(), lim = n1 * .1, mlim = ng * .02; let filled = 0, mixed = 0, bad = false;
+      for (let r = 0; r < n; r++) {
+        const v = rows[r][k]; if (blank(v)) continue; filled++;
+        const g = gid[r], o = val.get(g);
+        if (o === undefined) val.set(g, v); else if (o !== v && o !== null) { val.set(g, null); mixed++; }
+        if (filled - val.size > lim || mixed > mlim) { bad = true; break; }
+      }
+      if (!bad && val.size >= ng * .9) fc.push(k);
+    }
+    if (fc.length) return { j, fc, shuf: true };
   }
   return null;
 }
@@ -992,9 +1088,38 @@ function prep() {
   const fillSet = new Set(P.g && T.fill !== false ? P.g.fc : []);
   for (const h in T.fillOn) { const j = H.indexOf(h); if (j >= 0) T.fillOn[h] ? fillSet.add(j) : fillSet.delete(j); }
   const fill = [...fillSet], gj = P.g ? P.g.j : -1, drop = P.nb > 0 && T.drop !== false ? kj : -1;
+  const regroup = P.g && P.g.shuf && T.fill !== false;
   P.fill = fill; P.drop = drop;
-  if (!fill.length && drop < 0) { S.rows = raw; return; }
-  const out = [], last = {};
+  if (!fill.length && drop < 0 && !regroup) { S.rows = raw; return; }
+  const out = [];
+  if (P.g && P.g.shuf) {
+    // 打乱的分组：先按组收行（按第一次出现排），组里空格用本组前面最近的值，前面没有就用本组第一个值（只看不会被跳过的行）
+    const groups = new Map(), order = [];
+    for (let r = 0; r < raw.length; r++) {
+      const v = raw[r][gj], key = blank(v) ? '\u0000' + r : v;
+      let g = groups.get(key); if (!g) { groups.set(key, g = []); order.push(g); } g.push(raw[r]);
+    }
+    const seq = regroup || fill.length ? order : [raw];
+    for (const g of seq) {
+      const first = {};
+      if (fill.length) for (const row of g) { if (drop >= 0 && blank(row[drop])) continue; for (const k of fill) if (first[k] === undefined && !blank(row[k])) first[k] = row[k]; }
+      const last = {};
+      for (let row of g) {
+        const keep = !(drop >= 0 && blank(row[drop]));
+        if (fill.length) {
+          let cp = null;
+          for (const k of fill) {
+            if (blank(row[k])) { const x = last[k] !== undefined ? last[k] : first[k]; if (x !== undefined) { cp = cp || row.slice(); cp[k] = x; } }
+            else if (keep) last[k] = row[k];
+          }
+          if (cp) row = cp;
+        }
+        if (keep) out.push(row);
+      }
+    }
+    S.rows = out; return;
+  }
+  const last = {};
   for (let r = 0; r < raw.length; r++) {
     let row = raw[r];
     if (fill.length) {
@@ -1120,7 +1245,7 @@ function renderPreviewInner() {
 function renderTidyInner() {
   const P = S.prep, H = S.src.headers, rows = [];
   if (!P) return '';
-  if (P.g) rows.push(`<div class="f-row"><div class="li"><b>${esc(STR.tidyFill(H[P.g.j]))}</b><small>${esc(STR.tidyFillS(P.g.fc.map(j => H[j]), P.g.fc.length))}</small></div><button type="button" class="switch" role="switch" data-act="tidy" data-k="fill" aria-checked="${S.tidy.fill !== false}" aria-label="${esc(STR.tidyFill(H[P.g.j]))}"><i></i></button></div>`);
+  if (P.g) rows.push(`<div class="f-row"><div class="li"><b>${esc((P.g.shuf ? STR.tidyGroup : STR.tidyFill)(H[P.g.j]))}</b><small>${esc(STR.tidyFillS(P.g.fc.map(j => H[j]), P.g.fc.length))}</small></div><button type="button" class="switch" role="switch" data-act="tidy" data-k="fill" aria-checked="${S.tidy.fill !== false}" aria-label="${esc((P.g.shuf ? STR.tidyGroup : STR.tidyFill)(H[P.g.j]))}"><i></i></button></div>`);
   if (P.nb) rows.push(`<div class="f-row"><div class="li"><b>${esc(STR.tidyDrop(H[P.kj], P.nb))}</b><small>${esc(STR.tidyDropS(S.tgt.cols[0].name))}</small></div><button type="button" class="switch" role="switch" data-act="tidy" data-k="drop" aria-checked="${S.tidy.drop !== false}" aria-label="${esc(STR.tidyDrop(H[P.kj], P.nb))}"><i></i></button></div>`);
   return rows.length ? `<div class="grp-h"><h2>${STR.tidyH}</h2></div><div class="card form list tidy">${rows.join('')}</div>` : '';
 }
@@ -1196,7 +1321,13 @@ function colSheetBody(i) {
     if (o.t === 'num') h += `<div class="form"><div class="f-row"><span class="f-k">${STR.dec}</span><select data-in="dec">${[['keep', STR.decKeep], ['0', '0'], ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']].map(([v, l]) => `<option value="${v}"${String(o.dec ?? 'keep') === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="f-row"><span class="f-k">${STR.unit}</span><select data-in="unit">${[['', STR.unitKeep], ['g', 'g'], ['kg', 'kg'], ['lb', 'lb'], ['oz', 'oz']].map(([v, l]) => `<option value="${v}"${(o.unit || '') === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="f-row"><span class="f-k">${STR.thou}</span><button type="button" class="switch" role="switch" data-act="thou" aria-checked="${!!o.thou}"><i></i></button></div></div>`;
-    if (o.t === 'list') h += `<div class="form"><div class="f-row"><span class="f-k">${STR.listJoin}</span><input data-in="lsep" value="${esc(o.sep ?? ', ')}" placeholder=", "></div></div><div class="sh-foot">${STR.listS}</div>`;
+    if (o.t === 'list') {
+      const sp = listSp(o, m.src[0]), en = sp.plan.cells > 0, ps = [...sp.phr].sort((x, y) => y.split(' ').length - x.split(' ').length);
+      const st = o.space === false ? false : sp.en || !en;
+      const note = o.space === false ? STR.listSpOff : !en && o.space == null ? '' : !sp.en ? STR.listSpAuto : ps.length ? STR.listPhr(ps) : STR.listSpOn;
+      h += `<div class="form"><div class="f-row"><span class="f-k">${STR.listJoin}</span><input data-in="lsep" value="${esc(o.sep ?? ', ')}" placeholder=", "></div>
+        <div class="f-row"><span class="f-k">${STR.listSpace}</span><button type="button" class="switch" role="switch" data-act="lspace" aria-checked="${st}" aria-label="${STR.listSpace}"><i></i></button></div></div><div class="sh-foot">${esc(STR.listS)}${note ? '<br>' + esc(note) : ''}</div>`;
+    }
     if (o.t === 'case') h += pickHTML('mode', [['lower', STR.caseLower], ['upper', STR.caseUpper], ['title', STR.caseTitle], ['trim', STR.caseTrim]], o.mode || 'lower');
     if (o.t === 'map') {
       const pairs = o.pairs || [];
@@ -1427,6 +1558,7 @@ document.addEventListener('click', e => {
     if (a === 'smart') { m.op.smart = !m.op.smart; return refreshCol(true); }
     if (a === 'thou') { m.op.thou = !m.op.thou; return refreshCol(true); }
     if (a === 'ccauto') { m.op.auto = !m.op.auto; return refreshCol(true); }
+    if (a === 'lspace') { m.op.space = b.getAttribute('aria-checked') !== 'true'; return refreshCol(true); }
     if (a === 'fillcol') { const h = S.src.headers[m.src[0]], on = S.prep && S.prep.fill && S.prep.fill.includes(m.src[0]); S.tidy.fillOn[h] = !on; return refreshCol(true); }
   }
 });
@@ -1511,7 +1643,7 @@ addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 30),
 /* ================= 开张 ================= */
 S.tgt = tplFrom('crm'); S.fmt = 'csv';
 setSource(demoSource(), false);
-window.__yj = { S, loadFile, autoMap, parseDate, splitName, fmtPhone, parseNum, parseCSV };
+window.__yj = { S, loadFile, autoMap, parseDate, splitName, fmtPhone, parseNum, parseCSV, splitList, listPlan, outRow };
 </script>
 </body>
 </html>

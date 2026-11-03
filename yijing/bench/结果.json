@@ -300,5 +300,67 @@
     "Phone": 10076
    }
   }
+ },
+ "v021": {
+  "date": "2026-11-03",
+  "note": "0.2.1 复赛：run_ours.js 零调整走真界面；OpenRefine 3.8.7 同机重跑；100k 三次取中位数（沙盒 4 核，有别的会话在跑，负载约 4.5）",
+  "ours_bad_cells": {
+   "crm": "0/3900",
+   "crm_gbk": "0/3900",
+   "shop_cn2shopify": "0/1800",
+   "shopify2shop_cn": "0/1364",
+   "coa": "0/225",
+   "shopify_shuf2shop_cn": "0/1364",
+   "shop_en2shopify": "0/1800",
+   "shop_en12shopify": "0/1800",
+   "crm_100k": "0/1300000"
+  },
+  "or_bad_cells": "全部 0",
+  "clicks": {
+   "ours": {
+    "crm": 3,
+    "crm_gbk": 3,
+    "shop_cn2shopify": 5,
+    "shopify2shop_cn": 6,
+    "coa": 5,
+    "shopify_shuf2shop_cn": 6,
+    "shop_en2shopify": 5,
+    "shop_en12shopify": 5
+   },
+   "or": {
+    "crm": 121,
+    "crm_gbk": 123,
+    "shop_cn2shopify": 132,
+    "shopify2shop_cn": 107,
+    "coa": 59,
+    "shopify_shuf2shop_cn": 121,
+    "shop_en2shopify": 112,
+    "shop_en12shopify": 107
+   }
+  },
+  "speed_100k_s": {
+   "ours_021_median": 2.92,
+   "ours_021_runs": [
+    2.92,
+    2.95,
+    2.69
+   ],
+   "ours_020_same_machine_median": 2.84,
+   "ours_020_runs": [
+    3.17,
+    2.79,
+    2.84
+   ],
+   "or_median": 7.24,
+   "or_runs": [
+    7.73,
+    7.24,
+    6.85
+   ]
+  },
+  "v020_on_new_materials": {
+   "shopify_shuf2shop_cn": "384/1364",
+   "shop_en2shopify": "233/1800"
+  }
  }
 }

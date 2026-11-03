@@ -4,7 +4,7 @@ const { chromium } = require('playwright'); const path = require('path');
   const b = await chromium.launch(), D = path.join(__dirname, 'data'), S = path.join(__dirname, 'shots');
   for (const [w, h] of [[390, 844], [1280, 900]]) {
     const pg = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: w < 500 ? 2 : 1 });
-    await pg.goto('http://127.0.0.1:8765/yijing/');
+    await pg.goto(process.env.YJ_URL || 'http://127.0.0.1:8765/yijing/');
     await pg.setInputFiles('#fSrc', path.join(D, 'crm_src.csv'));
     await pg.waitForFunction(() => window.__yj.S.bad != null && window.__yj.S.src.name === 'crm_src.csv');
     await pg.waitForTimeout(3000);

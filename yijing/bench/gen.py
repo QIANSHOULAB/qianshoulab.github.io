@@ -198,6 +198,42 @@ def coa(seed):
     return H, src, T, tru, pre
 
 
+# 0.2.1 加：英文网店表，标签整列用空格分隔、里面有多词标签（summer sale）；single=True 时每格只有一个标签（多词也不许拆）
+EN_ADJ = ['linen', 'cotton', 'organic', 'vintage', 'handmade', 'gift', 'bestseller', 'eco']
+EN_PHR = ['summer sale', 'new arrival', 'back to school', 'limited edition', 'free shipping', 'gift set']
+
+
+def shop_en(n, seed, single=False):
+    r = random.Random(seed)
+    H = ['SKU', 'Product Name', 'Category', 'Brand', 'Price', 'Compare Price', 'Stock', 'Barcode', 'Status', 'Tags', 'Weight', 'Description', 'Image']
+    T = ['Handle', 'Title', 'Body (HTML)', 'Vendor', 'Type', 'Tags', 'Published', 'Variant SKU', 'Variant Grams', 'Variant Inventory Qty', 'Variant Price', 'Variant Compare At Price', 'Variant Barcode', 'Image Src', 'Status']
+    cats = ['Dresses', 'Tea', 'Storage', 'Cables', 'Stationery']
+    brands = ['Bamboo Grove', 'Still Water', 'Lotus & Co.', 'One Leaf']
+    src, tru = [], []
+    for i in range(n):
+        sku = f'{r.choice(["DR", "TE", "ST", "CB"])}-{2024 + i % 3}-{i + 1:03d}'
+        title = f'{r.choice(brands)} {r.choice(["Linen Dress", "Longjing 250g", "Storage Box", "USB-C Cable 1m", "A5 Notebook"])} {r.choice(["S", "M", "L", ""])}'.strip()
+        cat, br = r.choice(cats), r.choice(brands)
+        p = r.randint(990, 29900) / 100
+        cp = round(p * r.choice([1.2, 1.5, 2]), 2) if r.random() < .6 else None
+        stock = r.randint(0, 5000)
+        bc = r.choice(['690', '693', '069']) + ''.join(r.choice('0123456789') for _ in range(10))
+        on = r.random() < .7
+        st = r.choice(['Active', 'active', 'Published']) if on else r.choice(['Draft', 'draft', 'Hidden'])
+        if single:
+            tags = [r.choice(EN_PHR + EN_ADJ)] if r.random() < .85 else []
+        else:
+            tags = r.sample(EN_ADJ + EN_PHR, r.choice([0, 1, 2, 2, 3, 3, 4]))
+        tsrc = ' '.join(tags)
+        gm = r.choice([150, 250, 500, 800, 1200, 2350])
+        wsrc = r.choice([f'{gm}g', f'{gm/1000:g}kg', f'{gm} g', f'{gm/1000:g} kg'])
+        desc = '<p>' + ', '.join(r.choice(['Soft and breathable', '30-day returns', 'Colour may vary, "as is"', 'Made in Hangzhou']) for _ in range(r.randint(3, 10))) + '</p>'
+        img = f'https://img.example.com/p/{sku.lower()}.jpg'
+        src.append([sku, title, cat, br, f'${p:,.2f}', '' if cp is None else f'{cp:.2f}', str(stock), bc, st, tsrc, wsrc, desc, img])
+        tru.append([sku.lower(), title, desc, br, cat, ', '.join(tags), 'TRUE' if on else 'FALSE', sku, str(gm), str(stock), f'{p:.2f}', '' if cp is None else f'{cp:.2f}', bc, img, 'active' if on else 'draft'])
+    return H, src, T, tru
+
+
 def main():
     H, S, T, R, pre = crm(300, 1)
     w('crm_src.csv', H, S, pre=pre); w('truth_crm.csv', T, R)
@@ -209,6 +245,14 @@ def main():
     w('shopify_src.csv', H, S); w('truth_shopify2shop_cn.csv', T, R)
     H, S, T, R, pre = coa(4)
     w('coa_src_gbk.csv', H, S, enc='gbk', pre=pre); w('truth_coa.csv', T, R)
+    # 0.2.1 加：Shopify 导出把行顺序打乱（同一商品的变体行、图片行不再挨着）
+    H, S, T, R = shopify(60, 3)
+    S = S[:]; random.Random(5).shuffle(S)
+    w('shopify_shuf_src.csv', H, S)
+    H, S, T, R = shop_en(120, 6)
+    w('shop_en_src.csv', H, S); w('truth_shop_en2shopify.csv', T, R)
+    H, S, T, R = shop_en(120, 7, single=True)
+    w('shop_en1_src.csv', H, S); w('truth_shop_en12shopify.csv', T, R)
     if BIG:
         H, S, T, R, pre = crm(100_000, 9, title=False, empty_rows=False)
         w('crm_100k.csv', H, S); w('truth_crm_100k.csv', T, R)

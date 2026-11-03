@@ -9,6 +9,9 @@ const CASES = {
   shop_cn2shopify: { src: 'shop_cn_src.csv', tpl: 'shopify', key: 'Variant SKU', truth: 'truth_shop_cn2shopify.csv' },
   shopify2shop_cn: { src: 'shopify_src.csv', tpl: 'shop_cn', key: '商品编码', truth: 'truth_shopify2shop_cn.csv', csv: true },
   coa: { src: 'coa_src_gbk.csv', tpl: 'coa_en', key: 'Code', truth: 'truth_coa.csv' },
+  shopify_shuf2shop_cn: { src: 'shopify_shuf_src.csv', tpl: 'shop_cn', key: '商品编码', truth: 'truth_shopify2shop_cn.csv', csv: true },
+  shop_en2shopify: { src: 'shop_en_src.csv', tpl: 'shopify', key: 'Variant SKU', truth: 'truth_shop_en2shopify.csv' },
+  shop_en12shopify: { src: 'shop_en1_src.csv', tpl: 'shopify', key: 'Variant SKU', truth: 'truth_shop_en12shopify.csv' },
   crm_100k: { src: 'crm_100k.csv', tpl: 'crm', key: 'Customer ID', truth: 'truth_crm_100k.csv' },
 };
 const FIX = require('./fixes_ours.js');
@@ -19,7 +22,7 @@ const FIX = require('./fixes_ours.js');
   for (const [k, c] of Object.entries(CASES)) {
     if (only.length && !only.includes(k)) continue;
     const pg = await b.newPage({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
-    await pg.goto('http://127.0.0.1:8765/yijing/');
+    await pg.goto(process.env.YJ_URL || 'http://127.0.0.1:8765/yijing/');
     let clicks = 0;
     const click = async sel => { clicks++; await pg.click(sel); };
     const T0 = Date.now();
