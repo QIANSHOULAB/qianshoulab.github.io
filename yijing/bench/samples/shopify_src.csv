@@ -1,0 +1,229 @@
+Handle,Title,Body (HTML),Vendor,Product Category,Type,Tags,Published,Option1 Name,Option1 Value,Variant SKU,Variant Grams,Variant Inventory Qty,Variant Price,Variant Compare At Price,Variant Barcode,Image Src,Image Position,Status
+linen-shirt-1,"Linen Shirt No.1 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 0.</p>",Bamboo Grove,Apparel & Accessories,Home,"linen, summer",false,Size,S,LS001-S,300,294,212.89,,019074833788,https://cdn.example.com/s/linen-shirt-1-1.jpg,1,archived
+linen-shirt-1,,,,,,,,,M,LS001-M,300,74,171.09,,032860129040,,,
+linen-shirt-1,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-1-2.jpg,2,
+linen-shirt-2,"Linen Shirt No.2 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 1.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS002-S,300,292,154.89,,072510273464,https://cdn.example.com/s/linen-shirt-2-1.jpg,1,archived
+linen-shirt-2,,,,,,,,,M,LS002-M,300,194,153.00,198.90,095896935049,,,
+linen-shirt-2,,,,,,,,,L,LS002-L,300,164,234.96,305.45,089913944117,,,
+linen-shirt-2,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-2-2.jpg,2,
+linen-shirt-2,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-2-3.jpg,3,
+linen-shirt-2,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-2-4.jpg,4,
+linen-shirt-3,"Linen Shirt No.3 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 2.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS003-S,300,7,149.50,194.35,046610990695,https://cdn.example.com/s/linen-shirt-3-1.jpg,1,active
+linen-shirt-3,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-3-2.jpg,2,
+linen-shirt-3,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-3-3.jpg,3,
+linen-shirt-4,"Linen Shirt No.4 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 3.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS004-S,300,52,116.47,,098036494205,https://cdn.example.com/s/linen-shirt-4-1.jpg,1,archived
+linen-shirt-4,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-4-2.jpg,2,
+linen-shirt-5,"Linen Shirt No.5 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 4.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS005-S,300,194,165.86,215.62,098198463464,https://cdn.example.com/s/linen-shirt-5-1.jpg,1,active
+linen-shirt-5,,,,,,,,,M,LS005-M,300,170,185.76,,006950699205,,,
+linen-shirt-5,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-5-2.jpg,2,
+linen-shirt-5,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-5-3.jpg,3,
+linen-shirt-5,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-5-4.jpg,4,
+linen-shirt-6,"Linen Shirt No.6 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 5.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS006-S,300,28,175.40,,005474995252,https://cdn.example.com/s/linen-shirt-6-1.jpg,1,active
+linen-shirt-6,,,,,,,,,M,LS006-M,300,132,117.45,152.69,046109248343,,,
+linen-shirt-6,,,,,,,,,L,LS006-L,300,219,122.40,,011955372153,,,
+linen-shirt-6,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-6-2.jpg,2,
+linen-shirt-6,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-6-3.jpg,3,
+linen-shirt-7,"Linen Shirt No.7 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 6.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS007-S,300,94,26.11,33.94,059245195926,https://cdn.example.com/s/linen-shirt-7-1.jpg,1,active
+linen-shirt-7,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-7-2.jpg,2,
+linen-shirt-8,"Linen Shirt No.8 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 7.</p>",Still Water,Apparel & Accessories,Home,"linen, summer",true,Size,S,LS008-S,300,211,222.80,,096062307986,https://cdn.example.com/s/linen-shirt-8-1.jpg,1,active
+linen-shirt-8,,,,,,,,,M,LS008-M,300,110,198.13,257.57,007848531941,,,
+linen-shirt-8,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-8-2.jpg,2,
+linen-shirt-8,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-8-3.jpg,3,
+linen-shirt-8,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-8-4.jpg,4,
+linen-shirt-9,"Linen Shirt No.9 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 8.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS009-S,300,243,204.05,,012843088609,https://cdn.example.com/s/linen-shirt-9-1.jpg,1,active
+linen-shirt-9,,,,,,,,,M,LS009-M,300,126,52.22,,087053318123,,,
+linen-shirt-9,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-9-2.jpg,2,
+linen-shirt-10,"Linen Shirt No.10 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 9.</p>",Still Water,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS010-S,300,22,202.07,262.69,043498860750,https://cdn.example.com/s/linen-shirt-10-1.jpg,1,active
+linen-shirt-10,,,,,,,,,M,LS010-M,300,20,32.96,42.85,010170188752,,,
+linen-shirt-10,,,,,,,,,L,LS010-L,300,194,118.08,,069454356128,,,
+linen-shirt-10,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-10-2.jpg,2,
+linen-shirt-10,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-10-3.jpg,3,
+linen-shirt-10,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-10-4.jpg,4,
+linen-shirt-11,"Linen Shirt No.11 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 10.</p>",Bamboo Grove,Apparel & Accessories,Home,"linen, summer",false,Size,S,LS011-S,300,232,73.50,,098609605756,https://cdn.example.com/s/linen-shirt-11-1.jpg,1,draft
+linen-shirt-11,,,,,,,,,M,LS011-M,300,6,242.45,,033849163620,,,
+linen-shirt-11,,,,,,,,,L,LS011-L,300,283,121.68,,041718615981,,,
+linen-shirt-12,"Linen Shirt No.12 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 11.</p>",Lotus & Co.,Apparel & Accessories,Home,"linen, summer",true,Size,S,LS012-S,300,19,92.32,120.02,081916205101,https://cdn.example.com/s/linen-shirt-12-1.jpg,1,active
+linen-shirt-12,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-12-2.jpg,2,
+linen-shirt-12,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-12-3.jpg,3,
+linen-shirt-12,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-12-4.jpg,4,
+linen-shirt-13,"Linen Shirt No.13 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 12.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS013-S,300,285,26.88,34.94,088318180859,https://cdn.example.com/s/linen-shirt-13-1.jpg,1,active
+linen-shirt-13,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-13-2.jpg,2,
+linen-shirt-13,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-13-3.jpg,3,
+linen-shirt-14,"Linen Shirt No.14 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 13.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS014-S,300,198,96.90,,045965861683,https://cdn.example.com/s/linen-shirt-14-1.jpg,1,active
+linen-shirt-14,,,,,,,,,M,LS014-M,300,79,150.27,195.35,069987262217,,,
+linen-shirt-14,,,,,,,,,L,LS014-L,300,261,173.43,225.46,079224329853,,,
+linen-shirt-14,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-14-2.jpg,2,
+linen-shirt-15,"Linen Shirt No.15 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 14.</p>",Lotus & Co.,Apparel & Accessories,Home,"linen, summer",true,Size,S,LS015-S,300,133,206.55,268.52,034047632953,https://cdn.example.com/s/linen-shirt-15-1.jpg,1,active
+linen-shirt-15,,,,,,,,,M,LS015-M,300,70,120.52,,067937980716,,,
+linen-shirt-15,,,,,,,,,L,LS015-L,300,114,30.02,,031343342290,,,
+linen-shirt-15,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-15-2.jpg,2,
+linen-shirt-15,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-15-3.jpg,3,
+linen-shirt-15,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-15-4.jpg,4,
+linen-shirt-16,"Linen Shirt No.16 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 15.</p>",Still Water,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS016-S,300,40,153.70,,011440579500,https://cdn.example.com/s/linen-shirt-16-1.jpg,1,active
+linen-shirt-16,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-16-2.jpg,2,
+linen-shirt-16,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-16-3.jpg,3,
+linen-shirt-17,"Linen Shirt No.17 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 16.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS017-S,300,296,40.54,,076285141617,https://cdn.example.com/s/linen-shirt-17-1.jpg,1,draft
+linen-shirt-17,,,,,,,,,M,LS017-M,300,46,187.84,244.19,085574415988,,,
+linen-shirt-17,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-17-2.jpg,2,
+linen-shirt-17,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-17-3.jpg,3,
+linen-shirt-17,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-17-4.jpg,4,
+linen-shirt-18,"Linen Shirt No.18 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 17.</p>",Bamboo Grove,Apparel & Accessories,Home,"linen, summer",false,Size,S,LS018-S,300,286,111.47,144.91,022257118259,https://cdn.example.com/s/linen-shirt-18-1.jpg,1,draft
+linen-shirt-18,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-18-2.jpg,2,
+linen-shirt-18,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-18-3.jpg,3,
+linen-shirt-19,"Linen Shirt No.19 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 18.</p>",Still Water,Apparel & Accessories,Home,"linen, summer",true,Size,S,LS019-S,300,87,173.06,,011288965144,https://cdn.example.com/s/linen-shirt-19-1.jpg,1,active
+linen-shirt-19,,,,,,,,,M,LS019-M,300,66,140.62,,007843855678,,,
+linen-shirt-19,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-19-2.jpg,2,
+linen-shirt-20,"Linen Shirt No.20 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 19.</p>",Bamboo Grove,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS020-S,300,54,103.63,134.72,091239662992,https://cdn.example.com/s/linen-shirt-20-1.jpg,1,draft
+linen-shirt-21,"Linen Shirt No.21 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 20.</p>",Still Water,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS021-S,300,125,73.61,,054076658947,https://cdn.example.com/s/linen-shirt-21-1.jpg,1,archived
+linen-shirt-21,,,,,,,,,M,LS021-M,300,150,188.36,244.87,070930137287,,,
+linen-shirt-21,,,,,,,,,L,LS021-L,300,268,80.17,,030871942271,,,
+linen-shirt-21,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-21-2.jpg,2,
+linen-shirt-22,"Linen Shirt No.22 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 21.</p>",Lotus & Co.,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS022-S,300,252,91.48,118.92,080555521901,https://cdn.example.com/s/linen-shirt-22-1.jpg,1,active
+linen-shirt-22,,,,,,,,,M,LS022-M,300,102,127.58,165.85,013637510613,,,
+linen-shirt-22,,,,,,,,,L,LS022-L,300,251,246.28,,071863740776,,,
+linen-shirt-22,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-22-2.jpg,2,
+linen-shirt-22,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-22-3.jpg,3,
+linen-shirt-23,"Linen Shirt No.23 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 22.</p>",Still Water,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS023-S,300,186,99.09,,078596303452,https://cdn.example.com/s/linen-shirt-23-1.jpg,1,draft
+linen-shirt-23,,,,,,,,,M,LS023-M,300,78,165.72,215.44,030296820219,,,
+linen-shirt-23,,,,,,,,,L,LS023-L,300,91,70.12,,000675600360,,,
+linen-shirt-24,"Linen Shirt No.24 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 23.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS024-S,300,94,45.89,,025915190447,https://cdn.example.com/s/linen-shirt-24-1.jpg,1,active
+linen-shirt-24,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-24-2.jpg,2,
+linen-shirt-25,"Linen Shirt No.25 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 24.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS025-S,300,173,125.41,163.03,051061990101,https://cdn.example.com/s/linen-shirt-25-1.jpg,1,active
+linen-shirt-25,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-25-2.jpg,2,
+linen-shirt-25,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-25-3.jpg,3,
+linen-shirt-26,"Linen Shirt No.26 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 25.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS026-S,300,257,32.67,,053757506496,https://cdn.example.com/s/linen-shirt-26-1.jpg,1,archived
+linen-shirt-26,,,,,,,,,M,LS026-M,300,91,43.76,56.89,061868586268,,,
+linen-shirt-27,"Linen Shirt No.27 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 26.</p>",Still Water,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS027-S,300,243,90.17,,054289670220,https://cdn.example.com/s/linen-shirt-27-1.jpg,1,active
+linen-shirt-27,,,,,,,,,M,LS027-M,300,46,168.00,,053909077550,,,
+linen-shirt-27,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-27-2.jpg,2,
+linen-shirt-27,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-27-3.jpg,3,
+linen-shirt-27,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-27-4.jpg,4,
+linen-shirt-28,"Linen Shirt No.28 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 27.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS028-S,300,227,201.41,,013302290134,https://cdn.example.com/s/linen-shirt-28-1.jpg,1,draft
+linen-shirt-28,,,,,,,,,M,LS028-M,300,284,83.40,,086895837291,,,
+linen-shirt-29,"Linen Shirt No.29 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 28.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS029-S,300,127,80.29,104.38,011763917569,https://cdn.example.com/s/linen-shirt-29-1.jpg,1,archived
+linen-shirt-30,"Linen Shirt No.30 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 29.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS030-S,300,102,160.39,208.51,018074155371,https://cdn.example.com/s/linen-shirt-30-1.jpg,1,active
+linen-shirt-30,,,,,,,,,M,LS030-M,300,183,196.10,254.93,061983350536,,,
+linen-shirt-30,,,,,,,,,L,LS030-L,300,108,158.85,,052339786539,,,
+linen-shirt-30,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-30-2.jpg,2,
+linen-shirt-30,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-30-3.jpg,3,
+linen-shirt-31,"Linen Shirt No.31 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 30.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS031-S,300,6,26.45,,021024880703,https://cdn.example.com/s/linen-shirt-31-1.jpg,1,draft
+linen-shirt-31,,,,,,,,,M,LS031-M,300,218,82.94,,005734217467,,,
+linen-shirt-31,,,,,,,,,L,LS031-L,300,246,40.41,,046526477883,,,
+linen-shirt-31,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-31-2.jpg,2,
+linen-shirt-31,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-31-3.jpg,3,
+linen-shirt-31,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-31-4.jpg,4,
+linen-shirt-32,"Linen Shirt No.32 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 31.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS032-S,300,149,137.38,178.59,038002828020,https://cdn.example.com/s/linen-shirt-32-1.jpg,1,active
+linen-shirt-32,,,,,,,,,M,LS032-M,300,235,15.63,,055807230465,,,
+linen-shirt-33,"Linen Shirt No.33 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 32.</p>",Bamboo Grove,Apparel & Accessories,Home,"linen, summer",false,Size,S,LS033-S,300,252,117.11,,064500602932,https://cdn.example.com/s/linen-shirt-33-1.jpg,1,archived
+linen-shirt-33,,,,,,,,,M,LS033-M,300,169,150.14,195.18,082402007077,,,
+linen-shirt-34,"Linen Shirt No.34 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 33.</p>",Lotus & Co.,Apparel & Accessories,Home,"linen, summer",false,Size,S,LS034-S,300,147,184.87,240.33,021281657744,https://cdn.example.com/s/linen-shirt-34-1.jpg,1,archived
+linen-shirt-34,,,,,,,,,M,LS034-M,300,268,163.28,,029528067379,,,
+linen-shirt-34,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-34-2.jpg,2,
+linen-shirt-34,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-34-3.jpg,3,
+linen-shirt-34,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-34-4.jpg,4,
+linen-shirt-35,"Linen Shirt No.35 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 34.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS035-S,300,246,210.86,274.12,024416150877,https://cdn.example.com/s/linen-shirt-35-1.jpg,1,active
+linen-shirt-35,,,,,,,,,M,LS035-M,300,174,78.92,,026650430559,,,
+linen-shirt-35,,,,,,,,,L,LS035-L,300,15,143.62,186.71,026461733181,,,
+linen-shirt-35,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-35-2.jpg,2,
+linen-shirt-35,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-35-3.jpg,3,
+linen-shirt-36,"Linen Shirt No.36 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 35.</p>",Lotus & Co.,Apparel & Accessories,Home,"linen, summer",true,Size,S,LS036-S,300,134,241.77,,077448802372,https://cdn.example.com/s/linen-shirt-36-1.jpg,1,active
+linen-shirt-36,,,,,,,,,M,LS036-M,300,88,62.25,,076026022432,,,
+linen-shirt-37,"Linen Shirt No.37 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 36.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS037-S,300,51,85.21,,066204121242,https://cdn.example.com/s/linen-shirt-37-1.jpg,1,archived
+linen-shirt-37,,,,,,,,,M,LS037-M,300,36,140.69,,030527315871,,,
+linen-shirt-37,,,,,,,,,L,LS037-L,300,239,245.49,319.14,005879678847,,,
+linen-shirt-37,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-37-2.jpg,2,
+linen-shirt-38,"Linen Shirt No.38 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 37.</p>",Bamboo Grove,Apparel & Accessories,Home,"linen, summer",false,Size,S,LS038-S,300,88,209.74,,042543209069,https://cdn.example.com/s/linen-shirt-38-1.jpg,1,draft
+linen-shirt-38,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-38-2.jpg,2,
+linen-shirt-38,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-38-3.jpg,3,
+linen-shirt-38,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-38-4.jpg,4,
+linen-shirt-39,"Linen Shirt No.39 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 38.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS039-S,300,288,55.14,71.68,058417897529,https://cdn.example.com/s/linen-shirt-39-1.jpg,1,archived
+linen-shirt-40,"Linen Shirt No.40 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 39.</p>",Lotus & Co.,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS040-S,300,159,199.70,,095955444219,https://cdn.example.com/s/linen-shirt-40-1.jpg,1,active
+linen-shirt-40,,,,,,,,,M,LS040-M,300,171,179.10,,034647275829,,,
+linen-shirt-40,,,,,,,,,L,LS040-L,300,23,188.17,244.62,016689403663,,,
+linen-shirt-40,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-40-2.jpg,2,
+linen-shirt-40,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-40-3.jpg,3,
+linen-shirt-40,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-40-4.jpg,4,
+linen-shirt-41,"Linen Shirt No.41 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 40.</p>",Bamboo Grove,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS041-S,300,57,194.79,,066850458567,https://cdn.example.com/s/linen-shirt-41-1.jpg,1,archived
+linen-shirt-41,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-41-2.jpg,2,
+linen-shirt-42,"Linen Shirt No.42 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 41.</p>",Still Water,Apparel & Accessories,Home,"linen, summer",true,Size,S,LS042-S,300,186,120.96,,019021356430,https://cdn.example.com/s/linen-shirt-42-1.jpg,1,active
+linen-shirt-42,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-42-2.jpg,2,
+linen-shirt-42,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-42-3.jpg,3,
+linen-shirt-42,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-42-4.jpg,4,
+linen-shirt-43,"Linen Shirt No.43 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 42.</p>",Bamboo Grove,Apparel & Accessories,Home,"linen, summer",true,Size,S,LS043-S,300,106,134.27,174.55,075918637244,https://cdn.example.com/s/linen-shirt-43-1.jpg,1,active
+linen-shirt-43,,,,,,,,,M,LS043-M,300,85,196.11,,091605607274,,,
+linen-shirt-43,,,,,,,,,L,LS043-L,300,258,60.86,,069464111751,,,
+linen-shirt-43,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-43-2.jpg,2,
+linen-shirt-43,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-43-3.jpg,3,
+linen-shirt-43,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-43-4.jpg,4,
+linen-shirt-44,"Linen Shirt No.44 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 43.</p>",Bamboo Grove,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS044-S,300,166,45.85,59.61,069353610808,https://cdn.example.com/s/linen-shirt-44-1.jpg,1,draft
+linen-shirt-44,,,,,,,,,M,LS044-M,300,40,186.61,,023786457833,,,
+linen-shirt-44,,,,,,,,,L,LS044-L,300,298,202.78,,029859855983,,,
+linen-shirt-44,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-44-2.jpg,2,
+linen-shirt-44,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-44-3.jpg,3,
+linen-shirt-44,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-44-4.jpg,4,
+linen-shirt-45,"Linen Shirt No.45 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 44.</p>",Still Water,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS045-S,300,107,78.54,,021718635205,https://cdn.example.com/s/linen-shirt-45-1.jpg,1,draft
+linen-shirt-45,,,,,,,,,M,LS045-M,300,26,178.43,,036563244540,,,
+linen-shirt-45,,,,,,,,,L,LS045-L,300,53,242.45,315.19,033472923733,,,
+linen-shirt-45,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-45-2.jpg,2,
+linen-shirt-45,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-45-3.jpg,3,
+linen-shirt-46,"Linen Shirt No.46 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 45.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS046-S,300,198,239.12,310.86,098692475018,https://cdn.example.com/s/linen-shirt-46-1.jpg,1,archived
+linen-shirt-46,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-46-2.jpg,2,
+linen-shirt-47,"Linen Shirt No.47 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 46.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS047-S,300,250,185.30,240.89,036875697216,https://cdn.example.com/s/linen-shirt-47-1.jpg,1,active
+linen-shirt-47,,,,,,,,,M,LS047-M,300,70,126.04,163.85,095158247827,,,
+linen-shirt-47,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-47-2.jpg,2,
+linen-shirt-48,"Linen Shirt No.48 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 47.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS048-S,300,279,81.55,106.02,094948564068,https://cdn.example.com/s/linen-shirt-48-1.jpg,1,active
+linen-shirt-48,,,,,,,,,M,LS048-M,300,186,129.90,,092343961582,,,
+linen-shirt-48,,,,,,,,,L,LS048-L,300,245,119.75,155.68,028673689510,,,
+linen-shirt-48,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-48-2.jpg,2,
+linen-shirt-48,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-48-3.jpg,3,
+linen-shirt-49,"Linen Shirt No.49 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 48.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS049-S,300,48,233.07,,088168856417,https://cdn.example.com/s/linen-shirt-49-1.jpg,1,active
+linen-shirt-49,,,,,,,,,M,LS049-M,300,114,105.55,137.22,041317562452,,,
+linen-shirt-49,,,,,,,,,L,LS049-L,300,258,101.73,132.25,033345511213,,,
+linen-shirt-49,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-49-2.jpg,2,
+linen-shirt-50,"Linen Shirt No.50 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 49.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS050-S,300,248,69.15,,048257689966,https://cdn.example.com/s/linen-shirt-50-1.jpg,1,active
+linen-shirt-50,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-50-2.jpg,2,
+linen-shirt-50,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-50-3.jpg,3,
+linen-shirt-51,"Linen Shirt No.51 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 50.</p>",Still Water,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS051-S,300,13,142.16,,026032835408,https://cdn.example.com/s/linen-shirt-51-1.jpg,1,archived
+linen-shirt-51,,,,,,,,,M,LS051-M,300,180,199.70,259.61,031231764218,,,
+linen-shirt-51,,,,,,,,,L,LS051-L,300,79,125.36,162.97,042191210186,,,
+linen-shirt-51,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-51-2.jpg,2,
+linen-shirt-51,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-51-3.jpg,3,
+linen-shirt-52,"Linen Shirt No.52 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 51.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS052-S,300,-2,72.70,94.51,014620058551,https://cdn.example.com/s/linen-shirt-52-1.jpg,1,archived
+linen-shirt-52,,,,,,,,,M,LS052-M,300,195,29.50,38.35,008753773053,,,
+linen-shirt-52,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-52-2.jpg,2,
+linen-shirt-52,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-52-3.jpg,3,
+linen-shirt-52,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-52-4.jpg,4,
+linen-shirt-53,"Linen Shirt No.53 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 52.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS053-S,300,290,144.58,,018934106095,https://cdn.example.com/s/linen-shirt-53-1.jpg,1,draft
+linen-shirt-53,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-53-2.jpg,2,
+linen-shirt-53,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-53-3.jpg,3,
+linen-shirt-53,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-53-4.jpg,4,
+linen-shirt-54,"Linen Shirt No.54 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 53.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS054-S,300,104,212.05,,089641278814,https://cdn.example.com/s/linen-shirt-54-1.jpg,1,draft
+linen-shirt-54,,,,,,,,,M,LS054-M,300,72,205.71,267.42,078248235841,,,
+linen-shirt-54,,,,,,,,,L,LS054-L,300,242,38.96,,036000790087,,,
+linen-shirt-54,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-54-2.jpg,2,
+linen-shirt-54,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-54-3.jpg,3,
+linen-shirt-55,"Linen Shirt No.55 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 54.</p>",Bamboo Grove,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS055-S,300,153,169.87,,024916013312,https://cdn.example.com/s/linen-shirt-55-1.jpg,1,active
+linen-shirt-55,,,,,,,,,M,LS055-M,300,257,143.28,186.26,022148807157,,,
+linen-shirt-55,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-55-2.jpg,2,
+linen-shirt-55,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-55-3.jpg,3,
+linen-shirt-56,"Linen Shirt No.56 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 55.</p>",Bamboo Grove,Apparel & Accessories,Tea,"linen, summer",true,Size,S,LS056-S,300,11,167.50,,054747435147,https://cdn.example.com/s/linen-shirt-56-1.jpg,1,active
+linen-shirt-56,,,,,,,,,M,LS056-M,300,100,152.87,,059039096362,,,
+linen-shirt-56,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-56-2.jpg,2,
+linen-shirt-56,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-56-3.jpg,3,
+linen-shirt-56,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-56-4.jpg,4,
+linen-shirt-57,"Linen Shirt No.57 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 56.</p>",Still Water,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS057-S,300,286,156.34,203.24,095660565648,https://cdn.example.com/s/linen-shirt-57-1.jpg,1,active
+linen-shirt-57,,,,,,,,,M,LS057-M,300,97,86.92,,090619677688,,,
+linen-shirt-57,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-57-2.jpg,2,
+linen-shirt-57,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-57-3.jpg,3,
+linen-shirt-57,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-57-4.jpg,4,
+linen-shirt-58,"Linen Shirt No.58 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 57.</p>",Lotus & Co.,Apparel & Accessories,Tea,"linen, summer",false,Size,S,LS058-S,300,283,144.43,,020391268111,https://cdn.example.com/s/linen-shirt-58-1.jpg,1,archived
+linen-shirt-58,,,,,,,,,M,LS058-M,300,147,209.86,,082662236757,,,
+linen-shirt-58,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-58-2.jpg,2,
+linen-shirt-59,"Linen Shirt No.59 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 58.</p>",Lotus & Co.,Apparel & Accessories,Shirts,"linen, summer",true,Size,S,LS059-S,300,194,127.39,,031431363353,https://cdn.example.com/s/linen-shirt-59-1.jpg,1,active
+linen-shirt-59,,,,,,,,,M,LS059-M,300,152,45.12,,038386084324,,,
+linen-shirt-59,,,,,,,,,L,LS059-L,300,125,206.86,,053425338176,,,
+linen-shirt-60,"Linen Shirt No.60 — ""Monk"" edition","<p>Soft linen, relaxed fit.</p><p>Wash cold, hang dry, 59.</p>",Still Water,Apparel & Accessories,Shirts,"linen, summer",false,Size,S,LS060-S,300,266,204.50,,037345116659,https://cdn.example.com/s/linen-shirt-60-1.jpg,1,archived
+linen-shirt-60,,,,,,,,,M,LS060-M,300,60,92.96,,099102559235,,,
+linen-shirt-60,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-60-2.jpg,2,
+linen-shirt-60,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-60-3.jpg,3,
+linen-shirt-60,,,,,,,,,,,,,,,,https://cdn.example.com/s/linen-shirt-60-4.jpg,4,

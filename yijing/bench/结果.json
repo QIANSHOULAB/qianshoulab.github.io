@@ -1,0 +1,304 @@
+{
+ "crm": {
+  "or": {
+   "clicks": 121,
+   "grel": 7,
+   "importMs": 18,
+   "opsMs": 42,
+   "exportMs": 10,
+   "totalMs": 70,
+   "cells": 3900,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {}
+  },
+  "ours_raw": {
+   "clicks": 3,
+   "readMs": 6,
+   "readyMs": 323,
+   "exportMs": 46,
+   "totalMs": 449,
+   "flagged": 8,
+   "key": "Customer ID",
+   "cells": 3900,
+   "bad_cells": 32,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Phone": 24,
+    "Gender": 8
+   }
+  },
+  "ours_fix": {
+   "clicks": 3,
+   "readMs": 7,
+   "readyMs": 264,
+   "exportMs": 48,
+   "totalMs": 406,
+   "flagged": 8,
+   "key": "Customer ID",
+   "cells": 3900,
+   "bad_cells": 32,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Phone": 24,
+    "Gender": 8
+   }
+  }
+ },
+ "crm_gbk": {
+  "or": {
+   "clicks": 123,
+   "grel": 7,
+   "importMs": 76,
+   "opsMs": 45,
+   "exportMs": 8,
+   "totalMs": 129,
+   "cells": 3900,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {}
+  },
+  "ours_raw": {
+   "clicks": 3,
+   "readMs": 14,
+   "readyMs": 282,
+   "exportMs": 43,
+   "totalMs": 418,
+   "flagged": 8,
+   "key": "Customer ID",
+   "cells": 3900,
+   "bad_cells": 32,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Phone": 24,
+    "Gender": 8
+   }
+  },
+  "ours_fix": {
+   "clicks": 3,
+   "readMs": 8,
+   "readyMs": 236,
+   "exportMs": 38,
+   "totalMs": 350,
+   "flagged": 8,
+   "key": "Customer ID",
+   "cells": 3900,
+   "bad_cells": 32,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Phone": 24,
+    "Gender": 8
+   }
+  }
+ },
+ "shop_cn2shopify": {
+  "or": {
+   "clicks": 132,
+   "grel": 8,
+   "importMs": 123,
+   "opsMs": 36,
+   "exportMs": 19,
+   "totalMs": 178,
+   "cells": 1800,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {}
+  },
+  "ours_raw": {
+   "clicks": 5,
+   "readMs": 5,
+   "readyMs": 758,
+   "exportMs": 34,
+   "totalMs": 1224,
+   "flagged": 0,
+   "key": "Variant SKU",
+   "cells": 1800,
+   "bad_cells": 223,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Tags": 64,
+    "Published": 120,
+    "Variant Grams": 39
+   }
+  },
+  "ours_fix": {
+   "clicks": 8,
+   "readMs": 5,
+   "readyMs": 801,
+   "exportMs": 34,
+   "totalMs": 3002,
+   "flagged": 0,
+   "key": "Variant SKU",
+   "cells": 1800,
+   "bad_cells": 103,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Tags": 64,
+    "Variant Grams": 39
+   }
+  }
+ },
+ "shopify2shop_cn": {
+  "or": {
+   "clicks": 107,
+   "grel": 1,
+   "importMs": 55,
+   "opsMs": 28,
+   "exportMs": 15,
+   "totalMs": 98,
+   "cells": 1364,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {}
+  },
+  "ours_raw": {
+   "clicks": 6,
+   "readMs": 3,
+   "readyMs": 731,
+   "exportMs": 35,
+   "totalMs": 1236,
+   "flagged": 348,
+   "key": "商品编码",
+   "cells": 1364,
+   "bad_cells": 520,
+   "extra_rows": 104,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "商品名称": 124,
+    "分类": 124,
+    "上架状态": 80,
+    "品牌": 64,
+    "商品描述": 64,
+    "主图链接": 64
+   }
+  },
+  "ours_fix": {
+   "clicks": 12,
+   "readMs": 4,
+   "readyMs": 767,
+   "exportMs": 34,
+   "totalMs": 4137,
+   "flagged": 332,
+   "key": "商品编码",
+   "cells": 1364,
+   "bad_cells": 444,
+   "extra_rows": 104,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "商品名称": 124,
+    "分类": 64,
+    "品牌": 64,
+    "上架状态": 64,
+    "商品描述": 64,
+    "主图链接": 64
+   }
+  }
+ },
+ "coa": {
+  "or": {
+   "clicks": 59,
+   "grel": 3,
+   "importMs": 38,
+   "opsMs": 11,
+   "exportMs": 6,
+   "totalMs": 55,
+   "cells": 225,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {}
+  },
+  "ours_raw": {
+   "clicks": 5,
+   "readMs": 4,
+   "readyMs": 739,
+   "exportMs": 33,
+   "totalMs": 1179,
+   "flagged": 45,
+   "key": "Code",
+   "cells": 225,
+   "bad_cells": 90,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Type": 45,
+    "Description": 45
+   }
+  },
+  "ours_fix": {
+   "clicks": 12,
+   "readMs": 3,
+   "readyMs": 734,
+   "exportMs": 32,
+   "totalMs": 4169,
+   "flagged": 0,
+   "key": "Code",
+   "cells": 225,
+   "bad_cells": 10,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Type": 10
+   }
+  }
+ },
+ "crm_100k": {
+  "or": {
+   "clicks": 118,
+   "grel": 7,
+   "importMs": 796,
+   "opsMs": 4412,
+   "exportMs": 293,
+   "totalMs": 5501,
+   "cells": 1300000,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {}
+  },
+  "ours_raw": {
+   "clicks": 3,
+   "readMs": 614,
+   "readyMs": 1561,
+   "exportMs": 1221,
+   "totalMs": 3012,
+   "flagged": 2530,
+   "key": "Customer ID",
+   "cells": 1300000,
+   "bad_cells": 12606,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Gender": 2530,
+    "Phone": 10076
+   }
+  },
+  "ours_fix": {
+   "clicks": 3,
+   "readMs": 298,
+   "readyMs": 1249,
+   "exportMs": 1181,
+   "totalMs": 2655,
+   "flagged": 2530,
+   "key": "Customer ID",
+   "cells": 1300000,
+   "bad_cells": 12606,
+   "extra_rows": 0,
+   "missing_rows": 0,
+   "bad_by_col": {
+    "Gender": 2530,
+    "Phone": 10076
+   }
+  }
+ }
+}
