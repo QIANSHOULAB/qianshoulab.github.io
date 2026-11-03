@@ -4,255 +4,317 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>译经僧</title>
-<meta name="description" content="把 A 系统导出的文件翻成 B 系统的导入格式：自动对列、改日期、拆姓名、加国家码、换值，预览后一键导出。文件不出浏览器。">
+<meta name="description" content="把 A 系统导出的表翻成 B 系统的导入格式：丢进来自动对列、改日期、拆姓名、加国家码、换值，没把握的标黄给你看，看完就下载。文件不出浏览器。">
 <meta name="apple-mobile-web-app-title" content="译经僧">
-<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-/* Layout: glass nav; hero; two "ends" cards (source → target); mapping list (one row per target column); preview table; sticky export dock */
+/* 长相照 _ops/设计规范.md：一个主色（译经僧紫），其余全灰；分组列表；跟随系统浅色 / 深色 */
 :root{
-  --bg:#F2F2F7; --card:#FFFFFF; --elev:#F2F2F7; --elev-card:#FFFFFF;
-  --fill:rgba(118,118,128,.12); --fill2:rgba(120,120,128,.16);
-  --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#AEAEB2; --sep:rgba(60,60,67,.17);
-  --accent:#0071E3; --accent-tint:rgba(0,113,227,.10); --on-accent:#FFFFFF;
-  --amber:#FF9500; --amber-ink:#A85100; --amber-tint:rgba(255,149,0,.14);
-  --good:#1F7A36; --good-mark:#34C759; --good-tint:rgba(52,199,89,.16);
-  --bad:#D70015; --bad-mark:#FF3B30; --bad-tint:rgba(255,59,48,.10);
-  --glass:rgba(242,242,247,.8); --glass2:rgba(255,255,255,.78); --scrim:rgba(0,0,0,.3);
-  --toast-bg:rgba(29,29,31,.92); --toast-fg:#F5F5F7;
-  --shadow:0 1px 1px rgba(0,0,0,.03),0 6px 20px rgba(0,0,0,.05);
-  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
-  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --r:20px; color-scheme:light;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --bg:#ffffff; --bg-group:#f5f5f7; --card:#ffffff; --card-2:#fbfbfd;
+  --fg:#1d1d1f; --fg-2:#6e6e73; --fg-3:#86868b;
+  --line:rgba(0,0,0,.08); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.2);
+  --ok:#34c759; --warn:#ff9f0a; --bad:#ff3b30; --doubt:rgba(255,204,0,.22);
+  --bad-ink:#d70015; --doubt-ink:#8a5a00;
+  --accent:#7B4DEB; --accent-ink:#7B4DEB; --on-accent:#ffffff; --accent-tint:rgba(123,77,235,.10);
+  --r-card:18px; --r-btn:12px; --r-big:14px; --r-field:10px; --r-chip:8px;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  --glass:rgba(245,245,247,.72); --scrim:rgba(0,0,0,.32); --sheet:#f5f5f7; --sheet-card:#ffffff;
+  --toast-bg:rgba(29,29,31,.92); --toast-fg:#f5f5f7; --toast-act:#c2a8ff;
+  --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#000000; --card:#1C1C1E; --elev:#1C1C1E; --elev-card:#2C2C2E;
-    --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.32);
-    --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
-    --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
-    --amber:#FF9F0A; --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
-    --good:#30D158; --good-mark:#30D158; --good-tint:rgba(48,209,88,.20);
-    --bad:#FF6961; --bad-mark:#FF453A; --bad-tint:rgba(255,69,58,.18);
-    --glass:rgba(18,18,20,.72); --glass2:rgba(28,28,30,.78); --scrim:rgba(0,0,0,.55);
-    --toast-bg:rgba(58,58,60,.95); --shadow:none; color-scheme:dark;
-  }
-}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
+  --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
+  --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
+  --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --shadow:none;
+  --bad-ink:#ff6961; --doubt:rgba(255,214,10,.13); --doubt-ink:#ffd60a;
+  --accent:#8358EF; --accent-ink:#A585F7; --accent-tint:rgba(165,133,247,.16);
+  --glass:rgba(22,22,23,.72); --scrim:rgba(0,0,0,.6); --sheet:#1c1c1e; --sheet-card:#2c2c2e;
+  --toast-bg:rgba(58,58,60,.96);
+  color-scheme:dark;
+}}
 :root[data-theme="dark"]{
-  --bg:#000000; --card:#1C1C1E; --elev:#1C1C1E; --elev-card:#2C2C2E;
-  --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.32);
-  --fg:#F5F5F7; --fg2:#98989D; --fg3:#636366; --sep:rgba(84,84,88,.6);
-  --accent:#0A84FF; --accent-tint:rgba(10,132,255,.18);
-  --amber:#FF9F0A; --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
-  --good:#30D158; --good-mark:#30D158; --good-tint:rgba(48,209,88,.20);
-  --bad:#FF6961; --bad-mark:#FF453A; --bad-tint:rgba(255,69,58,.18);
-  --glass:rgba(18,18,20,.72); --glass2:rgba(28,28,30,.78); --scrim:rgba(0,0,0,.55);
-  --toast-bg:rgba(58,58,60,.95); --shadow:none; color-scheme:dark;
+  --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
+  --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
+  --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
+  --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --shadow:none;
+  --bad-ink:#ff6961; --doubt:rgba(255,214,10,.13); --doubt-ink:#ffd60a;
+  --accent:#8358EF; --accent-ink:#A585F7; --accent-tint:rgba(165,133,247,.16);
+  --glass:rgba(22,22,23,.72); --scrim:rgba(0,0,0,.6); --sheet:#1c1c1e; --sheet-card:#2c2c2e;
+  --toast-bg:rgba(58,58,60,.96);
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);font:400 17px/1.35 var(--f-text);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;background:var(--bg-group);color:var(--fg);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums}
+@media (min-width:760px){body{font-size:15px}}
 button,input,select{font:inherit;color:inherit}
 button{background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit;-webkit-appearance:none;appearance:none}
-a{color:inherit;text-decoration:none}
+a{color:var(--accent-ink);text-decoration:none}
 [hidden]{display:none!important}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-field)}
 button:focus:not(:focus-visible){outline:none}
 svg{display:block}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important}}
 
-/* nav */
-.nav{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:50px;padding:0 max(16px,calc(50% - 520px));transition:background-color .2s,box-shadow .2s}
-.nav.scrolled{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--sep)}
-.nav-back{justify-self:start;display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-size:17px;height:44px;margin-left:-4px}
-.nav-back svg{width:11px;height:19px}
-.nav-t{font-weight:600;opacity:0;transition:opacity .2s}
+/* 顶栏 */
+.nav{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:52px;padding:0 max(16px,calc(50% - 544px));transition:background-color var(--t) var(--ease),box-shadow var(--t) var(--ease)}
+.nav.scrolled{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--line)}
+.nav-back{justify-self:start;display:inline-flex;align-items:center;gap:4px;color:var(--accent-ink);font-size:17px;min-height:44px;margin-left:-4px}
+.nav-back svg{width:20px;height:20px}
+.nav-t{display:flex;align-items:center;gap:8px;font-weight:600;font-size:17px;opacity:0;transition:opacity var(--t) var(--ease)}
+.nav-t img{width:22px;height:22px;border-radius:6px}
 .nav.scrolled .nav-t{opacity:1}
-.nav-a{justify-self:end;display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-size:15px;font-weight:600;height:34px;padding:0 14px;border-radius:999px;background:var(--fill)}
-.nav-a svg{width:16px;height:16px}
-.nav-a .n{font-size:13px;color:var(--fg2);font-weight:600}
+.nav-a{justify-self:end;display:inline-flex;align-items:center;gap:6px;color:var(--accent-ink);font-size:15px;font-weight:600;min-height:44px;padding:0 4px}
+.nav-a svg{width:18px;height:18px}
+.nav-a .n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--fill);font-size:12px;line-height:20px;text-align:center;color:var(--fg-2)}
 
-/* page */
-.wrap{max-width:1072px;margin:0 auto;padding:0 16px 128px}
-.lt{padding:4px 4px 20px}
-.lt h1{margin:0;font-size:34px;line-height:1.2;font-weight:700;letter-spacing:.005em}
-.tag{margin:4px 0 0;color:var(--fg2);font-size:17px}
-.hint{margin:10px 0 0;color:var(--fg2);font-size:13px;display:flex;align-items:center;gap:6px}
-.hint svg{width:14px;height:14px;color:var(--good-mark);flex:none}
-@media (min-width:760px){.lt{padding:20px 4px 28px}.lt h1{font-size:48px;letter-spacing:-.01em}.tag{font-size:21px}}
+/* 页面 */
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px 132px}
+.wrap.narrow{max-width:980px}
+.hero{padding:24px 0 32px;text-align:left}
+.hero img{width:64px;height:64px;border-radius:15px;margin-bottom:16px}
+.hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.hero p{margin:8px 0 0;font-size:21px;line-height:1.4;color:var(--fg-2);max-width:30em}
+@media (max-width:759px){.hero{padding:8px 0 24px}.hero p{font-size:17px}}
+.pt{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:8px 0 24px}
+.pt h1{margin:0;font-size:28px;line-height:1.2;font-weight:700}
+.pt p{margin:0;font-size:15px;color:var(--fg-2)}
+@media (min-width:760px){.pt h1{font-size:34px}}
 
-/* ends */
-.ends{display:grid;grid-template-columns:1fr;gap:10px;align-items:stretch}
-@media (min-width:760px){.ends{grid-template-columns:1fr 36px 1fr;gap:0}}
-.end{position:relative;display:flex;align-items:center;gap:14px;background:var(--card);border-radius:var(--r);padding:16px 16px 16px 18px;box-shadow:var(--shadow);min-width:0;transition:box-shadow .2s,transform .2s}
-.end-ico{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--accent-tint);color:var(--accent)}
-.end-ico svg{width:22px;height:22px}
-.end.tgt .end-ico{background:var(--good-tint);color:var(--good)}
-.end-main{flex:1;min-width:0}
-.end-k{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--fg2)}
-.end-t{font-size:17px;font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.end-s{font-size:13px;color:var(--fg2);margin-top:1px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.arrow{display:grid;place-items:center;color:var(--fg3)}
-.arrow svg{width:18px;height:18px}
-@media (max-width:759px){.arrow{display:none}}
-.chip{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font-size:11px;font-weight:600;background:var(--fill);color:var(--fg2)}
-.chip.demo{background:var(--accent-tint);color:var(--accent)}
-.chip.rec{background:var(--good-tint);color:var(--good)}
-
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:50px;padding:0 22px;border-radius:999px;font-size:17px;font-weight:600;white-space:nowrap;transition:transform .12s,opacity .12s}
-.btn:active{transform:scale(.97);opacity:.85}
-.btn:disabled{opacity:.4;cursor:default;transform:none}
-.btn svg{width:17px;height:17px;flex:none}
-.btn.primary{background:var(--accent);color:var(--on-accent)}
-.btn.tinted{background:var(--accent-tint);color:var(--accent)}
-.btn.plain{color:var(--accent)}
-.btn.small{min-height:34px;padding:0 14px;font-size:15px}
-.btn.block{width:100%}
-.btn.danger{color:var(--bad)}
-
-/* groups */
+/* 卡片、分组 */
+.card{background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow);overflow:hidden}
 .grp{margin-top:32px}
-.grp-h{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 4px 10px}
-.grp-h h2{margin:0;font-size:22px;font-weight:700;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.grp-sub{font-size:15px;font-weight:400;color:var(--fg2);font-variant-numeric:tabular-nums}
-.grp-sub b{font-weight:600}
-.grp-sub .g{color:var(--good)} .grp-sub .a{color:var(--amber-ink)} .grp-sub .r{color:var(--bad)}
-.grp-foot{margin:10px 0 0;padding:0 16px;font-size:13px;color:var(--fg2)}
-.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.grp-h{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 4px 12px}
+.grp-h h2{margin:0;font-size:22px;line-height:1.2;font-weight:700;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.grp-sub{font-size:15px;font-weight:400;color:var(--fg-2)}
+.grp-sub b{font-weight:600;color:var(--fg)}
+.grp-sub .a{color:var(--doubt-ink)} .grp-sub .r{color:var(--bad-ink)}
+.grp-foot{margin:12px 0 0;padding:0 16px;font-size:13px;color:var(--fg-2)}
 
-/* mapping rows */
-.mhead{display:none}
-.mrow{position:relative;display:grid;grid-template-columns:26px minmax(0,1fr) 12px;grid-template-areas:"st t ch" ". s ch" ". x ch";column-gap:12px;row-gap:2px;align-items:center;width:100%;padding:12px 16px;min-height:60px;transition:background-color .15s}
-.mrow:active,.mrow:hover{background:var(--fill)}
-.mrow+.mrow::before{content:"";position:absolute;top:0;left:54px;right:0;height:.5px;background:var(--sep)}
-.st{grid-area:st;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
-.st svg{width:12px;height:12px}
-.st.sure{background:var(--good-mark)} .st.guess{background:var(--amber)} .st.blank{background:var(--fill2);color:var(--fg2)} .st.req{background:var(--bad-mark)} .st.user{background:var(--accent)}
-.m-t{grid-area:t;font-weight:600;min-width:0;display:flex;align-items:center;gap:6px;overflow:hidden}
-.m-t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.m-t .ty{flex:none;font-style:normal;font-size:11px;font-weight:600;color:var(--fg2);background:var(--fill);border-radius:5px;padding:1px 5px}
-.m-s{grid-area:s;font-size:15px;color:var(--fg2);min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.m-s .from{color:var(--fg)}
-.m-s .op{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-tint);border-radius:5px;padding:1px 6px}
-.m-s .none{color:var(--fg3)}
-.m-s .note{width:100%;font-size:12px;color:var(--amber-ink)}
-.m-s .note.r{color:var(--bad)}
-.m-x{grid-area:x;font-size:13px;color:var(--fg2);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-.m-x b{font-weight:500;color:var(--fg)}
-.m-x i{font-style:normal;color:var(--fg3);margin:0 4px}
-.m-x .bc{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;color:var(--amber-ink);background:var(--amber-tint);border-radius:5px;padding:1px 6px}
-.chev{grid-area:ch;color:var(--fg3)}
-.chev svg{width:8px;height:13px}
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border-radius:var(--r-btn);font-size:17px;font-weight:600;white-space:nowrap;transition:transform 200ms var(--ease),opacity 200ms var(--ease),background-color 200ms var(--ease)}
+.btn:active{transform:scale(.98);opacity:.85}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn svg{width:18px;height:18px;flex:none}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.big{min-height:50px;border-radius:var(--r-big);padding:0 28px}
+.btn.gray{background:var(--fill);color:var(--fg)}
+.btn.plain{color:var(--accent-ink);padding:0 8px}
+.btn.small{min-height:36px;padding:0 14px;font-size:15px;border-radius:var(--r-field)}
+.btn.block{width:100%}
+.btn.danger{color:var(--bad-ink)}
+@media (min-width:760px){.btn{font-size:15px}.btn.big{font-size:17px}}
+
+/* 丢文件 */
+.dropc{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:48px 24px 40px}
+.dropc .ico{width:56px;height:56px;color:var(--accent-ink);margin-bottom:8px}
+.dropc .ico svg{width:56px;height:56px}
+.dropc h2{margin:0;font-size:22px;line-height:1.2;font-weight:700}
+.dropc p{margin:0;font-size:15px;color:var(--fg-2)}
+.dropc .acts{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap;justify-content:center}
+.dropc .err{margin-top:12px;max-width:32em;font-size:15px;color:var(--bad-ink)}
+.dropc .err b{font-weight:600}
+.busy{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--fg-2)}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--fill-2);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:none}
+.toast .spin{border-color:rgba(255,255,255,.3);border-top-color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 两头：来源 → 目标 */
+.ends{display:grid;grid-template-columns:1fr;gap:12px;align-items:stretch}
+@media (min-width:760px){.ends{grid-template-columns:1fr 32px 1fr;gap:0}}
+.end{position:relative;display:flex;align-items:center;gap:16px;padding:16px;min-width:0}
+.end-ico{flex:none;width:44px;height:44px;border-radius:var(--r-btn);display:grid;place-items:center;background:var(--fill);color:var(--fg-2)}
+.end-ico svg{width:24px;height:24px}
+.end.tgt .end-ico{background:var(--accent-tint);color:var(--accent-ink)}
+.end-main{flex:1;min-width:0}
+.end-k{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-2)}
+.end-t{font-size:17px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.end-s{font-size:13px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.end-s.err{color:var(--bad-ink);white-space:normal}
+.end .busy{font-size:13px}
+.arrow{display:grid;place-items:center;color:var(--fg-3)}
+.arrow svg{width:20px;height:20px}
+@media (max-width:759px){.arrow{display:none}}
+.chip{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-chip);font-size:12px;background:var(--fill);color:var(--fg-2)}
+.chip.on{background:var(--accent-tint);color:var(--accent-ink)}
+.end-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+
+/* 分段控件 */
+.seg{display:inline-flex;padding:2px;border-radius:var(--r-chip);background:var(--fill);flex:none}
+.seg button{min-height:32px;min-width:52px;padding:0 12px;border-radius:7px;font-size:13px;font-weight:600;color:var(--fg);transition:background-color 200ms var(--ease)}
+.seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{background:#636366}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{background:#636366}}
+.seg-wrap{display:inline-flex}
+
+/* 分组列表行（iOS 设置） */
+.li-row{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:12px 16px;text-align:left;transition:background-color 200ms var(--ease)}
+button.li-row:hover,button.li-row:active{background:var(--fill)}
+.li-row+.li-row::before,.li-row+.li-col::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--line)}
+.li-main{flex:1;min-width:0}
+.li-main b{display:block;font-weight:400;font-size:17px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li-main small{display:block;font-size:13px;color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li-row .ck{flex:none;color:var(--accent-ink)}
+.li-row .ck svg{width:20px;height:20px}
+.li-row .go{flex:none;color:var(--fg-3)}
+.li-row .go svg{width:8px;height:13px}
+@media (min-width:760px){.li-main b{font-size:15px}}
+.tpl-grid{display:grid;grid-template-columns:minmax(0,1fr)}
 @media (min-width:760px){
-  .mhead{display:grid;grid-template-columns:26px minmax(150px,1fr) minmax(190px,1.25fr) minmax(200px,1.35fr) 12px;column-gap:16px;padding:10px 16px 8px;font-size:12px;font-weight:600;color:var(--fg2);border-bottom:.5px solid var(--sep)}
-  .mrow{grid-template-columns:26px minmax(150px,1fr) minmax(190px,1.25fr) minmax(200px,1.35fr) 12px;grid-template-areas:"st t s x ch";column-gap:16px;min-height:54px;padding:10px 16px}
+  .tpl-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .tpl-grid .li-row:nth-child(2)::before{display:none}
+  .tpl-grid .li-row:nth-child(2n)::after{content:"";position:absolute;top:12px;bottom:12px;left:0;width:.5px;background:var(--line)}
+}
+.tpl-grid .li-row.wide{grid-column:1/-1;color:var(--accent-ink)}
+.tpl-grid .li-row.wide b{color:var(--accent-ink)}
+
+/* 对列行 */
+.mhead{display:none}
+.mrow{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr) auto;grid-template-areas:"st t ok" ". s ok" ". x ok";column-gap:12px;row-gap:2px;align-items:center;width:100%;padding:12px 16px;min-height:60px;cursor:pointer;transition:background-color 200ms var(--ease)}
+.mrow:hover{background:var(--fill)}
+.mrow.doubt{background:var(--doubt)}
+.mrow+.mrow::before{content:"";position:absolute;top:0;left:52px;right:0;height:.5px;background:var(--line)}
+.st{grid-area:st;align-self:start;margin-top:2px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
+.st svg{width:14px;height:14px}
+.st.sure{color:var(--fg-3)}
+.st.user{color:var(--accent-ink)}
+.st.guess{background:var(--warn);color:#fff}
+:root[data-theme="dark"] .st.guess{color:#000}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .st.guess{color:#000}}
+.st.req{background:var(--bad)}
+.st.blank{color:var(--fg-3)}
+.m-t{grid-area:t;font-weight:600;min-width:0;display:flex;align-items:center;gap:8px;overflow:hidden}
+.m-t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m-t .ty{flex:none;font-style:normal;font-size:12px;font-weight:400;color:var(--fg-2)}
+.m-s{grid-area:s;font-size:15px;color:var(--fg-2);min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.m-s .from{color:var(--fg)}
+.m-s .op{font-size:12px;color:var(--fg-2);background:var(--fill);border-radius:var(--r-chip);padding:1px 8px}
+.m-s .none{color:var(--fg-3)}
+.m-s .note{width:100%;font-size:13px;color:var(--doubt-ink)}
+.m-s .note.r{color:var(--bad-ink)}
+.m-x{grid-area:x;font-size:13px;color:var(--fg-2);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-x b{font-weight:400;color:var(--fg)}
+.m-x i{font-style:normal;color:var(--fg-3);margin:0 4px}
+.m-x .bc{display:inline-block;margin-left:8px;font-size:12px;color:var(--doubt-ink)}
+.m-ok{grid-area:ok;display:flex;align-items:center;gap:8px}
+.m-ok .btn{min-height:36px;padding:0 16px;font-size:15px;background:var(--card);color:var(--accent-ink);box-shadow:0 0 0 .5px var(--line)}
+.m-ok .chev{color:var(--fg-3)}
+.m-ok .chev svg{width:8px;height:13px}
+@media (min-width:760px){
+  .mhead{display:grid;grid-template-columns:24px minmax(150px,1fr) minmax(190px,1.25fr) minmax(200px,1.35fr) 72px;column-gap:16px;padding:12px 16px 8px;font-size:12px;color:var(--fg-2);border-bottom:.5px solid var(--line)}
+  .mrow{grid-template-columns:24px minmax(150px,1fr) minmax(190px,1.25fr) minmax(200px,1.35fr) 72px;grid-template-areas:"st t s x ok";column-gap:16px;min-height:52px;padding:8px 16px}
+  .st{align-self:center;margin:0}
+  .m-ok{justify-content:flex-end}
   .m-x{font-size:15px}
 }
 
-/* preview table */
+/* 预览表 */
 .tbl{overflow:auto;max-height:560px;-webkit-overflow-scrolling:touch}
-table{border-collapse:separate;border-spacing:0;font-size:13px;font-variant-numeric:tabular-nums;min-width:100%}
-th,td{padding:8px 12px;text-align:left;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--sep)}
-th{position:sticky;top:0;z-index:1;background:var(--card);font-weight:600;color:var(--fg);box-shadow:0 .5px 0 var(--sep)}
-th small{display:block;font-weight:400;color:var(--fg2);font-size:11px}
-td.n,th.n{color:var(--fg3);text-align:right;padding-right:4px;position:sticky;left:0;background:var(--card);z-index:1}
+table{border-collapse:separate;border-spacing:0;font-size:13px;min-width:100%}
+th,td{padding:8px 12px;text-align:left;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--line)}
+th{position:sticky;top:0;z-index:1;background:var(--card);font-weight:600;color:var(--fg)}
+td.n,th.n{color:var(--fg-3);text-align:right;padding-right:4px;position:sticky;left:0;background:var(--card);z-index:1}
 th.n{z-index:2}
-td.e{color:var(--fg3)}
-td.bad{background:var(--amber-tint);color:var(--amber-ink)}
+td.bad{background:var(--doubt);color:var(--doubt-ink)}
 tr:last-child td{border-bottom:0}
 
-/* dock */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--glass2);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 -.5px 0 var(--sep);padding:10px 16px max(10px,env(safe-area-inset-bottom,0px))}
-.dock-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:12px}
-.dock-f{flex:1;min-width:0;font-size:13px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dock .btn{min-height:44px}
-@media (max-width:759px){.dock-f{display:none}.dock .btn.primary{flex:1}}
-.seg{display:inline-flex;padding:2px;border-radius:9px;background:var(--fill);flex:none}
-.seg button{min-height:32px;padding:0 12px;border-radius:7px;font-size:13px;font-weight:600;color:var(--fg)}
-.seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
-:root[data-theme="dark"] .seg button[aria-pressed="true"]{background:#636366}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{background:#636366}}
+/* 底栏 */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 -.5px 0 var(--line);padding:12px 16px max(12px,env(safe-area-inset-bottom,0px))}
+.dock-in{max-width:1088px;margin:0 auto;display:flex;align-items:center;gap:16px}
+.dock-f{flex:1;min-width:0;font-size:13px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dock-f b{font-weight:600;color:var(--fg)}
+.dock .btn{min-width:200px}
+@media (max-width:759px){.dock-f{display:none}.dock .btn{flex:1}}
 
-/* footer */
-.foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.8;color:var(--fg2);text-align:center}
-.foot a{color:var(--accent)}
+/* 页脚 */
+.foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.8;color:var(--fg-2);text-align:center}
 .mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
 
-/* sheets */
+/* 弹层 */
 #sheets{position:fixed;inset:0;z-index:50}
-.scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;transition:opacity .3s}
-.sheet{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:600px;max-height:calc(100% - 28px);overflow-y:auto;overscroll-behavior:contain;background:var(--elev);border-radius:24px 24px 0 0;transform:translateY(104%);transition:transform .42s cubic-bezier(.32,.72,0,1);padding-bottom:max(20px,env(safe-area-inset-bottom,0px))}
+.scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;transition:opacity 280ms var(--ease)}
+.sheet{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:600px;max-height:calc(100% - 32px);overflow-y:auto;overscroll-behavior:contain;background:var(--sheet);border-radius:var(--r-card) var(--r-card) 0 0;transform:translateY(104%);transition:transform 300ms var(--ease);padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}
 #sheets.open .scrim{opacity:1}
 #sheets.open .sheet{transform:none}
 @media (min-width:760px){
-  .sheet{top:50%;bottom:auto;max-height:84vh;border-radius:20px;transform:translateY(-46%) scale(.97);opacity:0;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .2s;box-shadow:0 30px 80px rgba(0,0,0,.25)}
+  .sheet{top:50%;bottom:auto;max-height:84vh;border-radius:var(--r-card);transform:translateY(-48%) scale(.98);opacity:0;transition:transform 260ms var(--ease),opacity 200ms var(--ease);box-shadow:0 24px 64px rgba(0,0,0,.24)}
   #sheets.open .sheet{transform:translateY(-50%);opacity:1}
   .grab{display:none}
 }
-.grab{width:36px;height:5px;border-radius:3px;background:var(--fg3);opacity:.6;margin:6px auto 0}
-.sh-head{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;min-height:52px;padding:0 16px;background:var(--elev)}
-.sh-x{justify-self:start;color:var(--accent);font-size:17px;min-height:44px}
-.sh-ok{justify-self:end;color:var(--accent);font-size:17px;font-weight:600;min-height:44px}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--fill-2);margin:8px auto 0}
+.sh-head{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;min-height:52px;padding:0 16px;background:var(--sheet)}
+.sh-x{justify-self:start;color:var(--accent-ink);font-size:17px;min-height:44px}
+.sh-ok{justify-self:end;color:var(--accent-ink);font-size:17px;font-weight:600;min-height:44px}
 .sh-t{font-size:17px;font-weight:600;text-align:center;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sh-body{display:flex;flex-direction:column;gap:10px;padding:4px 16px 8px}
-.lab{font-size:13px;color:var(--fg2);padding:8px 16px 0;display:flex;justify-content:space-between;gap:8px}
-.form{background:var(--elev-card);border-radius:14px;overflow:hidden}
+.sh-body{display:flex;flex-direction:column;gap:8px;padding:4px 16px 8px}
+.lab{font-size:13px;color:var(--fg-2);padding:16px 16px 0;display:flex;justify-content:space-between;gap:8px}
+.form{background:var(--sheet-card);border-radius:var(--r-btn);overflow:hidden}
 .f-row{position:relative;display:flex;align-items:center;gap:12px;min-height:48px;padding:0 16px}
-.form>.f-row+.f-row::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
+.form>.f-row+.f-row::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--line)}
 .f-k{flex:none;font-size:17px}
 .f-row input,.f-row select{flex:1;min-width:0;height:46px;border:0;background:transparent;outline:none;text-align:right;font-size:17px;color:var(--fg)}
-.f-row select{text-align:right;text-align-last:right;cursor:pointer;color:var(--accent);-webkit-appearance:none;appearance:none}
-.f-row input::placeholder{color:var(--fg3)}
-.f-row .x{color:var(--fg3);flex:none;width:28px;height:28px;display:grid;place-items:center}
+.f-row select{text-align-last:right;cursor:pointer;color:var(--accent-ink);-webkit-appearance:none;appearance:none;padding-right:16px;background:no-repeat right center/8px 13px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 13' fill='none' stroke='%2386868b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1.5 4.5 2.5-3 2.5 3M1.5 8.5l2.5 3 2.5-3'/%3E%3C/svg%3E")}
+.f-row select option{color:var(--fg);background:var(--sheet-card)}
+.f-row input::placeholder{color:var(--fg-3)}
+.f-row .x{color:var(--fg-3);flex:none;width:44px;height:44px;display:grid;place-items:center;margin-right:-12px}
 .f-row .x svg{width:14px;height:14px}
 .pick{display:flex;flex-wrap:wrap;gap:8px}
-.pick button{min-height:34px;padding:0 13px;border-radius:999px;background:var(--elev-card);font-size:15px}
+.pick button{min-height:36px;padding:0 14px;border-radius:var(--r-field);background:var(--sheet-card);font-size:15px;transition:background-color 200ms var(--ease)}
 .pick button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
-.switch{position:relative;flex:none;width:51px;height:31px;border-radius:999px;background:var(--fill2);margin-left:auto;transition:background-color .2s}
-.switch i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15);transition:transform .22s}
-.switch[aria-checked="true"]{background:var(--good-mark)}
+.switch{position:relative;flex:none;width:51px;height:31px;border-radius:999px;background:var(--fill-2);margin-left:auto;transition:background-color var(--t) var(--ease)}
+.switch::before{content:"";position:absolute;inset:-7px -4px}
+.switch i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15);transition:transform var(--t) var(--ease)}
+.switch[aria-checked="true"]{background:var(--accent)}
 .switch[aria-checked="true"] i{transform:translateX(20px)}
-.vmap .f-row{gap:10px}
+.vmap .f-row{gap:8px}
 .vmap .vk{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
-.vmap .vk small{color:var(--fg3);margin-left:6px;font-variant-numeric:tabular-nums}
-.vmap input{flex:0 0 42%;text-align:left;border-radius:8px;background:var(--fill);height:34px;padding:0 10px;font-size:15px}
-.vmap .ar{color:var(--fg3);flex:none}
-.vmap .vnil{flex:0 0 42%;height:34px;line-height:34px;padding:0 10px;font-size:15px;color:var(--fg3)}
-.vmap select.vm{flex:none;width:auto;height:34px;font-size:13px;font-weight:500;color:var(--fg2);text-align:right;text-align-last:right;padding:0 0 0 4px}
-.vmap .f-row.rule{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:6px 8px;align-items:center;padding:2px 16px 10px;font-size:13px;color:var(--fg2)}
+.vmap .vk small{color:var(--fg-3);margin-left:8px}
+.vmap input{flex:0 0 42%;text-align:left;border-radius:var(--r-chip);background:var(--fill);height:36px;padding:0 12px;font-size:15px}
+.vmap .ar{color:var(--fg-3);flex:none}
+.vmap .vnil{flex:0 0 42%;height:36px;line-height:36px;padding:0 12px;font-size:15px;color:var(--fg-3)}
+.vmap select.vm{flex:none;width:auto;height:36px;font-size:13px;color:var(--fg-2);padding-right:14px}
+.vmap .f-row.rule{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;padding:4px 16px 12px;font-size:13px;color:var(--fg-2)}
 .vmap .f-row.rule::before{display:none}
-.vmap .f-row.rule select,.vmap .f-row.rule input{width:100%;min-width:0;height:34px;font-size:15px;text-align:left;text-align-last:left;border-radius:8px;background:var(--fill);padding:0 10px}
+.vmap .f-row.rule select,.vmap .f-row.rule input{width:100%;min-width:0;height:36px;font-size:15px;text-align:left;text-align-last:left;border-radius:var(--r-chip);background-color:var(--fill);padding:0 20px 0 12px;color:var(--fg)}
+.vmap .f-row.rule input{padding-right:12px}
 .vmap .f-row.rule .ar{text-align:right}
-.tidy{background:var(--card)}
-.tidy .f-row{min-height:62px}
-.list.tidy .li b,.list.tidy .li small{white-space:normal}
-.tidy .li{gap:2px}
+.tidy .li-row{min-height:60px}
+.tidy .li-main b,.tidy .li-main small{white-space:normal}
 .pv{font-size:13px}
-.pv .f-row{min-height:38px;font-variant-numeric:tabular-nums}
-.pv .a{flex:1;min-width:0;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pv .b{flex:1;min-width:0;text-align:right;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pv .b.bad{color:var(--amber-ink)}
-.pv .ar{color:var(--fg3);flex:none}
+.pv .f-row{min-height:40px}
+.pv .a{flex:1;min-width:0;color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv .b{flex:1;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv .b.bad{color:var(--doubt-ink);background:var(--doubt);border-radius:6px;padding:0 4px}
+.pv .ar{color:var(--fg-3);flex:none}
 .list .f-row{min-height:56px}
-.list .li{flex:1;min-width:0;padding:8px 0;display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.list .li{flex:1;min-width:0;padding:8px 0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:44px;justify-content:center}
 .list .li b{font-weight:400;font-size:17px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.list .li small{font-size:13px;color:var(--fg2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.list .ck{color:var(--accent);flex:none}
-.list .ck svg{width:16px;height:16px}
-.empty-note{font-size:15px;color:var(--fg2);text-align:center;padding:24px 16px}
-.sh-foot{font-size:13px;color:var(--fg2);padding:0 16px}
+.list .li small{font-size:13px;color:var(--fg-2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .ck{color:var(--accent-ink);flex:none}
+.list .ck svg{width:20px;height:20px}
+.empty-note{font-size:15px;color:var(--fg-2);text-align:center;padding:24px 16px}
+.sh-foot{font-size:13px;color:var(--fg-2);padding:0 16px}
+.sh-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding-top:8px}
 
-/* drop overlay */
-#drop{position:fixed;inset:0;z-index:60;background:var(--scrim);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}
-.dz{border-radius:24px;border:2px dashed rgba(255,255,255,.7);display:grid;place-items:center;color:#fff;font-size:24px;font-weight:700;text-align:center;transition:background-color .15s}
-.dz small{display:block;font-size:15px;font-weight:400;opacity:.85;margin-top:6px}
-.dz.on{background:rgba(0,113,227,.45);border-style:solid}
+/* 拖进来：整页高亮 */
+#drop{position:fixed;inset:0;z-index:60;background:var(--scrim);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:grid;grid-template-rows:1fr auto;gap:16px;padding:16px}
+.dz{border-radius:var(--r-card);border:2px solid rgba(255,255,255,.5);display:grid;place-items:center;color:#fff;font-size:28px;font-weight:700;text-align:center;transition:background-color 200ms var(--ease),border-color 200ms var(--ease)}
+.dz small{display:block;font-size:15px;font-weight:400;opacity:.85;margin-top:8px}
+.dz.side{min-height:96px;font-size:17px}
+.dz.on{background:rgba(123,77,235,.55);border-color:#fff}
 
-/* toast & busy */
-.toast{position:fixed;left:50%;bottom:86px;z-index:70;transform:translate(-50%,20px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);padding:12px 18px;border-radius:14px;background:var(--toast-bg);color:var(--toast-fg);font-size:15px;transition:opacity .2s,transform .25s}
+/* 吐司 */
+.toast{position:fixed;left:50%;bottom:96px;z-index:70;transform:translate(-50%,16px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:16px;max-width:calc(100% - 32px);padding:12px 16px 12px 20px;border-radius:var(--r-btn);background:var(--toast-bg);color:var(--toast-fg);font-size:15px;line-height:1.4;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);transition:opacity var(--t) var(--ease),transform var(--t) var(--ease)}
 .toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
-.toast button{color:#64B5FF;font-weight:600;white-space:nowrap}
-.spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .8s linear infinite;flex:none}
-@keyframes spin{to{transform:rotate(360deg)}}
+.toast button{color:var(--toast-act);font-weight:600;white-space:nowrap;min-height:36px}
+.toast.solo{bottom:24px}
 </style>
 </head>
 <body>
@@ -262,11 +324,11 @@ tr:last-child td{border-bottom:0}
   <button type="button" class="nav-a" data-act="recipes" id="navRec"></button>
 </header>
 <main class="wrap" id="app"></main>
-<div class="dock" id="dock"></div>
+<div class="dock" id="dock" hidden></div>
 <div id="sheets" hidden><div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"></div></div>
-<div id="drop" hidden><div class="dz" data-zone="src"></div><div class="dz" data-zone="tgt"></div></div>
+<div id="drop" hidden><div class="dz main" data-zone="src"></div><div class="dz side" data-zone="tgt"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<input type="file" id="fSrc" hidden accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
+<input type="file" id="fSrc" hidden multiple accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fTgt" hidden accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fRec" hidden accept=".json,application/json">
 <script>
@@ -274,25 +336,31 @@ tr:last-child td{border-bottom:0}
 /* ================= 界面文字（全在这里，加英文就再抄一份） ================= */
 const STR = {
   app: '译经僧', tag: '施主搬家，贫僧译经',
-  hint: '文件丢进来就开译，一个字节都不出这台电脑。',
+  heroSub: 'A 系统导出的表丢进来，B 系统认的导入表自己掉出去。',
   home: '千手院', recipes: '配方',
-  src: '来源', tgt: '目标', demo: '示例', recChip: '配方',
+  src: '来源', tgt: '译成', demo: '示例', recChip: '上回的对法',
   demoName: '旧 CRM 客户表.csv',
   rc: (r, c) => `${fmtInt(r)} 行 · ${c} 列`,
-  tgtSub: (c, f) => `${c} 列 · 导出 ${f}`,
-  pickSrc: '换文件', pickTgt: '换格式',
+  tgtSub: c => `${c} 列`,
+  pickSrc: '换', pickTgt: '换',
+  dropT: '把要搬的表丢进来', dropS: 'CSV、Excel、JSON 都吃，文件不出本机。', pickBtn: '选文件', demoBtn: '用示例试试',
+  dropMore: '两个文件一起丢也行：一份数据、一份目标模板，贫僧自己分。',
+  tgtAsk: '译成哪家的格式？', tgtAskS: '选一次就记住，下回不问。',
+  tgtH: '译成', tgtKeep: '上回选的，换就点一下。',
   mapH: '对列',
-  mapSub: (n, ok, q, b, r) => [`${n} 列`, ok && `<b class="g">${ok} 对上</b>`, q && `<b class="a">${q} 存疑</b>`, r && `<b class="r">${r} 必填没着落</b>`, b && `${b} 留空`].filter(Boolean).join(' · '),
+  mapSub: (n, ok, q, b, r) => [`${n} 列`, ok && `<b>${ok} 对上</b>`, q && `<b class="a">${q} 存疑</b>`, r && `<b class="r">${r} 必填没着落</b>`, b && `${b} 留空`].filter(Boolean).join(' · '),
   colT: '目标列', colS: '从哪来', colX: '第一行译出来',
-  saveRec: '存配方',
   unused: n => `没用上的来源列：${n}`,
   allUsed: '来源列一个没落下。',
   blank: '留空', constOf: v => `固定值「${v}」`,
   noteAmb: '日/月分不清，按 月/日/年 译的', noteGuess: '名字像，没十成把握', noteByVal: '列名不像，看内容猜的',
-  noteReq: '目标系统要这列', noteMiss: '配方里的列这次没见到', noteHandle: '借货号当网址别名，同款多规格要改', noteUser: '',
-  badN: n => `${fmtInt(n)} 处不对`,
-  prevH: '预览', prevSub: n => `前 ${n} 行`, prevBad: n => `全表 ${fmtInt(n)} 处译不动，黄格子`, prevOk: '全表译完没毛病',
-  exportBtn: n => `导出 ${fmtInt(n)} 行`,
+  noteReq: '目标系统要这列，没找着', noteMiss: '上回的列这次没见到', noteHandle: '借货号当网址别名，同款多规格要改', noteUser: '',
+  badN: n => `${fmtInt(n)} 处译不动`,
+  doubtH: '瞄一眼', doubtSub: n => `${n} 处没十成把握，对就点「对」，不对点进去改`,
+  okBtn: '对', okUndo: '撤销', okDone: (n, left) => `「${n}」算对${left ? `，还剩 ${left} 处` : ''}`,
+  prevH: '预览', prevSub: n => `前 ${n} 行`, prevBad: n => `全表 ${fmtInt(n)} 处译不动，标黄了`, prevOk: '全表译完没毛病',
+  exportBtn: n => `下载 ${fmtInt(n)} 行`, exportOk: '都对，下载', exportDone: '下好了',
+  dockAuto: '没啥要看的，已经直接下好了', dockDone: (f, t) => `<b>${esc(f)}</b> · ${t} 下好的`, dockWait: n => `还有 ${n} 处要你瞄一眼`,
   done: '好了', cancel: '取消', close: '关闭',
   fromWhere: '从哪列来', howTo: '怎么译', preview: '前几行', sep: '分隔符', value: '值',
   optConst: '（固定值）', optBlank: '（留空）', addCol: '再合并一列',
@@ -311,23 +379,23 @@ const STR = {
   noteRule: (a, c) => `「${a}」按「${c}」分了，瞄一眼`, noteAmbig: a => `「${a}」一对多，贫僧不敢瞎换`,
   caseLower: '全小写', caseUpper: '全大写', caseTitle: '首字母大写', caseTrim: '只去空格',
   constPh: '填个值', sepPh: '空格',
-  tplH: '目标格式', tplBuiltin: '常用模板', tplFile: '丢目标系统的导入模板', tplFileS: 'CSV、Excel、JSON 都行，贫僧只看表头',
-  recH: '配方', recEmpty: '还没存过配方。对好一次列，点「存配方」，下回同样的文件丢进来自动套上。',
-  recSub: (n, d) => `${n} 列 · ${d}`, recApply: '用这个', recDel: '删除',
+  tplH: '译成哪家', tplFile: '用目标系统的导入模板', tplFileS: 'CSV、Excel、JSON 都行，贫僧只看表头',
+  recH: '配方', recEmpty: '还没有。下载过一次，那套对法就自动记在这，下回同样的表丢进来直接出。',
+  recSub: (n, d) => `${n} 列 · ${d}`, recDel: '删除',
   recExport: '导出配方文件', recImport: '导入配方文件',
-  recName: '配方名字', recSave: '存', recSaveH: '存配方',
-  recSaved: n => `存好了：${n}`, recAuto: n => `认出来了，套上配方「${n}」`, recUndo: '不用',
+  recKept: '这套对法记住了，下回同样的表直接出', recForget: '不记', recForgot: '没记',
+  recAuto: n => `照上回的对法译的：${n}`, recUndo: '重新对',
   recImported: n => `导入 ${n} 个配方`, recBadFile: '这不是配方文件',
-  dropSrc: '当来源文件', dropSrcS: '要搬走的那份', dropTgt: '当目标模板', dropTgtS: '新系统给的导入模板',
-  reading: '贫僧在读…', readFail: '读不出来：', emptyFile: '文件里没找到表格', exporting: '贫僧在译…',
-  exported: (n, s) => `译完 ${fmtInt(n)} 行，用时 ${s} 秒`,
+  dropSrc: '松手就译', dropSrcS: '两个文件一起丢，贫僧自己分哪个是模板', dropTgt: '丢这儿当目标模板',
+  reading: n => `在读「${n}」…`, readFail: n => `「${n}」读不动`, readHow: '换成 CSV、Excel 或 JSON 再丢一次。', emptyFile: '里面没找到表格', notTable: '不像表格', exporting: '贫僧在译…', exportFail: '没下成：',
+  exported: (n, s) => `下好了 · ${fmtInt(n)} 行 · ${s} 秒`,
   sheetNote: n => `有 ${n} 个工作表，用的第一个有数据的`,
   prof: n => `${n} 导出`,
   tidyH: '顺手整理',
   tidyFill: g => `同一个「${g}」的空格往下补`, tidyGroup: g => `同一个「${g}」排回一起，空格补齐`, tidyFillS: (cs, n) => `${cs.slice(0, 4).join('、')}${n > 4 ? ` 等 ${n} 列` : ''}`,
   tidyDrop: (h, n) => `跳过「${h}」为空的 ${fmtInt(n)} 行`, tidyDropS: t => `目标的「${t}」必填，这些行导过去也是废行`,
   rcOut: (a, b) => `${fmtInt(a)} 行进 · ${fmtInt(b)} 行出`,
-  footApp: '千手院 · 译经僧 0.2.1', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
+  footApp: '千手院 · 译经僧 0.3.0', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
 };
 
 /* ================= 小工具 ================= */
@@ -335,21 +403,21 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmtInt = n => Number(n).toLocaleString('en-US');
 const clone = o => JSON.parse(JSON.stringify(o));
-const CJK = /[㐀-鿿豈-﫿]/;
+const CJK = /[㐀-鿿豈-﫿]/;
 const norm = s => String(s ?? '').toLowerCase().replace(/[\s_\-.*()（）:：\/\\#'"`\[\]【】,，、]/g, '');
+const SV = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const ICON = {
-  chevL: '<svg viewBox="0 0 11 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 1.5 2 9.5l7.5 8"/></svg>',
+  chevL: SV('<path d="M15 4.5 7.5 12l7.5 7.5"/>'),
   chevR: '<svg viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m1.5 1.5 5 5-5 5"/></svg>',
-  arrow: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h13M11 4.5 16.5 10 11 15.5"/></svg>',
-  check: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.2 6.4 2.4 2.4 5.2-5.6"/></svg>',
-  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 2.8h8l4.5 4.5V20a1.2 1.2 0 0 1-1.2 1.2H6A1.2 1.2 0 0 1 4.8 20V4A1.2 1.2 0 0 1 6 2.8Z"/><path d="M13.6 2.8v4.8h4.9M8.3 12.5h7.4M8.3 16.3h5"/></svg>',
-  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="4" width="17" height="16" rx="2.2"/><path d="M3.5 9.3h17M3.5 14.6h17M9.5 4v16"/></svg>',
-  book: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 3.2h9.5a2 2 0 0 1 2 2v11.6H6a2 2 0 0 1-2-2Z"/><path d="M4 14.8a2 2 0 0 1 2-2h9.5M7.5 6.7h4.5"/></svg>',
-  down: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M5.5 8.8 10 13.3l4.5-4.5M4 16.8h12"/></svg>',
-  lock: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.2a3.6 3.6 0 0 0-3.6 3.6V6.6H4A1.3 1.3 0 0 0 2.7 8v5.5A1.3 1.3 0 0 0 4 14.8h8a1.3 1.3 0 0 0 1.3-1.3V8A1.3 1.3 0 0 0 12 6.6h-.4V4.8A3.6 3.6 0 0 0 8 1.2Zm-2.1 5.4V4.8a2.1 2.1 0 1 1 4.2 0v1.8Z"/></svg>',
+  arrow: SV('<path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5"/>'),
+  check: SV('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),
+  doc: SV('<path d="M6.5 3h7.5l4.5 4.5V20a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M13.5 3v5h5M9 13h6M9 17h4"/>'),
+  swap: SV('<path d="M5 8.5h13M14.5 5 18 8.5 14.5 12M19 15.5H6M9.5 12 6 15.5 9.5 19"/>'),
+  tray: SV('<path d="M12 3.5v10M7.5 9.5 12 14l4.5-4.5"/><path d="M3.5 14.5v3a3 3 0 0 0 3 3h11a3 3 0 0 0 3-3v-3"/>'),
+  book: SV('<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15Z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7.5h6"/>'),
+  down: SV('<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>'),
   x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>',
 };
-
 /* ================= 概念词典（列名同义词，中英都认） ================= */
 // t: 目标列的类型；同义词只要列名规整后完全一样就算，含在里面算「存疑」
 const C = {
@@ -1144,20 +1212,39 @@ function outRow(row, flags) {
   return o;
 }
 let scanT = 0;
-function scan() {
+function scanCore() {
+  const rows = S.rows, n = FNS.length, cnt = new Array(n).fill(0);
+  for (let r = 0; r < rows.length; r++) { const row = rows[r]; for (let k = 0; k < n; k++) { BAD = false; FNS[k](row); if (BAD) cnt[k]++; } }
+  S.bad = cnt; S.badTotal = cnt.reduce((a, b) => a + b, 0);
+}
+function scan(sync) {
   clearTimeout(scanT);
-  scanT = setTimeout(() => {
-    const rows = S.rows, n = FNS.length, cnt = new Array(n).fill(0);
-    for (let r = 0; r < rows.length; r++) { const row = rows[r]; for (let k = 0; k < n; k++) { BAD = false; FNS[k](row); if (BAD) cnt[k]++; } }
-    S.bad = cnt; S.badTotal = cnt.reduce((a, b) => a + b, 0);
-    renderMaps(); renderPreview();
-  }, 60);
+  const go = () => {
+    scanCore(); renderMaps(); renderDoubt(); renderPreview(); renderDock();
+    if (S.auto) { S.auto = false; if (!S.src.demo && !doubts().length) doExport(true); }
+  };
+  if (sync) go(); else scanT = setTimeout(go, 60);
 }
 function changed() { prep(); rebuild(); S.bad = null; render(); scan(); }
+
+/* ================= 存疑：要人瞄一眼的列 ================= */
+// 存疑 = 对列没十成把握（guess）、必填没着落（req）、或者全表有译不动的格子；点过「对」的不算
+function isDoubt(i) {
+  if (S.ack.has(i)) return false;
+  const c = S.maps[i].conf;
+  return c === 'guess' || c === 'req' || !!(S.bad && S.bad[i]);
+}
+function doubts() { return S.src && S.tgt && S.bad ? S.maps.map((_, i) => i).filter(isDoubt) : []; }
+
+/* ================= 记住：上回的目标格式、对法 ================= */
+const LK = 'yijing.last.v1';
+function lastGet() { try { return JSON.parse(localStorage.getItem(LK) || 'null'); } catch (e) { return null; } }
+function lastSet() { if (!S.tgt) return; try { localStorage.setItem(LK, JSON.stringify({ tgt: S.tgt, fmt: S.fmt })); } catch (e) { } }
 
 /* ================= 渲染 ================= */
 const app = $('#app');
 const typeLabel = tc => STR.types[tc.t] || '';
+const fmtName = f => ({ csv: 'CSV', xlsx: 'Excel', json: 'JSON' }[f]);
 function opLabel(m) {
   const o = m.op || {};
   switch (o.t) {
@@ -1182,52 +1269,82 @@ function firstExample(i) {
   }
   return null;
 }
-function confOf(i) { const m = S.maps[i]; return m.conf; }
 function stIcon(c) { return c === 'sure' || c === 'user' ? ICON.check : c === 'guess' ? '?' : c === 'req' ? '!' : '–'; }
-function renderEnds() {
-  const s = S.src, t = S.tgt;
-  const fmtName = { csv: 'CSV', xlsx: 'Excel', json: 'JSON' }[S.fmt];
-  return `<section class="ends">
-    <div class="end src" data-zone="src">
-      <div class="end-ico">${ICON.doc}</div>
-      <div class="end-main"><div class="end-k">${STR.src}${s.demo ? `<span class="chip demo">${STR.demo}</span>` : ''}${s.prof ? `<span class="chip">${esc(STR.prof(s.prof))}</span>` : ''}</div>
-      <div class="end-t" title="${esc(s.name)}">${esc(s.name)}</div><div class="end-s">${S.rows.length !== s.rows.length ? `${STR.rcOut(s.rows.length, S.rows.length)} · ${s.headers.length} 列` : STR.rc(s.rows.length, s.headers.length)}${s.note ? ' · ' + esc(s.note) : ''}</div></div>
-      <button type="button" class="btn small tinted" data-act="pick-src">${STR.pickSrc}</button>
-    </div>
-    <div class="arrow">${ICON.arrow}</div>
-    <div class="end tgt" data-zone="tgt">
-      <div class="end-ico">${ICON.grid}</div>
-      <div class="end-main"><div class="end-k">${STR.tgt}${S.recipe ? `<span class="chip rec">${STR.recChip}</span>` : ''}</div>
-      <div class="end-t" title="${esc(t.name)}">${esc(t.name)}</div><div class="end-s">${STR.tgtSub(t.cols.length, fmtName)}</div></div>
-      <button type="button" class="btn small tinted" data-act="pick-tgt">${STR.pickTgt}</button>
-    </div></section>`;
+const segHTML = () => `<span class="seg-wrap"><span class="seg" role="group">${['csv', 'xlsx', 'json'].map(f => `<button type="button" data-act="fmt" data-f="${f}" aria-pressed="${S.fmt === f}">${fmtName(f)}</button>`).join('')}</span></span>`;
+function srcLine() {
+  const s = S.src;
+  if (S.busy) return `<div class="busy"><span class="spin"></span>${esc(STR.reading(S.busy))}</div>`;
+  if (S.err) return `<div class="end-s err">${esc(S.err.msg)}${STR.readHow}</div>`;
+  return `<div class="end-s">${S.rows.length !== s.rows.length ? `${STR.rcOut(s.rows.length, S.rows.length)} · ${s.headers.length} 列` : STR.rc(s.rows.length, s.headers.length)}${s.note ? ' · ' + esc(s.note) : ''}</div>`;
 }
-function mapRows() {
-  return S.tgt.cols.map((tc, i) => {
-    const m = S.maps[i], c = confOf(i), ex = firstExample(i);
-    let from;
-    if (m.cnst != null) from = `<span class="from">${esc(STR.constOf(m.cnst))}</span>`;
-    else if (!m.src.length) from = `<span class="none">${STR.blank}</span>`;
-    else from = `<span class="from">${esc(m.src.map(j => S.src.headers[j]).join(' + '))}</span>`;
-    const ol = m.cnst == null && m.src.length ? opLabel(m) : '';
-    const bc = S.bad && S.bad[i] ? `<span class="bc">${STR.badN(S.bad[i])}</span>` : '';
-    const x = ex ? (ex.before && ex.before !== ex.after ? `${esc(ex.before)}<i>→</i><b>${esc(ex.after) || '∅'}</b>` : `<b>${esc(ex.after)}</b>`) : '';
-    return `<button type="button" class="mrow" data-act="col" data-i="${i}">
-      <span class="st ${c}">${stIcon(c)}</span>
+function srcCard() {
+  const s = S.src;
+  return `<div class="end src card" data-zone="src">
+      <div class="end-ico">${ICON.doc}</div>
+      <div class="end-main"><div class="end-k">${STR.src}${s.demo ? `<span class="chip">${STR.demo}</span>` : ''}${s.prof ? `<span class="chip">${esc(STR.prof(s.prof))}</span>` : ''}</div>
+      <div class="end-t" title="${esc(s.name)}">${esc(s.name)}</div>${srcLine()}</div>
+      <button type="button" class="btn small gray" data-act="pick-src">${STR.pickSrc}</button>
+    </div>`;
+}
+function tgtCard() {
+  const t = S.tgt;
+  return `<div class="end tgt card" data-zone="tgt">
+      <div class="end-ico">${ICON.swap}</div>
+      <div class="end-main"><div class="end-k">${STR.tgt} · ${STR.tgtSub(t.cols.length)}${S.recipe ? `<span class="chip on">${STR.recChip}</span>` : ''}</div>
+      <div class="end-t" title="${esc(t.name)}">${esc(t.name)}</div>
+      <div class="end-row">${segHTML()}</div></div>
+      <button type="button" class="btn small gray" data-act="pick-tgt">${STR.pickTgt}</button>
+    </div>`;
+}
+function renderEnds() {
+  return `<section class="ends">${srcCard()}<div class="arrow">${ICON.arrow}</div>${tgtCard()}</section>`;
+}
+function tplList() {
+  const cur = S.tgt && S.tgt.id;
+  return `<div class="card tpl-grid">${Object.entries(TPL).map(([k, t]) => `<button type="button" class="li-row" data-act="tpl" data-k="${k}"><span class="li-main"><b>${esc(t.name)}</b><small>${esc(t.cols.map(c => c.name).join(' · '))}</small></span>${cur === k ? `<span class="ck">${ICON.check}</span>` : `<span class="go">${ICON.chevR}</span>`}</button>`).join('')}
+    <button type="button" class="li-row wide" data-act="pick-tgt-file"><span class="li-main"><b>${STR.tplFile}</b><small>${STR.tplFileS}</small></span><span class="go">${ICON.chevR}</span></button></div>`;
+}
+function tgtSection() {
+  if (S.tgt) return `<section class="grp"><div class="grp-h"><h2>${STR.tgtH}<span class="grp-sub">${STR.tgtKeep}</span></h2></div><div class="ends" style="grid-template-columns:1fr">${tgtCard()}</div></section>`;
+  return `<section class="grp"><div class="grp-h"><h2>${STR.tgtAsk}<span class="grp-sub">${STR.tgtAskS}</span></h2></div>${tplList()}</section>`;
+}
+function dropCard() {
+  const inner = S.busy ? `<div class="busy"><span class="spin"></span>${esc(STR.reading(S.busy))}</div>`
+    : `<div class="acts"><button type="button" class="btn primary big" data-act="pick-src">${STR.pickBtn}</button><button type="button" class="btn plain" data-act="demo">${STR.demoBtn}</button></div>`;
+  return `<section class="card dropc" data-zone="src"><div class="ico">${ICON.tray}</div><h2>${STR.dropT}</h2><p>${STR.dropS}</p>${inner}
+    ${S.err ? `<p class="err" role="alert"><b>${esc(S.err.msg)}</b>${STR.readHow}</p>` : ''}</section>`;
+}
+function mapRow(i, okBtn) {
+  const tc = S.tgt.cols[i], m = S.maps[i], c = m.conf, ex = firstExample(i);
+  let from;
+  if (m.cnst != null) from = `<span class="from">${esc(STR.constOf(m.cnst))}</span>`;
+  else if (!m.src.length) from = `<span class="none">${STR.blank}</span>`;
+  else from = `<span class="from">${esc(m.src.map(j => S.src.headers[j]).join(' + '))}</span>`;
+  const ol = m.cnst == null && m.src.length ? opLabel(m) : '';
+  const bc = S.bad && S.bad[i] ? `<span class="bc">${STR.badN(S.bad[i])}</span>` : '';
+  const x = ex ? (ex.before && ex.before !== ex.after ? `${esc(ex.before)}<i>→</i><b>${esc(ex.after) || '∅'}</b>` : `<b>${esc(ex.after)}</b>`) : '';
+  const st = okBtn ? (c === 'req' ? 'req' : 'guess') : S.ack.has(i) && c !== 'sure' ? 'user' : c;
+  return `<div class="mrow${okBtn ? ' doubt' : ''}" role="button" tabindex="0" data-act="col" data-i="${i}">
+      <span class="st ${st}">${stIcon(st)}</span>
       <span class="m-t"><span>${esc(tc.name)}</span>${typeLabel(tc) ? `<em class="ty">${typeLabel(tc)}</em>` : ''}</span>
-      <span class="m-s">${from}${ol ? `<span class="op">${esc(ol)}</span>` : ''}${m.note ? `<span class="note${c === 'req' ? ' r' : ''}">${esc(m.note)}</span>` : ''}</span>
+      <span class="m-s">${from}${ol ? `<span class="op">${esc(ol)}</span>` : ''}${m.note && !S.ack.has(i) ? `<span class="note${c === 'req' ? ' r' : ''}">${esc(m.note)}</span>` : ''}</span>
       <span class="m-x">${x}${bc}</span>
-      <span class="chev">${ICON.chevR}</span></button>`;
-  }).join('');
+      <span class="m-ok">${okBtn ? `<button type="button" class="btn" data-act="ok" data-i="${i}">${STR.okBtn}</button>` : `<span class="chev">${ICON.chevR}</span>`}</span></div>`;
+}
+const mhead = () => `<div class="mhead"><span></span><span>${STR.colT}</span><span>${STR.colS}</span><span>${STR.colX}</span><span></span></div>`;
+function renderDoubtInner() {
+  const d = doubts();
+  if (!d.length) return '';
+  return `<div class="grp-h"><h2>${STR.doubtH}<span class="grp-sub">${STR.doubtSub(d.length)}</span></h2></div>
+    <div class="card">${mhead()}${d.map(i => mapRow(i, true)).join('')}</div>`;
 }
 function renderMapsInner() {
-  const cs = S.maps.map(m => m.conf);
+  const cs = S.maps.map((m, i) => S.ack.has(i) && m.conf !== 'sure' ? 'user' : m.conf);
   const ok = cs.filter(c => c === 'sure' || c === 'user').length, q = cs.filter(c => c === 'guess').length, b = cs.filter(c => c === 'blank').length, r = cs.filter(c => c === 'req').length;
   const used = new Set(); S.maps.forEach(m => { if (m.cnst == null) m.src.forEach(j => used.add(j)); });
   const un = S.src.headers.filter((_, j) => !used.has(j));
-  return `<div class="grp-h"><h2>${STR.mapH}<span class="grp-sub">${STR.mapSub(cs.length, ok, q, b, r)}</span></h2>
-    <button type="button" class="btn small tinted" data-act="save-rec">${STR.saveRec}</button></div>
-    <div class="card"><div class="mhead"><span></span><span>${STR.colT}</span><span>${STR.colS}</span><span>${STR.colX}</span><span></span></div>${mapRows()}</div>
+  return `<div class="grp-h"><h2>${STR.mapH}<span class="grp-sub">${STR.mapSub(cs.length, ok, q, b, r)}</span></h2></div>
+    <div class="card">${mhead()}${S.tgt.cols.map((_, i) => mapRow(i, false)).join('')}</div>
     <p class="grp-foot">${un.length ? esc(STR.unused(un.join('、'))) : STR.allUsed}</p>`;
 }
 const PREV_N = 20;
@@ -1236,34 +1353,49 @@ function renderPreviewInner() {
   const flags = new Array(cols.length);
   const body = rows.map((row, r) => {
     const o = outRow(row, flags);
-    return `<tr><td class="n">${r + 1}</td>${o.map((v, k) => `<td class="${flags[k] ? 'bad' : v === '' ? 'e' : ''}" title="${esc(v)}">${v === '' ? '' : esc(v)}</td>`).join('')}</tr>`;
+    return `<tr><td class="n">${r + 1}</td>${o.map((v, k) => `<td class="${flags[k] ? 'bad' : ''}" title="${esc(v)}">${v === '' ? '' : esc(v)}</td>`).join('')}</tr>`;
   }).join('');
-  const sub = S.bad == null ? STR.prevSub(Math.min(PREV_N, S.rows.length)) : S.badTotal ? `${STR.prevSub(Math.min(PREV_N, S.rows.length))} · <b class="a">${STR.prevBad(S.badTotal)}</b>` : `${STR.prevSub(Math.min(PREV_N, S.rows.length))} · <b class="g">${STR.prevOk}</b>`;
+  const n = Math.min(PREV_N, S.rows.length);
+  const sub = S.bad == null ? STR.prevSub(n) : S.badTotal ? `${STR.prevSub(n)} · <b class="a">${STR.prevBad(S.badTotal)}</b>` : `${STR.prevSub(n)} · ${STR.prevOk}`;
   return `<div class="grp-h"><h2>${STR.prevH}<span class="grp-sub">${sub}</span></h2></div>
     <div class="card tbl"><table><thead><tr><th class="n"></th>${cols.map(c => `<th>${esc(c.name)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 function renderTidyInner() {
   const P = S.prep, H = S.src.headers, rows = [];
   if (!P) return '';
-  if (P.g) rows.push(`<div class="f-row"><div class="li"><b>${esc((P.g.shuf ? STR.tidyGroup : STR.tidyFill)(H[P.g.j]))}</b><small>${esc(STR.tidyFillS(P.g.fc.map(j => H[j]), P.g.fc.length))}</small></div><button type="button" class="switch" role="switch" data-act="tidy" data-k="fill" aria-checked="${S.tidy.fill !== false}" aria-label="${esc((P.g.shuf ? STR.tidyGroup : STR.tidyFill)(H[P.g.j]))}"><i></i></button></div>`);
-  if (P.nb) rows.push(`<div class="f-row"><div class="li"><b>${esc(STR.tidyDrop(H[P.kj], P.nb))}</b><small>${esc(STR.tidyDropS(S.tgt.cols[0].name))}</small></div><button type="button" class="switch" role="switch" data-act="tidy" data-k="drop" aria-checked="${S.tidy.drop !== false}" aria-label="${esc(STR.tidyDrop(H[P.kj], P.nb))}"><i></i></button></div>`);
-  return rows.length ? `<div class="grp-h"><h2>${STR.tidyH}</h2></div><div class="card form list tidy">${rows.join('')}</div>` : '';
+  if (P.g) rows.push(`<div class="li-row"><div class="li-main"><b>${esc((P.g.shuf ? STR.tidyGroup : STR.tidyFill)(H[P.g.j]))}</b><small>${esc(STR.tidyFillS(P.g.fc.map(j => H[j]), P.g.fc.length))}</small></div><button type="button" class="switch" role="switch" data-act="tidy" data-k="fill" aria-checked="${S.tidy.fill !== false}" aria-label="${esc((P.g.shuf ? STR.tidyGroup : STR.tidyFill)(H[P.g.j]))}"><i></i></button></div>`);
+  if (P.nb) rows.push(`<div class="li-row"><div class="li-main"><b>${esc(STR.tidyDrop(H[P.kj], P.nb))}</b><small>${esc(STR.tidyDropS(S.tgt.cols[0].name))}</small></div><button type="button" class="switch" role="switch" data-act="tidy" data-k="drop" aria-checked="${S.tidy.drop !== false}" aria-label="${esc(STR.tidyDrop(H[P.kj], P.nb))}"><i></i></button></div>`);
+  return rows.length ? `<div class="grp-h"><h2>${STR.tidyH}</h2></div><div class="card tidy">${rows.join('')}</div>` : '';
 }
 function renderMaps() { const el = $('#maps'); if (el) el.innerHTML = renderMapsInner(); }
 function renderPreview() { const el = $('#prev'); if (el) el.innerHTML = renderPreviewInner(); }
+function renderDoubt() { const el = $('#doubt'); if (el) { const h = renderDoubtInner(); el.innerHTML = h; el.hidden = !h; } }
 function outName() {
   const base = S.src.name.replace(/\.[^.]+$/, ''), tn = S.tgt.name.replace(/（.*?）|\(.*?\)/g, '').trim();
   return `${base} → ${tn}`.replace(/[\\/:*?"<>|]/g, '').slice(0, 120) + '.' + S.fmt;
 }
+const view = () => !S.src ? 'empty' : !S.tgt ? 'pick' : 'work';
 function renderDock() {
-  $('#dock').innerHTML = `<div class="dock-in"><div class="seg" role="group">${['csv', 'xlsx', 'json'].map(f => `<button type="button" data-act="fmt" data-f="${f}" aria-pressed="${S.fmt === f}">${{ csv: 'CSV', xlsx: 'Excel', json: 'JSON' }[f]}</button>`).join('')}</div>
-    <span class="dock-f">${esc(outName())}</span>
-    <button type="button" class="btn primary" data-act="export">${ICON.down}${STR.exportBtn(S.rows.length)}</button></div>`;
+  const d = $('#dock'), on = view() === 'work';
+  d.hidden = !on; $('#toast').classList.toggle('solo', !on);
+  if (!on) return;
+  const n = doubts().length;
+  const f = S.dl ? STR.dockDone(S.dl.name, S.dl.at) : n ? esc(STR.dockWait(n)) : esc(outName());
+  d.innerHTML = `<div class="dock-in"><span class="dock-f">${f}</span>
+    <button type="button" class="btn primary big" data-act="export"${S.busy ? ' disabled' : ''}>${ICON.down}${n ? STR.exportOk : STR.exportBtn(S.rows.length)}</button></div>`;
 }
 function render() {
-  app.innerHTML = `<div class="lt"><h1>${STR.app}</h1><p class="tag">${STR.tag}</p><p class="hint">${ICON.lock}${STR.hint}</p></div>
-    ${renderEnds()}<section class="grp" id="tidy"${S.prep && (S.prep.g || S.prep.nb) ? '' : ' hidden'}>${renderTidyInner()}</section><section class="grp" id="maps">${renderMapsInner()}</section><section class="grp" id="prev">${renderPreviewInner()}</section>
-    <footer class="foot"><div>${STR.footApp}</div><div>${STR.footMail}<span class="mail">oilsongchengmin@gmail.com</span></div><div><a href="https://qianshoulab.github.io/">${STR.footHome}</a></div></footer>`;
+  const v = view();
+  app.className = 'wrap' + (v === 'work' ? '' : ' narrow');
+  let h;
+  if (v === 'empty') h = `<section class="hero"><img src="icon.svg" alt=""><h1>${STR.app}</h1><p>${STR.heroSub}</p></section>${dropCard()}${tgtSection()}<p class="grp-foot" style="text-align:center">${STR.dropMore}</p>`;
+  else {
+    h = `<div class="pt"><h1>${STR.app}</h1><p>${STR.tag}</p></div>`;
+    if (v === 'pick') h += `<section class="ends">${srcCard()}</section>${tgtSection()}`;
+    else h += `${renderEnds()}<section class="grp" id="doubt" hidden></section><section class="grp" id="tidy"${S.prep && (S.prep.g || S.prep.nb) ? '' : ' hidden'}>${renderTidyInner()}</section><section class="grp" id="maps">${renderMapsInner()}</section><section class="grp" id="prev">${renderPreviewInner()}</section>`;
+  }
+  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp}</div><div>${STR.footMail}<span class="mail">oilsongchengmin@gmail.com</span></div><div><a href="https://qianshoulab.github.io/">${STR.footHome}</a></div></footer>`;
+  if (v === 'work') renderDoubt();
   renderDock();
   const n = recipes().length;
   $('#navRec').innerHTML = `${ICON.book}${STR.recipes}${n ? `<span class="n">${n}</span>` : ''}`;
@@ -1271,7 +1403,7 @@ function render() {
 
 /* ================= 弹层 ================= */
 const sheets = $('#sheets'), sheetEl = $('.sheet', sheets);
-let sheetKind = null, sheetCol = -1, lastFocus = null;
+let sheetKind = null, sheetCol = -1, lastFocus = null, sheetDoubt = false;
 function openSheet(kind, title, body, ok) {
   sheetKind = kind; lastFocus = document.activeElement; $('#toast').classList.remove('on');
   sheetEl.innerHTML = `<div class="grab"></div><div class="sh-head"><button type="button" class="sh-x" data-act="close">${ok ? STR.cancel : ''}</button><div class="sh-t">${esc(title)}</div><button type="button" class="sh-ok" data-act="close">${ok || STR.done}</button></div><div class="sh-body">${body}</div>`;
@@ -1280,9 +1412,12 @@ function openSheet(kind, title, body, ok) {
 }
 function closeSheet() {
   if (sheets.hidden) return;
-  sheets.classList.remove('open'); sheetKind = null; sheetCol = -1;
-  setTimeout(() => { sheets.hidden = true; sheetEl.innerHTML = ''; }, 380);
+  const wasCol = sheetKind === 'col' && sheetDoubt;
+  sheets.classList.remove('open'); sheetKind = null; sheetCol = -1; sheetDoubt = false;
+  setTimeout(() => { sheets.hidden = true; sheetEl.innerHTML = ''; }, 300);
   lastFocus && lastFocus.focus && lastFocus.focus({ preventScroll: true });
+  // 改完最后一处存疑，关上弹层那一下就出文件
+  if (wasCol && S.src && !S.src.demo) { scan(true); if (!doubts().length) doExport(); }
 }
 const pickHTML = (name, opts, cur) => `<div class="pick" data-pick="${name}">${opts.map(([v, l]) => `<button type="button" data-v="${esc(v)}" aria-pressed="${String(v) === String(cur)}">${esc(l)}</button>`).join('')}</div>`;
 function srcOptions(sel, withExtra) {
@@ -1357,13 +1492,13 @@ function pvRows(i) {
   }
   return out.join('') || `<div class="empty-note">∅</div>`;
 }
-function openCol(i) { sheetCol = i; openSheet('col', S.tgt.cols[i].name, colSheetBody(i)); }
+function openCol(i) { sheetDoubt = isDoubt(i); openSheet('col', S.tgt.cols[i].name, colSheetBody(i)); sheetCol = i; }
 function refreshCol(full) {
   const i = sheetCol; if (i < 0) return;
-  S.maps[i].conf = 'user'; S.maps[i].note = '';
+  S.maps[i].conf = 'user'; S.maps[i].note = ''; S.ack.delete(i);
   prep(); rebuild();
   if (full) { const st = sheetEl.scrollTop; $('.sh-body', sheetEl).innerHTML = colSheetBody(i); sheetEl.scrollTop = st; render(); }
-  else { const pv = $('#pv', sheetEl); if (pv) pv.innerHTML = pvRows(i); renderMaps(); renderPreview(); }
+  else { const pv = $('#pv', sheetEl); if (pv) pv.innerHTML = pvRows(i); renderMaps(); renderDoubt(); renderPreview(); }
   scan();
 }
 function setOp(i, t) {
@@ -1379,14 +1514,9 @@ function setOp(i, t) {
   else m.op = { t: 'none' };
   if (t !== 'join' && m.src.length > 1) m.src = [m.src[0]];
 }
-function openTpl() {
-  const cur = S.tgt.id;
-  const body = `<div class="lab"><span>${STR.tplBuiltin}</span></div><div class="form list">${Object.entries(TPL).map(([k, t]) => `<div class="f-row"><button type="button" class="li" data-act="tpl" data-k="${k}"><b>${esc(t.name)}</b><small>${esc(t.cols.map(c => c.name).join(' · '))}</small></button>${cur === k ? `<span class="ck">${ICON.check}</span>` : ''}</div>`).join('')}</div>
-    <button type="button" class="btn tinted block" data-act="pick-tgt-file">${STR.tplFile}</button><div class="sh-foot" style="text-align:center">${STR.tplFileS}</div>`;
-  openSheet('tpl', STR.tplH, body);
-}
+function openTpl() { openSheet('tpl', STR.tplH, tplList()); }
 
-/* ================= 配方 ================= */
+/* ================= 配方（下载那一下自动记，下回同样的表自动套） ================= */
 const RK = 'yijing.recipes.v1';
 function recipes() { try { return JSON.parse(localStorage.getItem(RK) || '[]'); } catch (e) { return []; } }
 function saveRecipes(a) { try { localStorage.setItem(RK, JSON.stringify(a)); return true; } catch (e) { return false; } }
@@ -1405,7 +1535,7 @@ function applyRecipe(r) {
     const ok = src.filter(j => j >= 0);
     const tc = S.tgt.cols[i];
     if (m.cnst != null) return { src: [], cnst: m.cnst, op: m.op, conf: 'sure', note: '' };
-    if (!m.src.length) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'blank', note: tc.req ? STR.noteReq : '' };
+    if (!m.src.length) return { src: [], cnst: null, op: { t: 'none' }, conf: 'blank', note: '' };
     if (!ok.length) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'guess', note: STR.noteMiss };
     return { src: ok, cnst: null, op: clone(m.op), conf: miss ? 'guess' : 'sure', note: miss ? STR.noteMiss : '' };
   });
@@ -1421,17 +1551,25 @@ function matchRecipe() {
   }
   return best;
 }
+// 下载时记住这套对法：同一份表头 + 同一个目标只留一个；返回 true 表示是新记的
+function remember() {
+  if (!S.src || S.src.demo) return null;
+  const key = new Set(S.src.headers.map(norm));
+  const same = r => r.id === S.recipe || (r.tgt.name === S.tgt.name && r.srcHeaders.length === key.size && r.srcHeaders.every(h => key.has(norm(h))));
+  let rs = recipes(); const old = rs.find(same);
+  const name = old ? old.name : `${S.src.name.replace(/\.[^.]+$/, '')} → ${S.tgt.name.replace(/（.*?）|\(.*?\)/g, '').trim()}`;
+  const r = currentRecipe(name); if (old) { r.id = old.id; r.created = old.created; }
+  rs = rs.filter(x => !same(x)); rs.unshift(r);
+  if (!saveRecipes(rs)) return null;
+  S.recipe = r.id;
+  return old ? null : r.id;
+}
 function openRecipes() {
   const rs = recipes();
   const body = (rs.length ? `<div class="form list">${rs.map(r => `<div class="f-row"><button type="button" class="li" data-act="rec-apply" data-id="${r.id}"><b>${esc(r.name)}</b><small>${esc(STR.recSub(r.tgt.cols.length, r.created.slice(0, 10)))} · ${esc(r.tgt.name)}</small></button>${S.recipe === r.id ? `<span class="ck">${ICON.check}</span>` : ''}<button type="button" class="btn small danger" data-act="rec-del" data-id="${r.id}">${STR.recDel}</button></div>`).join('')}</div>`
     : `<div class="empty-note">${STR.recEmpty}</div>`) +
-    `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">${rs.length ? `<button type="button" class="btn plain small" data-act="rec-export">${STR.recExport}</button>` : ''}<button type="button" class="btn plain small" data-act="rec-import">${STR.recImport}</button></div>`;
+    `<div class="sh-acts">${rs.length ? `<button type="button" class="btn plain small" data-act="rec-export">${STR.recExport}</button>` : ''}<button type="button" class="btn plain small" data-act="rec-import">${STR.recImport}</button></div>`;
   openSheet('rec', STR.recH, body);
-}
-function openSaveRec() {
-  const def = `${S.src.demo ? '旧 CRM' : S.src.name.replace(/\.[^.]+$/, '')} → ${S.tgt.name.replace(/（.*?）|\(.*?\)/g, '').trim()}`;
-  openSheet('save', STR.recSaveH, `<div class="form"><div class="f-row"><span class="f-k">${STR.recName}</span><input id="recName" value="${esc(def)}" autofocus maxlength="60"></div></div>`, STR.recSave);
-  $('.sh-ok', sheetEl).dataset.act = 'rec-save';
 }
 function download(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
@@ -1440,7 +1578,10 @@ function download(blob, name) {
 
 /* ================= 导出 ================= */
 const csvCell = v => /[",\r\n]|^\s|\s$/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-async function doExport() {
+let exporting = false;
+async function doExport(auto) {
+  if (exporting || !S.src || !S.tgt) return;
+  exporting = true;
   const t0 = performance.now();
   toast(STR.exporting, null, null, true);
   await new Promise(r => setTimeout(r, 30));
@@ -1464,10 +1605,20 @@ async function doExport() {
       const out = X.write(wb, { type: 'array', bookType: 'xlsx', compression: true });
       download(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name);
     }
-    const s = ((performance.now() - t0) / 1000).toFixed(1);
-    window.__lastExport = { ms: performance.now() - t0, rows: rows.length, fmt: S.fmt };
-    toast(STR.exported(rows.length, s));
-  } catch (e) { toast(STR.readFail + e.message); }
+    const ms = performance.now() - t0, s = ms < 100 ? '<0.1' : (ms / 1000).toFixed(1);
+    window.__lastExport = { ms, rows: rows.length, fmt: S.fmt, auto: !!auto };
+    const d = new Date();
+    S.dl = { name, at: `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}` };
+    const fresh = remember(); lastSet();
+    exporting = false;
+    renderDock(); $('#navRec').innerHTML = `${ICON.book}${STR.recipes}<span class="n">${recipes().length}</span>`;
+    const tc = $('.end.tgt .end-k'); if (tc && S.recipe && !tc.querySelector('.chip')) tc.insertAdjacentHTML('beforeend', `<span class="chip on">${STR.recChip}</span>`);
+    const btn = $('#dock .btn'); if (btn) { btn.classList.add('done'); btn.innerHTML = `${ICON.check}${STR.exportDone}`; setTimeout(() => renderDock(), 1600); }
+    const msg = S.recipeHit && auto ? `${STR.recAuto(S.recipeHit)} · ${STR.exported(rows.length, s)}` : auto ? `${STR.dockAuto} · ${s} 秒` : STR.exported(rows.length, s);
+    if (S.recipeHit && auto) toast(msg, STR.recUndo, undoRecipe);
+    else if (fresh) toast(`${msg}。${STR.recKept}`, STR.recForget, () => { saveRecipes(recipes().filter(r => r.id !== fresh)); if (S.recipe === fresh) S.recipe = null; render(); toast(STR.recForgot); });
+    else toast(msg);
+  } catch (e) { exporting = false; toast(STR.exportFail + (e.message || e)); }
 }
 
 /* ================= 吐司 ================= */
@@ -1476,42 +1627,71 @@ function toast(msg, act, fn, busy) {
   const el = $('#toast'); clearTimeout(toastT); toastFn = fn || null;
   el.innerHTML = `${busy ? '<span class="spin"></span>' : ''}<span>${esc(msg)}</span>${act ? `<button type="button" data-act="toast">${esc(act)}</button>` : ''}`;
   el.classList.add('on');
-  if (!busy) toastT = setTimeout(() => el.classList.remove('on'), act ? 6000 : 2600);
+  if (!busy) toastT = setTimeout(() => el.classList.remove('on'), act ? 7000 : 2800);
 }
 
 /* ================= 载入 ================= */
+let undoRecipe = null;
 function setSource(src, tryRecipe) {
   const p = profileOf(src.headers); src.prof = p ? p.name : '';
-  S.src = src; S.recipe = null; S.prep = null; S.tidy = { fill: null, drop: null, fillOn: {} };
   const prevTgt = S.tgt, prevFmt = S.fmt;
-  let r = tryRecipe ? matchRecipe() : null;
+  S.src = src; S.err = null; S.recipe = null; S.recipeHit = null; S.prep = null; S.tidy = { fill: null, drop: null, fillOn: {} }; S.ack = new Set(); S.dl = null;
+  const r = tryRecipe ? matchRecipe() : null;
   if (r) {
-    applyRecipe(r); changed();
-    toast(STR.recAuto(r.name), STR.recUndo, () => { S.tgt = prevTgt; S.fmt = prevFmt; S.recipe = null; S.tidy = { fill: null, drop: null, fillOn: {} }; S.prep = null; S.maps = autoMap(); changed(); });
-  } else { S.maps = autoMap(); changed(); }
+    applyRecipe(r); S.recipeHit = r.name;
+    undoRecipe = () => { S.tgt = prevTgt || S.tgt; S.fmt = prevTgt ? prevFmt : S.fmt; S.recipe = null; S.recipeHit = null; S.tidy = { fill: null, drop: null, fillOn: {} }; S.prep = null; S.ack = new Set(); S.dl = null; S.maps = autoMap(); S.auto = false; changed(); };
+  } else if (!S.tgt) { S.maps = []; S.rows = src.rows; return render(); }
+  else S.maps = autoMap();
+  S.auto = !src.demo; changed();
+  if (r) toast(STR.recAuto(r.name), STR.recUndo, undoRecipe);
+}
+function setTarget(t, name) {
+  const cols = t.headers.map((h, k) => {
+    const c = conceptOf(h), ty = c && c.exact ? C[c.c].t : 'text';
+    const col = { name: h, t: ty === 'enum' ? 'text' : ty };
+    if (ty === 'date') { const ex = t.rows.map(r => String(r[k] ?? '')).find(Boolean); col.fmt = ex ? guessFmt(ex) : 'YYYY-MM-DD'; }
+    return col;
+  });
+  S.tgt = { id: 'file', name: name.replace(/\.[^.]+$/, ''), cols }; S.fmt = t.kind; S.recipe = null; lastSet();
+}
+function useTarget() {
+  // 换了目标：有来源就重新对列；没存疑就直接下
+  if (!S.src) return render();
+  S.maps = autoMap(); S.ack = new Set(); S.dl = null; S.recipe = null; S.recipeHit = null; S.auto = !S.src.demo; changed();
+}
+const TABLE_EXT = /\.(csv|tsv|txt|xlsx|xls|xlsm|ods|json)$/i;
+async function readOne(file) {
+  if (!TABLE_EXT.test(file.name)) throw new Error(STR.notTable);
+  return readFile(file);
+}
+const errMsg = (f, e) => `${STR.readFail(f.name)}：${[STR.emptyFile, STR.notTable].includes(e && e.message) ? e.message : STR.notTable}。`;
+async function loadFiles(list, as) {
+  list = [...list].filter(Boolean); if (!list.length) return;
+  if (as === 'tgt' || list.length < 2) return loadFile(list[0], as);
+  S.busy = list.map(f => f.name).join('、'); S.err = null; render();
+  await new Promise(r => setTimeout(r, 20));
+  const t0 = performance.now(); let a, b;
+  try { a = await readOne(list[0]); } catch (e) { S.busy = null; S.err = { msg: errMsg(list[0], e) }; return render(); }
+  try { b = await readOne(list[1]); } catch (e) { S.busy = null; S.err = { msg: errMsg(list[1], e) }; return render(); }
+  window.__lastRead = { ms: performance.now() - t0, rows: a.rows.length + b.rows.length };
+  S.busy = null;
+  // 行少的那份当目标模板（模板一般只有表头，最多几行样例）
+  const [tg, sr] = a.rows.length <= b.rows.length ? [a, b] : [b, a];
+  setTarget(tg, tg.name); S.tgt.id = 'file';
+  setSource(sr, false);
 }
 async function loadFile(file, as) {
-  toast(STR.reading, null, null, true);
+  S.busy = file.name; S.err = null;
+  if (view() === 'work') { const e = $('.end.src .end-main'); if (e) { const s = e.querySelector('.end-s,.busy'); if (s) s.outerHTML = srcLine(); } renderDock(); } else render();
   await new Promise(r => setTimeout(r, 20));
   const t0 = performance.now();
   try {
-    const t = await readFile(file);
+    const t = await readOne(file);
     window.__lastRead = { ms: performance.now() - t0, rows: t.rows.length };
-    if (as === 'tgt') {
-      const cols = t.headers.map((h, k) => {
-        const c = conceptOf(h), ty = c && c.exact ? C[c.c].t : 'text';
-        const col = { name: h, t: ty === 'enum' ? 'text' : ty };
-        if (ty === 'date') { const ex = t.rows.map(r => String(r[k] ?? '')).find(Boolean); col.fmt = ex ? guessFmt(ex) : 'YYYY-MM-DD'; }
-        return col;
-      });
-      S.tgt = { id: 'file', name: file.name.replace(/\.[^.]+$/, ''), cols };
-      S.fmt = t.kind; S.recipe = null; S.maps = autoMap(); changed();
-      toast(`${file.name} · ${cols.length} 列`);
-    } else {
-      setSource(t, true);
-      if (!$('#toast').querySelector('button')) toast(`${file.name} · ${STR.rc(t.rows.length, t.headers.length)}`);
-    }
-  } catch (e) { console.warn(e); toast(STR.readFail + (e.message || e)); }
+    S.busy = null;
+    if (as === 'tgt') { setTarget(t, file.name); useTarget(); }
+    else setSource(t, true);
+  } catch (e) { S.busy = null; S.err = { msg: errMsg(file, e) }; render(); }
 }
 function guessFmt(ex) {
   ex = ex.trim();
@@ -1527,6 +1707,12 @@ function guessFmt(ex) {
 }
 
 /* ================= 事件 ================= */
+function ackOne(i) {
+  S.ack.add(i); const left = doubts().length;
+  renderMaps(); renderDoubt(); renderDock();
+  if (!left) return doExport(); // 最后一处点「对」那一下就出文件
+  toast(STR.okDone(S.tgt.cols[i].name, left), STR.okUndo, () => { S.ack.delete(i); renderMaps(); renderDoubt(); renderDock(); });
+}
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;
@@ -1534,19 +1720,15 @@ document.addEventListener('click', e => {
   if (a === 'pick-src') return $('#fSrc').click();
   if (a === 'pick-tgt') return openTpl();
   if (a === 'pick-tgt-file') { closeSheet(); return $('#fTgt').click(); }
-  if (a === 'tpl') { S.tgt = tplFrom(b.dataset.k); S.fmt = S.tgt.fmt; S.recipe = null; S.maps = autoMap(); closeSheet(); return changed(); }
+  if (a === 'demo') { if (!S.tgt) { S.tgt = tplFrom('crm'); S.fmt = S.tgt.fmt; } return setSource(demoSource(), false); }
+  if (a === 'tpl') { S.tgt = tplFrom(b.dataset.k); S.fmt = S.tgt.fmt; lastSet(); closeSheet(); return useTarget(); }
   if (a === 'col') return openCol(+b.dataset.i);
-  if (a === 'fmt') { S.fmt = b.dataset.f; return renderDock(), void $('.end.tgt .end-s').replaceChildren(document.createTextNode(STR.tgtSub(S.tgt.cols.length, { csv: 'CSV', xlsx: 'Excel', json: 'JSON' }[S.fmt]))); }
-  if (a === 'export') return doExport();
+  if (a === 'ok') return ackOne(+b.dataset.i);
+  if (a === 'fmt') { S.fmt = b.dataset.f; lastSet(); S.dl = null; document.querySelectorAll('[data-act="fmt"]').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === S.fmt)); return renderDock(); }
+  if (a === 'export') { doubts().forEach(i => S.ack.add(i)); renderMaps(); renderDoubt(); return doExport(); }
   if (a === 'tidy') { const k = b.dataset.k; S.tidy[k] = S.tidy[k] === false; return changed(); }
   if (a === 'recipes') return openRecipes();
-  if (a === 'save-rec') return openSaveRec();
-  if (a === 'rec-save') {
-    const name = ($('#recName').value || '').trim() || STR.recipes;
-    const rs = recipes().filter(r => r.name !== name); const r = currentRecipe(name); rs.unshift(r);
-    saveRecipes(rs); S.recipe = r.id; closeSheet(); render(); return toast(STR.recSaved(name));
-  }
-  if (a === 'rec-apply') { const r = recipes().find(x => x.id === b.dataset.id); if (r) { applyRecipe(r); closeSheet(); changed(); toast(STR.recAuto(r.name)); } return; }
+  if (a === 'rec-apply') { const r = recipes().find(x => x.id === b.dataset.id); if (r && S.src) { applyRecipe(r); S.ack = new Set(); closeSheet(); changed(); toast(STR.recAuto(r.name)); } return; }
   if (a === 'rec-del') { saveRecipes(recipes().filter(x => x.id !== b.dataset.id)); if (S.recipe === b.dataset.id) S.recipe = null; render(); return openRecipes(); }
   if (a === 'rec-export') { download(new Blob([JSON.stringify({ app: 'yijing', v: 1, recipes: recipes() }, null, 1)], { type: 'application/json' }), `译经僧配方-${new Date().toISOString().slice(0, 10)}.json`); return; }
   if (a === 'rec-import') return $('#fRec').click();
@@ -1607,9 +1789,9 @@ sheetEl.addEventListener('input', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSheet();
-  if (e.key === 'Enter' && sheetKind === 'save' && e.target.id === 'recName') { e.preventDefault(); $('.sh-ok', sheetEl).click(); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('mrow')) { e.preventDefault(); openCol(+e.target.dataset.i); }
 });
-$('#fSrc').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) loadFile(f, 'src'); });
+$('#fSrc').addEventListener('change', e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) loadFiles(fs, 'src'); });
 $('#fTgt').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) loadFile(f, 'tgt'); });
 $('#fRec').addEventListener('change', async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -1621,29 +1803,30 @@ $('#fRec').addEventListener('change', async e => {
     saveRecipes(rs); render(); if (sheetKind === 'rec') openRecipes(); toast(STR.recImported(list.length));
   } catch (_) { toast(STR.recBadFile); }
 });
-// 拖放
+// 拖放：整页都能丢，拖进来整页高亮；底下一条专收目标模板
 const drop = $('#drop'); let dragN = 0;
 drop.querySelector('[data-zone="src"]').innerHTML = `<div>${STR.dropSrc}<small>${STR.dropSrcS}</small></div>`;
-drop.querySelector('[data-zone="tgt"]').innerHTML = `<div>${STR.dropTgt}<small>${STR.dropTgtS}</small></div>`;
+drop.querySelector('[data-zone="tgt"]').innerHTML = `<div>${STR.dropTgt}</div>`;
 const hasFiles = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
 window.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); dragN++; drop.hidden = false; });
 window.addEventListener('dragleave', e => { if (!hasFiles(e)) return; if (--dragN <= 0) { dragN = 0; drop.hidden = true; } });
-window.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); drop.querySelectorAll('.dz').forEach(z => z.classList.toggle('on', z.contains(e.target))); });
+window.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); const t = e.target.closest && e.target.closest('.dz'); drop.querySelectorAll('.dz').forEach(z => z.classList.toggle('on', t ? z === t : z.classList.contains('main'))); });
 window.addEventListener('drop', e => {
   if (!hasFiles(e)) return; e.preventDefault(); dragN = 0; drop.hidden = true;
-  const z = e.target.closest && e.target.closest('[data-zone]'); const f = e.dataTransfer.files[0];
-  if (f) loadFile(f, z && z.dataset.zone === 'tgt' ? 'tgt' : 'src');
+  const z = e.target.closest && e.target.closest('.dz');
+  loadFiles(e.dataTransfer.files, z && z.dataset.zone === 'tgt' ? 'tgt' : 'src');
 });
 // 导航
 const nav = $('#nav');
 $('#navBack').innerHTML = `${ICON.chevL}<span>${STR.home}</span>`;
-$('#navT').textContent = STR.app;
-addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 30), { passive: true });
+$('#navT').innerHTML = `<img src="icon.svg" alt="">${STR.app}`;
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 24), { passive: true });
 
-/* ================= 开张 ================= */
-S.tgt = tplFrom('crm'); S.fmt = 'csv';
-setSource(demoSource(), false);
-window.__yj = { S, loadFile, autoMap, parseDate, splitName, fmtPhone, parseNum, parseCSV, splitList, listPlan, outRow };
+/* ================= 开张：记得上回选的目标格式；第一次来就是空的，一句话 + 用示例试试 ================= */
+S.ack = new Set(); S.busy = null; S.err = null; S.auto = false; S.dl = null; S.recipeHit = null;
+{ const L = lastGet(); if (L && L.tgt && Array.isArray(L.tgt.cols)) { S.tgt = L.tgt; S.fmt = L.fmt || L.tgt.fmt || 'csv'; } }
+render();
+window.__yj = { S, loadFile, loadFiles, autoMap, parseDate, splitName, fmtPhone, parseNum, parseCSV, splitList, listPlan, outRow, render, doubts, demo: () => setSource(demoSource(), false) };
 </script>
 </body>
 </html>

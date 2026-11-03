@@ -1,0 +1,289 @@
+{
+ "crm": {
+  "first": {
+   "clicks": 4,
+   "doubts": [
+    "Phone",
+    "Gender",
+    "Notes"
+   ],
+   "auto": false,
+   "readMs": 6,
+   "readyMs": 171,
+   "exportMs": 54,
+   "machineMs": 225,
+   "cells": 3900,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 5,
+   "readyMs": 144,
+   "exportMs": 37,
+   "machineMs": 181,
+   "cells": 3900,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ },
+ "crm_gbk": {
+  "first": {
+   "clicks": 4,
+   "doubts": [
+    "Phone",
+    "Gender",
+    "Notes"
+   ],
+   "auto": false,
+   "readMs": 7,
+   "readyMs": 166,
+   "exportMs": 53,
+   "machineMs": 219,
+   "cells": 3900,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 13,
+   "readyMs": 189,
+   "exportMs": 40,
+   "machineMs": 229,
+   "cells": 3900,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ },
+ "shop_cn2shopify": {
+  "first": {
+   "clicks": 4,
+   "doubts": [
+    "Handle",
+    "Body (HTML)",
+    "Published"
+   ],
+   "auto": false,
+   "readMs": 14,
+   "readyMs": 232,
+   "exportMs": 42,
+   "machineMs": 274,
+   "cells": 1800,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 9,
+   "readyMs": 198,
+   "exportMs": 48,
+   "machineMs": 246,
+   "cells": 1800,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ },
+ "shopify2shop_cn": {
+  "first": {
+   "clicks": 4,
+   "doubts": [],
+   "auto": true,
+   "readMs": 15,
+   "readyMs": 218,
+   "exportMs": 37,
+   "machineMs": 255,
+   "cells": 1364,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 5,
+   "readyMs": 177,
+   "exportMs": 36,
+   "machineMs": 213,
+   "cells": 1364,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ },
+ "coa": {
+  "first": {
+   "clicks": 4,
+   "doubts": [
+    "Type"
+   ],
+   "auto": false,
+   "readMs": 4,
+   "readyMs": 138,
+   "exportMs": 36,
+   "machineMs": 174,
+   "cells": 225,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 6,
+   "readyMs": 179,
+   "exportMs": 56,
+   "machineMs": 235,
+   "cells": 225,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ },
+ "shopify_shuf2shop_cn": {
+  "first": {
+   "clicks": 4,
+   "doubts": [],
+   "auto": true,
+   "readMs": 7,
+   "readyMs": 158,
+   "exportMs": 35,
+   "machineMs": 193,
+   "cells": 1364,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 6,
+   "readyMs": 161,
+   "exportMs": 38,
+   "machineMs": 199,
+   "cells": 1364,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ },
+ "shop_en2shopify": {
+  "first": {
+   "clicks": 4,
+   "doubts": [
+    "Handle",
+    "Published",
+    "Variant Compare At Price"
+   ],
+   "auto": false,
+   "readMs": 4,
+   "readyMs": 154,
+   "exportMs": 37,
+   "machineMs": 191,
+   "cells": 1800,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 16,
+   "readyMs": 178,
+   "exportMs": 37,
+   "machineMs": 215,
+   "cells": 1800,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ },
+ "shop_en12shopify": {
+  "first": {
+   "clicks": 4,
+   "doubts": [
+    "Handle",
+    "Published",
+    "Variant Compare At Price"
+   ],
+   "auto": false,
+   "readMs": 8,
+   "readyMs": 210,
+   "exportMs": 39,
+   "machineMs": 249,
+   "cells": 1800,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 4,
+   "readyMs": 159,
+   "exportMs": 38,
+   "machineMs": 197,
+   "cells": 1800,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ },
+ "crm_100k": {
+  "first": {
+   "clicks": 4,
+   "doubts": [
+    "Phone",
+    "Gender",
+    "Notes"
+   ],
+   "auto": false,
+   "readMs": 365,
+   "readyMs": 1535,
+   "exportMs": 1138,
+   "machineMs": 2673,
+   "cells": 1300000,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "second": {
+   "clicks": 2,
+   "doubts": [],
+   "auto": true,
+   "readMs": 298,
+   "readyMs": 1376,
+   "exportMs": 1089,
+   "machineMs": 2465,
+   "cells": 1300000,
+   "bad_cells": 0,
+   "extra_rows": 0,
+   "missing_rows": 0
+  },
+  "errs": 0
+ }
+}
