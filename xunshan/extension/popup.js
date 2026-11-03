@@ -118,7 +118,7 @@ function status(w) {
   return '';
 }
 function valueOf(w) {
-  if (w.err && !w.paused) return `<span style="color:var(--warn-fg)">${ui.esc(errText(w))}</span>`;
+  if (w.err && !w.paused) return ui.esc(errText(w));
   if (w.lastText == null) return t('waitingFirst');
   if (!w.selector) return ui.esc(w.lastNew ? t('newPrefix') + w.lastNew : (w.title || ui.host(w.url)));
   return `<span class="v">${ui.esc(oneLine(w.lastText).slice(0, 60))}</span> · ${ui.esc(rules.condLabel(w.cond))}`;
@@ -132,11 +132,11 @@ function renderList() {
   const hits = all.filter(w => w.unread).length;
   $('#duty').textContent = hits ? t('onDutyHit', hits) : all.length ? t('onDuty', all.length) : t('onDutyIdle');
   $('#dutyDot').className = 'dot ' + (hits ? 'hit' : 'on');
+  // 只列前几条；全部在顶上「全部 N」里，底下不再重复一行
   $('#list').innerHTML = shown.map(w => `
     <button class="row it" data-open="${w.id}">${ui.avatar(w.url)}
-      <div class="grow"><div class="t">${ui.esc(w.label || w.title || ui.host(w.url))}</div><div class="s">${valueOf(w)}</div></div>
-      <span class="end">${status(w)}<span class="tn">${ui.ago(w.lastChange || w.lastCheck)}</span></span></button>`).join('')
-    + (ws.length > shown.length ? `<a class="row more" href="app.html" target="_blank"><div class="grow">${t('openAll')} ${t('count', all.length)}</div>${ui.ICON.chev.replace('<svg', '<svg class="chev"')}</a>` : '');
+      <div class="grow"><div class="t">${ui.esc(w.label || w.title || ui.host(w.url))}</div><div class="s${w.err && !w.paused ? ' err2' : ''}">${valueOf(w)}</div></div>
+      <span class="end">${status(w)}<span class="tn">${ui.ago(w.lastChange || w.lastCheck)}</span></span></button>`).join('');
   $('#mine').hidden = !shown.length;
   $('#empty').hidden = all.length > 0;
 }

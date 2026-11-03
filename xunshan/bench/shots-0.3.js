@@ -10,6 +10,11 @@ fs.mkdirSync(OUT, { recursive: true });
 const PORT = 8791, BASE = `http://localhost:${PORT}`;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const errors = [];
+// ONLY=3-result,4-error,intro 只重出这几张（别的照样走流程，图写到临时目录扔掉）；不给就全出
+const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null;
+const want = f => !ONLY || ONLY.some(o => path.basename(f).startsWith(o));
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'xs-shot-'));
+const P = f => want(f) ? path.join(OUT, f) : path.join(TMP, f);
 
 async function toWebp(browser, png, out, q) {
   const p = await browser.newPage();
@@ -45,7 +50,7 @@ async function run(scheme) {
   const tabIdOf = url => sw.evaluate(u => chrome.tabs.query({}).then(ts => (ts.find(t => (t.url || '') === u) || {}).id), url);
   const S = scheme === 'dark' ? 'dark' : 'light';
   const pop = await ctx.newPage(); await pop.setViewportSize({ width: 380, height: 640 });
-  const popShot = async name => { await sleep(350); await pop.screenshot({ path: path.join(OUT, name + '-' + S + '.png'), fullPage: true }); };
+  const popShot = async name => { await sleep(350); await pop.screenshot({ path: P(name + '-' + S + '.png'), fullPage: true }); };
   const open = async p => { const pg = await ctx.newPage(); await pg.goto(BASE + p); return pg; };
   const popFor = async p => { await pop.goto(X('popup.html?tab=' + (await tabIdOf(BASE + p)))); await pop.waitForSelector('[data-a="pick"]'); };
   const addRow = async (label, cond) => {
@@ -100,25 +105,25 @@ async function run(scheme) {
   const b = await ord.locator('#status').boundingBox();
   await ord.mouse.move(b.x + 10, b.y + 8); await ord.mouse.click(b.x + 10, b.y + 8);
   await ord.waitForSelector('qianshou-picker .pn .seg'); await sleep(900);
-  await ord.screenshot({ path: path.join(OUT, 'x-pick-1280-' + S + '.png') });
+  await ord.screenshot({ path: P('x-pick-1280-' + S + '.png') });
   await ord.keyboard.press('Escape'); await ord.close();
 
   // 总览页 1280 / 390
   const pid = Object.values(await WS()).find(w => w.url.endsWith('/price')).id;
   const app = await ctx.newPage();
   await app.goto(X('app.html#' + pid)); await app.waitForSelector('.he'); await sleep(600);
-  await app.screenshot({ path: path.join(OUT, 'x-app-1280-' + S + '.png') });
+  await app.screenshot({ path: P('x-app-1280-' + S + '.png') });
   const hb = await app.locator('.hist-h').boundingBox(), cb = await app.locator('#hist .he').first().boundingBox();
-  await app.screenshot({ path: path.join(OUT, 'x-compare-' + S + '.png'), fullPage: true, clip: { x: cb.x - 24, y: hb.y - 24, width: cb.width + 48, height: cb.y + cb.height - hb.y + 48 } });
+  await app.screenshot({ path: P('x-compare-' + S + '.png'), fullPage: true, clip: { x: cb.x - 24, y: hb.y - 24, width: cb.width + 48, height: cb.y + cb.height - hb.y + 48 } });
   await app.setViewportSize({ width: 390, height: 844 }); await sleep(300);
-  await app.screenshot({ path: path.join(OUT, 'x-app-390-' + S + '.png') });
+  await app.screenshot({ path: P('x-app-390-' + S + '.png') });
   await app.setViewportSize({ width: 1280, height: 800 });
   // 加一串
   await app.goto(X('app.html#add')); await app.waitForSelector('#urls');
   await app.fill('#urls', [1, 2, 3, 4, 5, 6, 7, 8].map(i => BASE + '/shop/' + i).join('\n')); await app.fill('#lim', '100');
   await app.dispatchEvent('#urls', 'input'); await app.evaluate(() => { document.activeElement.blur(); scrollTo(0, 0); }); await sleep(300);
   const ab = await app.locator('#add').boundingBox();
-  await app.screenshot({ path: path.join(OUT, 'x-batch-1280-' + S + '.png'), clip: { x: ab.x - 24, y: ab.y - 24, width: ab.width + 48, height: ab.height + 48 } });
+  await app.screenshot({ path: P('x-batch-1280-' + S + '.png'), clip: { x: ab.x - 24, y: ab.y - 24, width: ab.width + 48, height: ab.height + 48 } });
   const hoz = await app.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   if (hoz) errors.push(S + ' 总览页横向溢出');
   await ctx.close();
@@ -139,13 +144,14 @@ async function run(scheme) {
     const bad = await p.evaluate(() => ({ hoz: document.documentElement.scrollWidth > innerWidth, broken: [...document.images].filter(i => i.complete && !i.naturalWidth).map(i => i.currentSrc || i.src) }));
     if (bad.hoz) errors.push(`介绍页 ${w} ${scheme} 横向溢出`);
     if (bad.broken.length) errors.push(`介绍页 ${w} ${scheme} 坏图 ${bad.broken.join(',')}`);
-    await p.screenshot({ path: path.join(OUT, `intro-${w}-${scheme}.png`), fullPage: true });
+    await p.screenshot({ path: P(`intro-${w}-${scheme}.png`), fullPage: true });
     await p.close();
   }
   // 介绍页用图
   const pairs = [['x-app-1280', 'app'], ['3-result', 'popup'], ['x-batch-1280', 'batch'], ['x-compare', 'compare']];
   const dims = {};
   for (const [src, dst] of pairs) for (const s of ['light', 'dark']) {
+    if (!want(src)) continue;
     const d = await toWebp(browser, path.join(OUT, `${src}-${s}.png`), path.join(IMG, dst + (s === 'dark' ? '-dark' : '') + '.webp'));
     dims[dst] = [d.w, d.h];
   }

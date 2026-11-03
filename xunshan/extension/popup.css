@@ -36,7 +36,8 @@ body{width:380px;min-height:220px;padding:16px 16px 16px;background:var(--bg-gro
 .empty p{margin:0 0 12px}
 .empty b{display:block;color:var(--fg);font-weight:600;margin-bottom:4px}
 .empty-acts{display:flex;align-items:center;gap:8px}
-.more{color:var(--link)}
+/* 出错那条的说明最多两行，「怎么办」不被截掉；正常的仍一行 */
+.row .s.err2{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--warn-fg)}
 .row button.grow{display:block;padding:0;min-width:0;text-align:left;color:inherit}
 .row.cand.on{padding-top:12px;padding-bottom:12px}
 .row[disabled]{opacity:1;cursor:default}
