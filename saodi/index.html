@@ -129,7 +129,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
   <a class="back" href="https://qianshoulab.github.io/"><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5 1.5 7.5l6 6"/></svg><span data-t="i_home"></span></a>
   <span class="me"><img src="icon.svg" alt=""><span data-t="app"></span></span>
   <span class="lang" id="lang" role="group"></span>
-  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.1/SaodiSeng-0.3.1.exe" data-t="i_dl"></a>
+  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.4.0/SaodiSeng-0.4.0.exe" data-t="i_dl"></a>
 </div></nav>
 
 <main class="wrap">
@@ -139,7 +139,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
     <p class="tag" data-t="i_tag"></p>
     <p class="lede" data-t="i_lede"></p>
     <div class="cta">
-      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.1/SaodiSeng-0.3.1.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span data-t="i_dl_btn"></span></a>
+      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.4.0/SaodiSeng-0.4.0.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span data-t="i_dl_btn"></span></a>
       <span class="meta tn" id="meta"></span>
     </div>
     <div class="shot">
@@ -198,7 +198,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
 /* 字从 app/ui/strings.js 拿；右上角 EN / 中文 一点就换，记在 localStorage；
    下载链接跟着 version.json 走：以后出新版只改 version.json 不用改页面 */
 (function () {
-  var V = "0.3.1";
+  var V = "0.4.0";
   var $ = function (s) { return document.querySelector(s); };
   var exe = function () { return "SaodiSeng-" + V + ".exe"; };
   var url = function () { return "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v" + V + "/" + exe(); };
