@@ -1,0 +1,6 @@
+{
+  "name": { "message": "Daibi · Form Filler", "description": "Store and extensions-page name. Keep in sync with app.full in strings.js." },
+  "short_name": { "message": "Daibi" },
+  "description": { "message": "Fills web forms from Excel or CSV, row by row: dropdowns, date pickers, uploads, Google Sheets. Your data stays in your browser." },
+  "action_title": { "message": "Open Daibi" }
+}

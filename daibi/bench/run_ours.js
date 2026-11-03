@@ -50,6 +50,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const tmp = await ctx.newPage();
   await tmp.goto(`chrome-extension://${extId}/panel.html`);
   const tabId = await tmp.evaluate(async () => (await chrome.tabs.query({ url: 'http://127.0.0.1/*' }))[0].id);
+  if (process.env.DAIBI_LANG) await tmp.evaluate(l => chrome.storage.local.set({ 'daibi:lang': l }), process.env.DAIBI_LANG); // 侧栏语言（默认英文）
   const [panel] = await Promise.all([ctx.waitForEvent('page'), tmp.evaluate(u => chrome.windows.create({ url: u, left: 910, top: 0, width: 400, height: 860 }), `chrome-extension://${extId}/panel.html?tab=${tabId}`)]);
   await tmp.close();
   await web.bringToFront();
@@ -102,10 +103,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     console.log('  展开', unfold, '次  点选成功：', picks.join(',') || '无', ' 点选不成：', pickFail.join(',') || '无');
     if (!(await panel.isChecked('#set-auto'))) await panel.click('label.qs-set');
     await sleep(300);
-    const mainTxt = (await panel.textContent('#btnMain')).trim();
+    const mainTxt = (await panel.textContent('#btnMain')).trim(), mainMode = await panel.getAttribute('#btnMain', 'data-mode');
     if (site === 'react' || site === 'plain') await panel.screenshot({ path: path.join(SHOTS, `ours-${site}-ready.png`) });
     const t0 = Date.now(); let secs = null, warned = 0;
-    if (/连填/.test(mainTxt)) {
+    if (mainMode === 'go') { // 「连填 N 行 / Fill N rows」：按模式认，不按字（0.4.0 起界面两种语言）
       await panel.click('#btnMain');
       await sleep(150);
       if (await panel.isVisible('#warn')) { warned = 1; console.log('  开跑前提醒：', (await panel.textContent('#warnTxt')).trim()); await panel.click('#warnGo'); }
@@ -119,7 +120,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     }
     const s = await st();
     const lg = (await getLog()).filter(x => x.site === site || (site === 'iframe' && x.site === 'inner'));
-    const errs = s.map((x, i) => x.s === 'error' ? `${i + 1}:${x.m}` : null).filter(Boolean);
+    const errs = await panel.evaluate(() => window.__daibi.S().st.map((x, i) => x.s === 'error' ? `${i + 1}:${window.__daibi.mText ? window.__daibi.mText(x.m) : x.m}` : null).filter(Boolean));
     console.log(`  主按钮「${mainTxt}」 用时 ${secs}s  完成 ${s.filter(x => x.s === 'done').length}  出错 ${errs.length}  服务器收到 ${lg.length}`);
     errs.slice(0, 6).forEach(e => console.log('    ' + e));
     results[site] = { auto, picks, pickFail, unfold, warned, secs, mainTxt, status: s, received: lg.map(x => x.f) };

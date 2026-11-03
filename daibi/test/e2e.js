@@ -1,5 +1,7 @@
 /* 代笔僧端到端测试：真把插件装进 Chromium，在本地测试站上把 20 行表从头填到尾。
- * 跑法（Linux 无显示器）：xvfb-run -a node daibi/test/e2e.js
+ * 跑法（Linux 无显示器）：xvfb-run -a node daibi/test/e2e.js            （侧栏用中文跑）
+ *                         DAIBI_LANG=en xvfb-run -a node daibi/test/e2e.js（侧栏用英文跑）
+ * 0.4.0 起界面字两套：核对界面字一律问侧栏自己的 QSLib.i18n.t（跟着当前语言），不在这里写死中文。
  * 说明：侧栏在测试里以普通标签页打开（panel.html?tab=<目标标签页 id>），
  *       并给测试副本的 manifest 加了 127.0.0.1 的 host 权限，省掉授权弹窗（真用户点「对字段」时浏览器会问一次）。
  */
@@ -8,7 +10,8 @@ const { spawn } = require('child_process');
 const fs = require('fs'), path = require('path'), os = require('os');
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = process.env.SHOTS || path.join(os.tmpdir(), 'daibi-shots');
+const LANG = process.env.DAIBI_LANG === 'en' ? 'en' : 'zh';
+const OUT = process.env.SHOTS || path.join(os.tmpdir(), 'daibi-shots-' + LANG);
 const PORT = 18700;
 const SITE = n => `http://127.0.0.1:${PORT + n}`;
 const DATA = f => path.join(__dirname, 'data', f);
@@ -32,7 +35,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'daibi-prof-'));
   const ctx = await chromium.launchPersistentContext(prof, {
-    headless: false, viewport: { width: 980, height: 900 }, deviceScaleFactor: 2, locale: 'zh-CN',
+    headless: false, viewport: { width: 980, height: 900 }, deviceScaleFactor: 2, locale: LANG === 'en' ? 'en-US' : 'zh-CN',
     args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`]
   });
   let [sw] = ctx.serviceWorkers(); if (!sw) sw = await ctx.waitForEvent('serviceworker');
@@ -51,12 +54,20 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await panel.setViewportSize({ width: 380, height: 900 });
   await panel.goto(`chrome-extension://${extId}/panel.html`);
   const tabId = await panel.evaluate(async () => (await chrome.tabs.query({ url: 'http://127.0.0.1/*' }))[0].id);
+  check((await panel.evaluate(() => document.documentElement.lang)) === 'en', '没选过语言：侧栏默认英文');
+  await panel.evaluate(l => chrome.storage.local.set({ 'daibi:lang': l }), LANG); // 等于在右上角点了 EN / 中文
   await panel.goto(`chrome-extension://${extId}/panel.html?tab=${tabId}`);
   await panel.waitForSelector('#btnMain');
+  await sleep(200);
+  check((await panel.evaluate(() => window.__daibi.lang())) === LANG, '侧栏语言：' + LANG);
+  const T = (k, v) => panel.evaluate(([k, v]) => QSLib.i18n.t(k, v), [k, v]);
+  const rowsN = () => panel.evaluate(() => { const t = window.__daibi.S().table; return t ? t.rows.length : 0; });
+  // 表读进来、侧栏画完：表信息那行写着「N 行 · M 列」（跟 0.3.0 的等法一样，等到画完再往下点）
+  const metaIs = async n => (await rowsN()) === n && (await panel.textContent('#tMeta')) === await T('table.meta', { rows: n, cols: await panel.evaluate(() => window.__daibi.S().table.headers.length) });
   await panel.screenshot({ path: path.join(OUT, '00-empty.png') });
 
   const st = () => panel.evaluate(() => window.__daibi.S().st.map(x => x.s));
-  const stm = () => panel.evaluate(() => window.__daibi.S().st);
+  const stm = () => panel.evaluate(() => window.__daibi.S().st.map(x => ({ s: x.s, m: window.__daibi.mText(x.m) }))); // 行上的话按当前语言出字
   const binds = () => panel.evaluate(() => { const d = window.__daibi; const m = d.maps()[d.tab.origin]; return m && Object.keys(m.b).length ? m : null; });
   const mainText = () => panel.textContent('#btnMain');
   const state = () => panel.evaluate(() => { const d = window.__daibi; return { st: d.S().st.map(x => x.s[0]).join(''), row: d.run.row, phase: d.run.phase, going: d.run.going, hold: d.run.hold, url: d.tab.url, main: document.getElementById('btnMain').textContent, warn: document.getElementById('warn').hidden ? '' : document.getElementById('warnTxt').textContent }; }).catch(() => null);
@@ -69,8 +80,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   /* ===== 1. 订单站：xlsx，自动对字段 + 点选一个 + 手动模式 ===== */
   console.log('\n[1] 订单录入：读 xlsx，对字段，手动模式');
   await put('订单20行.xlsx');
-  await waitFor(async () => (await panel.textContent('#tMeta')).includes('20 行'), 5000, '读表');
-  check((await panel.textContent('#tMeta')).trim() === '20 行 · 16 列', '读出 20 行 16 列（跳过「说明」页）');
+  await waitFor(() => metaIs(20), 5000, '读表');
+  check((await panel.textContent('#tMeta')).trim() === await T('table.meta', { rows: 20, cols: 16 }), '读出 20 行 16 列（跳过「说明」页）：' + (await panel.textContent('#tMeta')));
   await waitFor(async () => !!(await binds()), 4000, '自动对字段');
   let b = (await binds()).b;
   console.log('    自动对上：', Object.entries(b).map(([h, x]) => `${h}→${x.label}(${x.conf} ${x.score})`).join('，'));
@@ -91,13 +102,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 0.3.0：字段都有主了、这个网站答应过 → 不用再点「填第 1 行」，自己填好等人看
   await reset();
   await waitFor(async () => (await st())[0] === 'filled', 6000, '点选完自己填好第 1 行');
-  check((await panel.textContent('#toast')).includes('撤'), '自己填了，提示条带「撤」：' + (await panel.textContent('#toast')));
+  check((await panel.textContent('#toastAct')) === await T('toast.undo'), '自己填了，提示条带「撤」：' + (await panel.textContent('#toast')));
   await sleep(1200);
   // 撤：网页回空表，这行退回待填，不再自己填
   await panel.click('#toastAct');
   await sleep(1500);
   check((await st())[0] === 'todo' && (await web.inputValue('#cust')) === '', '点「撤」：网页回空表，第 1 行退回待填');
-  check((await mainText()) === '填第 1 行', '撤了以后不再自己填，主按钮：填第 1 行');
+  check((await mainText()) === await T('run.fill', { n: 1 }), '撤了以后不再自己填，主按钮：' + (await mainText()));
   await panel.click('#btnMain');
   await waitFor(async () => (await st())[0] === 'filled', 4000, '第 1 行填好');
   const vals = await web.evaluate(() => ({
@@ -121,9 +132,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   /* ===== 2. 自动提交：20 行从头到尾 ===== */
   console.log('\n[2] 订单录入：自动提交，20 行计时');
   await put('订单20行.xlsx'); // 同一张表又放进来：交过的行记着，对应自动套上
-  await waitFor(async () => (await panel.textContent('#fieldNote')).includes('上次的对应'), 3000, '套用上次对应');
+  await waitFor(async () => (await panel.textContent('#fieldNote')) === await T('fields.restored'), 3000, '套用上次对应');
   check(true, '同一网站再打开：上次的字段对应自动套上');
-  await waitFor(async () => (await panel.textContent('#toast')).includes('上回交过的 1 行'), 4000, '同一张表：交过的行记着');
+  await waitFor(async () => [await T('toast.kept', { n: 1, k: 2 }), await T('toast.keptFilled', { n: 1, k: 2 })].includes(await panel.textContent('#toastTxt')), 4000, '同一张表：交过的行记着'); // 接着就自己填第 2 行，话换成「…第 2 行填好了」
   const s2 = await st();
   check(s2[0] === 'done' && s2[1] !== 'done', '同一张表再放：第 1 行还是完成，从第 2 行接着');
   await panel.click('#toastAct'); // 从头来
@@ -131,7 +142,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   check(true, '「从头来」把状态清零');
   await reset();
   await setAuto(true);
-  await waitFor(async () => (await mainText()) === '连填 20 行', 2000, '主按钮变「连填 20 行」');
+  await waitFor(async () => (await mainText()) === await T('run.go', { n: 20 }), 2000, '主按钮变「连填 20 行」');
   const t0 = Date.now();
   await panel.click('#btnMain');
   await waitFor(async () => (await st()).every(s => s === 'done'), 90000, '20 行全部完成');
@@ -159,7 +170,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await reset();
   await web.goto(SITE(1) + '/wizard/1');
   await put('订单20行-GBK.csv');
-  await waitFor(async () => (await panel.textContent('#tMeta')).includes('20 行'), 4000, '读 GBK CSV');
+  await waitFor(async () => (await panel.textContent('#tName')) === '订单20行-GBK.csv' && await metaIs(20), 4000, '读 GBK CSV');
   check((await panel.evaluate(() => window.__daibi.S().table.headers[0])) === '客户名', 'GBK 编码 CSV 读出来不乱码：' + (await panel.evaluate(() => window.__daibi.S().table.headers.slice(0, 3).join('|'))));
   await waitFor(async () => !!(await binds()), 4000, '向导第 1 页对字段');
   b = (await binds()).b;
@@ -201,7 +212,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await panel.click('#btnMain');
   await waitFor(async () => (await stm())[0].s === 'filled', 5000, '第 1 行填好');
   await sleep(1500);
-  check((await getLog()).length === 0 && (await stm())[0].m === '卡在验证码', '遇到验证码：填好不提交，标「卡在验证码」');
+  check((await getLog()).length === 0 && (await stm())[0].m === await T('err.CAPTCHA'), '遇到验证码：填好不提交，标「卡在验证码」：' + (await stm())[0].m);
   await panel.screenshot({ path: path.join(OUT, '05-captcha.png') });
   await web.check('#robot');
   await web.click('button:has-text("提交")');
@@ -216,18 +227,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await reset();
   await web.goto(SITE(0) + '/order');
   await put('坏一行.csv');
-  await waitFor(async () => (await panel.textContent('#tMeta')).includes('3 行'), 3000, '读坏表');
+  await waitFor(() => metaIs(3), 3000, '读坏表');
   await setAuto(true);
   await panel.click('#btnMain');
   await waitFor(async () => (await st()).every(s => s !== 'todo' && s !== 'filled'), 30000, '坏表跑完');
   const sm = await stm();
   check(sm[0].s === 'done' && sm[1].s === 'error' && sm[2].s === 'done', '第 2 行出错，1、3 行照常完成');
   check(/企业版/.test(sm[1].m || ''), '出错原因写明：' + sm[1].m);
-  check((await getLog()).length === 2, '坏行没提交');
+  { const L = await getLog(); check(L.length === 2, '坏行没提交（收到 ' + L.length + '：' + L.map(x => x.f.c1).join(',') + '）'); }
   await panel.click('#seg button[data-f=error]');
   check((await panel.$$('.ri')).length === 1, '「出错」筛选只列出 1 行');
   await panel.screenshot({ path: path.join(OUT, '06-error.png') });
-  check((await mainText()) === '重试出错的 1 行' && !(await panel.isVisible('#btnRetry')), '只剩出错的：主按钮就是「重试出错的 1 行」');
+  check((await mainText()) === await T('run.retry', { n: 1 }) && !(await panel.isVisible('#btnRetry')), '只剩出错的：主按钮就是「重试出错的 1 行」：' + (await mainText()));
   await panel.click('#btnMain');
   await waitFor(async () => (await st())[1] === 'error', 15000, '重试后仍标出错');
   check(true, '重试能跑（数据没改仍出错）');
@@ -283,7 +294,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await panel.evaluate(() => { document.getElementById('pasteBox').hidden = false; });
   await panel.fill('#pasteText', SITE(0) + '/sheet.csv');
   await panel.click('#pasteOk');
-  await waitFor(async () => (await panel.textContent('#tMeta')).includes('5 行'), 5000, '读链接');
+  await waitFor(() => metaIs(5), 5000, '读链接');
   check((await panel.textContent('#tName')) === '线上订单表.csv', '链接读进来，表名取自下载文件名');
   check(await panel.isVisible('#btnReload'), '链接表有「刷新」按钮');
   await panel.click('#btnMain'); // 填第 1 行
@@ -292,21 +303,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await waitFor(async () => (await st())[0] === 'done', 5000, '第 1 行完成');
   await fetch(SITE(0) + '/api/sheetrows?n=8', { method: 'POST' });
   await panel.click('#btnReload');
-  await waitFor(async () => (await panel.textContent('#tMeta')).includes('8 行'), 5000, '刷新后 8 行');
+  await waitFor(() => metaIs(8), 5000, '刷新后 8 行');
   const s9 = await st();
   check(s9[0] === 'done' && s9.slice(2).every(x => x === 'todo'), '刷新：已完成的行保留状态，新行待填');
-  check((await panel.textContent('#toast')).includes('新增 3 行'), '提示：' + (await panel.textContent('#toast')));
+  check((await panel.textContent('#toastTxt')) === await T('table.reloaded', { n: 3 }), '提示：' + (await panel.textContent('#toast')));
   await panel.evaluate(() => { document.getElementById('pasteBox').hidden = false; });
   await panel.fill('#pasteText', SITE(0) + '/private');
   await panel.click('#pasteOk');
   await sleep(800);
-  check((await panel.textContent('#toast')).includes('打不开'), '要登录的链接给出提示：' + (await panel.textContent('#toast')));
+  check((await panel.textContent('#toastTxt')) === await T('table.linkPrivate'), '要登录的链接给出提示：' + (await panel.textContent('#toast')));
 
   console.log('\n[7] 重开侧栏');
   await panel.reload();
   await panel.waitForSelector('#tMeta');
   await sleep(500);
-  check((await panel.textContent('#tMeta')).includes('8 行') && (await st())[0] === 'done' && (await panel.isVisible('#btnReload')), '重开后表格、状态、链接都在');
+  check((await rowsN()) === 8 && (await panel.textContent('#tMeta')) === await T('table.meta', { rows: 8, cols: await panel.evaluate(() => window.__daibi.S().table.headers.length) }) && (await st())[0] === 'done' && (await panel.isVisible('#btnReload')), '重开后表格、状态、链接都在');
+  check((await panel.evaluate(() => window.__daibi.lang())) === LANG, '重开侧栏还是上回选的语言');
 
   // 截图：连填进行中 → 暂停（顺便测暂停）
   await web.goto(SITE(0) + '/order');
@@ -320,7 +332,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(1500);
   const nDone = (await st()).filter(s => s === 'done').length;
   await sleep(1500);
-  check((await st()).filter(s => s === 'done').length === nDone && (await mainText()).startsWith('连填'), '暂停后不再往下填');
+  check((await st()).filter(s => s === 'done').length === nDone && (await panel.getAttribute('#btnMain', 'data-mode')) === 'go', '暂停后不再往下填');
   await web.screenshot({ path: path.join(OUT, 'hero-web.png') });
 
   // 截图：深色
@@ -335,9 +347,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await panel.screenshot({ path: path.join(OUT, '07-light.png') });
   await web.screenshot({ path: path.join(OUT, '07-web.png') });
 
+  /* ===== 10. 右上角 EN / 中文 ===== */
+  console.log('\n[10] 右上角切语言');
+  const other = LANG === 'en' ? 'zh' : 'en';
+  await panel.click(`#langSeg button[data-l=${other}]`);
+  await sleep(300);
+  check((await panel.evaluate(() => [window.__daibi.lang(), document.documentElement.lang])).join() === (other === 'en' ? 'en,en' : 'zh,zh-CN'), '点一下就换成 ' + other + '，<html lang> 跟着换');
+  check((await panel.textContent('#tMeta')) === await T('table.meta', { rows: 20, cols: 16 }) && (await panel.textContent('label.qs-set .qs-set-l')).startsWith(await T('set.auto')), '表信息、设置行都换了');
+  await panel.reload(); await panel.waitForSelector('#btnMain'); await sleep(400);
+  check((await panel.evaluate(() => window.__daibi.lang())) === other, '重开侧栏记得刚选的 ' + other);
+  await panel.click(`#langSeg button[data-l=${LANG}]`); await sleep(300);
+  check((await panel.evaluate(() => window.__daibi.lang())) === LANG, '切回 ' + LANG);
+
   console.log('\n报错：', errors.length ? errors : '无');
   check(errors.length === 0, '全程控制台零报错');
-  fs.writeFileSync(path.join(OUT, 'result.json'), JSON.stringify({ orderSecs, wizSecs, problems, errors }, null, 2));
+  fs.writeFileSync(path.join(OUT, 'result.json'), JSON.stringify({ lang: LANG, orderSecs, wizSecs, problems, errors }, null, 2));
   await ctx.close(); server.kill();
   console.log(problems.length ? `\n${problems.length} 项没过` : '\n全部通过');
   process.exit(problems.length ? 1 : 0);

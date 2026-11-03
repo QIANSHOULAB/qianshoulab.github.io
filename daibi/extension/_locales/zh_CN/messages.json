@@ -1,0 +1,6 @@
+{
+  "name": { "message": "代笔僧 · 自动填表", "description": "商店和扩展列表里的名字，跟 strings.js 的 app.full 一致" },
+  "short_name": { "message": "代笔僧" },
+  "description": { "message": "把 Excel / CSV 一行一行填进网页表单：表头自动对上输入框，下拉、单选、复选、日期、上传文件都会填；也能直接读 Google 表格，填完标状态。数据只存在你的浏览器里。" },
+  "action_title": { "message": "打开代笔僧" }
+}

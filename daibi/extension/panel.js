@@ -1,12 +1,23 @@
 /* 代笔僧侧栏：读表、对字段、按行填、跟踪提交、标状态。表格和对应只存在本机 chrome.storage.local。 */
 (() => {
   'use strict';
-  const { t, apply } = QSLib.i18n;
+  const I18N = QSLib.i18n, { t } = I18N;
   const store = QSLib.store, TB = QSLib.table, FILES = QSLib.files, M = DaibiMatch;
   const $ = id => document.getElementById(id);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-  apply();
-  $('homeLink').href = t('common.homeUrl');
+  // 语言：默认英文，右上角 EN / 中文 选过就记在 chrome.storage.local「daibi:lang」，下次打开直接用；不跟浏览器语言走
+  const LANG_KEY = 'daibi:lang';
+  function applyLang() {
+    I18N.apply();
+    document.title = t('app.name');
+    $('homeLink').href = t('common.homeUrl');
+    I18N.toggle($('langSeg'), pickLang);
+  }
+  async function pickLang(l) {
+    I18N.setLang(l);
+    await store.set(LANG_KEY, I18N.lang);
+    hideToast(); applyLang(); drawSettings(); render();
+  }
   $('ver').textContent = chrome.runtime.getManifest().version;
   // 顶栏右上角「…」：署名、总舵、找方丈都收在这里，侧栏正文只干一件事
   const menuOpen = on => { $('menu').hidden = !on; $('btnMore').setAttribute('aria-expanded', String(on)); };
@@ -27,6 +38,7 @@
   let keptN = 0, filter = 'all', picking = null, lastFile = null, showAll = false, attN = 0, warnCols = null, demoTable = null;
   const FIXED_TAB = new URLSearchParams(location.search).get('tab'); // 测试用：指定要填的标签页
   const DEMO_URL = 'https://qianshoulab.github.io/daibi/demo/';
+  const SAMPLE = { en: 'sample-en.csv', zh: 'sample.csv' }; // 示例表各写一套：英文界面给英文示例
 
   /* ---------- 存 ---------- */
   let saveT = 0;
@@ -128,7 +140,7 @@
   async function refreshPage() {
     if (demoTable && tab.url.startsWith(DEMO_URL)) { const d = demoTable; demoTable = null; lastFile = null; return setTable(d, true); }
     if (!S.table || tab.id == null) return render();
-    try { await scan(); if (page.note === t('fields.noPage') || page.note === t('fields.needClick')) note(''); }
+    try { await scan(); if (page.note === 'fields.noPage' || page.note === 'fields.needClick') note(''); }
     catch (e) { page.fields = null; page.present = []; }
     render();
     autoFill();
@@ -168,19 +180,19 @@
   }
 
   /* ---------- 对字段 ---------- */
-  function note(s, bad) { page.note = s; page.noteBad = !!bad; }
+  function note(k, bad) { page.note = k; page.noteBad = !!bad; } // 存 key，画的时候按当前语言出字
   function startMatch() {
     const p = askAccess();
     p.then(async ok => {
       await learnUrl();
-      try { await scan(); } catch (e) { note(t(tab.url ? (ok ? 'fields.cantRun' : 'fields.denied') : 'fields.needClick'), true); return render(); }
+      try { await scan(); } catch (e) { note(tab.url ? (ok ? 'fields.cantRun' : 'fields.denied') : 'fields.needClick', true); return render(); }
       matchNow(false);
       autoFill();
     });
   }
   function matchNow(quiet) {
     const m = map(); if (!m || !page.fields) return;
-    if (!page.fields.length) { note(t('fields.noFields'), true); return render(); }
+    if (!page.fields.length) { note('fields.noFields', true); return render(); }
     m.b = M.autoMatch(S.table.headers, S.table.rows, page.fields, m.b);
     m.start = tab.url; m.off = [];
     saveMaps(); note('');
@@ -207,7 +219,7 @@
         r = await pickAny(h === '\u0000btn'
           ? { type: 'daibi:pick', button: true, hint: t('fields.pickBtnHint') }
           : { type: 'daibi:pick', hint: t('fields.pickHint', { col: h }) });
-      } catch (e) { note(t('fields.needClick'), true); }
+      } catch (e) { note('fields.needClick', true); }
       if (picking !== h) return;
       picking = null;
       const m = map();
@@ -246,7 +258,10 @@
     for (let k = 0; k < n; k++) { const i = (from + k) % n; if (S.st[i].s === 'todo' || S.st[i].s === 'filled') return i; }
     return -1;
   }
-  const errText = x => t('err.' + x.err, { col: x.col, v: x.v, max: x.max, label: x.invalid && x.invalid.label, msg: x.invalid && x.invalid.msg });
+  const msg = (k, v) => ({ k, v });
+  const errText = x => msg('err.' + x.err, { col: x.col, v: x.v, max: x.max, label: x.invalid && x.invalid.label, msg: x.invalid && x.invalid.msg });
+  // 行上的话：0.3.0 存的是字（老数据原样显示）；0.4.0 起存 {k, v}，几条一起的存数组
+  const mText = m => m == null ? '' : typeof m === 'string' ? m : Array.isArray(m) ? m.map(mText).join(t('fmt.sep')) : t(m.k, m.v);
 
   // 每次开一行记一个号；旧的那条链（被「撤」「从头来」「连填」打断的）醒来发现号变了就收手
   async function startRow(i) {
@@ -260,7 +275,7 @@
     run.row = i; S.cur = i; run.seen = new Set(); run.textSels = new Set(); run.human = false; run.phase = 'filling';
     render();
     let sc;
-    try { sc = await scan(); } catch (e) { if (gen !== run.gen) return; run.phase = 'idle'; run.row = -1; note(t('fields.needClick'), true); return render(); }
+    try { sc = await scan(); } catch (e) { if (gen !== run.gen) return; run.phase = 'idle'; run.row = -1; note('fields.needClick', true); return render(); }
     if (gen !== run.gen) return;
     const m = map();
     if (!sc.present.length && m && m.start && m.start !== tab.url) { // 不在表单页：先回去
@@ -295,7 +310,7 @@
       }
     }
     if (missing.length) {
-      setSt(i, 'error', missing.map(errText).join('；'));
+      setSt(i, 'error', missing.map(errText));
       run.phase = 'wait'; render();
       return autoOn() ? recover() : undefined;
     }
@@ -311,13 +326,13 @@
     });
     const errs = r.items.filter(x => x.err);
     if (errs.length) {
-      setSt(i, 'error', errs.map(errText).join('；'));
+      setSt(i, 'error', errs.map(errText));
       run.phase = 'wait'; render();
       return autoOn() ? recover() : undefined;
     }
-    if (!run.seen.size) { setSt(i, 'error', t('err.NOFIELD')); run.phase = 'idle'; run.row = -1; render(); return autoOn() ? finish() : undefined; }
+    if (!run.seen.size) { setSt(i, 'error', msg('err.NOFIELD')); run.phase = 'idle'; run.row = -1; render(); return autoOn() ? finish() : undefined; }
     if (r.captcha) {
-      setSt(i, 'filled', t('err.CAPTCHA'));
+      setSt(i, 'filled', msg('err.CAPTCHA'));
       run.human = true; run.phase = 'wait'; render();
       toast(t('toast.captcha'), 6000);
       return;
@@ -345,9 +360,9 @@
     if (r.alert != null) return alerted(r.alert);
     afterSubmit();
   }
-  function alerted(msg) { // 网站弹框拦下了：弹框的话就是原因
+  function alerted(said) { // 网站弹框拦下了：弹框的话就是原因
     clearTimeout(run.timer);
-    setSt(run.row, 'error', t('err.ALERT', { msg: String(msg).replace(/\s+/g, ' ').trim().slice(0, 80) || '…' }));
+    setSt(run.row, 'error', msg('err.ALERT', { msg: String(said).replace(/\s+/g, ' ').trim().slice(0, 80) || '…' }));
     run.phase = 'wait'; render();
     if (autoOn()) recover();
   }
@@ -381,7 +396,7 @@
     const i = run.row;
     if (chk && chk.alert != null) return alerted(chk.alert);
     if (chk && chk.invalid) setSt(i, 'error', errText({ err: 'INVALID', invalid: chk.invalid }));
-    else if (cfg.auto) setSt(i, 'error', t('err.STUCK'));
+    else if (cfg.auto) setSt(i, 'error', msg('err.STUCK'));
     else { run.phase = 'wait'; return render(); }
     render();
     if (autoOn()) recover();
@@ -392,7 +407,7 @@
     if (run.row < 0 || run.phase === 'idle' || run.phase === 'needBack') return refreshPage();
     if (run.phase === 'filling') { // 填到一半网页换了（人刷新了、点走了）：这一行在新页上从头填，不能算交了
       const i = run.row;
-      if ((run.navFill = (run.navFill || 0) + 1) > 2) { run.gen++; run.navFill = 0; setSt(i, 'error', t('err.NAVAWAY')); run.row = -1; run.phase = 'idle'; run.going = false; return render(); }
+      if ((run.navFill = (run.navFill || 0) + 1) > 2) { run.gen++; run.navFill = 0; setSt(i, 'error', msg('err.NAVAWAY')); run.row = -1; run.phase = 'idle'; run.going = false; return render(); }
       await sleep(120); return startRow(i);
     }
     await sleep(120);
@@ -407,7 +422,7 @@
       if (c === false) { // 页面又回来了，值还在：没交上
         const chk = await call({ type: 'daibi:check', sels: [...run.seen] }).catch(() => null);
         if (chk && chk.invalid) setSt(run.row, 'error', errText({ err: 'INVALID', invalid: chk.invalid }));
-        else if (run.phase === 'submitted') setSt(run.row, 'error', t('err.STUCK'));
+        else if (run.phase === 'submitted') setSt(run.row, 'error', msg('err.STUCK'));
         run.phase = 'wait'; render();
         return autoOn() ? recover() : undefined;
       }
@@ -536,7 +551,7 @@
     await refreshPage();
     run.hold = false;
     const m = tab.origin && maps[tab.origin];
-    if (bound()) note(t('fields.restored'));
+    if (bound()) note('fields.restored');
     else if (page.fields && page.fields.length && (!m || !Object.keys(m.b).length)) matchNow(true);
     render();
     keptN = keep ? keep.n : 0;
@@ -601,7 +616,7 @@
     const ne = S.st.filter(x => x.s === 'error').length;
     $('btnRetry').hidden = !ne || (cfg.auto && run.going) || mode === 'retry';
     $('warn').hidden = !warnCols;
-    if (warnCols) $('warnTxt').textContent = t('warn.fields', { f: warnCols.slice(0, 3).map(x => '「' + x.label + '」').join('') + (warnCols.length > 3 ? t('warn.more', { n: warnCols.length }) : '') });
+    if (warnCols) $('warnTxt').textContent = t('warn.fields', { n: warnCols.length, f: warnCols.slice(0, 3).map(x => t('fmt.q', { x: x.label })).join(t('fmt.join')) + (warnCols.length > 3 ? t('warn.more', { n: warnCols.length, rest: warnCols.length - 3 }) : '') });
     $('btnRetry').textContent = t('run.retry', { n: ne });
   }
 
@@ -625,7 +640,7 @@
     $('fieldList').hidden = n === 0;
     $('btnRematch').hidden = n === 0;
     $('fieldNote').hidden = !page.note;
-    $('fieldNote').textContent = page.note;
+    $('fieldNote').textContent = page.note ? t(page.note) : '';
     $('fieldNote').classList.toggle('bad', page.noteBad);
     if (!n) return;
     const tb = S.table, row = tb.rows[S.cur] || [];
@@ -682,7 +697,7 @@
       const st = S.st[i], r = tb.rows[i];
       const prev = r.filter(Boolean).slice(0, 2).join(' · ');
       return `<li class="ri${i === S.cur ? ' cur' : ''}" data-i="${i}"><span class="rn">${i + 1}</span>
-        <span class="rt"><b>${esc(prev)}</b>${st.m ? `<small${st.s === 'filled' ? ' class="wait"' : ''}>${esc(st.m)}</small>` : ''}</span>
+        <span class="rt"><b>${esc(prev)}</b>${st.m ? `<small${st.s === 'filled' ? ' class="wait"' : ''}>${esc(mText(st.m))}</small>` : ''}</span>
         <span class="pill ${st.s}">${esc(t('st.' + st.s))}</span></li>`;
     }).join('');
     if (idx.length > LIM) html += `<li class="rmore">${esc(t('rows.more', { n: idx.length - LIM }))}</li>`;
@@ -715,7 +730,7 @@
   $('pasteCancel').onclick = () => { $('pasteBox').hidden = true; render(); };
   $('pasteOk').onclick = () => {
     if (isLink($('pasteText').value)) return loadLink($('pasteText').value.trim());
-    const tb = TB.parseText($('pasteText').value, t('table.paste'));
+    const tb = TB.parseText($('pasteText').value, t('common.pasted'));
     if (!tb.rows.length) return toast(t('table.empty'));
     lastFile = null; $('pasteText').value = ''; setTable(tb);
   };
@@ -723,7 +738,7 @@
     if (S.table || e.target.closest('textarea,input')) return;
     const txt = e.clipboardData.getData('text/plain');
     if (isLink(txt)) return loadLink(txt.trim());
-    if (txt && /\t|\n/.test(txt)) { const tb = TB.parseText(txt, t('table.paste')); if (tb.rows.length) { lastFile = null; setTable(tb); } }
+    if (txt && /\t|\n/.test(txt)) { const tb = TB.parseText(txt, t('common.pasted')); if (tb.rows.length) { lastFile = null; setTable(tb); } }
   });
   // 整个侧栏都能丢，拖进来整页高亮
   ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); document.body.classList.add('over'); }));
@@ -738,10 +753,11 @@
   });
   // 用示例试试：一张 5 行的示例表 + 千手院自己的示例表单，开新标签页，对字段、填第 1 行都自己来
   $('btnDemo').onclick = async () => {
-    try { demoTable = TB.parseText(await (await fetch('sample.csv')).text(), t('demo.name')); } catch (e) { return toast(t('table.bad')); }
-    if (FIXED_TAB) return chrome.tabs.update(tab.id, { url: DEMO_URL });
-    const nt = await chrome.tabs.create({ url: DEMO_URL, active: true });
-    tab.id = nt.id; setUrl(DEMO_URL); page = { fields: null, present: [], note: '', noteBad: false, frames: [] };
+    try { demoTable = TB.parseText(await (await fetch(SAMPLE[I18N.lang])).text(), t('demo.name')); } catch (e) { return toast(t('table.bad')); }
+    const url = DEMO_URL + '?lang=' + I18N.lang;
+    if (FIXED_TAB) return chrome.tabs.update(tab.id, { url });
+    const nt = await chrome.tabs.create({ url, active: true });
+    tab.id = nt.id; setUrl(url); page = { fields: null, present: [], note: '', noteBad: false, frames: [] };
   };
   $('btnReload').onclick = () => S.table && S.table.src && loadLink(S.table.src, true);
   $('btnAtt').onclick = () => $('attFile').click();
@@ -768,10 +784,10 @@
   };
   $('btnExport').onclick = () => {
     const tb = S.table;
-    const csv = TB.toCSV([...tb.headers, t('rows.statusCol')], tb.rows.map((r, i) => [...r, t('st.' + S.st[i].s) + (S.st[i].m ? '：' + S.st[i].m : '')]));
+    const csv = TB.toCSV([...tb.headers, t('rows.statusCol')], tb.rows.map((r, i) => [...r, t('st.' + S.st[i].s) + (S.st[i].m ? t('fmt.colon') + mText(S.st[i].m) : '')]));
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    a.download = tb.name.replace(/\.[^.]+$/, '') + '-代笔僧.csv';
+    a.download = t('rows.file', { name: tb.name.replace(/\.[^.]+$/, '') });
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     toast(t('toast.exported'));
   };
@@ -840,13 +856,18 @@
   new ResizeObserver(() => document.documentElement.style.setProperty('--dock-h', $('dock').offsetHeight + 'px')).observe($('dock'));
 
   /* ---------- 启动 ---------- */
-  (async () => {
-    cfg = await SETTINGS.load();
+  function drawSettings() {
     store.renderSettings($('setBox'), SETTINGS.schema, cfg, async (k, v) => {
       cfg[k] = v; await SETTINGS.save(cfg);
       if (k === 'auto' && !v) run.going = false;
       render();
     }, t);
+  }
+  (async () => {
+    I18N.setLang(await store.get(LANG_KEY, 'en'));
+    applyLang();
+    cfg = await SETTINGS.load();
+    drawSettings();
     maps = await store.get('daibi:maps', {});
     attN = (await FILES.list().catch(() => [])).length;
     const saved = await store.get('daibi:sheet', null);
@@ -857,5 +878,5 @@
     await refreshPage();
   })();
 
-  window.__daibi = { S: () => S, run, maps: () => maps, tab, page: () => page, call }; // 调试/测试用
+  window.__daibi = { S: () => S, run, maps: () => maps, tab, page: () => page, call, mText, lang: () => I18N.lang }; // 调试/测试用
 })();

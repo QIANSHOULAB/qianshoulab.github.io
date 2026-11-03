@@ -10,7 +10,7 @@
   --accent:#3A4150; --on-accent:#ffffff; --accent-fg:#3A4150; --accent-tint:rgba(58,65,80,.08);
   --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
-  --glass:rgba(245,245,247,.78); --toast-bg:#ffffff;
+  --glass:rgba(245,245,247,.98); --toast-bg:#ffffff; /* 顶栏、底栏 98% 不透明：留毛玻璃，底下的字透不出来 */
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
   color-scheme:light;
 }
@@ -22,9 +22,11 @@
   --ok-fg:#30d158; --bad-fg:#ff6961;
   /* 墨色在黑底上看不见：提到接近白（墨里的白），按钮上的字改深色；链接用浅一档的墨灰，跟正文分得开 */
   --accent:#E6E9EF; --on-accent:#0b0d12; --accent-fg:#C3CAD6; --accent-tint:rgba(230,233,239,.12);
-  --shadow:none; --glass:rgba(22,22,24,.72); --toast-bg:#2c2c2e;
+  --shadow:none; --glass:rgba(28,28,30,.98); --toast-bg:#2c2c2e;
   color-scheme:dark;
 }}
+/* 英文界面：西文字体在前（不然 Windows 上英文会用雅黑的西文字形）；中文不变 */
+html[lang=en]{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",sans-serif}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg-group);color:var(--fg);font:400 15px/1.5 var(--font);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -62,3 +64,10 @@ button{background:none;border:0;padding:0;cursor:pointer}
 .qs-switch:checked::after{transform:translateX(20px)}
 @media (prefers-color-scheme:dark){.qs-switch:checked::after{background:#0b0d12;box-shadow:none}} /* 深色：开关的底是接近白的主色，钮改深色才看得见 */
 
+
+/* 右上角 EN / 中文：两格分段控件，看着 26 高，点的范围撑到 44 */
+.lang-seg{display:flex;flex:none;gap:2px;padding:2px;border-radius:var(--r-chip);background:var(--fill)}
+.lang-seg button{position:relative;min-width:36px;height:26px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:600;color:var(--fg-2);transition:background-color var(--t) var(--ease),color var(--t) var(--ease)}
+.lang-seg button::after{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
+.lang-seg button[aria-pressed=true]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px var(--line)}
+@media (prefers-color-scheme:dark){.lang-seg button[aria-pressed=true]{background:#636366;box-shadow:none}}

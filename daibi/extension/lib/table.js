@@ -5,6 +5,8 @@
  */
 (function (g) {
   'use strict';
+  // 表格自己起的名字（粘贴的表、没表头的列）走 QSLib.i18n，跟界面同一种语言
+  const txt = (k, dflt, vars) => { const I = g.QSLib && g.QSLib.i18n; return I && I.has(k) ? I.t(k, vars) : dflt.replace(/\{(\w+)\}/g, (_, n) => (vars || {})[n] ?? ''); };
 
   /* ---------- CSV ---------- */
   function decode(buf) {
@@ -54,7 +56,7 @@
   function parseText(text, name) {
     text = String(text || '').replace(/^﻿/, '');
     const d = sniffDelimiter(text);
-    return shape(parseDelimited(text, d), name || '粘贴的表格', [], '');
+    return shape(parseDelimited(text, d), name || txt('common.pasted', 'Pasted table'), [], '');
   }
 
   /* ---------- ZIP（XLSX 本质是 zip） ---------- */
@@ -210,7 +212,7 @@
     const rawH = (clean[h] || []).slice(0, width);
     const seen = {};
     const headers = Array.from({ length: width }, (_, i) => {
-      let x = rawH[i] || ('列' + (i + 1));
+      let x = rawH[i] || txt('common.colN', 'Column {n}', { n: i + 1 });
       if (seen[x]) { seen[x]++; x = x + '_' + seen[x]; } else seen[x] = 1;
       return x;
     });

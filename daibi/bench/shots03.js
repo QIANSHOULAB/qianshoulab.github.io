@@ -1,4 +1,4 @@
-/* 0.3.0 交货截图（照 _ops/设计规范.md 最后一节）：侧栏 × 浅深 × 空状态 / 干活中 / 结果 / 出错 = 8 张，
+/* （0.4.0 起交货截图用 shots04.js，中英各一套；这个留着对照 0.3.0）0.3.0 交货截图（照 _ops/设计规范.md 最后一节）：侧栏 × 浅深 × 空状态 / 干活中 / 结果 / 出错 = 8 张，
  * 介绍页 390 / 1280 × 浅深 = 4 张，示例表单 2 张；顺带出介绍页用的 img/。
  * 跑法：xvfb-run -a node daibi/bench/shots03.js
  * 「用示例试试」打开的 https://qianshoulab.github.io/daibi/demo/ 在沙盒里打不开，用 Playwright 把它接到本地的 daibi/demo/index.html。

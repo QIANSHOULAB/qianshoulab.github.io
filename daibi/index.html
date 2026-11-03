@@ -1,14 +1,27 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>代笔僧 · 自动填表</title>
-<meta name="description" content="浏览器插件：把 Excel / CSV 一行一行填进网页表单。表头自动对上输入框，下拉、日历、iframe 里的表单都会填；你看一眼、点提交，下一行它自己填好。数据只在你的浏览器里。">
+<title>Daibi · Form Filler</title>
+<meta name="description" content="Browser extension that fills web forms from Excel or CSV, one row at a time. Columns find their fields on their own; dropdowns, date pickers and iframes included. Your data stays in your browser.">
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="img/icon.png">
 <link rel="apple-touch-icon" href="img/icon.png">
+<!-- 字全在 extension/strings.js（site.*，跟侧栏同一个文件）。语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage daibi.lang）> 默认英文。
+     不跟浏览器语言走（Song 11-03 22:19）。<html lang>、<title>、简介在画页面之前就换好 -->
+<script src="extension/lib/i18n.js?v=0.4.0"></script>
+<script src="extension/strings.js?v=0.4.0"></script>
+<script>
+(function(){
+  var q=(location.search.match(/[?&]lang=(zh|en)\b/)||[])[1], s=null;
+  try{s=localStorage.getItem("daibi.lang")}catch(e){}
+  QSLib.i18n.setLang(q||s||"en");
+  document.title=QSLib.i18n.t("site.title");
+  document.querySelector('meta[name="description"]').content=QSLib.i18n.t("site.desc");
+})();
+</script>
 <style>
 :root{
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
@@ -20,7 +33,7 @@
   --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
-  --glass:rgba(255,255,255,.72);
+  --glass:rgba(255,255,255,.98);
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
@@ -29,24 +42,34 @@
   --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
   --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --shadow:none;
   --accent:#E6E9EF; --on-accent:#0b0d12; --accent-fg:#C3CAD6;
-  --glass:rgba(22,22,24,.72);
+  --glass:rgba(28,28,30,.98);
   color-scheme:dark;
 }}
+/* 英文：西文字体在前（Windows 上英文不走雅黑的西文字形）；中文不变 */
+html[lang=en]{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",sans-serif}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased}
 a{color:var(--accent-fg);text-decoration:none}
 a:hover{text-decoration:underline}
 img{max-width:100%;height:auto;display:block}
-h1,h2,.lede,.sub,.note,.num span,.card p{text-wrap:balance}
+h1,h2,.lede,.sub,.note,.num span{text-wrap:balance}
+.card p,.steps li>div{text-wrap:pretty}
 .nav{position:sticky;top:0;z-index:10;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 max(16px,calc(50% - 490px));background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line);font-size:13px}
 .nav b{font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px}
 .nav b img{width:24px;height:24px}
 .nav a{color:var(--fg-2);min-height:44px;display:flex;align-items:center}
+.nav-r{display:flex;align-items:center;gap:16px}
+.lang-seg{display:flex;flex:none;gap:2px;padding:2px;border-radius:var(--r-chip);background:var(--fill)}
+.lang-seg button{position:relative;min-width:40px;height:26px;padding:0 8px;border:0;border-radius:6px;background:none;font:600 12px/1 var(--font);color:var(--fg-2);cursor:pointer}
+.lang-seg button::after{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
+.lang-seg button[aria-pressed=true]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px var(--line)}
+@media (prefers-color-scheme:dark){.lang-seg button[aria-pressed=true]{background:#636366;box-shadow:none}}
 .wrap{max-width:980px;margin:0 auto;padding:0 16px}
 .hero{text-align:center;padding:64px 0 0}
 .hero .icon{width:96px;height:96px;margin:0 auto 24px}
-.hero h1{font-size:clamp(40px,6vw,64px);font-weight:700;line-height:1.1;letter-spacing:-.02em;margin:0}
+.hero h1{font-size:clamp(40px,6vw,64px);font-weight:700;line-height:1.1;margin:0}
+html[lang=en] .hero h1,html[lang=en] h2,html[lang=en] .num b{letter-spacing:-.02em}
 .hero .tag{font-size:clamp(22px,3vw,28px);font-weight:600;line-height:1.2;margin:8px 0 0}
 .hero .lede{max-width:600px;margin:16px auto 0;color:var(--fg-2);font-size:17px}
 .hero .lede span{display:inline-block}
@@ -55,7 +78,7 @@ h1,h2,.lede,.sub,.note,.num span,.card p{text-wrap:balance}
 .btn.pri{background:var(--accent);color:var(--on-accent)}
 .btn.pri:hover{text-decoration:none;filter:brightness(1.12)}
 .more{font-size:17px;min-height:44px;display:inline-flex;align-items:center}
-.meta{margin-top:16px;color:var(--fg-3);font-size:13px;font-variant-numeric:tabular-nums}
+.meta{margin-top:16px;color:var(--fg-3);font-size:13px}
 .shot{margin:48px auto 0}
 .shot img{border-radius:12px;box-shadow:0 0 0 .5px var(--line),0 24px 64px rgba(0,0,0,.14)}
 @media (prefers-color-scheme:dark){.shot img{box-shadow:0 0 0 .5px var(--line)}}
@@ -70,7 +93,7 @@ h2{font-size:clamp(28px,4.4vw,40px);font-weight:700;line-height:1.15;margin:0;te
 .card p{margin:0;color:var(--fg-2);font-size:15px}
 .nums{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
 .num{text-align:center;padding:8px}
-.num b{display:block;font-size:40px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.num b{display:block;font-size:40px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
 .num span{display:block;margin-top:8px;color:var(--fg-2);font-size:13px}
 .four{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px;align-items:start}
 .four figure{margin:0}
@@ -102,83 +125,98 @@ footer a{color:var(--fg-2)}
 </style>
 </head>
 <body>
-<nav class="nav"><b><img src="img/icon.png" alt="">代笔僧</b><a href="https://qianshoulab.github.io/">千手院总舵</a></nav>
+<nav class="nav"><b><img src="img/icon.png" alt=""><span data-t="app.name"></span></b><span class="nav-r"><a href="https://qianshoulab.github.io/" data-t="site.home"></a><span class="lang-seg" id="langSeg"></span></span></nav>
 
 <main class="wrap">
   <header class="hero">
     <img class="icon" src="img/icon.png" width="96" height="96" alt="">
-    <h1>代笔僧</h1>
-    <p class="tag">施主喝茶，贫僧代笔</p>
-    <p class="lede"><span>Excel 丢进来，第一行已经填好了。</span><span>你看一眼、点提交，下一行它接着填。</span></p>
+    <h1 data-t="app.name"></h1>
+    <p class="tag" data-t="app.tag"></p>
+    <p class="lede"><span data-t="site.lede1"></span> <span data-t="site.lede2"></span></p>
     <div class="cta">
-      <a class="btn pri" href="dist/daibi-0.3.0.zip" download>下载插件</a>
-      <a class="more" href="#install">怎么装 ›</a>
+      <a class="btn pri" id="dl" href="dist/daibi-0.4.0.zip" download data-t="site.download"></a>
+      <a class="more" href="#install" data-t="site.how"></a>
     </div>
-    <p class="meta">0.3.0 · Chrome / Edge · 免费 · 表格不出你的电脑</p>
-    <div class="shot"><img src="img/hero.jpg" width="1600" height="1000" alt="左边网页表单已经填好第 3 行，右边代笔僧侧栏：两行已交，第 3 行等你提交"></div>
+    <p class="meta" data-t="site.meta"></p>
+    <div class="shot"><img data-img="hero.jpg" width="1600" height="1000" data-t-alt="site.heroAlt"></div>
   </header>
 
   <section>
-    <h2>你只管看，只管点提交。</h2>
-    <p class="sub">剩下的它记着：这个网站的字段怎么对、哪几行交过了。</p>
+    <h2 data-t="site.s1h"></h2>
+    <p class="sub" data-t="site.s1p"></p>
     <div class="grid">
       <div class="card">
         <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="M6 12h20M6 20h20M13 4v24"/></svg>
-        <h3>丢进来就对上</h3>
-        <p>.xlsx、.csv、Google 表格链接都认。表头自动对上网页的框，对不上的标黄，点一下网页上的框就绑上。</p>
+        <h3 data-t="site.c1h"></h3>
+        <p data-t="site.c1p"></p>
       </div>
       <div class="card">
         <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 16s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="16" cy="16" r="3.5"/></svg>
-        <h3>提交还是你点</h3>
-        <p>每一行先填好摆着，你看一眼再点网页上的提交。交完它自己回表单，把下一行填好。嫌慢就打开「自动提交」。</p>
+        <h3 data-t="site.c2h"></h3>
+        <p data-t="site.c2p"></p>
       </div>
       <div class="card">
         <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 17l5 5 11-12"/></svg>
-        <h3>下回不用再教</h3>
-        <p>同一个网站，字段对应自己套上，表一放就填。同一张表再放进来，交过的行不会再交一遍。</p>
+        <h3 data-t="site.c3h"></h3>
+        <p data-t="site.c3p"></p>
       </div>
     </div>
   </section>
 
   <section>
-    <h2>1138 格，一格不错。</h2>
-    <p class="sub">13 种网站同一张 20 行的表：普通表单、三页向导、iframe、只能点的日历，外加真 AntD、Element Plus、MUI、select2 和 Shadow DOM。服务器收到的每一格都核对过。</p>
+    <h2 data-t="site.s2h"></h2>
+    <p class="sub" data-t="site.s2p"></p>
     <div class="nums">
-      <div class="num"><b>0</b><span>错的格子（共 1138）</span></div>
-      <div class="num"><b>8 秒</b><span>20 行订单，自动提交</span></div>
-      <div class="num"><b>4 下</b><span>再来同一个网站：开侧栏到第一行填好</span></div>
-      <div class="num"><b>1 下</b><span>之后每一行：你点的那下提交</span></div>
+      <div class="num"><b data-t="site.n1"></b><span data-t="site.n1t"></span></div>
+      <div class="num"><b data-t="site.n2"></b><span data-t="site.n2t"></span></div>
+      <div class="num"><b data-t="site.n3"></b><span data-t="site.n3t"></span></div>
+      <div class="num"><b data-t="site.n4"></b><span data-t="site.n4t"></span></div>
     </div>
   </section>
 
   <section>
-    <h2>该停的地方会停。</h2>
-    <p class="sub">数据不对不交，缺附件不交，验证码不碰。自己做掉的每件事都能撤。</p>
+    <h2 data-t="site.s3h"></h2>
+    <p class="sub" data-t="site.s3p"></p>
     <div class="four">
-      <figure><img src="img/panel-ready.png" width="760" height="1520" loading="lazy" alt="放好表，第 1 行已经填好"><figcaption>放好表，第 1 行已填好</figcaption></figure>
-      <figure><img src="img/panel-run.png" width="760" height="1520" loading="lazy" alt="交一行，下一行自己填好"><figcaption>交一行，下一行自己填好</figcaption></figure>
-      <figure><img src="img/panel-error.png" width="760" height="1520" loading="lazy" alt="出错的行写明原因"><figcaption>出错写明原因，一下重试</figcaption></figure>
-      <figure><img src="img/panel-dark.png" width="760" height="1520" loading="lazy" alt="深色模式"><figcaption>跟着系统换深色</figcaption></figure>
+      <figure><img data-img="panel-ready.png" width="760" height="1520" loading="lazy" data-t-alt="site.f1"><figcaption data-t="site.f1"></figcaption></figure>
+      <figure><img data-img="panel-run.png" width="760" height="1520" loading="lazy" data-t-alt="site.f2"><figcaption data-t="site.f2"></figcaption></figure>
+      <figure><img data-img="panel-error.png" width="760" height="1520" loading="lazy" data-t-alt="site.f3"><figcaption data-t="site.f3"></figcaption></figure>
+      <figure><img data-img="panel-dark.png" width="760" height="1520" loading="lazy" data-t-alt="site.f4"><figcaption data-t="site.f4"></figcaption></figure>
     </div>
   </section>
 
   <section id="install">
-    <h2>怎么装</h2>
-    <p class="sub">商店还在路上，先用开发者模式装，一分钟。</p>
+    <h2 data-t="site.s4h"></h2>
+    <p class="sub" data-t="site.s4p"></p>
     <ol class="steps">
-      <li><div>下载 <a href="dist/daibi-0.3.0.zip" download>daibi-0.3.0.zip</a>，解压成一个文件夹。<small>放个不会被误删的地方，删了插件就没了。</small></div></li>
-      <li><div>地址栏打开 <code>edge://extensions</code> 或 <code>chrome://extensions</code>。</div></li>
-      <li><div>打开「开发人员模式」（Chrome 叫「开发者模式」）。</div></li>
-      <li><div>点「加载解压缩的扩展」（Chrome 叫「加载已解压的扩展程序」），选刚才的文件夹。</div></li>
-      <li><div>把代笔僧钉到工具栏，点它开侧栏，再点「用示例试试」。<small>示例表单在 <a href="demo/">这里</a>，交上去的单只记在那一页。</small></div></li>
+      <li><div data-th="site.i1"></div></li>
+      <li><div data-th="site.i2"></div></li>
+      <li><div data-th="site.i3"></div></li>
+      <li><div data-th="site.i4"></div></li>
+      <li><div data-th="site.i5"></div></li>
     </ol>
-    <p class="note">表格、附件和字段对应只存在你自己的浏览器里，不上传、不注册。第一次在某个网站填，浏览器问一次能不能进，点允许。</p>
+    <p class="note" data-t="site.note"></p>
   </section>
 </main>
 
 <footer>
-  千手院 · 代笔僧 · <a href="https://qianshoulab.github.io/">千手院总舵</a><br>
-  找方丈 <span class="mail">oilsongchengmin@gmail.com</span>
+  <span data-t="site.foot"></span> · <a href="https://qianshoulab.github.io/" data-t="common.home"></a><br>
+  <span data-t="common.contact"></span> <span class="mail" data-t="common.email"></span>
 </footer>
+<script>
+/* 画字、换语言。截图按语言各一套：英文在 img/en/，中文在 img/ */
+(function () {
+  const I = QSLib.i18n, VER = '0.4.0';
+  function draw() {
+    I.apply(document, { v: VER });
+    document.title = I.t('site.title');
+    document.querySelector('meta[name="description"]').content = I.t('site.desc');
+    const dir = I.lang === 'en' ? 'img/en/' : 'img/';
+    document.querySelectorAll('img[data-img]').forEach(im => { const u = dir + im.dataset.img; if (im.getAttribute('src') !== u) im.src = u; });
+    I.toggle(document.getElementById('langSeg'), l => { I.setLang(l); try { localStorage.setItem('daibi.lang', I.lang); } catch (e) {} draw(); });
+  }
+  draw();
+})();
+</script>
 </body>
 </html>

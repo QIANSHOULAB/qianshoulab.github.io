@@ -1,0 +1,198 @@
+manifest.name	代笔僧 · 自动填表
+manifest.short_name	代笔僧
+manifest.description	把 Excel / CSV 一行一行填进网页表单：表头自动对上输入框，下拉、单选、复选、日期、上传文件都会填；也能直接读 Google 表格，填完标状态。数据只存在你的浏览器里。
+manifest.action_title	打开代笔僧
+common.lab	千手院
+common.contact	找方丈
+common.email	oilsongchengmin@gmail.com
+common.home	千手院总舵
+common.homeUrl	https://qianshoulab.github.io/
+common.lang	语言
+common.colN	列{n}
+common.pasted	粘贴的表格
+app.name	代笔僧
+app.full	代笔僧 · 自动填表
+app.tag	施主喝茶，贫僧代笔
+table.drop	把 Excel 丢进来
+table.dropSub	一行一单，贫僧替你一格格抄进网页
+table.demo	用示例试试
+table.dropHere	松手，贫僧接着
+table.paste	粘贴
+table.change	换一张
+table.meta	{rows} 行 · {cols} 列
+table.pastePh	从 Excel 复制几行（带表头）粘在这，或者贴 Google 表格链接
+table.reload	刷新
+table.google	Google 表格
+table.linkFail	这个链接读不了：贴 Google 表格或 .csv 的链接
+table.linkPrivate	这张表打不开：设成「知道链接的人可查看」，或先在这个浏览器登录 Google
+table.denied	没给权限，读不了。再贴一次，弹窗里点「允许」
+table.reloaded	刷新好了，新增 {n} 行待填
+table.pasteOk	用这些
+table.cancel	取消
+table.oldXls	老式 .xls 贫僧不认，另存为 .xlsx 或 .csv 再来
+table.bad	这文件读不出来，存成 .xlsx 或 .csv 再试
+table.empty	表里一行数据都没有
+table.sheet	工作表
+fields.title	字段
+fields.here	当前网页
+fields.match	对字段
+fields.rematch	重新对
+fields.none	贫僧看一眼网页，表头自动对上输入框
+fields.unbound	没对上
+fields.okN	{n} 列稳稳对上
+fields.idleN	{n} 列这页用不上
+fields.expand	展开
+fields.fold	收起
+fields.maybe	不太确定
+fields.otherPage	不在这页
+fields.pick	点选
+fields.picking	等你点
+fields.pickHint	点「{col}」要填进去的格子 · Esc 取消
+fields.pickBtnHint	点网页上的提交按钮 · Esc 取消
+fields.unbind	解绑
+fields.restored	照上回的对应套上了
+fields.noPage	先打开要填的网页
+fields.noFields	这页没找到能填的格子
+fields.denied	没给权限，贫僧进不去。再点一次，弹窗里点「允许」
+fields.needClick	点一下浏览器工具栏上的代笔僧图标再试
+fields.cantRun	浏览器不让插件进这种页面（设置页、商店页之类），换个网页
+fields.submitBtn	提交按钮
+fields.submitAuto	自动找
+rows.title	进度
+rows.all	全部
+rows.err	出错
+rows.export	导出结果
+rows.sum	完成 {done} · 出错 {err} · 还剩 {left}
+rows.statusCol	代笔僧状态
+rows.more	还有 {n} 行没列出来
+rows.file	{name}-代笔僧.csv
+st.noTable	还没放表
+st.going	在填第 {n} 行，共 {total} 行
+st.filling	在填第 {n} 行
+st.yourTurn	第 {n} 行填好了，等你提交
+st.allDone	{n} 行全交了，收工
+st.errLeft	{n} 行没交上，原因写在那一行
+demo.name	示例订单.csv
+st.todo	待填
+st.filled	等你提交
+st.done	完成
+st.error	出错
+set.auto	自动提交
+set.autoHint	填完替你点提交，接着下一行
+run.fill	填第 {n} 行
+run.go	连填 {n} 行
+run.refill	重填第 {n} 行
+run.nothing	没有待填的行
+run.pause	暂停
+run.retry	重试出错的 {n} 行
+run.back	回表单填第 {n} 行
+run.next	再放一张表
+run.busy	稍等，贫僧在填
+run.choose	选文件
+run.match	对字段
+toast.filled	第 {n} 行填好了，看一眼，点网页上的提交
+toast.back	第 {n} 行交了，回表单填第 {m} 行
+toast.kept	上回交过的 {n} 行记着，从第 {k} 行接着
+toast.fromTop	从头来
+toast.keptFilled	上回交过的 {n} 行记着，第 {k} 行填好了，看一眼再提交
+toast.undo	撤
+toast.stop	停
+toast.captcha	有验证码，劳驾施主亲自过，过完点提交
+toast.all	{n} 行全交了，收工
+toast.paused	停了，下一行是第 {n} 行
+toast.matched	对上 {n} 列，黄底的没把握，不对就点选改掉
+toast.exported	导出好了
+err.NO_OPTION	「{col}」选项里没有「{v}」
+err.BAD_DATE	「{col}」：「{v}」看不懂是哪天
+err.NOT_BOOL	「{col}」：「{v}」算勾还是不勾？
+err.NOT_NUMBER	「{col}」：「{v}」不是数字
+err.TOO_LONG	「{col}」太长，最多 {max} 字
+err.FAILED	「{col}」写不进去
+err.INVALID	网页不收：「{label}」{msg}
+err.NO_BUTTON	找不到提交按钮，到「字段」里点选一下提交按钮
+err.STUCK	点了提交没动静，多半没交上
+err.NOFIELD	这页一个对上的格子都没有
+err.CAPTCHA	卡在验证码
+err.NAVAWAY	填着填着网页自己跳走了，这行没交
+err.ALERT	网页弹框不收：「{msg}」
+err.NO_FILE	「{col}」：附件里没有「{v}」
+err.ONE_FILE	「{col}」只收一个文件
+warn.fields	网页上{f}还没对上表里的列，照填就空着交
+warn.more	等 {n} 个框
+warn.go	照填
+warn.pick	去点选
+att.none	附件：还没放（表里写文件名，文件放这）
+att.n	附件：{n} 个
+att.add	放附件
+att.clear	清空
+att.added	收下 {n} 个附件
+fmt.q	「{x}」
+fmt.join	
+fmt.sep	；
+fmt.colon	：
+foot.by	千手院 · 代笔僧
+menu.more	更多
+site.title	代笔僧 · 自动填表
+site.desc	浏览器插件：把 Excel / CSV 一行一行填进网页表单。表头自动对上输入框，下拉、日历、iframe 里的表单都会填；你看一眼、点提交，下一行它自己填好。数据只在你的浏览器里。
+site.home	千手院总舵
+site.lede1	Excel 丢进来，第一行已经填好了。
+site.lede2	你看一眼、点提交，下一行它接着填。
+site.download	下载插件
+site.how	怎么装 ›
+site.meta	{v} · Chrome / Edge · 免费 · 表格不出你的电脑
+site.heroAlt	左边网页表单已经填好第 3 行，右边代笔僧侧栏：两行已交，第 3 行等你提交
+site.s1h	你只管看，只管点提交。
+site.s1p	剩下的它记着：这个网站的字段怎么对、哪几行交过了。
+site.c1h	丢进来就对上
+site.c1p	.xlsx、.csv、Google 表格链接都认。表头自动对上网页的框，没把握的标黄，点一下网页上的框就改过来。
+site.c2h	提交还是你点
+site.c2p	每一行先填好摆着，你看一眼再点网页上的提交。交完它自己回表单，把下一行填好。嫌慢就打开「自动提交」。
+site.c3h	下回不用再教
+site.c3p	同一个网站，字段对应自己套上，表一放就填。同一张表再放进来，交过的行不会再交一遍。
+site.s2h	1138 格，一格不错。
+site.s2p	13 种网站同一张 20 行的表：普通表单、三页向导、iframe、只能点的日历，外加真 AntD、Element Plus、MUI、select2 和 Shadow DOM。服务器收到的每一格都核对过。
+site.n1	0
+site.n1t	错的格子（共 1138）
+site.n2	8 秒
+site.n2t	20 行订单，自动提交
+site.n3	4 下
+site.n3t	再来同一个网站：开侧栏到第一行填好
+site.n4	1 下
+site.n4t	之后每一行：你点的那下提交
+site.s3h	该停的地方会停。
+site.s3p	数据不对不交，缺附件不交，验证码不碰。自己做掉的每件事都能撤。
+site.f1	放好表，第 1 行已填好
+site.f2	交一行，下一行自己填好
+site.f3	出错写明原因，一下重试
+site.f4	跟着系统换深色
+site.s4h	怎么装
+site.s4p	商店还在路上，先用开发者模式装，一分钟。
+site.i1	下载 daibi-{v}.zip，解压成一个文件夹。 放个不会被误删的地方，删了插件就没了。
+site.i2	地址栏打开 edge://extensions 或 chrome://extensions。
+site.i3	打开「开发人员模式」（Chrome 叫「开发者模式」）。
+site.i4	点「加载解压缩的扩展」（Chrome 叫「加载已解压的扩展程序」），选刚才的文件夹。
+site.i5	把代笔僧钉到工具栏，点它开侧栏，再点「用示例试试」。 示例表单在 这里，交上去的单只记在那一页。
+site.note	表格、附件和字段对应只存在你自己的浏览器里，不上传、不注册。第一次在某个网站填，浏览器问一次能不能进，点允许。
+site.foot	千手院 · 代笔僧
+form.title	代笔僧示例表单
+form.desc	给代笔僧练手的示例订单表单。交上来的单不出这台电脑，只在本页记一笔。
+form.h1	示例订单
+form.sub	给代笔僧练手的表单。交上来的单只记在这一页，刷新就没。
+form.name	姓名
+form.phone	手机
+form.email	邮箱
+form.company	公司
+form.product	产品
+form.choose	选一个
+form.p1	标准版
+form.p2	专业版
+form.p3	旗舰版
+form.qty	数量
+form.due	交付日期
+form.memo	备注
+form.submit	提交
+form.got	收到的单
+form.none	还没有。装好代笔僧，点「用示例试试」。
+form.item	{q} 件 · {d}
+form.noDate	没写日子
+form.foot	千手院
