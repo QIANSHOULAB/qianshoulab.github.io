@@ -1,4 +1,5 @@
-// 真流程比武：用手机宽度从头录四个月账，数点几下、打几处字，读界面上的数和标准答案对。
+// 真流程比武（0.3.0 流程）：用手机宽度从头录四个月账，数点几下、打几处字，读界面上的数和标准答案对；
+// 每月复制全屋账单，账单里每人那行的钱也跟答案对。
 // 用法：node run-baozuseng.js http://127.0.0.1:8765/baozuseng/ 输出目录
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -14,6 +15,7 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE_UA, hasTouch: true, acceptDownloads: true });
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(BASE).origin });
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
@@ -21,13 +23,35 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   const type = async (loc, text) => { await loc.first().fill(String(text)); C().fields++; C().chars += String(text).length; await page.waitForTimeout(40); };
   const sheetGone = () => page.waitForSelector('#sheets', { state: 'hidden' });
   const at = async (ym, day) => { await page.clock.setFixedTime(new Date(`${ym}-${day}T10:00:00`)); const t0 = Date.now(); await page.goto(BASE); await page.waitForSelector('.lt h1'); return Date.now() - t0; };
-  const openHouse = async unit => { await tap(page.locator('a.row', { hasText: unit })); await page.waitForSelector('#elecIn'); };
+  // 只有一套房时打开就在房子里（0.3.0），不用点；不在就点进去
+  const openHouse = async unit => { if (await page.locator('#elecIn').count() && (await page.locator('.lt h1').textContent()).trim() === unit) return; await tap(page.locator('a.row', { hasText: unit })); await page.waitForSelector('#elecIn'); };
   const home = async () => { await tap(page.locator('.nav-back')); await page.waitForSelector('.hero'); };
-  const markPaid = async (names) => { for (const n of names) await tap(page.locator('.row.ten', { hasText: n }).locator('button.paid')); };
+  // 要记已收的正好是还没收的全部 → 一下「都收了」；否则一个个点
+  const markPaid = async (names) => {
+    const open = await page.evaluate(() => [...document.querySelectorAll('.row.ten')].filter(r => !r.querySelector('.paid.on,.paid.owe')).map(r => r.querySelector('.row-t').childNodes[0].textContent.trim()));
+    if (open.length >= 2 && open.length === names.length && names.every(n => open.includes(n))) { await tap(page.locator('[data-act=all-paid]')); return; }
+    for (const n of names) await tap(page.locator('.row.ten', { hasText: n }).locator('button.paid'));
+  };
+  // 复制全屋账单，读剪贴板，每人一行「名字 $应交（…）」跟答案（应交 + 之前欠）对
+  const prevOf = (ym, name) => { let c = 0; for (const [k, mo] of Object.entries(sc.months)) if (k < ym) for (const h of Object.values(mo)) for (const o of h.owe || []) if (o.name === name) c += Math.round(o.amt * 100); return c; };
+  let billChecks = 0;
+  const checkBills = async (ym, key) => {
+    await tap(page.locator('[data-act=copy-bills]'));
+    const text = await page.evaluate(() => navigator.clipboard.readText());
+    for (const [n, r] of Object.entries(ans[ym][key].rows)) {
+      billChecks++; checks++;
+      const line = text.split('\n').find(l => l.startsWith(n + ' $'));
+      if (!line) { diffs.push(`${ym} ${key} 账单里没有 ${n}`); continue; }
+      const d = cents(line.slice(n.length + 1).split('（')[0]) - (r.due + prevOf(ym, n));
+      if (d) diffs.push(`${ym} ${key} 账单 ${n} 差 ${d} 分`);
+    }
+    return text;
+  };
+  const billTexts = {};
   const tenant = n => page.locator('.row.ten .row-btn', { hasText: n });
   const maybePrompt = async (choice) => { try { await page.waitForSelector('#cfOk', { timeout: 1200 }); } catch (e) { return false; }
     if (choice === 'save') { const [dl] = await Promise.all([page.waitForEvent('download'), tap(page.locator('#cfOk'))]); await dl.saveAs(path.join(OUT, 'backup-' + bucket + '.json')); }
-    else await tap(page.locator('.cf .btn.tinted')); await sheetGone(); return true; };
+    else await tap(page.locator('.cf .btn.gray')); await sheetGone(); return true; };
   async function readHouse() {
     return page.evaluate(() => {
       const rows = {};
@@ -57,16 +81,15 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   // ---------- 2026-08：建房、贴名单、填电费、收齐 ----------
   bucket = 'setup'; loads.push(await at('2026-08', '05'));
   await page.screenshot({ path: path.join(OUT, 'first-open-390.png') });
-  await tap(page.locator('[data-act=a2hs-x]'));
   const A = sc.houses[0], B = sc.houses[1];
   await tap(page.locator('[data-act=new-house]'));
   await type(page.locator('#hEstate'), A.estate); await type(page.locator('#hUnit'), A.unit); await type(page.locator('#hHead'), A.head);
-  await tap(page.locator('#hOk'));
-  await type(page.locator('#bText'), sc.months['2026-08'].A.paste);
-  await page.waitForSelector('#bGo:not([disabled])'); await tap(page.locator('#bGo')); await sheetGone();
+  await type(page.locator('#hPaste'), sc.months['2026-08'].A.paste);
+  await tap(page.locator('#hOk')); await sheetGone();
   await tap(page.locator('[data-act=add-exp]')); await tap(page.locator('#eQuick button', { hasText: '网费' })); await type(page.locator('#eAmt'), 45); await tap(page.locator('#eOk')); await sheetGone();
   bucket = '2026-08';
   { const t0 = Date.now(); await type(page.locator('#elecIn'), sc.months['2026-08'].A.elec); await page.waitForSelector('.split-main'); C().ms += Date.now() - t0; }
+  billTexts['2026-08A'] = await checkBills('2026-08', 'A');
   await markPaid(['阿明', '小美', '阿强', '阿杰', 'Raj']);
   const prompt8 = await maybePrompt('save');
   compare('2026-08', 'A', await readHouse());
@@ -80,6 +103,7 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   await tap(page.locator('[data-act=add-tenant]')); await type(page.locator('#tName'), 'Ken'); await type(page.locator('#tRent'), 540);
   await tap(page.locator('#tRooms button', { hasText: '小房' })); await type(page.locator('#tFrom'), '2026-09-20'); await tap(page.locator('#tOk')); await sheetGone();
   await tap(page.locator('[data-act=add-exp]')); await tap(page.locator('#eQuick button', { hasText: '维修' })); await type(page.locator('#eAmt'), 120); await tap(page.locator('#eOk')); await sheetGone();
+  billTexts['2026-09A'] = await checkBills('2026-09', 'A');
   await markPaid(['阿明', '小美', '阿强', '阿杰', 'Raj', 'Ken']);
   const prompt9 = await maybePrompt('later');
   compare('2026-09', 'A', await readHouse());
@@ -93,16 +117,18 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   await tap(page.locator('#tRooms button', { hasText: '客厅' })); await tap(page.locator('#tShare')); await type(page.locator('#tFrom'), '2026-10-09'); await tap(page.locator('#tOk')); await sheetGone();
   await tap(tenant('小美')); await type(page.locator('#tRent'), 680); await tap(page.locator('#tOk')); await sheetGone();
   await tap(tenant('阿强')); await tap(page.locator('#tOwe')); await type(page.locator('#tOweAmt'), 200); await tap(page.locator('#tOk')); await sheetGone();
+  billTexts['2026-10A'] = await checkBills('2026-10', 'A');
   await markPaid(['阿明', '小美', '阿杰', 'Ken', '陈姐']);
   compare('2026-10', 'A', await readHouse());
   await home();
   bucket = '2026-10-newhouse';
   await tap(page.locator('[data-act=new-house]'));
   await type(page.locator('#hEstate'), B.estate); await type(page.locator('#hUnit'), B.unit); await type(page.locator('#hHead'), B.head); await tap(page.locator('#hSelf'));
-  await tap(page.locator('#hOk'));
-  await type(page.locator('#bText'), sc.months['2026-10'].B.paste); await page.waitForSelector('#bGo:not([disabled])'); await tap(page.locator('#bGo')); await sheetGone();
+  await type(page.locator('#hPaste'), sc.months['2026-10'].B.paste);
+  await tap(page.locator('#hOk')); await sheetGone();
   bucket = '2026-10';
   await type(page.locator('#elecIn'), 165.60);
+  billTexts['2026-10B'] = await checkBills('2026-10', 'B');
   await markPaid(['小李', 'Tom']);
   const prompt10 = await maybePrompt('later');
   compare('2026-10', 'B', await readHouse());
@@ -112,6 +138,7 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   await openHouse(A.unit);
   await type(page.locator('#elecIn'), 250);
   await tap(tenant('阿杰')); await type(page.locator('#tTo'), '2026-11-15'); await tap(page.locator('#tOk')); await sheetGone();
+  billTexts['2026-11A'] = await checkBills('2026-11', 'A');
   await markPaid(['阿明', '小美', '阿强', '阿杰', 'Ken', '陈姐']);
   compare('2026-11', 'A', await readHouse());
   await page.screenshot({ path: path.join(OUT, 'nov-houseA-390.png'), fullPage: true });
@@ -121,6 +148,7 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   await tap(tenant('Tom')); await type(page.locator('#tTo'), '2026-11-10'); await tap(page.locator('#tOk')); await sheetGone();
   await tap(page.locator('[data-act=bulk]')); await type(page.locator('#bText'), 'Amy 普通房 760 11号入住\nSara 普通房2 380\nLily 普通房2 380 包电');
   await page.waitForSelector('#bGo:not([disabled])'); await tap(page.locator('#bGo')); await sheetGone();
+  billTexts['2026-11B'] = await checkBills('2026-11', 'B');
   await markPaid(['小李', 'Tom', 'Sara', 'Lily']);
   compare('2026-11', 'B', await readHouse());
   await tap(page.locator('#segR')); await page.screenshot({ path: path.join(OUT, 'nov-houseB-byroom-390.png'), fullPage: true }); await page.locator('#segP').click();
@@ -146,7 +174,7 @@ const cents = s => Math.round(parseFloat(String(s).replace(/[^\d.\-−]/g, '').r
   const got2 = await p2.evaluate(() => ({ net: document.querySelector('#hHero .hero-n').textContent, n: document.querySelectorAll('.row.ten').length }));
   const restoreOk = cents(got2.net) === ans['2026-11'].A.net && got2.n === Object.keys(ans['2026-11'].A.rows).length;
 
-  const result = { counts: cnt, loadsMs: loads, prompts: { aug: prompt8, sep: prompt9, oct: prompt10 }, checks, diffs, restore: { ok: restoreOk, taps: restoreCnt.taps }, errors };
+  const result = { counts: cnt, loadsMs: loads, billChecks, billTexts, prompts: { aug: prompt8, sep: prompt9, oct: prompt10 }, checks, diffs, restore: { ok: restoreOk, taps: restoreCnt.taps }, errors };
   fs.writeFileSync(path.join(OUT, 'result-baozuseng.json'), JSON.stringify(result, null, 1));
   console.log(JSON.stringify(result, null, 1));
   await browser.close();
