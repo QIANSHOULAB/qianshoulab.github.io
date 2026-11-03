@@ -38,7 +38,9 @@ const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleW
       await p.locator('[data-act=copy-bills]').click(); await p.waitForTimeout(300);
       await p.locator('[data-act=all-paid]').click(); await p.waitForTimeout(200);
       if (await p.locator('#cfOk').count()) { await p.waitForTimeout(400); await p.keyboard.press('Escape'); }
-      await p.evaluate(() => window.scrollTo(0, 0));
+      // 手机上滚到房客列表（结果在这），提示条落在列表下面留出的空白里
+      if (w === 390) await p.evaluate(() => { const l = document.querySelector('#hTen .list'); window.scrollTo(0, l.getBoundingClientRect().bottom + scrollY - (innerHeight - 108)); });
+      else await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); // 电脑：滚到底，提示条落在页底留出的空白里，左栏吸顶仍在
       await shot(p, '3-result');
       await ctx.close(); }
     // 出错：电费里打了字母

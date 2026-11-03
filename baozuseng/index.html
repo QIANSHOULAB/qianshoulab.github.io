@@ -29,7 +29,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
   --glass:rgba(245,245,247,.72); --scrim:rgba(0,0,0,.32); --sheet:#f5f5f7; --sheet-card:#ffffff;
-  --toast-bg:rgba(29,29,31,.92); --toast-fg:#f5f5f7; --knob:#ffffff; --bar:rgba(120,120,128,.28);
+  --toast-bg:rgba(29,29,31,.72); --toast-fg:#f5f5f7; --knob:#ffffff; --bar:rgba(120,120,128,.28);
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
@@ -40,7 +40,7 @@
   --accent:#ff5ca8; --accent-fill:#d63384; --accent-tint:rgba(255,92,168,.16);
   --bad-ink:#ff6961; --bad-tint:rgba(255,69,58,.16);
   --glass:rgba(22,22,24,.72); --scrim:rgba(0,0,0,.56); --sheet:#1c1c1e; --sheet-card:#2c2c2e;
-  --toast-bg:rgba(58,58,60,.96); --bar:rgba(120,120,128,.44);
+  --toast-bg:rgba(58,58,60,.72); --bar:rgba(120,120,128,.44);
   color-scheme:dark;
 }}
 
@@ -77,7 +77,7 @@ button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
 .stale-all #hHero,.stale-all #hTen{opacity:.35;transition:opacity 200ms var(--ease)}
 
 /* 页面 */
-.wrap{max-width:600px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:600px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right,0px)) calc(96px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 #view{overflow-x:clip}
 .enter{animation:push var(--t) var(--ease)}
 @keyframes push{from{opacity:.4;transform:translateX(12px)}to{opacity:1;transform:none}}
@@ -304,10 +304,12 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 .bk.dup{opacity:.5}
 
 /* 提示条：能撤销 */
-#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:16px;max-width:calc(100% - 32px);transform:translate(-50%,16px);opacity:0;pointer-events:none;padding:12px 20px;border-radius:var(--r-btn-l);background:var(--toast-bg);color:var(--toast-fg);font-size:15px;font-weight:400;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);transition:opacity var(--t) var(--ease),transform var(--t) var(--ease)}
-#toast.show{opacity:1;transform:translate(-50%,0)}
+/* 提示条：底部居中（整页内容区就是居中的），离底 24 + 安全区，毛玻璃；页面底部留了 96 不让它盖最后一行 */
+#toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:12px;min-height:44px;max-width:calc(100% - 32px);transform:translateY(16px);opacity:0;pointer-events:none;padding:8px 16px;border-radius:var(--r-btn);box-shadow:0 8px 24px rgba(0,0,0,.16);background:var(--toast-bg);color:var(--toast-fg);font-size:15px;font-weight:400;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);transition:opacity var(--t) var(--ease),transform var(--t) var(--ease)}
+#toast.show{opacity:1;transform:none}
+#toast.has-act{padding-right:8px}
 #toast.show.has-act{pointer-events:auto}
-#toast button{color:#ff8cc4;font-weight:600;min-height:32px;padding:0 4px;white-space:nowrap}
+#toast button{color:#ff8cc4;font-weight:600;min-height:36px;padding:0 8px;border-radius:var(--r-chip);white-space:nowrap}
 
 /* 放到主屏幕 */
 .a2hs{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:var(--r-card);padding:12px 4px 12px 16px;margin-bottom:24px;box-shadow:var(--shadow)}
