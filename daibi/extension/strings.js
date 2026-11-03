@@ -97,6 +97,12 @@ QSLib.i18n.add('zh', {
   'err.NOFIELD': '这页一个对上的格子都没有',
   'err.CAPTCHA': '卡在验证码',
 
+  'err.ALERT': '网页弹框不收：「{msg}」',
+  'warn.fields': '网页上{f}还没对上表里的列，照填就空着交',
+  'warn.more': '等 {n} 个框',
+  'warn.go': '照填',
+  'warn.pick': '去点选',
+
   'att.none': '附件：还没放（表里写文件名，文件放这）',
   'att.n': '附件：{n} 个',
   'att.add': '放附件',

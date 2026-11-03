@@ -1,11 +1,24 @@
-/* 代笔僧：在网页里干活的那只手。由侧栏按需注入（只在你授权过的网站），不常驻。
- * 消息：scan / fill / submit / values / pick / flash / cancelPick
+/* 代笔僧：在网页里干活的那只手。由侧栏按需注入（只在你授权过的网站，连同页里的 iframe），不常驻。
+ * 侧栏用 scripting.executeScript 调 window.__daibiDo(消息)，每个 frame 各答各的，侧栏合起来。
+ * 消息：scan / fill / submit / values / check / pick / flash / cancelPick
+ * 选择器：顶层页面原样；iframe 里的加前缀「@来源|」，各 frame 只认自己的。
  */
 (function () {
   'use strict';
   if (window.__daibiHand) return;
   window.__daibiHand = true;
   const P = QSLib.page;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const TOP = window === window.top;
+  const FK = TOP ? '' : location.origin;
+  const tag = sel => sel && FK ? '@' + FK + '|' + sel : sel;
+  const mine = sel => {
+    if (!sel) return null;
+    if (sel[0] !== '@') return TOP ? sel : null;
+    const k = sel.indexOf('|');
+    return !TOP && sel.slice(1, k) === FK ? sel.slice(k + 1) : null;
+  };
+  const tagD = d => d && Object.assign(d, { sel: tag(d.sel) });
 
   /* ---------- 值的规整 ---------- */
   const key = s => String(s ?? '').toLowerCase().replace(/[\s\-_.,，。:：;；/\\|()（）[\]【】"'“”‘’*＊·•]/g, '');
@@ -44,6 +57,26 @@
     return D;
   }
 
+  // 照框的格式写日期：placeholder 写了 YYYY/MM/DD 就照它，写了个样例日期就照样例，都没有用 YYYY-MM-DD
+  function fmtFor(el) {
+    const ph = String(el.getAttribute('placeholder') || '').trim();
+    if (/y{2,4}/i.test(ph) && /m{1,2}/i.test(ph) && /d{1,2}/i.test(ph)) return ph.replace(/[^ymdhs:\-/.年月日 ]/gi, '').trim();
+    const ex = /\d{4}([-/.年])\d{1,2}([-/.月])\d{1,2}(日)?/.exec(ph + ' ' + (el.value || ''));
+    if (ex) return 'YYYY' + ex[1] + 'MM' + ex[2] + 'DD' + (ex[3] || '');
+    return 'YYYY-MM-DD';
+  }
+  function fmtDate(d, f) {
+    return f.replace(/y{4}|y{2}|m{1,2}|d{1,2}|h{1,2}|i{2}|s{2}/gi, x => {
+      const c = x[0].toLowerCase(), two = x.length >= 2;
+      if (c === 'y') return x.length === 4 ? String(d.y) : String(d.y).slice(-2);
+      if (c === 'm') return two ? pad(d.mo) : String(d.mo);
+      if (c === 'd') return two ? pad(d.d) : String(d.d);
+      if (c === 'h') return pad(+(d.h || 0));
+      if (c === 'i') return pad(+(d.mi || 0));
+      return '00';
+    });
+  }
+
   function matchOption(opts, v) {
     const raw = String(v).trim(), k = key(raw);
     let i = opts.findIndex(o => o.value === raw); if (i >= 0) return i;
@@ -76,16 +109,73 @@
     if (el.checked !== on) { el.checked = on; fire(el, 'input', 'change'); }
   }
 
-  function fillOne(it) {
+  /* ---------- 自定义下拉：点开 → 找选项 → 点中 ---------- */
+  function press(el, kinds) {
+    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, view: window, button: 0, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
+    kinds.forEach(k => el.dispatchEvent(k.startsWith('pointer') ? new PointerEvent(k, { ...o, pointerType: 'mouse', isPrimary: true }) : new MouseEvent(k, o)));
+  }
+  const key1 = (el, k) => ['keydown', 'keyup'].forEach(t => el.dispatchEvent(new KeyboardEvent(t, { key: k, code: k, bubbles: true, cancelable: true })));
+  async function until(fn, ms) { const t0 = Date.now(); let x; while (!(x = fn()) && Date.now() - t0 < ms) await sleep(30); return x; }
+  const handleOf = root => root.querySelector('.ant-select-selector,.el-select__wrapper,.el-input__wrapper,.el-input__inner,.select2-selection,.vs__dropdown-toggle,.n-base-selection-label,.ivu-select-selection,[role=combobox]') || root;
+  const openOpts = root => P.optionsOf(root, true);
+  async function openCombo(root) {
+    const h = handleOf(root);
+    try { h.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+    let os = openOpts(root); if (os.length) return os;
+    press(h, ['pointerdown', 'mousedown', 'pointerup', 'mouseup']);   // AntD / MUI 按下就开
+    if ((os = await until(() => { const x = openOpts(root); return x.length && x; }, 200))) return os;
+    press(h, ['click']);                                              // Element / 自家组件 点了才开
+    if ((os = await until(() => { const x = openOpts(root); return x.length && x; }, 500))) return os;
+    try { h.focus(); } catch (e) {} key1(document.activeElement || h, 'ArrowDown'); // 键盘开
+    return (await until(() => { const x = openOpts(root); return x.length && x; }, 300)) || [];
+  }
+  async function closeCombo(root) {
+    key1(document.activeElement || root, 'Escape');
+    await sleep(30);
+    if (openOpts(root).length) { press(handleOf(root), ['click']); await sleep(30); }
+    if (openOpts(root).length) press(document.body, ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
+  }
+  async function fillCombo(root, v, col) {
+    const shown = () => (root.innerText || '').replace(/\s+/g, ' ').trim();
+    let os = await openCombo(root);
+    let i = matchOption(os.map(P.optInfo), v);
+    if (i < 0) { // 能搜的下拉：打字再找
+      const inp = root.querySelector('input:not([type=hidden]):not([readonly])') || (document.activeElement && document.activeElement.matches('input:not([readonly])') && document.activeElement);
+      if (inp && P.visible(inp)) { setNative(inp, v); fire(inp, 'input'); os = await until(() => { const x = openOpts(root); return matchOption(x.map(P.optInfo), v) >= 0 && x; }, 800) || openOpts(root); i = matchOption(os.map(P.optInfo), v); }
+    }
+    if (i < 0) { await closeCombo(root); return { col, err: os.length ? 'NO_OPTION' : 'FAILED', v }; }
+    const opt = os[i], txt = P.optInfo(opt).text;
+    try { opt.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+    press(opt, ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
+    const ok = await until(() => shown().includes(txt) || opt.getAttribute('aria-selected') === 'true', 400);
+    if (openOpts(root).length && !root.matches('[aria-multiselectable=true]')) await closeCombo(root);
+    return ok ? { col, ok: true } : { col, err: 'FAILED', v };
+  }
+
+  async function fillOne(it) {
+    const r = await fillOne0(it);
+    if (r && r.sel) r.sel = it.sel;
+    return r;
+  }
+  async function fillOne0(it) {
     const v = it.v == null ? '' : String(it.v);
     if (v.trim() === '') return { col: it.col, skip: 'empty' };
-    const found = P.find(it.sel);
+    const found = P.find(it.css);
     if (!found) return { col: it.col, skip: 'absent' };
     const els = [].concat(found);
     const el = els[0];
     if (!P.visible(el) && !(el.type === 'radio' || el.type === 'checkbox')) return { col: it.col, skip: 'absent' };
     const kind = P.describe(el).kind;
     try {
+      if (kind === 'combo') return await fillCombo(el, v.trim(), it.col);
+      if (kind === 'datetext') {
+        const d = toDate(v);
+        if (!d || d.mo < 1 || d.mo > 12 || d.d < 1 || d.d > 31) { if (el.readOnly) return { col: it.col, err: 'BAD_DATE', v }; typeIn(el, v); return { col: it.col, ok: true }; }
+        const s = fmtDate(d, fmtFor(el));
+        typeIn(el, s); key1(el, 'Escape');
+        if (el.value !== s) return { col: it.col, err: 'FAILED', v };
+        return { col: it.col, ok: true };
+      }
       if (kind === 'file') {
         const files = it.files || [];
         if (!files.length) return { col: it.col, skip: 'empty' };
@@ -137,20 +227,21 @@
       } else {
         let s = v;
         if (el.type === 'number') { s = v.replace(/[,，\s¥￥$€£]/g, ''); if (s !== '' && isNaN(+s)) return { col: it.col, err: 'NOT_NUMBER', v }; }
+        else if ((it.num || el.inputMode === 'numeric' || el.inputMode === 'decimal') && /^[-+]?\d{1,3}([,，]\d{3})+(\.\d+)?$/.test(v.trim())) s = v.trim().replace(/[,，]/g, ''); // 1,200 → 1200
         if (el.maxLength > 0 && s.length > el.maxLength) return { col: it.col, err: 'TOO_LONG', v, max: el.maxLength };
         typeIn(el, s);
       }
     } catch (e) {
       return { col: it.col, err: 'FAILED', v, msg: String(e && e.message || e) };
     }
-    return { col: it.col, ok: true, sel: it.sel };
+    return { col: it.col, ok: true };
   }
 
   /* ---------- 提交按钮 ---------- */
   const SUBMIT_TXT = /^(提交|下一步|下一页|保存|确定|确认|完成|发送|报名|登记|创建|添加|新增|submit|next|continue|save|send|create|add|register|sign\s*up|apply|confirm|done|ok)/i;
   function btnText(b) { return (b.value || b.textContent || b.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim(); }
   function findSubmit(sels) {
-    const els = sels.map(s => [].concat(P.find(s) || [])[0]).filter(Boolean);
+    const els = sels.map(s => [].concat(P.find(s) || [])[0]).filter(Boolean).map(e => e.form ? e : (e.closest('form') || e));
     const form = els.map(e => e.form || e.closest('form')).find(Boolean);
     const vis = b => b.getClientRects().length && !b.disabled;
     if (form) {
@@ -170,7 +261,7 @@
     const bad = Array.from(root.querySelectorAll('input,select,textarea')).find(el => el.willValidate && !el.checkValidity() && P.visible(el));
     if (!bad) return null;
     const d = P.describe(bad);
-    return { label: d.label || d.name || d.placeholder, msg: bad.validationMessage, sel: d.sel };
+    return { label: d.label || d.name || d.placeholder, msg: bad.validationMessage, sel: tag(d.sel) };
   }
 
   /* ---------- 记住用户自己点提交 ---------- */
@@ -196,46 +287,60 @@
     });
   }
 
-  chrome.runtime.onMessage.addListener((m, _s, reply) => {
-    if (!m || typeof m.type !== 'string' || !m.type.startsWith('daibi:')) return;
+  // 网页弹框（alert）拦提交：提交那几秒里，贫僧把弹框的话记下来当出错原因，不让它卡住网页。钩子由侧栏装在网页自己的世界里。
+  const DE = document.documentElement;
+  function takeAlert() { const a = DE.getAttribute('data-daibi-alert'); if (a != null) DE.removeAttribute('data-daibi-alert'); return a; }
+  let disarm = 0;
+
+  async function handle(m) {
     const t = m.type.slice(6);
-    if (t === 'ping') { reply({ ok: true }); return; }
+    const own = (m.sels || []).map(mine).filter(Boolean);
+    if (t === 'ping') return { ok: true, top: TOP };
     if (t === 'scan') {
-      const fields = P.fields();
-      const present = (m.sels || []).filter(s => { const f = P.find(s); return f && [].concat(f).some(x => P.visible(x)); });
-      reply({ url: location.href, title: document.title, fields, present, captcha: P.captcha() });
-      return;
+      const fields = P.fields().map(tagD);
+      const present = (m.sels || []).filter(s => { const c = mine(s); const f = c && P.find(c); return f && [].concat(f).some(x => P.visible(x)); });
+      const cap = P.captcha();
+      const frames = TOP ? Array.from(document.querySelectorAll('iframe[src],frame[src]')).filter(f => f.getClientRects().length).map(f => { try { return new URL(f.src, location.href).origin; } catch (e) { return null; } }).filter(o => o && /^https?:/.test(o)) : [];
+      return { url: location.href, title: document.title, fields, present, captcha: cap && { sel: tag(cap.sel) }, frames };
     }
     if (t === 'fill') {
-      const out = (m.items || []).map(fillOne);
-      reply({ items: out, captcha: P.captcha(), url: location.href });
-      return;
+      const items = m.items || [], out = [];
+      for (const it of items) { const c = mine(it.sel); out.push(c ? await fillOne({ ...it, css: c }) : null); }
+      const cap = P.captcha();
+      return { items: out, captcha: out.some(Boolean) && cap ? { sel: tag(cap.sel) } : null, url: location.href };
     }
-    if (t === 'values') { reply({ values: valuesOf(m.sels || []) }); return; }
+    if (t === 'values') {
+      const vals = valuesOf((m.sels || []).map(s => mine(s) || '\u0000'));
+      return { values: vals.map((v, k) => mine(m.sels[k]) ? v : '\u0001'), alert: takeAlert() }; // \u0001 = 不归这个 frame
+    }
     if (t === 'check') {
-      const { form } = findSubmit(m.sels || []);
-      reply({ invalid: firstInvalid(form), captcha: P.captcha() });
-      return;
+      if (!own.length && !(TOP && !(m.sels || []).length)) return { mine: false };
+      const { form } = findSubmit(own);
+      return { mine: true, invalid: firstInvalid(form), captcha: P.captcha(), alert: takeAlert() };
     }
     if (t === 'submit') {
-      let btn = m.btn ? [].concat(P.find(m.btn) || [])[0] : null;
+      const bc = mine(m.btn);
+      if (!bc && !own.length && !(TOP && !(m.sels || []).length && !m.btn)) return { mine: false };
+      let btn = bc ? [].concat(P.find(bc) || [])[0] : null;
       let form = null;
-      if (!btn) ({ btn, form } = findSubmit(m.sels || []));
+      if (!btn) ({ btn, form } = findSubmit(own));
       else form = btn.form;
       const inv = firstInvalid(form);
-      if (inv) { reply({ ok: false, err: 'INVALID', invalid: inv }); return; }
-      if (!btn) { reply({ ok: false, err: 'NO_BUTTON' }); return; }
-      reply({ ok: true, label: btnText(btn) });
+      if (inv) return { mine: true, ok: false, err: 'INVALID', invalid: inv };
+      if (!btn) return { mine: true, ok: false, err: 'NO_BUTTON' };
       lastSent = Date.now(); // 自己点的，不当成用户点的
-      setTimeout(() => btn.click(), 30);
-      return;
+      takeAlert(); DE.setAttribute('data-daibi-arm', '');
+      clearTimeout(disarm); disarm = setTimeout(() => DE.removeAttribute('data-daibi-arm'), 4000);
+      btn.click();
+      return { mine: true, ok: true, label: btnText(btn), alert: takeAlert() };
     }
     if (t === 'pick') {
-      P.pick({ hint: m.hint, accept: m.button ? (el => el.closest && el.closest('button,input[type=submit],input[type=button],[role=button],a')) : undefined })
-        .then(el => reply(el ? (m.button ? { sel: P.selectorOf(el), label: btnText(el) } : P.describe(el)) : null));
-      return true;
+      const el = await P.pick({ hint: m.hint, noTip: !TOP, accept: m.button ? (e => e.closest && e.closest('button,input[type=submit],input[type=button],[role=button],a')) : undefined });
+      return el ? (m.button ? { sel: tag(P.selectorOf(el)), label: btnText(el) } : tagD(P.describe(el))) : null;
     }
-    if (t === 'cancelPick') { P.cancelPick(); reply({ ok: true }); return; }
-    if (t === 'flash') { const f = P.find(m.sel); P.flash(f); reply({ ok: !!f }); return; }
-  });
+    if (t === 'cancelPick') { P.cancelPick(); return { ok: true }; }
+    if (t === 'flash') { const c = mine(m.sel); const f = c && P.find(c); if (f) P.flash(f); return { ok: !!f }; }
+    return null;
+  }
+  window.__daibiDo = m => (m && typeof m.type === 'string' && m.type.startsWith('daibi:') ? handle(m) : null);
 })();

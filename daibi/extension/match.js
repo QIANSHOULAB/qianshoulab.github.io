@@ -70,7 +70,7 @@
 
   const SPLIT = /[,，;；、|\/]+/;
   const isEmail = v => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
-  const isDate = v => /^\d{4}\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}/.test(v) || /^\d{1,2}[-/.]\d{1,2}[-/.]\d{4}$/.test(v);
+  const isDate = v => /^\d{4}\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}/.test(v) || /^\d{1,2}[-/.]\d{1,2}[-/.]\d{4}$/.test(v) || /^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$/.test(v);
   const isBool = v => /^(是|否|y|n|yes|no|true|false|1|0|√|✓|x|×|对|有|无)$/i.test(v.trim());
 
   function optHit(opts, v) {
@@ -90,7 +90,7 @@
         if (r >= 0.8) s += 0.15; else if (r < 0.3) s -= 0.25;
       }
       if (f.type === 'email') s += vals.every(isEmail) ? 0.1 : -0.2;
-      if (['date', 'datetime-local', 'month'].includes(f.kind)) s += vals.every(isDate) ? 0.1 : -0.2;
+      if (['date', 'datetime-local', 'month', 'datetext'].includes(f.kind)) s += vals.every(isDate) ? 0.1 : -0.2;
       if (f.kind === 'checkbox') s += vals.every(isBool) ? 0.1 : -0.3;
       const isFile = v => /\.[a-z0-9]{2,5}$/i.test(v.split(/[;；,，、|\n]/)[0].trim());
       if (f.kind === 'file') s += vals.every(isFile) ? 0.15 : -0.3;

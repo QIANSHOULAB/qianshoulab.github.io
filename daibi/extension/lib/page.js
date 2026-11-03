@@ -11,6 +11,14 @@
   if (g.QSLib && g.QSLib.page) return;
 
   const SKIP_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image']);
+  // 自定义下拉（div 做的 select）：ARIA 写法 + 常见组件库的外壳
+  const COMBO = ['[role=combobox]:not(input):not(select):not(textarea)', '[aria-haspopup=listbox]:not(input):not(select):not(textarea)',
+    '.ant-select:not(.ant-select-dropdown)', '.el-select', '.el-select-v2', '.MuiSelect-select', '.select2-container', '.choices', '.v-select',
+    '.ivu-select', '.n-base-selection', '.arco-select-view', '.t-select', '.vs__dropdown-toggle', '.multiselect'].join(',');
+  // 下拉展开后的选项
+  const OPT = '[role=option],.ant-select-item-option,.el-select-dropdown__item,.MuiMenuItem-root,.select2-results__option,.vs__dropdown-option,' +
+    '.choices__item--choice,.ivu-select-item,.n-base-select-option,.arco-select-option,.t-select-option,.multiselect__option';
+  const DATEISH = /日期|时间|生日|date|day|birth|yyyy|calendar|picker|选择日期|年月日/i;
   const norm = s => String(s || '').replace(/\s+/g, ' ').trim();
   const cssEsc = s => (g.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/["\\]/g, '\\$&');
 
@@ -107,6 +115,40 @@
     return el.value;
   }
 
+  // 一个元素所属的自定义下拉的最外层；不是就返回 null
+  function comboRoot(el) {
+    if (!el || el.nodeType !== 1 || !el.closest) return null;
+    let r = el.closest(COMBO);
+    if (!r) return null;
+    let up;
+    while (r.parentElement && (up = r.parentElement.closest(COMBO))) r = up;
+    if (r.querySelector('select') && !r.matches('.select2-container')) return null; // 里面是原生下拉，按原生的填
+    return r;
+  }
+  const isCombo = el => !!el && el.nodeType === 1 && !el.matches('input,select,textarea') && comboRoot(el) === el;
+  // 只读的日期框（日历控件）：只能点日历，贫僧直接写进去
+  function dateLike(el) {
+    if (!el.matches('input') || !/^(text|search|)$/.test((el.type || '').toLowerCase())) return false;
+    const hay = [el.placeholder, el.name, el.id, el.className, el.getAttribute('aria-label'), el.getAttribute('data-type'), el.readOnly ? labelOf(el) : ''].join(' ');
+    return DATEISH.test(hay) || (el.labels && el.labels[0] && DATEISH.test(textOf(el.labels[0])) && el.readOnly);
+  }
+  function optionsOf(root, onlyVisible) {
+    const pools = [root];
+    const ids = [root, ...root.querySelectorAll('[aria-controls],[aria-owns]')].flatMap(e => ((e.getAttribute('aria-controls') || '') + ' ' + (e.getAttribute('aria-owns') || '')).split(/\s+/)).filter(Boolean);
+    ids.forEach(id => { const x = document.getElementById(id); if (x) pools.push(x); });
+    const seen = new Set(), out = [];
+    const take = el => {
+      if (seen.has(el) || el.closest('[data-qs-ui]')) return; seen.add(el);
+      if (el.getAttribute('aria-disabled') === 'true' || /\bdisabled\b|is-disabled/.test(el.className || '')) return;
+      if (onlyVisible && !el.getClientRects().length) return;
+      out.push(el);
+    };
+    pools.forEach(p => p.querySelectorAll(OPT + ',li').forEach(take));
+    if (onlyVisible && !out.length) document.querySelectorAll(OPT).forEach(take); // 弹层挂在 body 下面（AntD/Element 都这样）
+    return out.filter(o => !out.some(x => x !== o && o.contains(x))); // 只留最里层
+  }
+  const optInfo = o => ({ value: o.getAttribute('data-value') || o.getAttribute('data-v') || o.getAttribute('value') || '', text: norm(o.textContent) });
+
   function uniq(sel) { try { return document.querySelectorAll(sel).length === 1; } catch (e) { return false; } }
 
   function pathOf(el) {
@@ -135,6 +177,7 @@
 
   function kindOf(el) {
     const tag = el.tagName.toLowerCase();
+    if (isCombo(el)) return 'combo';
     if (tag === 'select') return el.multiple ? 'multiselect' : 'select';
     if (tag === 'textarea') return 'textarea';
     if (el.isContentEditable && tag !== 'input') return 'editable';
@@ -143,6 +186,7 @@
     if (t === 'checkbox') return 'checkbox';
     if (t === 'file') return 'file';
     if (['date', 'datetime-local', 'time', 'month', 'week'].includes(t)) return t;
+    if (dateLike(el)) return 'datetext';
     return 'text';
   }
 
@@ -167,6 +211,11 @@
         d.options = group.map(x => ({ value: x.value, text: optionText(x) }));
       }
       if (!el.name) d.sel = selectorOf(el);
+    } else if (kind === 'combo') {
+      d.label = labelOf(el) || norm((el.querySelector('[class*=placeholder]') || {}).textContent);
+      const ph = el.querySelector('[class*=placeholder],.ph'); if (ph) d.placeholder = norm(ph.textContent);
+      const os = optionsOf(el, false).map(optInfo).filter(o => o.text);
+      if (os.length) d.options = os;
     } else {
       d.label = labelOf(el);
       if (kind === 'select' || kind === 'multiselect') d.options = Array.from(el.options).map(o => ({ value: o.value, text: norm(o.text) }));
@@ -178,10 +227,20 @@
   function fields(root) {
     root = root || document;
     const out = [], seen = new Set();
-    root.querySelectorAll('input,select,textarea,[contenteditable=""],[contenteditable=true]').forEach(el => {
+    const els = new Set();
+    root.querySelectorAll('input,select,textarea,[contenteditable=""],[contenteditable=true],' + COMBO).forEach(el => {
+      if (el.matches('input,select,textarea')) {
+        const c = comboRoot(el); if (c) { els.add(c); return; }   // 下拉里面的搜索框/隐藏框：算到下拉头上
+        if (el.getAttribute('aria-hidden') === 'true') return;
+      } else if (!el.isContentEditable) { const c = comboRoot(el); if (c) els.add(c); return; }
+      els.add(el);
+    });
+    els.forEach(el => {
       if (el.matches('input') && SKIP_TYPES.has((el.type || '').toLowerCase())) return;
-      if (el.disabled || el.readOnly && el.type !== 'date' && el.type !== 'file') return;
+      if (el.disabled || el.readOnly && el.type !== 'date' && el.type !== 'file' && !dateLike(el)) return;
+      if (el.getAttribute('aria-disabled') === 'true' || /is-disabled|ant-select-disabled/.test(el.className || '')) return;
       if (el.closest('[data-qs-ui]')) return;
+      if (el.closest('.g-recaptcha,.h-captcha,.cf-turnstile,[class*="geetest"]')) return; // 验证码自己的勾，贫僧不碰
       if (!visible(el)) return;
       const d = describe(el);
       if (seen.has(d.sel)) return;
@@ -231,6 +290,7 @@
 
   function inputFrom(t) {
     if (!t || t.nodeType !== 1) return null;
+    const c = comboRoot(t); if (c) return c;
     if (t.matches('input,select,textarea')) return t;
     const lab = t.closest('label');
     if (lab && lab.control) return lab.control;
@@ -247,7 +307,7 @@
     return new Promise(resolve => {
       const tip = document.createElement('div'); tip.className = 'qs-tip'; tip.setAttribute('data-qs-ui', '');
       tip.textContent = opts.hint || 'Click a field · Esc to cancel';
-      document.documentElement.appendChild(tip);
+      if (!opts.noTip) document.documentElement.appendChild(tip);
       const hl = box(document.body); hl.style.opacity = '0';
       const want = opts.accept || inputFrom;
       const over = e => { const el = want(e.target); if (el) { hl.style.opacity = '1'; place(hl, el); } else hl.style.opacity = '0'; };
@@ -283,5 +343,5 @@
   }
 
   g.QSLib = g.QSLib || {};
-  g.QSLib.page = { fields, describe, find, pick, cancelPick, flash, captcha, labelOf, selectorOf, visible };
+  g.QSLib.page = { fields, describe, find, pick, cancelPick, flash, captcha, labelOf, selectorOf, visible, comboRoot, optionsOf, optInfo };
 })(globalThis);

@@ -5,25 +5,35 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 40.2,
+  "secs": 42.6,
   "detail": []
  },
  "react": {
   "cells": 546,
-  "wrong": 7,
+  "wrong": 0,
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 68.5,
-  "detail": [
-   "13行数量：要「1200」收到「1,200」",
-   "26行数量：要「1200」收到「1,200」",
-   "39行数量：要「1200」收到「1,200」",
-   "52行数量：要「1200」收到「1,200」",
-   "65行数量：要「1200」收到「1,200」",
-   "78行数量：要「1200」收到「1,200」",
-   "91行数量：要「1200」收到「1,200」"
-  ]
+  "secs": 70.2,
+  "detail": []
+ },
+ "dd": {
+  "cells": 258,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 82.2,
+  "detail": []
+ },
+ "iframe": {
+  "cells": 400,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 40.4,
+  "detail": []
  },
  "wizard": {
   "cells": 688,
@@ -31,7 +41,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 129.9,
+  "secs": 123.7,
   "detail": []
  },
  "ajax": {
@@ -40,7 +50,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 73.1,
+  "secs": 74,
   "detail": []
  },
  "valid": {
@@ -49,7 +59,16 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 38.5,
+  "secs": 37.5,
+  "detail": []
+ },
+ "date": {
+  "cells": 200,
+  "wrong": 0,
+  "missing_rows": 0,
+  "bad_in": 0,
+  "extra": 0,
+  "secs": 39.6,
   "detail": []
  }
 }

@@ -1,5 +1,5 @@
 /* 代笔僧侧栏：一列分组卡片，底部固定一个主按钮 */
-body{min-height:100vh;padding-bottom:150px}
+body{min-height:100vh;padding-bottom:calc(var(--dock-h,150px) + 12px)}
 .top{display:flex;align-items:center;gap:10px;padding:16px 16px 14px}
 .logo{width:34px;height:34px;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .top h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.01em}
@@ -86,7 +86,7 @@ body{min-height:100vh;padding-bottom:150px}
 .dock .qs-card{box-shadow:none}
 .dock-b{display:flex;flex-direction:column;gap:8px}
 .qs-btn.retry{height:30px;color:var(--bad)}
-.toast{position:fixed;left:50%;bottom:150px;transform:translate(-50%,8px);max-width:calc(100% - 32px);width:max-content;background:rgba(29,29,31,.92);color:#F5F5F7;padding:9px 14px;border-radius:12px;font-size:12px;line-height:1.4;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:9;text-align:center}
+.toast{position:fixed;left:50%;top:12px;transform:translate(-50%,-8px);max-width:calc(100% - 32px);width:max-content;background:rgba(29,29,31,.92);color:#F5F5F7;padding:9px 14px;border-radius:12px;font-size:12px;line-height:1.4;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:9;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media (prefers-color-scheme: dark){.toast{background:rgba(58,58,60,.96)}}
 .frow.fsum .dot{background:var(--good-mark)}
@@ -96,3 +96,6 @@ body{min-height:100vh;padding-bottom:150px}
 .att svg{width:16px;height:16px;flex:none;color:var(--fg2)}
 .att span{flex:1}
 .att .qs-link{font-size:12px}
+.warn{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:var(--r);background:var(--warn-tint);color:var(--fg)}
+.warn p{margin:0;font-size:12px;line-height:1.45}
+.warn-a{display:flex;justify-content:flex-end;gap:8px}

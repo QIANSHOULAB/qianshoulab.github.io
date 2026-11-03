@@ -16,9 +16,9 @@
   let S = { table: null, st: [], cur: 0 };       // 表格 + 每行状态
   let maps = {};                                 // 每个网站一份：origin → {b:{表头:{sel,label,kind,conf}}, btn, start}
   const tab = { id: null, url: '', origin: '', host: '', pat: '', win: null };
-  let page = { fields: null, present: [], note: '', noteBad: false };
+  let page = { fields: null, present: [], note: '', noteBad: false, frames: [] };
   const run = { row: -1, seen: new Set(), textSels: new Set(), start: '', phase: 'idle', going: false, nav: false, human: false, timer: 0, tries: 0, busy: false };
-  let filter = 'all', picking = null, lastFile = null, showAll = false, attN = 0;
+  let filter = 'all', picking = null, lastFile = null, showAll = false, attN = 0, warnCols = null;
   const FIXED_TAB = new URLSearchParams(location.search).get('tab'); // 测试用：指定要填的标签页
 
   /* ---------- 存 ---------- */
@@ -48,32 +48,72 @@
     } catch (e) {}
     const changed = !tb || tb.id !== tab.id;
     tab.id = tb ? tb.id : null; setUrl(tb && tb.url);
-    if (changed) { page = { fields: null, present: [], note: '', noteBad: false }; }
+    if (changed) { page = { fields: null, present: [], note: '', noteBad: false, frames: [] }; }
   }
 
-  async function inject() {
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['lib/page.js', 'content.js'] });
+  /* 跟网页说话：顶层页面和里面的 iframe（授权过的）各跑一份手，executeScript 一次问遍，按 frame 收答案再合起来 */
+  const ASK = m => (window.__daibiDo ? window.__daibiDo(m) : { __missing: true });
+  const exec = (msg, frameIds) => chrome.scripting.executeScript({ target: frameIds ? { tabId: tab.id, frameIds } : { tabId: tab.id, allFrames: true }, func: ASK, args: [msg] });
+  async function ask(msg) {
+    if (tab.id == null) throw new Error('NO_TAB');
+    let rs = null;
+    try { rs = await exec(msg); } catch (e) { try { rs = await exec(msg, [0]); } catch (e2) {} }
+    if (!rs || rs.some(r => r.result && r.result.__missing)) {
+      try { await chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ['lib/page.js', 'content.js'] }); }
+      catch (e) {
+        try { await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['lib/page.js', 'content.js'] }); } catch (e2) { throw new Error('NO_ACCESS'); }
+      }
+      try { rs = await exec(msg); } catch (e) { rs = await exec(msg, [0]); }
+    }
+    return rs.filter(r => r.result && !r.result.__missing).sort((a, b) => a.frameId - b.frameId);
   }
   async function call(msg) {
-    if (tab.id == null) throw new Error('NO_TAB');
-    try { const r = await chrome.tabs.sendMessage(tab.id, msg); if (r !== undefined) return r; } catch (e) {}
-    try { await inject(); } catch (e) { throw new Error('NO_ACCESS'); }
-    return chrome.tabs.sendMessage(tab.id, msg);
+    const rs = await ask(msg), R = rs.map(r => r.result);
+    const top = (rs.find(r => r.frameId === 0) || rs[0] || {}).result || {};
+    const first = f => { for (const x of R) { const v = f(x); if (v != null) return v; } return null; };
+    switch (msg.type) {
+      case 'daibi:scan': return { url: top.url, title: top.title, fields: R.flatMap(x => x.fields || []), present: R.flatMap(x => x.present || []), captcha: first(x => x.captcha), frames: top.frames || [] };
+      case 'daibi:fill': return { url: top.url, captcha: first(x => x.captcha), items: msg.items.map((it, k) => first(x => x.items && x.items[k]) || { col: it.col, skip: 'absent' }) };
+      case 'daibi:values': return { alert: first(x => x.alert), values: (msg.sels || []).map((_, k) => { for (const x of R) { const v = x.values && x.values[k]; if (v !== '\u0001' && v !== undefined) return v; } return null; }) };
+      case 'daibi:check': { const o = R.find(x => x.mine) || {}; return { invalid: o.invalid || null, captcha: first(x => x.captcha), alert: first(x => x.alert) }; }
+      case 'daibi:submit': return R.find(x => x.mine) || { ok: false, err: 'NO_BUTTON' };
+      default: return top;
+    }
   }
+  // 点选：每个 frame 都等着，用户点在哪个算哪个
+  async function pickAny(msg) {
+    const ids = (await ask({ type: 'daibi:ping' })).map(r => r.frameId);
+    return new Promise(resolve => {
+      let left = ids.length, done = false;
+      const end = r => { if (done) return; done = true; resolve(r); call({ type: 'daibi:cancelPick' }).catch(() => {}); };
+      ids.forEach(fid => exec(fid === 0 ? msg : { ...msg, hint: '' }, [fid])
+        .then(x => { const r = x && x[0] && x[0].result; if (r && !r.__missing) end(r); else if (r === null && fid === 0) end(null); })
+        .catch(() => {}).finally(() => { if (--left === 0) end(null); }));
+    });
+  }
+  // 网页的 alert 装个耳朵：只在贫僧点提交后的几秒里收下弹框的话，平时原样弹
+  function hookAlert() {
+    if (window.__daibiAlert) return; window.__daibiAlert = 1;
+    const de = document.documentElement, orig = window.alert;
+    window.alert = function (m) { if (de.hasAttribute('data-daibi-arm')) { de.setAttribute('data-daibi-alert', String(m ?? '')); return; } return orig.apply(this, arguments); };
+  }
+  const armAlert = () => chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, world: 'MAIN', func: hookAlert }).catch(() => {});
   async function learnUrl() { // 没拿到网址时（只有 activeTab），从页面里问
     if (tab.url) return;
     try { const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => location.href }); setUrl(r && r.result); } catch (e) {}
   }
   // 必须在点击里同步调用，浏览器才会弹授权
+  // 表单在别家网站的 iframe 里（嵌入的报名表、第三方表单）：一并要
   function askAccess() {
     if (!tab.pat) return Promise.resolve(false);
-    return chrome.permissions.request({ origins: [tab.pat] }).catch(() => false);
+    const pats = [tab.pat, ...(page.frames || []).map(o => { try { const u = new URL(o); return `${u.protocol}//${u.hostname}/*`; } catch (e) { return null; } }).filter(Boolean)];
+    return chrome.permissions.request({ origins: [...new Set(pats)] }).catch(() => false);
   }
 
   const boundSels = () => { const m = map(); return m && S.table ? S.table.headers.map(h => m.b[h] && m.b[h].sel).filter(Boolean) : []; };
   async function scan() {
     const r = await call({ type: 'daibi:scan', sels: boundSels() });
-    page.fields = r.fields; page.present = r.present;
+    page.fields = r.fields; page.present = r.present; page.frames = r.frames || [];
     if (r.url) setUrl(r.url);
     return r;
   }
@@ -99,7 +139,7 @@
     const m = map(); if (!m || !page.fields) return;
     if (!page.fields.length) { note(t('fields.noFields'), true); return render(); }
     m.b = M.autoMatch(S.table.headers, S.table.rows, page.fields, m.b);
-    m.start = tab.url;
+    m.start = tab.url; m.off = [];
     saveMaps(); note('');
     if (!quiet) toast(t('toast.matched', { n: bound() }));
     render();
@@ -108,7 +148,8 @@
     const m = map(); if (!m || !page.fields || !S.table) return;
     const nb = M.autoMatch(S.table.headers, S.table.rows, page.fields, m.b, true);
     let n = 0;
-    Object.entries(nb).forEach(([h, b]) => { if (!m.b[h] && b.conf === 'sure') { m.b[h] = b; n++; } });
+    const off = new Set(m.off || []); // 用户亲手解绑的列，跑的时候不再自作主张补回去
+    Object.entries(nb).forEach(([h, b]) => { if (!m.b[h] && !off.has(h) && b.conf === 'sure') { m.b[h] = b; n++; } });
     if (n) saveMaps();
   }
 
@@ -120,7 +161,7 @@
       await learnUrl();
       let r = null;
       try {
-        r = await call(h === '\u0000btn'
+        r = await pickAny(h === '\u0000btn'
           ? { type: 'daibi:pick', button: true, hint: t('fields.pickBtnHint') }
           : { type: 'daibi:pick', hint: t('fields.pickHint', { col: h }) });
       } catch (e) { note(t('fields.needClick'), true); }
@@ -132,6 +173,7 @@
         else {
           Object.keys(m.b).forEach(k => { if (m.b[k] && m.b[k].sel === r.sel) delete m.b[k]; });
           m.b[h] = { sel: r.sel, label: r.label || r.placeholder || r.name || r.sel, kind: r.kind, conf: 'manual' };
+          m.off = (m.off || []).filter(x => x !== h);
           if (!m.start) m.start = tab.url;
         }
         saveMaps();
@@ -144,7 +186,16 @@
   /* ---------- 填 ---------- */
   const autoOn = () => cfg.auto && run.going;
   const flowOn = () => cfg.auto ? run.going : true;
-  const TEXTISH = new Set(['text', 'textarea', 'editable', 'date', 'datetime-local', 'time', 'month', 'week']);
+  const TEXTISH = new Set(['text', 'textarea', 'editable', 'date', 'datetime-local', 'time', 'month', 'week', 'datetext']);
+  // 整列都是数（允许 1,200 这种千分位）：填进文本框时去掉逗号
+  let numCols = null;
+  const NUMV = /^[-+]?(\d{1,3}([,，]\d{3})+|\d+)(\.\d+)?$/;
+  function isNumCol(ci) {
+    if (!numCols || numCols.t !== S.table) {
+      numCols = { t: S.table, c: S.table.headers.map((_, k) => { const v = S.table.rows.map(r => String(r[k] ?? '').trim()).filter(Boolean); return v.length > 0 && v.every(x => NUMV.test(x)) && v.some(x => /[,，]/.test(x)); }) };
+    }
+    return numCols.c[ci];
+  }
   function setSt(i, s, m) { S.st[i] = m ? { s, m } : { s }; saveSheet(); }
   function nextTodo(from) {
     const n = S.st.length;
@@ -175,7 +226,7 @@
     if (!sc) sc = await scan();
     addNewMatches();
     const items = [];
-    H.forEach((h, ci) => { const b = m.b[h]; if (b && !run.seen.has(b.sel)) items.push({ col: h, sel: b.sel, v: row[ci] }); });
+    H.forEach((h, ci) => { const b = m.b[h]; if (b && !run.seen.has(b.sel)) items.push({ col: h, sel: b.sel, v: row[ci], num: isNumCol(ci) }); });
     // 上传框：按单元格里的文件名去附件袋里取
     const missing = [];
     for (const it of items) {
@@ -223,13 +274,21 @@
   async function submitNow() {
     const i = run.row, m = map();
     const btn = m.btn && page.present ? m.btn.sel : null;
+    await armAlert();
     let r;
-    try { r = await call({ type: 'daibi:submit', sels: [...run.seen], btn }); } catch (e) { r = { ok: false, err: 'STUCK' }; }
+    try { r = await call({ type: 'daibi:submit', sels: [...run.seen], btn }); } catch (e) { r = { ok: true }; } // 点完页面就跳走了，答案没回来：当交了，看跳到哪
     if (!r.ok) {
       if (r.err === 'NO_BUTTON' && btn) r = await call({ type: 'daibi:submit', sels: [...run.seen] }).catch(() => r);
       if (!r.ok) { setSt(i, 'error', errText(r)); render(); return recover(); }
     }
+    if (r.alert != null) return alerted(r.alert);
     afterSubmit();
+  }
+  function alerted(msg) { // 网站弹框拦下了：弹框的话就是原因
+    clearTimeout(run.timer);
+    setSt(run.row, 'error', t('err.ALERT', { msg: String(msg).replace(/\s+/g, ' ').trim().slice(0, 80) || '…' }));
+    run.phase = 'wait'; render();
+    if (autoOn()) recover();
   }
 
   function afterSubmit() {
@@ -241,6 +300,7 @@
     const sels = [...run.textSels];
     if (!sels.length) return null;
     let r; try { r = await call({ type: 'daibi:values', sels }); } catch (e) { return null; }
+    if (r.alert != null) return { alert: r.alert };
     const vals = r.values.filter(v => v !== null);
     if (!vals.length) return true;
     return vals.filter(v => v === '').length >= Math.ceil(vals.length / 2);
@@ -250,6 +310,7 @@
     if (run.nav || run.phase !== 'submitted') return;
     const c = await cleared();
     if (run.nav || run.phase !== 'submitted') return;
+    if (c && c.alert != null) return alerted(c.alert);
     if (c) {
       let sc = null; try { sc = await scan(); } catch (e) {}
       return rowDone(sc);
@@ -257,6 +318,7 @@
     if (++run.tries < 10) { run.timer = setTimeout(checkAfter, 400); return; }
     let chk = null; try { chk = await call({ type: 'daibi:check', sels: [...run.seen] }); } catch (e) {}
     const i = run.row;
+    if (chk && chk.alert != null) return alerted(chk.alert);
     if (chk && chk.invalid) setSt(i, 'error', errText({ err: 'INVALID', invalid: chk.invalid }));
     else if (cfg.auto) setSt(i, 'error', t('err.STUCK'));
     else { run.phase = 'wait'; return render(); }
@@ -275,6 +337,7 @@
     if (fresh.length && run.seen.size) return fillStep(sc); // 多页表单的下一页
     if (sc.present.length) {
       const c = await cleared();
+      if (c && c.alert != null) return alerted(c.alert);
       if (c === false) { // 页面又回来了，值还在：没交上
         const chk = await call({ type: 'daibi:check', sels: [...run.seen] }).catch(() => null);
         if (chk && chk.invalid) setSt(run.row, 'error', errText({ err: 'INVALID', invalid: chk.invalid }));
@@ -367,7 +430,7 @@
   const TABLE_EXT = /\.(xlsx|xlsm|csv|tsv|txt|xls)$/i;
 
   async function setTable(tb) {
-    S = { table: tb, st: tb.rows.map(() => ({ s: 'todo' })), cur: 0 };
+    S = { table: tb, st: tb.rows.map(() => ({ s: 'todo' })), cur: 0 }; warnCols = null;
     clearTimeout(run.timer); Object.assign(run, { row: -1, phase: 'idle', going: false, seen: new Set(), textSels: new Set() });
     filter = 'all'; saveSheet();
     $('pasteBox').hidden = true;
@@ -432,6 +495,8 @@
     b.classList.toggle('gray', mode === 'pause'); b.classList.toggle('pri', mode !== 'pause');
     const ne = S.st.filter(x => x.s === 'error').length;
     $('btnRetry').hidden = !ne || (cfg.auto && run.going);
+    $('warn').hidden = !warnCols;
+    if (warnCols) $('warnTxt').textContent = t('warn.fields', { f: warnCols.slice(0, 3).map(x => '「' + x.label + '」').join('') + (warnCols.length > 3 ? t('warn.more', { n: warnCols.length }) : '') });
     $('btnRetry').textContent = t('run.retry', { n: ne });
   }
 
@@ -560,7 +625,7 @@
     const act = b.dataset.act;
     if (act === 'fold') { showAll = !showAll; return render(); }
     if (act === 'pick') pickFor(h);
-    if (act === 'unbind') { if (h === '\u0000btn') m.btn = null; else delete m.b[h]; saveMaps(); render(); }
+    if (act === 'unbind') { if (h === '\u0000btn') m.btn = null; else { delete m.b[h]; m.off = [...new Set([...(m.off || []), h])]; } saveMaps(); render(); }
     if (act === 'flash' && m.b[h]) call({ type: 'daibi:flash', sel: m.b[h].sel }).catch(() => {});
   };
   $('seg').onclick = e => { const b = e.target.closest('button'); if (!b) return; filter = b.dataset.f; renderRows(); };
@@ -579,14 +644,38 @@
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     toast(t('toast.exported'));
   };
+  // 开跑前看一眼：网页上还有没主的框，表里又有带数据、没对上的列——多半是漏了，先问一句。说的是网页上那个框（列多半是这页本来就没有的）。
+  // 「照填」后这些框在这个网站不再问。
+  function unmatchedFields() {
+    const m = map(); if (!m || !page.fields || !S.table) return [];
+    const used = new Set(Object.values(m.b).filter(Boolean).map(x => x.sel)), skip = new Set(m.skipF || []);
+    const free = page.fields.filter(f => !used.has(f.sel) && !skip.has(f.sel) && f.kind !== 'file');
+    const cols = S.table.headers.map((h, ci) => [h, ci]).filter(([h, ci]) => !m.b[h] && S.table.rows.some((r, i) => /todo|filled/.test(S.st[i].s) && String(r[ci] ?? '').trim()));
+    if (!free.length || !cols.length) return [];
+    return free.map(f => {
+      let best = null, bs = 0.3;
+      cols.forEach(([h, ci]) => { const sc = M.score(h, S.table.rows.slice(0, 8).map(r => String(r[ci] ?? '').trim()), f); if (sc > bs) { bs = sc; best = h; } });
+      return { sel: f.sel, label: f.label || f.placeholder || f.name || '?', col: best };
+    });
+  }
+  $('warnGo').onclick = () => {
+    const m = map(); if (m) { m.skipF = [...new Set([...(m.skipF || []), ...(warnCols || []).map(x => x.sel)])]; saveMaps(); }
+    warnCols = null; askAccess(); go(mainMode()[0]);
+  };
+  $('warnPick').onclick = () => { const w = warnCols && warnCols.find(x => x.col); warnCols = null; showAll = true; if (w) pickFor(w.col); else render(); };
+  function go(mode) {
+    if (mode === 'go') { run.going = true; render(); return startRow(nextTodo(S.cur)); }
+    if (mode === 'fill' || mode === 'refill') { render(); return startRow(S.cur); }
+  }
   $('btnMain').onclick = () => {
     const [mode] = mainMode();
     if (mode === 'match') return startMatch();
     if (mode === 'pause') { run.going = false; clearTimeout(run.timer); toast(t('toast.paused', { n: S.cur + 1 })); return render(); }
     askAccess(); // 顺手拿持久授权（已有就不弹）
+    if ((mode === 'go' || mode === 'fill') && !warnCols) { const miss = unmatchedFields(); if (miss.length) { warnCols = miss; return render(); } }
+    warnCols = null;
     if (mode === 'back') { const m = map(); run.row = S.cur; run.phase = 'back'; run.nav = true; render(); return chrome.tabs.update(tab.id, { url: m.start }); }
-    if (mode === 'go') { run.going = true; render(); return startRow(nextTodo(S.cur)); }
-    if (mode === 'fill' || mode === 'refill') return startRow(S.cur);
+    return go(mode);
   };
   $('btnRetry').onclick = () => {
     S.st.forEach((x, i) => { if (x.s === 'error') S.st[i] = { s: 'todo' }; });
@@ -611,6 +700,9 @@
   });
   chrome.tabs.onRemoved.addListener(id => { if (id === tab.id && !FIXED_TAB) { run.going = false; run.row = -1; resolveTab().then(render); } });
 
+  // 底部那块多高，页面就留多少底，不压最后一行；提示条挪到顶上（压的是招牌，不压数据）
+  new ResizeObserver(() => document.documentElement.style.setProperty('--dock-h', $('dock').offsetHeight + 'px')).observe($('dock'));
+
   /* ---------- 启动 ---------- */
   (async () => {
     cfg = await SETTINGS.load();
@@ -629,5 +721,5 @@
     await refreshPage();
   })();
 
-  window.__daibi = { S: () => S, run, maps: () => maps, tab, page: () => page }; // 调试/测试用
+  window.__daibi = { S: () => S, run, maps: () => maps, tab, page: () => page, call }; // 调试/测试用
 })();

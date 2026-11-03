@@ -98,9 +98,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await sleep(300);
     const mainTxt = (await panel.textContent('#btnMain')).trim();
     if (site === 'react' || site === 'plain') await panel.screenshot({ path: path.join(SHOTS, `ours-${site}-ready.png`) });
-    const t0 = Date.now(); let secs = null;
+    const t0 = Date.now(); let secs = null, warned = 0;
     if (/连填/.test(mainTxt)) {
       await panel.click('#btnMain');
+      await sleep(150);
+      if (await panel.isVisible('#warn')) { warned = 1; console.log('  开跑前提醒：', (await panel.textContent('#warnTxt')).trim()); await panel.click('#warnGo'); }
       while (Date.now() - t0 < 240000) {
         const s = await st();
         if (s.every(x => x.s === 'done' || x.s === 'error') && !(await panel.evaluate(() => window.__daibi.run.going))) break;
@@ -114,7 +116,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const errs = s.map((x, i) => x.s === 'error' ? `${i + 1}:${x.m}` : null).filter(Boolean);
     console.log(`  主按钮「${mainTxt}」 用时 ${secs}s  完成 ${s.filter(x => x.s === 'done').length}  出错 ${errs.length}  服务器收到 ${lg.length}`);
     errs.slice(0, 6).forEach(e => console.log('    ' + e));
-    results[site] = { auto, picks, pickFail, unfold, secs, mainTxt, status: s, received: lg.map(x => x.f) };
+    results[site] = { auto, picks, pickFail, unfold, warned, secs, mainTxt, status: s, received: lg.map(x => x.f) };
     await panel.screenshot({ path: path.join(SHOTS, `ours-${site}-end.png`) });
     if (site === 'plain') await web.screenshot({ path: path.join(SHOTS, `ours-${site}-web.png`) });
   }

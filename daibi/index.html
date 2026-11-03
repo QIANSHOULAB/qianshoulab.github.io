@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>代笔僧 · 自动填表</title>
-<meta name="description" content="浏览器插件：把 Excel / CSV 一行一行填进网页表单。表头自动对上输入框，下拉、单选、复选、日期都会填，填完标状态。数据只在你的浏览器里。">
+<meta name="description" content="浏览器插件：把 Excel / CSV 一行一行填进网页表单。表头自动对上输入框，下拉（含网站自己做的下拉）、日历控件、嵌在 iframe 里的表单都会填，填完标状态。数据只在你的浏览器里。">
 <meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="img/icon.png">
@@ -88,10 +88,10 @@ footer .mail{user-select:text;-webkit-user-select:text;color:var(--fg2)}
     <p class="tag">施主喝茶，贫僧代笔</p>
     <p class="lede">Excel 里的每一行，替你一格一格写进网页表单。录订单、录系统、报名登记，二十行十秒。</p>
     <div class="cta">
-      <a class="btn pri" href="dist/daibi-0.2.0.zip" download>下载插件</a>
+      <a class="btn pri" href="dist/daibi-0.2.1.zip" download>下载插件</a>
       <a class="btn ghost" href="#install">怎么装 ›</a>
     </div>
-    <p class="meta">0.2.0 · Chrome / Edge · 免费 · 表格不出你的电脑</p>
+    <p class="meta">0.2.1 · Chrome / Edge · 免费 · 表格不出你的电脑</p>
     <div class="shot"><img src="img/hero.jpg" width="1360" height="944" alt="左边网页表单已经填好第 1 行，右边是代笔僧侧栏：字段已自动对上，下面是 20 行的进度"></div>
   </header>
 
@@ -101,20 +101,19 @@ footer .mail{user-select:text;-webkit-user-select:text;color:var(--fg2)}
     <div class="grid">
       <div class="card"><div class="k">📄</div><h3>放表</h3><p>拖进 .xlsx 或 .csv，或者贴一个 Google 表格链接，表更新了点「刷新」。GBK、Excel 日期、多个工作表都认。</p></div>
       <div class="card"><div class="k">🧲</div><h3>对字段</h3><p>看网页上的标签、提示字、name，表头自动配对。没把握的标黄，点一下输入框就绑上。</p></div>
-      <div class="card"><div class="k">✍️</div><h3>开填</h3><p>文本、下拉、单选、复选、日期、上传文件都会填。默认填完等你点提交；打开「自动提交」它就一路填到底。</p></div>
-      <div class="card"><div class="k">🧾</div><h3>记账</h3><p>每行标完成或出错，出错写明原因，单独列出来能重试，结果能导出。碰到验证码就停下等你。</p></div>
+      <div class="card"><div class="k">✍️</div><h3>开填</h3><p>文本、下拉、单选、复选、日期、上传文件都会填；网站拿 div 自己画的下拉，点开就选；只能点日历的日期框，按格式直接写；嵌在 iframe 里的表单也进得去。默认填完等你点提交，打开「自动提交」一路填到底。</p></div>
+      <div class="card"><div class="k">🧾</div><h3>记账</h3><p>每行标完成或出错，网页弹框说了什么就记什么，单独列出来能重试，结果能导出。碰到验证码就停下等你。</p></div>
     </div>
   </section>
 
   <section>
-    <h2>实测：20 行，一个不错。</h2>
-    <p class="sub">真把插件装进浏览器，在测试网站上用同一张 20 行的表跑，服务器收到的每一格都核对过。</p>
+    <h2>实测：744 格，一个不错。</h2>
+    <p class="sub">真把插件装进浏览器，8 种网站各填同一张 20 行的表：普通表单、框架表单、自己画的下拉、嵌在 iframe 里的表、三页向导、不跳页的、带校验的、只能点日历的。服务器收到的每一格都核对过。</p>
     <div class="nums">
-      <div class="num"><b>9.6 秒</b><span>单页订单表，20 行自动提交</span></div>
-      <div class="num"><b>21 秒</b><span>两页报名向导，20 份</span></div>
-      <div class="num"><b>7 下</b><span>第一次：放表到填完，含授权和点选 1 列</span></div>
+      <div class="num"><b>0 / 744</b><span>错的格子 / 该填的格子</span></div>
+      <div class="num"><b>7.9 秒</b><span>单页订单表，20 行自动提交</span></div>
+      <div class="num"><b>7 下</b><span>第一次：放表到填完，含授权</span></div>
       <div class="num"><b>2 下</b><span>再来同一个网站：放表、连填</span></div>
-      
     </div>
     <div class="wide"><img src="img/run.jpg" width="1360" height="944" loading="lazy" alt="自动提交连填中：已完成 12 行，第 13 行等提交"></div>
   </section>
@@ -134,7 +133,7 @@ footer .mail{user-select:text;-webkit-user-select:text;color:var(--fg2)}
     <h2>怎么装</h2>
     <p class="sub">商店还在路上。先用开发者模式装，一分钟。</p>
     <ol class="steps">
-      <li><div>下载 <a href="dist/daibi-0.2.0.zip" download>daibi-0.2.0.zip</a>，解压成一个文件夹。<small>放个不会被误删的地方，删了插件就没了。</small></div></li>
+      <li><div>下载 <a href="dist/daibi-0.2.1.zip" download>daibi-0.2.1.zip</a>，解压成一个文件夹。<small>放个不会被误删的地方，删了插件就没了。</small></div></li>
       <li><div>地址栏打开扩展页：Edge 输入 <code>edge://extensions</code>，Chrome 输入 <code>chrome://extensions</code>。</div></li>
       <li><div>打开「开发人员模式」（Chrome 叫「开发者模式」）。<small>Edge 在左下角，Chrome 在右上角。</small></div></li>
       <li><div>点「加载解压缩的扩展」（Chrome 叫「加载已解压的扩展程序」），选刚才解压的文件夹。</div></li>
