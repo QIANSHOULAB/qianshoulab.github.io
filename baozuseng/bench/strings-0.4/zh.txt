@@ -1,0 +1,337 @@
+# 包租僧 0.4.0 中文界面文字（strings.js 导出）。一行一条：键<Tab>文字；#2 是同一句的另一种情形（单复数、正负）。
+lang	zh-CN
+other	en
+langOther	English
+manifest	manifest.webmanifest
+app	包租僧
+appFull	包租僧
+appSub	
+desc	二房东记账：房租、电费按人头按天自动分，全屋账单一键复制。账只存在你自己手机里。
+tagline	电费掰到分，狮子吼都省了
+loading	贫僧翻账本中…
+shareWord	分享
+fm.m	8月
+fm.mL	2026年8月
+fm.md	9/20
+fm.mdL	11月5日
+fm.y	2026年
+fm.col	8
+sep	、
+c	，
+end	。
+houses	房子
+ledger	总账
+houseMenu	这套房的设置
+emptyS	名单一贴，电费一填，谁该交多少、账单怎么写，贫僧包了。
+firstHouse	建第一套房
+seeDemo	用示例试试
+restore	导回备份
+demoT	这是示例账本
+demoS	随便点，点坏了不心疼。
+demoClear	清空示例
+demoCleared	示例清掉了
+undo	撤销
+undone	撤回来了
+net#1	净赚
+net#2	倒贴
+monthNet#1	8月净赚
+monthNet#2	8月倒贴
+yearNet#1	2026年净赚
+yearNet#2	2026年倒贴
+inOut	收入 $3,948.03 · 支出 $2,913.30
+paidOf	已收 $3,000.00 / $3,948.03
+toLedger	总账 ›
+missElec#1	1 套还没填电费，这数还会变
+missElec#2	2 套还没填电费，这数还会变
+missElec1	电费还没填，这数还会变。
+owedAll	欠租没收回 $200.00
+noEstate	没写小区
+nHouses#1	1 套
+nHouses#2	2 套
+newHouse	新房子
+opened	10月才开张
+nTenants#1	1 位房客
+nTenants#2	6 位房客
+chipNoElec	电费未填
+chipOwe	欠租 $200.00
+chipLeft	还差 2 人
+chipDone	收齐了
+chipDemo	示例
+pickMonth	选月份
+prevMonth	上个月
+nextMonth	下个月
+thisMonth	本月
+backThis	回本月
+pickYear	选年份
+prevYear	上一年
+nextYear	下一年
+notOpenYet	这套房2026年10月才开张，这个月没账。
+goto	去10月
+elecThis	这个月电费
+elecOf	8月电费
+tenants	房客
+byPerson	按人
+byRoom	按房间
+byWhat	房客排法
+paidN	已收 4/6
+allPaid	都结了
+expenses	支出
+expFoot	标「每月」的，下个月自动跟过去。
+tenFootDone	全收齐了，今晚加鸡腿。
+tenFoot	点圆圈记已收；搬进搬出、欠租、改房租，点名字。
+allPaidT	都收了
+allPaidS	剩下 3 位一键记已收
+allPaidDone	5 位都收了
+elecHintPrev	上个月 $268.30。
+elecHint	账单总数填进来，剩下的贫僧来掰。
+elecErr	只认数字，比如 268.30
+elecNoTen	还没房客，填了也全归你扛。
+elecAllMine	没房客，这 $268.30 全归你扛。
+elecIncAll	全是包电的，这 $268.30 全归你扛。
+heads#1	5 个人头，住满一月每人 $53.66
+heads#2	3 个人头（含你），住满一月每人 $55.20
+heads#3	1 个人头，住满一月每人 $250.00
+youSelf	你自己
+incN	包电 1 份
+rounding	凑整差几分
+sharersPay#1	4 人掏 $214.64
+sharersPay#2	1 人掏 $100.00
+youEat	 · 你自己 + 包电 1 份 $67.06 你扛
+byDays	按天折：
+dayPart	Raj 18 天 $19.11
+copyBills	复制账单
+copiedBills	5 人的账单复制好了，去群里一贴
+sendNote	全屋一条消息：每人多少、怎么算的，都写好了。
+sendNoteTbd	电费没填也能先发，电费那行写「出了再补」。
+rowRent	房租 900.00
+rowInc	包电
+rowElec	电费 53.66
+rowElecTbd	电费待填
+rowDays	住 18/30 天
+owe	欠 $200.00
+prevOwe	之前欠 $200.00
+chipIn	9/20入住
+chipOut	住到9/18
+chipEnd	月底走
+stPaid	已收
+stOwe	欠租
+stOpen	未收
+oweMark	欠
+paidAria	阿明：已收
+goneOwe	搬走的人还欠 $200.00（Raj）
+emptyRoom	空房不收租，只收灰。
+addTenant	加房客
+paste	粘贴名单
+noRoom	没写房间
+roomSum#1	1 人 · $400.00
+roomSum#2	2 人 · $800.00
+roomN	普通房2
+elecBill	电费账单
+elecBillS	上面填的那个数
+notFilled	未填
+noExp	还没别的支出。大房东这个月忘收租了？
+monthly	每月
+onlyThis	仅当月
+addExp	加支出
+noHouseYet	还没房子，没账可算。
+goBuild	去建一套
+perHouse	按房子
+perMonth	按月
+nMonths#1	1 个月
+nMonths#2	4 个月
+noYear	这一年还没账
+gotoMonth	去这个月 ›
+chartAria	2026年每月净赚
+noBook	12月没账
+book	账本
+saveBk	存备份
+lastBk	上次 11月5日
+neverBk	还没存过
+staleBk	45 天没存
+restoreS	换手机就点这个
+bkSaved	存好了
+bkNothing	还没自己的账，没什么可存
+bkBad	这不是包租僧的备份，换一个文件试试
+bkDone	导回 2 套房
+bkSwapped	换成了备份里的 1 套房
+dropT	松手就导回备份
+settledT	8月的账结清了
+settledM	存一份备份进手机「文件」，换手机一键导回。
+later	下次
+bkFile	包租僧备份-2026-11-05.json
+storeLocked	账只存在这台设备里，已上锁，浏览器不会清。
+storeLoose	账只存在这台设备里，记得存备份。
+foot	千手院 · 包租僧 0.4.0
+footMail	要新花样、嫌哪里反人类，找方丈：
+mail	oilsongchengmin@gmail.com
+a2hsT	放到主屏幕，账就不会被清
+a2hsIOS	点[⬆]，再点「添加到主屏幕」。
+a2hsAnd	像 App 一样打开。
+a2hsAndMenu	浏览器菜单里选「添加到主屏幕」。
+a2hsBtn	添加
+a2hsDone	放好了
+close	关掉
+billsHead	【8月账单】碧水湾 12栋 08-21
+billsElec#1	电费 $268.30，5 人平摊，住满一月每人 $53.66。
+billsElec#2	电费 $165.60，3 人（含我）平摊，住满一月每人 $55.20，搬进搬出的按天折。
+billsElecTbd	电费账单还没出，出了再补。
+billsLine	阿明 $953.66（房租 $900.00 + 电费 $53.66）
+bpRent	房租 $900.00
+bpElec	电费 $53.66
+bpInc	含电
+bpDays	住 18 天
+bpPrev	之前欠 $200.00
+bpTbd	电费待补
+bpPaid	已收
+billInc	小美，8月房租 $650.00，含电费
+billTbd	阿明，8月房租 $900.00，电费账单还没出，出了再补
+billBoth	Raj，9月房租 $312.00（住 18 天，整月 $520.00 按天折） + 电费 $19.11
+billDays	（住 18 天，整月 $520.00 按天折）
+billPrev	，加上之前欠的 $200.00，一共 $1,153.66。
+billTotal	，一共 $953.66。
+cancel	取消
+save	保存
+addT	加房客
+editT	改房客
+fName	名字
+fNamePh	比如 阿明
+fRent	月租
+fShare	分摊电费
+shareOn	电费跟大家平摊
+shareOff	房租已含电费
+fRoom	房间
+fRoomPh	或者自己写，比如 普通房2
+fFrom	入住
+fFromS	月中搬进才填
+fTo	住到
+fToS	要搬走才填
+fOwe#1	这个月欠租
+fOwe#2	10月欠租
+oweOn	标了，算他欠着
+oweOff	欠着没给就打开
+fOweAmt	欠多少
+prevOweLine	之前欠 <b>$200.00</b>（10月）
+prevClear	还清了
+prevCleared	旧账清了
+copyBill	复制账单
+copiedBill	复制好了，发给他就行
+del	删掉这条
+delNote	从这个月起删掉他。要搬走的，填「住到」就行。
+delOnly	只删10月这一条。
+deletedN	Raj 删了
+saveMore	再加一位
+savedNext	存好了，下一位
+errName	名字空着，贫僧找谁收钱？
+errRent	月租多少？
+errRentNum	月租只认数字
+errOwe	欠多少？
+errDates	住到比入住还早？
+startsOn	12月1日起算
+rooms.0	主人房
+rooms.1	普通房
+rooms.2	小房
+rooms.3	客厅
+rooms.4	储物间
+bulkT	房客名单
+bulkOk	建好
+fPaste	房客名单
+fPasteS	一行一个人，可以晚点再贴
+bulkPh	阿明 主人房 900 ⏎ 小美 普通房 650 包电 ⏎ Raj 小房 520
+bulkTip	一行一位：名字、房间、月租，包电的写上「包电」。纸上的名单？拍张照，在照片里长按文字就能拷贝。
+bulkNone	没认出人。一行写一个，名字和月租至少要有。
+bulkSeen	认出 5 位，不对的直接改
+bulkBad#1	还有 1 位没写名字或月租
+bulkBad#2	还有 2 位没写名字或月租
+bulkGo#1	建好这 1 位
+bulkGo#2	建好这 5 位
+bulkDup	已经有了，跳过
+bulkDel	删掉这位
+bulkDone	建好 5 位
+roomOpt	房间（可空）
+addE	加支出
+editE	改支出
+eName	名称
+eNamePh	比如 网费
+eAmt	金额
+eFix	每月都有
+fixOn	下个月自动跟过去
+fixOff	只算这个月
+errEName	写个名字，月底才知道钱去哪了
+errAmt	多少钱？
+delExp	删掉这笔
+delExpFix	下个月起也不再记这笔。
+delExpOnly	只删这个月这一笔。
+quick.0	交大房东（每月）
+quick.1	网费（每月）
+quick.2	水费
+quick.3	管理费（每月）
+quick.4	清洁
+quick.5	维修
+newHouseOk	建好
+estate	小区
+estatePh	比如 碧水湾
+unit	门牌
+unitPh	比如 12栋 08-21
+headRent	每月交大房东
+headRentS	没有就空着
+selfLive	我也住这
+selfLiveS	算一个人头，一起分电费
+knownEstates	已有的小区
+errEstate	哪个小区？
+errUnit	门牌写一下
+errHead	大房东那笔只认数字
+headName	交大房东
+thisHouse	这套房
+delHouse	删掉这套房
+manualCopy	手动复制
+done	好了
+manualTip	这里不让自动复制。长按上面的字，全选，拷贝。
+thisM	这个月
+demo.e1	碧水湾
+demo.u1	12栋 08-21
+demo.e2	金沙苑
+demo.u2	3栋 11-05
+demo.head	交大房东
+demo.wifi	网费
+demo.ac	修空调
+demo.t.t1.0	阿明
+demo.t.t1.1	主人房
+demo.t.t2.0	小美
+demo.t.t2.1	普通房1
+demo.t.t3.0	阿强
+demo.t.t3.1	普通房2
+demo.t.t4.0	阿杰
+demo.t.t4.1	普通房2
+demo.t.t5.0	Raj
+demo.t.t5.1	小房
+demo.t.t6.0	陈姐
+demo.t.t6.1	客厅
+demo.t.t9.0	Ken
+demo.t.t9.1	小房
+demo.t.t7.0	小李
+demo.t.t7.1	主人房
+demo.t.t8.0	Tom
+demo.t.t8.1	普通房
+sample.bills.2026-09A.1	【9月账单】碧水湾 12栋 08-21
+sample.bills.2026-09A.2	电费 $301.75，6 人平摊，住满一月每人 $60.76，搬进搬出的按天折。
+sample.bills.2026-09A.3	阿明 $960.76（房租 $900.00 + 电费 $60.76）
+sample.bills.2026-09A.4	小美 $650.00（房租 $650.00，含电）
+sample.bills.2026-09A.5	阿强 $460.76（房租 $400.00 + 电费 $60.76）
+sample.bills.2026-09A.6	阿杰 $460.76（房租 $400.00 + 电费 $60.76）
+sample.bills.2026-09A.7	Raj $348.45（住 18 天，房租 $312.00 + 电费 $36.45）
+sample.bills.2026-09A.8	Ken $220.28（住 11 天，房租 $198.00 + 电费 $22.28）
+sample.bills.2026-10A.1	【10月账单】碧水湾 12栋 08-21
+sample.bills.2026-10A.2	电费 $284.10，6 人平摊，住满一月每人 $49.48。
+sample.bills.2026-10A.3	阿明 $949.48（房租 $900.00 + 电费 $49.48）
+sample.bills.2026-10A.4	小美 $680.00（房租 $680.00，含电）
+sample.bills.2026-10A.5	阿强 $449.48（房租 $400.00 + 电费 $49.48）
+sample.bills.2026-10A.6	阿杰 $449.48（房租 $400.00 + 电费 $49.48）
+sample.bills.2026-10A.7	Ken $589.48（房租 $540.00 + 电费 $49.48）
+sample.bills.2026-10A.8	陈姐 $333.87（住 23 天，房租 $333.87，含电）
+sample.bills.2026-11B.1	【11月账单】金沙苑 3栋 11-05
+sample.bills.2026-11B.2	电费 $172.50，6 人（含我）平摊，住满一月每人 $34.50，搬进搬出的按天折。
+sample.bills.2026-11B.3	小李 $1,134.50（房租 $1,100.00 + 电费 $34.50）
+sample.bills.2026-11B.4	Tom $261.50（住 10 天，房租 $250.00 + 电费 $11.50）
+sample.bills.2026-11B.5	Amy $529.67（住 20 天，房租 $506.67 + 电费 $23.00）
+sample.bills.2026-11B.6	Sara $414.50（房租 $380.00 + 电费 $34.50）
+sample.bills.2026-11B.7	Lily $380.00（房租 $380.00，含电）

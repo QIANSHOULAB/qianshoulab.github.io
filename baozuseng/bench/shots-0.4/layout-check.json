@@ -1,0 +1,24 @@
+{
+ "issues": 0,
+ "report": {
+  "zh-390": {},
+  "zh-1280": {},
+  "en-390": {},
+  "en-1280": {}
+ },
+ "errors": [],
+ "shots": [
+  "zh-empty-390.png",
+  "zh-x-newhouse-390.png",
+  "zh-x-tenant-390.png",
+  "zh-result-390.png",
+  "zh-empty-1280.png",
+  "zh-result-1280.png",
+  "en-empty-390.png",
+  "en-x-newhouse-390.png",
+  "en-x-tenant-390.png",
+  "en-result-390.png",
+  "en-empty-1280.png",
+  "en-result-1280.png"
+ ]
+}

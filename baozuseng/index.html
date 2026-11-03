@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>包租僧</title>
-<meta name="description" content="二房东记账：房租、电费按人头按天自动分，合租一间也分得清。账只存在你自己手机里。">
+<meta name="description" content="二房东记账：房租、电费按人头按天自动分，全屋账单一键复制。账只存在你自己手机里。">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="包租僧">
@@ -84,7 +84,8 @@ button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
 .lt{padding:4px 4px 24px}
 .lt h1{margin:0;font-size:34px;line-height:1.15;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
 .lt h1.big{font-size:clamp(40px,6vw,64px);line-height:1.1;letter-spacing:-.02em}
-.tag{margin:8px 0 0;color:var(--fg-2);font-size:17px}
+.tag{margin:8px 0 0;color:var(--fg-2);font-size:17px;text-wrap:balance;word-break:keep-all;overflow-wrap:anywhere}
+.lt h1 .h1-2{color:var(--fg-2)}
 .eyebrow{display:flex;align-items:center;gap:8px;color:var(--fg-2);font-size:15px;font-weight:600;margin-bottom:4px}
 
 /* 月份 / 年份切换：分段式 */
@@ -212,13 +213,14 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 /* 空状态 / 加载 / 页脚 */
 .empty{padding:32px 24px 16px;text-align:center}
 .empty-ico{display:block;width:96px;height:96px;margin:0 auto 24px;border-radius:22px;box-shadow:var(--shadow)}
-.empty-s{margin:0 auto 32px;color:var(--fg-2);font-size:17px;max-width:24em;text-wrap:balance}
+.empty-s{margin:0 auto 32px;color:var(--fg-2);font-size:17px;max-width:24em;text-wrap:balance;word-break:keep-all;overflow-wrap:anywhere}
 .empty-b{display:flex;flex-direction:column;gap:8px;max-width:360px;margin:0 auto}
 .loading{display:flex;align-items:center;justify-content:center;gap:12px;color:var(--fg-2);padding:48px 0;font-size:15px}
 .spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--fill-2);border-top-color:var(--fg-2);animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.7;color:var(--fg-2);text-align:center}
 .mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
+.foot .lang{color:var(--accent);font-size:13px;font-weight:600;min-height:44px;padding:0 12px;margin-top:4px}
 
 /* 总账图 */
 .chart{background:var(--card);border-radius:var(--r-card);padding:16px;margin-top:24px;box-shadow:var(--shadow)}
@@ -286,7 +288,8 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 .copybox,.paste{width:100%;border:0;border-radius:var(--r-btn);background:var(--sheet-card);color:var(--fg);padding:12px 16px;font:17px/1.5 var(--font);resize:none;outline:none}
 .paste:focus{box-shadow:inset 0 0 0 2px var(--accent)}
 .sh-tip{margin:0;padding:0 4px;font-size:13px;color:var(--fg-2)}
-.bk-h{display:flex;justify-content:space-between;align-items:baseline;padding:4px 4px 0;font-size:13px;color:var(--fg-2)}
+.bk-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;padding:4px 4px 0;font-size:13px;color:var(--fg-2)}
+.bk-h .bk-bad{color:var(--bad-ink)}
 .bk{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;background:var(--sheet-card);border-radius:var(--r-btn);padding:8px 8px 8px 16px}
 .bk+.bk{margin-top:8px}
 .bk input{border:0;background:transparent;outline:none;color:var(--fg);min-width:0}
@@ -354,135 +357,32 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="drop" aria-hidden="true"><div id="dropT"></div></div>
 
+<script src="strings.js?v=0.4.0"></script>
 <script>
 (function () {
 'use strict';
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 
 /* =====================================================================
-   界面文字：全部在这一处。改字只改这里。
+   界面文字全在 strings.js（中文、英文各一套，键一一对应），这里只挑语言：
+   页脚切过就照切的，没切过看浏览器语言——zh 开头用中文，其余用英文。
    ===================================================================== */
-const T = {
-  app: '包租僧',
-  tagline: '电费掰到分，狮子吼都省了',
-  loading: '贫僧翻账本中…',
-  houses: '房子', ledger: '总账', houseMenu: '这套房的设置',
-  emptyS: '名单一贴，电费一填，谁该交多少、账单怎么写，贫僧包了。',
-  firstHouse: '建第一套房', seeDemo: '用示例试试', restore: '导回备份',
-  demoT: '这是示例账本', demoS: '随便点，点坏了不心疼。', demoClear: '清空示例', demoCleared: '示例清掉了',
-  undo: '撤销', undone: '撤回来了',
-  net: v => (v < 0 ? '倒贴' : '净赚'),
-  inOut: (i, o) => `收入 ${i} · 支出 ${o}`,
-  paidOf: (p, t) => `已收 ${p} / ${t}`,
-  toLedger: '总账 ›',
-  missElec: n => `${n} 套电费还没填，这数不算完`,
-  missElec1: '电费还没填，这数不算完。',
-  owedAll: v => `欠租没收回 ${v}`,
-  noEstate: '没写小区', nHouses: n => `${n} 套`,
-  newHouse: '新房子',
-  opened: m => `${m}才开张`,
-  nTenants: n => `${n} 位房客`,
-  chipNoElec: '电费未填', chipOwe: v => `欠租 ${v}`, chipLeft: n => `还差 ${n} 人`, chipDone: '收齐了', chipDemo: '示例',
-  pickMonth: '选月份', prevMonth: '上个月', nextMonth: '下个月', thisMonth: '本月', backThis: '回本月',
-  pickYear: '选年份', prevYear: '上一年', nextYear: '下一年',
-  notOpenYet: m => `这套房${m}才开张，这个月没账。`, goto: m => `去${m}`,
-  elecThis: '这个月电费', elecOf: m => `${m}电费`,
-  tenants: '房客', byPerson: '按人', byRoom: '按房间', byWhat: '房客排法',
-  paidN: (a, n) => `已收 ${a}/${n}`, allPaid: '都结了',
-  expenses: '支出', expFoot: '标「每月」的，下个月自动跟过去。',
-  tenFootDone: '全收齐了，今晚加鸡腿。',
-  tenFoot: '点圆圈记已收；搬进搬出、欠租、改房租，点名字。',
-  allPaidT: '都收了', allPaidS: n => `剩下 ${n} 位一下记成已收`, allPaidDone: n => `${n} 位记成已收`,
-  elecHintPrev: v => `上个月 ${v}。`,
-  elecHint: '账单总数填进来，剩下的贫僧来掰。',
-  elecErr: '只认数字，比如 268.30',
-  elecNoTen: '还没房客，填了也全归你扛。',
-  elecAllMine: v => `没房客，这 ${v} 全归你扛。`,
-  elecIncAll: v => `全是包电的，这 ${v} 全归你扛。`,
-  heads: (n, self) => `${n} 个人头${self ? '（含你）' : ''}，住满一月每人 `,
-  youSelf: '你自己', incN: n => `包电 ${n} 份`, rounding: '凑整差几分',
-  sharersPay: (n, v) => `${n} 人掏 ${v}`, youEat: (what, v) => ` · ${what} ${v} 你扛`,
-  byDays: '按天折：',
-  dayPart: (name, d, v) => `${name} ${d} 天 ${v}`,
-  copyBills: '复制账单', copiedBills: n => `${n} 人的账单复制好了，去群里一贴`,
-  sendNote: '全屋一条消息：每人多少、怎么算的，都写好了。', sendNoteTbd: '电费没填也能先发，电费那行写「出了再补」。',
-  rowRent: v => `房租 ${v}`, rowInc: '包电', rowElec: v => `电费 ${v}`, rowElecTbd: '电费待填',
-  rowDays: (d, D) => `住 ${d}/${D} 天`,
-  owe: v => `欠 ${v}`, prevOwe: v => `之前欠 ${v}`,
-  chipIn: md => `${md}入住`, chipOut: md => `住到${md}`, chipEnd: '月底走',
-  stPaid: '已收', stOwe: '欠租', stOpen: '未收', oweMark: '欠',
-  goneOwe: (v, names) => `搬走的人还欠 ${v}（${names}）`,
-  emptyRoom: '空房不收租，只收灰。',
-  addTenant: '加房客', paste: '粘贴名单，一次加好', noRoom: '没写房间',
-  roomSum: (n, v) => `${n} 人 · ${v}`,
-  elecBill: '电费账单', elecBillS: '上面填的那个数', notFilled: '未填',
-  noExp: '还没别的支出。大房东这个月忘收租了？',
-  monthly: '每月', onlyThis: '仅当月', addExp: '加支出',
-  // ledger
-  noHouseYet: '还没房子，没账可算。', goBuild: '去建一套', yearNet: (y, v) => `${y}年${v}`,
-  perHouse: '按房子', perMonth: '按月', nMonths: n => `${n} 个月`, noYear: '这一年还没账',
-  gotoMonth: '去这个月 ›', chartAria: y => `${y}年每月净赚`, noBook: m => `${m} 没账`,
-  // backup & storage
-  book: '账本', saveBk: '存备份', lastBk: d => `上次 ${d}`, neverBk: '还没存过', staleBk: n => `${n} 天没存`,
-  restoreS: '换手机就点这个', bkSaved: '存好了', bkNothing: '还没自己的账，没什么可存',
-  bkBad: '这不是包租僧的备份，换一个文件试试',
-  bkDone: n => `导回 ${n} 套房`, bkSwapped: n => `换成了备份里的 ${n} 套房`, dropT: '松手就导回备份',
-  settledT: m => `${m}的账结清了`, settledM: '存一份备份进手机「文件」，换手机一键导回。', later: '下次',
-  bkFile: d => `包租僧备份-${d}.json`,
-  storeLocked: '账只存在这台设备里，已上锁，浏览器不会清。',
-  storeLoose: '账只存在这台设备里，记得存备份。',
-  foot: v => `千手院 · 包租僧 ${v}`,
-  footMail: '要新花样、嫌哪里反人类，找方丈：', mail: 'oilsongchengmin@gmail.com',
-  // add to home screen
-  a2hsT: '放到主屏幕，账就不会被清',
-  a2hsIOS: share => `点${share}，再点「添加到主屏幕」。`,
-  a2hsAnd: '像 App 一样打开。',
-  a2hsAndMenu: '浏览器菜单里选「添加到主屏幕」。',
-  a2hsBtn: '添加到主屏幕', a2hsDone: '放好了', close: '关掉',
-  // 全屋账单（一条消息）
-  billsHead: (m, est, unit) => `【${m}账单】${est} ${unit}`,
-  billsElec: (v, n, self, per, part) => `电费 ${v}，${n} 人${self ? '（含我）' : ''}平摊，住满一月每人 ${per}${part ? '，搬进搬出的按天折' : ''}。`,
-  billsElecTbd: '电费账单还没出，出了再补。',
-  billsLine: (name, total, parts) => `${name} ${total}（${parts}）`,
-  bpRent: v => `房租 ${v}`, bpElec: v => `电费 ${v}`, bpInc: '含电', bpDays: d => `住 ${d} 天`, bpPrev: v => `之前欠 ${v}`, bpTbd: '电费待补', bpPaid: '已收',
-  billInc: (n, M, r) => `${n}，${M}房租 ${r}（含电费）`,
-  billTbd: (n, M, r) => `${n}，${M}房租 ${r}（电费账单还没出，出了再补）`,
-  billBoth: (n, M, r, e) => `${n}，${M}房租 ${r} + 电费 ${e}`,
-  billDays: (d, full) => `（住 ${d} 天，整月 ${full} 按天折）`,
-  billPrev: (p, t) => `，加上之前欠的 ${p}，一共 ${t}。`,
-  billTotal: t => `，一共 ${t}。`,
-  // sheets
-  cancel: '取消', save: '保存', addT: '加房客', editT: '改房客',
-  fName: '名字', fNamePh: '比如 阿明', fRent: '月租', fShare: '分摊电费',
-  shareOn: '电费跟大家平摊', shareOff: '房租已含电费',
-  fRoom: '房间', fRoomPh: '或者自己写，比如 普通房2',
-  fFrom: '入住', fFromS: '月中搬进才填', fTo: '住到', fToS: '要搬走才填',
-  fOwe: m => `${m}欠租`, oweOn: '标了，算他欠着', oweOff: '欠着没给就打开', fOweAmt: '欠多少',
-  prevOweLine: (v, ms) => `之前欠 <b>${v}</b>（${ms}）`, prevClear: '还清了', prevCleared: '旧账清了',
-  copyBill: m => `复制他${m}的账单`, copiedBill: '复制好了，发给他就行',
-  del: '删掉这条', delNote: cur => (cur ? '录错了才用，这个月的账也一起删。' : null), delOnly: m => `只删${m}这一条。`,
-  deleted: '删了', deletedN: n => `${n} 删了`, saveMore: '存好，再加一个', savedNext: '存好了，下一个',
-  errName: '名字空着，贫僧找谁收钱？', errRent: '月租多少？', errRentNum: '月租只认数字', errOwe: '欠多少？',
-  errDates: '住到比入住还早？',
-  startsOn: d => `${d}起算`,
-  rooms: ['主人房', '普通房', '小房', '客厅', '储物间'],
-  bulkT: '房客名单', bulkOk: '建好', fPaste: '房客名单', fPasteS: '一行一个人，可以晚点再贴', bulkPh: '阿明 主人房 900&#10;小美 普通房 650 包电&#10;Raj 小房 520',
-  bulkTip: '一行一个人：名字、房间、月租，包电的写上「包电」。手写、打印的名单：iPhone 相册里长按字 → 拷贝，粘进来。',
-  bulkNone: '没认出人。一行写一个，名字和月租至少要有。',
-  bulkSeen: n => `认出 ${n} 位，不对的直接改`, bulkBad: n => `还有 ${n} 位没写名字或月租`, bulkGo: n => `建好这 ${n} 位`,
-  bulkDup: '已经有了，跳过', bulkDel: '删掉这位', bulkDone: n => `建好 ${n} 位`, roomOpt: '房间（可空）',
-  addE: '加支出', editE: '改支出', eName: '名称', eNamePh: '比如 网费', eAmt: '金额', eFix: '每月都有',
-  fixOn: '下个月自动跟过去', fixOff: '只算这个月', errEName: '写个名字，月底才知道钱去哪了', errAmt: '多少钱？',
-  delExp: '删掉这笔', delExpFix: '下个月起也不再记这笔。', delExpOnly: m => `只删${m}这一笔。`,
-  quick: [['交大房东', 1], ['网费', 1], ['水费', 0], ['管理费', 1], ['清洁', 0], ['维修', 0]],
-  newHouseOk: '建好了', estate: '小区', estatePh: '比如 碧水湾', unit: '门牌', unitPh: '比如 12栋 08-21',
-  headRent: '每月交大房东', headRentS: '没有就空着', selfLive: '我也住这', selfLiveS: '算一个人头，一起分电费',
-  knownEstates: '已有的小区', errEstate: '哪个小区？', errUnit: '门牌写一下', errHead: '大房东那笔只认数字',
-  headName: '交大房东', thisHouse: '这套房', delHouse: '删掉这套房',
-
-  manualCopy: '手动复制', done: '好了', manualTip: '这里不让自动复制。长按上面的字，全选，拷贝。',
-  thisM: '这个月'
-};
+const STR = window.BZS_STR;
+const LS = 'baozuseng.v1', LSU = 'baozuseng.ui';
+let UI = {};
+try { UI = JSON.parse(localStorage.getItem(LSU) || '{}') || {}; } catch (e) { UI = {}; }
+function saveUI() { try { localStorage.setItem(LSU, JSON.stringify(UI)); } catch (e) {} }
+const autoLang = () => (/^zh\b/i.test(navigator.language || '') ? 'zh' : 'en');
+let LANG = STR[UI.lang] ? UI.lang : autoLang(), T = STR[LANG];
+// <html lang>、<title>、description、主屏名字、manifest 跟着语言换
+function applyLang() {
+  const q = x => document.querySelector(x);
+  document.documentElement.lang = T.lang; document.title = T.appFull;
+  const d = q('meta[name=description]'); if (d) d.content = T.desc;
+  const a = q('meta[name=apple-mobile-web-app-title]'); if (a) a.content = T.app;
+  const mf = q('link[rel=manifest]'); if (mf && mf.getAttribute('href') !== T.manifest) mf.setAttribute('href', T.manifest);
+}
+applyLang();
 
 /*MODEL-START*/
 const pad = n => String(n).padStart(2, '0');
@@ -570,10 +470,18 @@ const ROOM_PATS = [
   /主人房\d{0,2}(?!\d)/, /主卧\d{0,2}(?!\d)/, /次卧\d{0,2}(?!\d)/, /普通房\d{0,2}(?!\d)/, /普通间\d{0,2}(?!\d)/,
   /小房间?\d{0,2}(?!\d)/, /大房间\d{0,2}(?!\d)/, /客厅/, /储物间/, /杂物间/, /工人房/, /女佣房/, /阁楼/,
   /房间\d{1,2}(?!\d)/, /房间[A-Za-z一二三四五六七八九十](?![A-Za-z])/, /房\d{1,2}(?!\d)/, /\d{1,2}号房/, /[一二三四五六七八九十]号房/, /\b[A-Za-z]房(?!东|租)/,
-  /master\s*(?:bed)?room\s*\d{0,2}(?!\d)/i, /common\s*room\s*\d{0,2}(?!\d)/i, /small\s*room\s*\d{0,2}(?!\d)/i, /living\s*room/i, /store\s*room/i, /\broom\s*\d{1,2}(?!\d)/i
+  /master\s*(?:bed)?room\s*\d{0,2}(?!\d)/i, /common\s*room\s*\d{0,2}(?!\d)/i, /small\s*room\s*\d{0,2}(?!\d)/i, /living\s*room/i, /store\s*room/i, /\bbed\s*room\s*\d{1,2}(?!\d)/i, /\broom\s*\d{1,2}(?!\d)/i
 ];
-const SHARE_W = '(不包电|不含电|电费另算|电费另付|电费自理|分摊电费|分摊|平摊|摊电|另算|另付|分电|\\bAA\\b)';
-const INC_W = '(包水电|含水电|水电全包|水电包|电费全包|电费包了|包电费|含电费|包电|含电|utilities\\s*incl\\w*|incl\\w*)';
+// English: "incl." / "power incl." / "all-in" = rent covers power; "not incl." / "excl." = splits it.
+const EN_UTIL = '(?:\\s*(?:of\\s+)?(?:power|electricity|elec|utilities|utils|bills))?';
+const SHARE_W = '(不包电|不含电|电费另算|电费另付|电费自理|分摊电费|分摊|平摊|摊电|另算|另付|分电|\\bAA\\b|\\bnot\\s+incl\\w*\\.?' + EN_UTIL + '|\\bexcl\\w*\\.?' + EN_UTIL + '|\\b(?:power|electricity|utilities|bills)\\s+(?:extra|separate|split)\\b)';
+const INC_W = '(包水电|含水电|水电全包|水电包|电费全包|电费包了|包电费|含电费|包电|含电|\\b(?:power|electricity|elec|utilities|utils|bills)\\s*incl\\w*\\.?|incl\\w*\\.?' + EN_UTIL + '|\\ball[\\s-]in(?:clusive)?\\b)';
+// English move dates: "from 11th", "moves in Nov 11", "until 20", "moving out 20th Nov". Day numbers only, with a word in front.
+const EN_MON = 'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec';
+const EN_DAY = '(?:(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+(' + EN_MON + ')[a-z]*\\.?)?|(' + EN_MON + ')[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?)(?![\\d/])';
+const EN_FROM = '\\b(?:from|moves?\\s+in|moving\\s+in|move-in|starts?|starting)\\s+(?:on\\s+)?(?:the\\s+)?' + EN_DAY;
+const EN_TO = '\\b(?:until|till|til|moves?\\s+out|moving\\s+out|move-out|out|leaves?|leaving)\\s+(?:on\\s+)?(?:the\\s+)?' + EN_DAY;
+const enMon = w => (w ? EN_MON.split('|').indexOf(w.slice(0, 3).toLowerCase()) + 1 : 0);
 function findRoom(s) {
   let best = null;
   for (const re of ROOM_PATS) {
@@ -589,10 +497,11 @@ function rentNums(s) {
     const val = parseFloat((m[1] + (m[2] || '')).replace(/,/g, ''));
     const before = s.slice(Math.max(0, m.index - 10), m.index);
     const after = s.slice(m.index + m[0].length, m.index + m[0].length + 2);
-    if (/(押金|按金|deposit|电费|水费|网费)\s*[:：]?\s*$/i.test(before)) continue;
-    if (/#\s*$/.test(before) || /^\s*(年|月|号|日|楼|层|栋|座|-|\/)/.test(after) || /\/\s*$/.test(before)) continue;
+    const perMonth = /^\s*\/\s*(?:月|mo|mth)/i.test(s.slice(m.index + m[0].length, m.index + m[0].length + 6)); // "900/月"、"$1,200/month" 是月租，不是日期
+    if (/(押金|按金|deposit|bond|电费|水费|网费)\s*[:：]?\s*$/i.test(before)) continue;
+    if (/#\s*$/.test(before) || (!perMonth && /^\s*(年|月|号|日|楼|层|栋|座|-|\/)/.test(after)) || /\/\s*$/.test(before)) continue;
     if (val < 50 || val >= 100000) continue;
-    out.push({ val: Math.round(val * 100) / 100, index: m.index, len: m[0].length, pref: /(房租|月租|租金|租|rent)\s*[:：]?\s*$/i.test(before) });
+    out.push({ val: Math.round(val * 100) / 100, index: m.index, len: m[0].length, pref: perMonth || /(房租|月租|租金|租|rent)\s*[:：]?\s*$/i.test(before) });
   }
   return out;
 }
@@ -605,6 +514,8 @@ function findDates(s, m) {
   if (x) out.from = mk(x[1], x[2]);
   x = new RegExp('(?:住到|租到|到)\\s*' + D).exec(s) || new RegExp(D + '\\s*(?:搬走|搬出|退租|退房|走)').exec(s);
   if (x) out.to = mk(x[1], x[2]);
+  if (!out.from && (x = new RegExp(EN_FROM, 'i').exec(s))) out.from = mk(enMon(x[2] || x[3]) || null, x[1] || x[4]);
+  if (!out.to && (x = new RegExp(EN_TO, 'i').exec(s))) out.to = mk(enMon(x[2] || x[3]) || null, x[1] || x[4]);
   return out;
 }
 function parseOne(seg, inheritRoom, m) {
@@ -617,13 +528,14 @@ function parseOne(seg, inheritRoom, m) {
   const rm = findRoom(s);
   if (rm) { room = rm.text.replace(/\s+/g, ' ').trim(); s = s.slice(0, rm.index) + ' ' + s.slice(rm.index + rm.text.length); }
   s = s.replace(/(?:\d{1,2}\s*月\s*)?\d{1,2}\s*[日号]\s*(?:起)?(?:入住|搬入|搬进|起租|进来|起|搬走|搬出|退租|退房|走)?|(?:住到|租到|到)\s*(?:\d{1,2}\s*月\s*)?\d{1,2}\s*[日号]/g, ' ');
+  s = s.replace(new RegExp(EN_FROM, 'gi'), ' ').replace(new RegExp(EN_TO, 'gi'), ' ');
   let rent = null;
   const nums = rentNums(s);
   if (nums.length) { const p = nums.find(n => n.pref) || nums[0]; rent = p.val; s = s.slice(0, p.index) + ' ' + s.slice(p.index + p.len); }
   s = s.replace(/(押金|按金|deposit|电费|水费|网费)\s*[:：]?\s*(?:S\$|RM|\$|¥|￥)?\s*[\d,.]+/gi, ' ')
     .replace(/\d{2,4}\s*年|\d{1,2}\s*月(\s*\d{1,2}\s*[日号])?|\d{1,2}\s*[日号]/g, ' ')
     .replace(/入住|搬入|搬进|起租|到期|开始|电话|手机|微信|whatsapp|mobile|phone|tel\b/gi, ' ')
-    .replace(/S\$|RM|HK\$|NT\$|[$¥￥]|元|块|新币|新元|每月|一个月|\/\s*月|per\s*month|\/mo\b/gi, ' ')
+    .replace(/S\$|RM|HK\$|NT\$|[$¥￥]|元|块|新币|新元|每月|一个月|\/\s*月|per\s*month|\/\s*mo(?:nth)?\b|\/\s*mth\b|\ba\s+month\b|\bmonthly\b|\bp\.?m\b\.?|\b(?:SGD|MYR|USD|AUD|HKD|NZD|CAD|GBP)\b/gi, ' ')
     .replace(/房租|月租|租金|rent/gi, ' ')
     .replace(/[:：,，、;；|/\\()（）\[\]【】<>《》"“”'‘’~·•\-—_=+*#@!！?？]/g, ' ')
     .replace(/(^|\s)[\d.,]+(?=\s|$)/g, ' ')
@@ -658,7 +570,7 @@ function parseRoster(text, m) {
   return out;
 }
 
-function makeDemo(base) {
+function makeDemo(base, D) {
   const m3 = ymAdd(base, -3), m2 = ymAdd(base, -2), m1 = ymAdd(base, -1);
   const T2 = (id, name, room, rent, share, extra) => Object.assign({ id, name, room, rent, share }, extra || {});
   const mk = (ten, fix, self, elec, paid, m, extra, patch) => ({
@@ -666,17 +578,17 @@ function makeDemo(base) {
     rows: ten.filter(t => span(t, m) > 0).map(t => Object.assign({}, t, { paid: Array.isArray(paid) ? paid.includes(t.id) : paid }, (patch || {})[t.id] || {})),
     exp: fix.map(f => Object.assign({}, f, { fixed: true })).concat(extra || [])
   });
-  const t1 = [T2('t1', '阿明', '主人房', 900, true), T2('t2', '小美', '普通房1', 650, false), T2('t3', '阿强', '普通房2', 400, true),
-    T2('t4', '阿杰', '普通房2', 400, true), T2('t5', 'Raj', '小房', 520, true, { to: m1 + '-18' }), T2('t6', '陈姐', '客厅', 450, false),
-    T2('t9', 'Ken', '小房', 540, true, { from: m1 + '-20' })];
-  const f1 = [{ id: 'e1', name: '交大房东', amt: 2600 }, { id: 'e2', name: '网费', amt: 45 }];
-  const t2 = [T2('t7', '小李', '主人房', 1100, true), T2('t8', 'Tom', '普通房', 750, true)];
-  const f2 = [{ id: 'e4', name: '交大房东', amt: 1500 }, { id: 'e5', name: '网费', amt: 30 }];
-  const h1 = { id: 'h-demo1', demo: true, estate: '碧水湾', unit: '12栋 08-21', self: false, byRoom: false, created: m3, tenants: t1, fixed: f1, months: {} };
+  const P = (id, rent, share, extra) => T2(id, D.t[id][0], D.t[id][1], rent, share, extra);
+  const t1 = [P('t1', 900, true), P('t2', 650, false), P('t3', 400, true), P('t4', 400, true), P('t5', 520, true, { to: m1 + '-18' }), P('t6', 450, false),
+    P('t9', 540, true, { from: m1 + '-20' })];
+  const f1 = [{ id: 'e1', name: D.head, amt: 2600 }, { id: 'e2', name: D.wifi, amt: 45 }];
+  const t2 = [P('t7', 1100, true), P('t8', 750, true)];
+  const f2 = [{ id: 'e4', name: D.head, amt: 1500 }, { id: 'e5', name: D.wifi, amt: 30 }];
+  const h1 = { id: 'h-demo1', demo: true, estate: D.e1, unit: D.u1, self: false, byRoom: false, created: m3, tenants: t1, fixed: f1, months: {} };
   h1.months[m3] = mk(t1, f1, false, 268.3, true, m3);
-  h1.months[m2] = mk(t1, f1, false, 301.75, true, m2, [{ id: 'e3', name: '修空调', amt: 120, fixed: false }]);
+  h1.months[m2] = mk(t1, f1, false, 301.75, true, m2, [{ id: 'e3', name: D.ac, amt: 120, fixed: false }]);
   h1.months[m1] = mk(t1, f1, false, 284.1, ['t1', 't2', 't3', 't4', 't6', 't9'], m1, null, { t5: { owe: 200 } });
-  const h2 = { id: 'h-demo2', demo: true, estate: '金沙苑', unit: '3栋 11-05', self: true, byRoom: false, created: m2, tenants: t2, fixed: f2, months: {} };
+  const h2 = { id: 'h-demo2', demo: true, estate: D.e2, unit: D.u2, self: true, byRoom: false, created: m2, tenants: t2, fixed: f2, months: {} };
   h2.months[m2] = mk(t2, f2, true, 180, true, m2);
   h2.months[m1] = mk(t2, f2, true, 165.6, true, m1);
   h2.months[base] = mk(t2, f2, true, 172.5, ['t7'], base);
@@ -691,12 +603,11 @@ const rid = p => p + Math.random().toString(36).slice(2, 7) + Date.now().toStrin
 const NOW = new Date();
 const CUR = NOW.getFullYear() + '-' + pad(NOW.getMonth() + 1);
 const TODAY = CUR + '-' + pad(NOW.getDate());
-const mNum = ym => +ym.slice(5);
 const yNum = ym => +ym.slice(0, 4);
-const mLabel = ym => mNum(ym) + '月';
-const mLong = ym => yNum(ym) + '年' + mNum(ym) + '月';
-const md = d => +d.slice(5, 7) + '/' + +d.slice(8);
-const mdLong = d => +d.slice(5, 7) + '月' + +d.slice(8) + '日';
+const mLabel = ym => T.fm.m(ym);
+const mLong = ym => T.fm.mL(ym);
+const md = d => T.fm.md(d);
+const mdLong = d => T.fm.mdL(d);
 const NF = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const num = c => NF.format(c / 100);
 const money = c => (c < 0 ? '−$' : '$') + NF.format(Math.abs(c) / 100);
@@ -728,7 +639,7 @@ const ICON = {
   dots: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.9" fill="currentColor"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><circle cx="18.5" cy="12" r="1.9" fill="currentColor"/></svg>',
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 5.5V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   chart: '<svg viewBox="0 0 22 22" aria-hidden="true"><path d="M4 18V11M9 18V5M14 18v-9M19 18V8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-  share: '<svg class="share" viewBox="0 0 15 18" aria-label="分享"><path d="M7.5 1v10M4 4.3 7.5 1 11 4.3M4.5 7H2.6A1.1 1.1 0 0 0 1.5 8.1v7.8A1.1 1.1 0 0 0 2.6 17h9.8a1.1 1.1 0 0 0 1.1-1.1V8.1A1.1 1.1 0 0 0 12.4 7h-1.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  share: () => '<svg class="share" viewBox="0 0 15 18" aria-label="' + T.shareWord + '"><path d="M7.5 1v10M4 4.3 7.5 1 11 4.3M4.5 7H2.6A1.1 1.1 0 0 0 1.5 8.1v7.8A1.1 1.1 0 0 0 2.6 17h9.8a1.1 1.1 0 0 0 1.1-1.1V8.1A1.1 1.1 0 0 0 12.4 7h-1.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   up: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3M6 6.5 10 3l4 3.5M4 11v4.5A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5V11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   down: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10M6 9.5 10 13l4-3.5M4 11v4.5A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5V11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   app: c => '<svg class="' + c + '" aria-hidden="true" viewBox="0 0 64 64"><defs><linearGradient id="bzsG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF8FC7"/><stop offset="1" stop-color="#E2418C"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#bzsG)"/><path d="M14 31L32 15l18 16v19a2 2 0 0 1-2 2H16a2 2 0 0 1-2-2z" fill="#fff" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="32" cy="38" r="6.5" fill="#E2418C"/><path d="M32 34.5v7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>',
@@ -738,10 +649,6 @@ const ICON = {
 /* ---------- state & storage: everything lives in this browser only ---------- */
 const S = { houses: {}, order: [], month: CUR, year: yNum(CUR), sel: null, route: '', ready: false };
 const St = { locked: false, bip: null };
-const LS = 'baozuseng.v1', LSU = 'baozuseng.ui';
-let UI = {};
-try { UI = JSON.parse(localStorage.getItem(LSU) || '{}') || {}; } catch (e) { UI = {}; }
-function saveUI() { try { localStorage.setItem(LSU, JSON.stringify(UI)); } catch (e) {} }
 
 function housesInOrder() {
   const seen = new Set(), out = [];
@@ -892,10 +799,10 @@ function maybeSettled(m) {
 function billsAll(h, c, m) {
   const lines = [T.billsHead(mLabel(m), h.estate, h.unit), c.has ? (c.sharers ? T.billsElec(money(c.elecC), c.heads, c.r.self, money(c.perC), c.rows.some(x => x.part && x.share)) : '') : T.billsElecTbd];
   for (const x of c.rows) {
-    let p = (x.part ? T.bpDays(x.d) + '，' : '') + T.bpRent(money(x.rC));
-    p += !x.share ? '，' + T.bpInc : c.has ? ' + ' + T.bpElec(money(x.eC)) : '，' + T.bpTbd;
+    let p = (x.part ? T.bpDays(x.d) + T.c : '') + T.bpRent(money(x.rC));
+    p += !x.share ? T.c + T.bpInc : c.has ? ' + ' + T.bpElec(money(x.eC)) : T.c + T.bpTbd;
     if (x.prevC) p += ' + ' + T.bpPrev(money(x.prevC));
-    if (x.st === 'paid') p += '，' + T.bpPaid;
+    if (x.st === 'paid') p += T.c + T.bpPaid;
     lines.push(T.billsLine(x.name, money(x.due + x.prevC), p));
   }
   return lines.filter(Boolean).join('\n');
@@ -903,11 +810,11 @@ function billsAll(h, c, m) {
 function tenantBill(c, x, m) {
   const M = mLabel(m), days = x.part ? T.billDays(x.d, money(x.fullC)) : '';
   let s, total = x.due;
-  if (!x.share) s = T.billInc(x.name, M, money(x.rC)) + days;
-  else if (!c.has) s = T.billTbd(x.name, M, money(x.rC)) + days;
-  else s = T.billBoth(x.name, M, money(x.rC), money(x.eC)) + days;
+  if (!x.share) s = T.billInc(x.name, M, money(x.rC), days);
+  else if (!c.has) s = T.billTbd(x.name, M, money(x.rC), days);
+  else s = T.billBoth(x.name, M, money(x.rC), money(x.eC), days);
   if (x.prevC) { total += x.prevC; s += T.billPrev(money(x.prevC), money(total)); }
-  else s += x.share && c.has ? T.billTotal(money(total)) : '。';
+  else s += x.share && c.has ? T.billTotal(money(total)) : T.end;
   return s;
 }
 
@@ -920,7 +827,7 @@ function setNav(o) {
   $('#nav').classList.toggle('wide', !!o.wide);
 }
 const loadingBlock = () => `<div class="loading"><span class="spin"></span>${T.loading}</div>`;
-const footer = () => `<footer class="foot"><div>${T.foot(VERSION)}</div><div id="syncLine">${syncText()}</div><div>${T.footMail}<span class="mail">${T.mail}</span></div></footer>`;
+const footer = () => `<footer class="foot"><div>${T.foot(VERSION)}</div><div id="syncLine">${syncText()}</div><div>${T.footMail}<span class="mail">${T.mail}</span></div><div><button type="button" class="lang" data-act="lang" lang="${STR[T.other].lang}">${T.langOther}</button></div></footer>`;
 const addRow = (act, label, icon) => `<button type="button" class="row add" data-act="${act}"><span class="plus">${icon || ICON.plus}</span><span>${label}</span></button>`;
 function monthSwitch(min) {
   const m = S.month;
@@ -945,7 +852,7 @@ function a2hsCard() {
   if (STANDALONE || UI.a2hs || !(IOS || ANDROID || St.bip)) return '';
   let body;
   if (St.bip) body = `<p>${T.a2hsAnd}</p><button type="button" class="btn primary small" data-act="a2hs-go">${T.a2hsBtn}</button>`;
-  else if (IOS) body = `<p>${T.a2hsIOS(ICON.share)}</p>`;
+  else if (IOS) body = `<p>${T.a2hsIOS(ICON.share())}</p>`;
   else body = `<p>${T.a2hsAndMenu}</p>`;
   return `<div class="a2hs" id="a2hs">${ICON.app('a2hs-ico')}<div><b>${T.a2hsT}</b>${body}</div><button type="button" class="a2hs-x" data-act="a2hs-x" aria-label="${T.close}">${ICON.x2}</button></div>`;
 }
@@ -964,7 +871,7 @@ function renderHome() {
   const hs = housesInOrder();
   setNav({ title: T.app, right: hs.length ? `<a class="nav-a" href="#ledger">${ICON.chart}${T.ledger}</a>` : '' });
   if (!hs.length) {
-    view('<div class="wrap">' + (S.ready ? `<div class="empty">${ICON.app('empty-ico')}<div class="lt"><h1 class="big">${T.app}</h1><p class="tag">${T.tagline}</p></div><p class="empty-s">${T.emptyS}</p><div class="empty-b"><button type="button" class="btn primary" data-act="new-house">${T.firstHouse}</button><button type="button" class="btn plain" data-act="load-demo">${T.seeDemo}</button><button type="button" class="btn plain" data-act="bk-load">${T.restore}</button></div></div>` + a2hsCard() + footer() : loadingBlock()) + '</div>');
+    view('<div class="wrap">' + (S.ready ? `<div class="empty">${ICON.app('empty-ico')}<div class="lt"><h1 class="big">${T.app}${T.appSub ? `<br><span class="h1-2">${T.appSub}</span>` : ''}</h1><p class="tag">${T.tagline}</p></div><p class="empty-s">${T.emptyS}</p><div class="empty-b"><button type="button" class="btn primary" data-act="new-house">${T.firstHouse}</button><button type="button" class="btn plain" data-act="load-demo">${T.seeDemo}</button><button type="button" class="btn plain" data-act="bk-load">${T.restore}</button></div></div>` + a2hsCard() + footer() : loadingBlock()) + '</div>');
     return;
   }
   const head = `<div class="lt"><h1>${T.app}</h1><p class="tag">${T.tagline}</p></div>` + a2hsCard();
@@ -982,7 +889,7 @@ function renderHome() {
   if (hs.some(h => h.demo)) html += `<div class="demo-bar"><div><b>${T.demoT}</b><span>${T.demoS}</span></div><button type="button" class="btn small gray" data-act="clear-demo">${T.demoClear}</button></div>`;
   html += monthSwitch(min);
   const allIn = !miss && !owedC && inC > 0 && paidC >= inC;
-  html += `<a class="hero" href="#ledger"><span class="hero-l">${mLabel(m)}${T.net(netC)}</span><span class="hero-n">${big(netC)}</span><span class="hero-s">${T.inOut(money(inC), money(outC))}</span><span class="meter" role="img" aria-label="${T.stPaid} ${pct}%"><i style="width:${pct}%"></i></span><span class="hero-f"><span>${T.paidOf(money(paidC), money(inC))}</span><span class="go">${T.toLedger}</span></span>${miss ? `<span class="hero-note">${T.missElec(miss)}</span>` : ''}${owedC ? `<span class="hero-note bad">${T.owedAll(money(owedC))}</span>` : ''}${allIn ? `<span class="hero-note done">${T.tenFootDone}</span>` : ''}</a>`;
+  html += `<a class="hero" href="#ledger"><span class="hero-l">${T.monthNet(mLabel(m), netC)}</span><span class="hero-n">${big(netC)}</span><span class="hero-s">${T.inOut(money(inC), money(outC))}</span><span class="meter" role="img" aria-label="${T.stPaid} ${pct}%"><i style="width:${pct}%"></i></span><span class="hero-f"><span>${T.paidOf(money(paidC), money(inC))}</span><span class="go">${T.toLedger}</span></span>${miss ? `<span class="hero-note">${T.missElec(miss)}</span>` : ''}${owedC ? `<span class="hero-note bad">${T.owedAll(money(owedC))}</span>` : ''}${allIn ? `<span class="hero-note done">${T.tenFootDone}</span>` : ''}</a>`;
   for (const g of groups) html += `<section class="grp"><div class="grp-h"><h2>${esc(g.k)}</h2><span class="grp-meta">${T.nHouses(g.hs.length)}</span></div><div class="list">${g.hs.map(h => houseRow(h, m)).join('')}</div></section>`;
   html += `<button type="button" class="btn gray newhouse" data-act="new-house">${ICON.plusS}${T.newHouse}</button>` + bookBlock(realHouses().length > 0) + footer() + '</div>';
   view(html);
@@ -1024,7 +931,7 @@ function renderHouse(h, part) {
   if (!$('#hHero')) return;
   const c = calc(h, m);
   const n = c.rows.length;
-  $('#hHero').innerHTML = `<div class="hhero"><div class="hero-l">${mLabel(m)}${T.net(c.netC)}</div><div class="hero-n">${big(c.netC)}</div><div class="hero-s">${T.inOut(money(c.inC), money(c.outC))}</div>${c.has ? '' : `<div class="hero-note">${T.missElec1}</div>`}${c.owedC ? `<div class="hero-note bad">${T.owedAll(money(c.owedC))}</div>` : ''}</div>`;
+  $('#hHero').innerHTML = `<div class="hhero"><div class="hero-l">${T.monthNet(mLabel(m), c.netC)}</div><div class="hero-n">${big(c.netC)}</div><div class="hero-s">${T.inOut(money(c.inC), money(c.outC))}</div>${c.has ? '' : `<div class="hero-note">${T.missElec1}</div>`}${c.owedC ? `<div class="hero-note bad">${T.owedAll(money(c.owedC))}</div>` : ''}</div>`;
   $('#elecOut').innerHTML = elecOut(h, c, m);
   $('#tenMeta').textContent = n ? (c.unpaid ? T.paidN(n - c.unpaid, n) : T.allPaid) : '';
   $('#segP').setAttribute('aria-pressed', String(!h.byRoom));
@@ -1051,8 +958,8 @@ function elecOut(h, c, m) {
     sub = T.sharersPay(c.sharers, money(c.elecInC)) + (mine && c.eatC ? T.youEat(mine, money(c.eatC)) : '');
   }
   const parts = c.rows.filter(x => x.part && x.share);
-  const days = parts.length ? `<div class="split-days">${T.byDays}${parts.map(x => esc(T.dayPart(x.name, x.d, money(x.eC)))).join('、')}</div>` : '';
-  return `<div class="heads" aria-hidden="true">${dots}</div><div class="split-main">${T.heads(c.heads, c.r.self)}<b>${money(c.perC)}</b></div><div class="split-sub">${sub}</div>${days}${send}`;
+  const days = parts.length ? `<div class="split-days">${T.byDays}${parts.map(x => esc(T.dayPart(x.name, x.d, money(x.eC)))).join(T.sep)}</div>` : '';
+  return `<div class="heads" aria-hidden="true">${dots}</div><div class="split-main">${T.heads(c.heads, c.r.self, `<b>${money(c.perC)}</b>`)}</div><div class="split-sub">${sub}</div>${days}${send}`;
 }
 function tenantRow(h, c, x, m, inRoom) {
   const rent = T.rowRent(num(x.rC));
@@ -1061,14 +968,14 @@ function tenantRow(h, c, x, m, inRoom) {
   let chips = '';
   if (x.from && x.from.slice(0, 7) === m && x.from > m + '-01') chips += `<span class="chip move">${T.chipIn(md(x.from))}</span>`;
   if (x.to && x.to.slice(0, 7) === m) chips += `<span class="chip${x.to < last ? ' move' : ''}">${x.to < last ? T.chipOut(md(x.to)) : T.chipEnd}</span>`;
-  chips += (x.st === 'owe' ? `<span class="chip bad">${T.owe(money(x.oC))}</span>` : '') + (x.prevC ? `<span class="chip bad">${T.prevOwe(money(x.prevC))}</span>` : '');
+  chips += (x.st === 'owe' ? `<span class="chip bad owe-now">${T.owe(money(x.oC))}</span>` : '') + (x.prevC ? `<span class="chip bad">${T.prevOwe(money(x.prevC))}</span>` : '');
   const mark = x.st === 'paid' ? ' on' : x.st === 'owe' ? ' owe' : '';
   const label = x.st === 'paid' ? T.stPaid : x.st === 'owe' ? T.stOwe : T.stOpen;
-  return `<div class="row ten"><button type="button" class="paid${mark}" data-act="paid" data-id="${esc(x.id)}" aria-pressed="${x.st === 'paid'}" aria-label="${esc(x.name)}：${label}"><span>${x.st === 'owe' ? T.oweMark : ICON.check}</span></button><button type="button" class="row-btn" data-act="tenant" data-id="${esc(x.id)}"><span class="row-main"><span class="row-t">${esc(x.name)}${x.room && !inRoom ? `<span class="tag2">${esc(x.room)}</span>` : ''}</span><span class="row-s">${base}${chips}</span></span><span class="row-v">${money(x.due)}</span>${ICON.chevR}</button></div>`;
+  return `<div class="row ten"><button type="button" class="paid${mark}" data-act="paid" data-id="${esc(x.id)}" aria-pressed="${x.st === 'paid'}" aria-label="${esc(T.paidAria(x.name, label))}"><span>${x.st === 'owe' ? T.oweMark : ICON.check}</span></button><button type="button" class="row-btn" data-act="tenant" data-id="${esc(x.id)}"><span class="row-main"><span class="row-t">${esc(x.name)}${x.room && !inRoom ? `<span class="tag2">${esc(x.room)}</span>` : ''}</span><span class="row-s">${base}${chips}</span></span><span class="row-v">${money(x.due)}</span>${ICON.chevR}</button></div>`;
 }
 function tenantBlock(h, c, m) {
   const adds = addRow('add-tenant', T.addTenant) + addRow('bulk', T.paste, ICON.list);
-  const gone = c.gone.length ? `<div class="row emptyrow">${esc(T.goneOwe(money(c.gone.reduce((s, g) => s + g.c, 0)), c.gone.map(g => g.name).join('、')))}</div>` : '';
+  const gone = c.gone.length ? `<div class="row emptyrow">${esc(T.goneOwe(money(c.gone.reduce((s, g) => s + g.c, 0)), c.gone.map(g => g.name).join(T.sep)))}</div>` : '';
   const all = c.unpaid >= 2 ? `<button type="button" class="row add" id="allPaid" data-act="all-paid"><span class="plus">${ICON.allpaid}</span><span class="row-main"><span class="row-t">${T.allPaidT}</span><span class="row-s" id="allPaidS">${T.allPaidS(c.unpaid)}</span></span></button>` : '';
   if (!c.rows.length) return `<div class="list lead"><div class="row emptyrow">${T.emptyRoom}</div>${gone}${adds}</div>`;
   if (!h.byRoom) return `<div class="list lead">${c.rows.map(x => tenantRow(h, c, x, m)).join('')}${gone}${all}${adds}</div>`;
@@ -1104,9 +1011,9 @@ function renderLedger() {
   const owedNow = hs.reduce((s, h) => s + (h.created <= CUR ? calc(h, CUR).owedC : 0), 0);
   if (!(S.sel && data.some(p => p.m === S.sel))) S.sel = data.some(p => p.m === S.month) ? S.month : (data.length ? data[data.length - 1].m : null);
   let html = `<div class="wrap"><div class="lt"><h1>${T.ledger}</h1></div>`;
-  html += `<div class="mswitch" role="group" aria-label="${T.pickYear}"><button type="button" class="ms-b" data-act="y-prev" aria-label="${T.prevYear}"${Y <= minY ? ' disabled' : ''}>${ICON.chevL}</button><span class="ms-t">${Y}年</span><button type="button" class="ms-b" data-act="y-next" aria-label="${T.nextYear}"${Y >= maxY ? ' disabled' : ''}>${ICON.chevRb}</button></div>`;
-  html += `<div class="hero"><span class="hero-l">${T.yearNet(Y, T.net(yNet))}</span><span class="hero-n">${big(yNet)}</span><span class="hero-s">${T.inOut(money(yIn), money(yOut))}</span>${owedNow && Y === maxY ? `<span class="hero-note bad">${T.owedAll(money(owedNow))}</span>` : ''}</div>`;
-  html += `<section class="chart" aria-label="${T.chartAria(Y)}"><div class="ro">${readout(per, S.sel)}</div>${plot(per, S.sel)}</section>`;
+  html += `<div class="mswitch" role="group" aria-label="${T.pickYear}"><button type="button" class="ms-b" data-act="y-prev" aria-label="${T.prevYear}"${Y <= minY ? ' disabled' : ''}>${ICON.chevL}</button><span class="ms-t">${T.fm.y(Y)}</span><button type="button" class="ms-b" data-act="y-next" aria-label="${T.nextYear}"${Y >= maxY ? ' disabled' : ''}>${ICON.chevRb}</button></div>`;
+  html += `<div class="hero"><span class="hero-l">${T.yearNet(Y, yNet)}</span><span class="hero-n">${big(yNet)}</span><span class="hero-s">${T.inOut(money(yIn), money(yOut))}</span>${owedNow && Y === maxY ? `<span class="hero-note bad">${T.owedAll(money(owedNow))}</span>` : ''}</div>`;
+  html += `<section class="chart" aria-label="${T.chartAria(Y)}"><div class="ro">${readout(per, S.sel)}</div>${plot(per, S.sel, Y)}</section>`;
   const byH = hs.map(h => {
     const ms = []; for (let i = 1; i <= 12; i++) { const m = Y + '-' + pad(i); if (m >= h.created && m <= CUR) ms.push(m); }
     if (!ms.length) return null;
@@ -1123,7 +1030,7 @@ function readout(per, sel) {
   if (!p) return `<div class="ro-m">${T.noYear}</div>`;
   return `<div class="ro-m">${mLong(p.m)}</div><div class="ro-v">${T.net(p.netC)} ${money(Math.abs(p.netC))}</div><div class="ro-s">${T.inOut(money(p.inC), money(p.outC))}</div><button type="button" class="ro-go" data-act="open-month" data-m="${p.m}">${T.gotoMonth}</button>`;
 }
-function plot(per, sel) {
+function plot(per, sel, Y) {
   const vals = per.map(p => (p ? p.netC : 0));
   const top = niceUp(Math.max(0, ...vals)), bot = niceUp(Math.max(0, ...vals.map(v => -v)));
   const span2 = top + bot || 1, H = 128, zy = Math.round(top / span2 * H);
@@ -1132,9 +1039,9 @@ function plot(per, sel) {
   g += `<div class="gl zero" style="top:${zy}px"></div><div class="yl" style="top:${zy}px">$0</div>`;
   if (bot) g += `<div class="gl" style="top:${H}px"></div><div class="yl" style="top:${H}px">${axisMoney(-bot)}</div>`;
   const cols = per.map((p, i) => {
-    if (!p) return `<button type="button" class="col none" disabled aria-label="${T.noBook((i + 1) + '月')}"><span class="lbl">${i + 1}</span></button>`;
+    if (!p) return `<button type="button" class="col none" disabled aria-label="${T.noBook(mLabel(Y + '-' + pad(i + 1)))}"><span class="lbl">${T.fm.col(i + 1)}</span></button>`;
     const hgt = Math.max(2, Math.round(Math.abs(p.netC) / span2 * H)), y = p.netC >= 0 ? zy - hgt : zy;
-    return `<button type="button" class="col${p.m === sel ? ' sel' : ''}" data-act="pick" data-m="${p.m}" aria-pressed="${p.m === sel}" aria-label="${mLabel(p.m)}${T.net(p.netC)} ${money(Math.abs(p.netC))}"><span class="b ${p.netC < 0 ? 'dn' : 'up'}" style="top:${y}px;height:${hgt}px"></span><span class="lbl">${i + 1}</span></button>`;
+    return `<button type="button" class="col${p.m === sel ? ' sel' : ''}" data-act="pick" data-m="${p.m}" aria-pressed="${p.m === sel}" aria-label="${T.monthNet(mLabel(p.m), p.netC)} ${money(Math.abs(p.netC))}"><span class="b ${p.netC < 0 ? 'dn' : 'up'}" style="top:${y}px;height:${hgt}px"></span><span class="lbl">${T.fm.col(i + 1)}</span></button>`;
   }).join('');
   return `<div class="plot">${g}<div class="cols">${cols}</div></div>`;
 }
@@ -1184,8 +1091,8 @@ function tenantSheet(h, m, tid) {
   const owing = !!(t && !t.paid && t.owe > 0);
   let acts = '';
   if (t) {
-    if (cx && cx.prevC) acts += `<div class="prev-owe"><span>${T.prevOweLine(money(cx.prevC), cx.prevMs.map(mLabel).join('、'))}</span><button type="button" class="btn small" id="tPrev">${T.prevClear}</button></div>`;
-    acts += `<div class="sh-acts"><button type="button" class="btn gray" id="tCopy">${ICON.copy}${T.copyBill(mWord)}</button>`;
+    if (cx && cx.prevC) acts += `<div class="prev-owe"><span>${T.prevOweLine(money(cx.prevC), cx.prevMs.map(mLabel).join(T.sep))}</span><button type="button" class="btn small" id="tPrev">${T.prevClear}</button></div>`;
+    acts += `<div class="sh-acts"><button type="button" class="btn gray" id="tCopy">${ICON.copy}${T.copyBill}</button>`;
     acts += `<button type="button" class="btn plain danger" id="tDel">${T.del}</button><p class="sh-note">${T.delNote(cur) || T.delOnly(mLabel(m))}</p></div>`;
   }
   const lo = m + '-01', hi = m + '-' + pad(dim(m));
@@ -1213,7 +1120,7 @@ function tenantSheet(h, m, tid) {
       const b = e.target.closest('button'); if (!b) return;
       const v = b.dataset.room;
       if (known.includes(v)) roomI.value = v;
-      else { const taken = rec(h, m).rows.filter(x => x.id !== tid && (x.room || '').startsWith(v)).length; roomI.value = taken ? v + (taken + 1) : v; }
+      else { const taken = rec(h, m).rows.filter(x => x.id !== tid && (x.room || '').startsWith(v)).length; roomI.value = taken ? T.roomN(v, taken + 1) : v; }
       syncRooms();
     };
     roomI.oninput = syncRooms;
@@ -1269,10 +1176,14 @@ function tenantSheet(h, m, tid) {
 function rosterEditor(ta, list, m, have, onChange) {
   let items = [];
   const valid = x => !x.dup && x.name && x.rent != null && !Number.isNaN(x.rent);
-  const refresh = () => { const fresh = items.filter(x => !x.dup), good = fresh.filter(valid).length; onChange(good, fresh.length - good); };
+  const refresh = () => {
+    const fresh = items.filter(x => !x.dup), good = fresh.filter(valid).length, bad = fresh.length - good, n = list.querySelector('.bk-bad');
+    if (n) n.textContent = bad ? T.bulkBad(bad) : '';
+    onChange(good, bad);
+  };
   const draw = () => {
     if (!items.length) { list.innerHTML = ta.value.trim() ? `<p class="sh-tip">${T.bulkNone}</p>` : ''; refresh(); return; }
-    list.innerHTML = `<div class="bk-h"><span>${T.bulkSeen(items.length)}</span></div>` + items.map((x, i) => `<div class="bk${x.dup ? ' dup' : ''}" data-i="${i}">
+    list.innerHTML = `<div class="bk-h"><span>${T.bulkSeen(items.length)}</span><span class="bk-bad"></span></div>` + items.map((x, i) => `<div class="bk${x.dup ? ' dup' : ''}" data-i="${i}">
         <input class="bk-name" data-f="name" value="${esc(x.name)}" placeholder="${T.fName}" aria-label="${T.fName}">
         <label class="bk-rent${x.rent == null || Number.isNaN(x.rent) ? ' bad' : ''}"><span>$</span><input data-f="rent" inputmode="decimal" value="${x.rent != null && !Number.isNaN(x.rent) ? num(toC(x.rent)) : ''}" placeholder="${T.fRent}" aria-label="${T.fRent}"></label>
         <div class="bk-2"><input class="bk-room" data-f="room" value="${esc(x.room)}" placeholder="${T.roomOpt}" aria-label="${T.fRoom}">${x.from ? `<span class="chip move">${T.chipIn(md(x.from))}</span>` : ''}${x.to ? `<span class="chip move">${T.chipOut(md(x.to))}</span>` : ''}${x.dup ? `<span class="chip">${T.bulkDup}</span>` : `<button type="button" class="bk-sh${x.share ? '' : ' inc'}" data-f="share">${x.share ? T.fShare : T.rowInc}</button>`}<button type="button" class="bk-del" data-f="del" aria-label="${T.bulkDel}">${ICON.x}</button></div></div>`).join('');
@@ -1309,7 +1220,7 @@ function bulkSheet(h, m) {
     const go2 = $('#bGo', sh), ok = $('#bOk', sh), ta = $('#bText', sh);
     const take = rosterEditor(ta, $('#bList', sh), m, have, (good, bad) => {
       go2.disabled = ok.disabled = !good || bad > 0;
-      go2.textContent = bad ? T.bulkBad(bad) : good ? T.bulkGo(good) : T.bulkOk;
+      go2.textContent = good && !bad ? T.bulkGo(good) : T.bulkOk;
     });
     const commit = () => {
       const add = take();
@@ -1324,7 +1235,7 @@ function bulkSheet(h, m) {
 function expSheet(h, m, eid) {
   const cur = m === CUR, r = rec(h, m), e = eid ? r.exp.find(x => x.id === eid) : null;
   openSheet(head3(e ? T.editE : T.addE, T.save, 'eOk') + `<div class="sh-body">
-    ${e ? '' : `<div class="pick" id="eQuick">${T.quick.map(q => `<button type="button" data-n="${q[0]}" data-f="${q[1]}">${q[0]}</button>`).join('')}</div>`}
+    ${e ? '' : `<div class="pick" id="eQuick">${T.quick.map(q => `<button type="button" data-n="${esc(q[0])}" data-f="${q[1]}">${esc(q[0])}</button>`).join('')}</div>`}
     <div class="form">
       <label class="f-row"><span class="f-k">${T.eName}</span><input id="eName" autocomplete="off" maxlength="24" enterkeyhint="next" placeholder="${T.eNamePh}" value="${esc(e ? e.name : '')}"></label>
       <label class="f-row"><span class="f-k">${T.eAmt}</span><input id="eAmt" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="$ 0.00" value="${e ? num(toC(e.amt)) : ''}"></label>
@@ -1436,6 +1347,9 @@ function toast(msg, actLabel, fn) {
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show', 'has-act'), actLabel ? 6000 : 2200);
 }
 
+// 设置里那个切换（页脚）：切了就记住，以后不再看浏览器语言
+function setLang(l) { if (!STR[l]) return; LANG = l; T = STR[l]; UI.lang = l; saveUI(); applyLang(); render(); }
+
 /* ---------- routing & events ---------- */
 function go(route) {
   S.route = route;
@@ -1447,6 +1361,7 @@ function act(name, el) {
   const h = curHouse();
   switch (name) {
     case 'close': closeSheet(); break;
+    case 'lang': setLang(T.other); break;
     case 'm-prev': S.month = ymAdd(S.month, -1); render(); break;
     case 'm-next': S.month = ymAdd(S.month, 1); render(); break;
     case 'm-cur': S.month = CUR; render(); break;
@@ -1459,7 +1374,7 @@ function act(name, el) {
       if (h) {
         Ops.togglePaid(h, S.month, el.dataset.id);
         const x = calc(h, S.month).rows.find(y => y.id === el.dataset.id);
-        if (x) { el.className = 'paid pop' + (x.st === 'paid' ? ' on' : x.st === 'owe' ? ' owe' : ''); el.setAttribute('aria-pressed', String(x.st === 'paid')); el.firstElementChild.innerHTML = x.st === 'owe' ? T.oweMark : ICON.check; const s = el.parentNode.querySelector('.row-s .chip.bad'); if (s && x.st !== 'owe' && s.textContent.startsWith(T.oweMark)) s.remove(); }
+        if (x) { el.className = 'paid pop' + (x.st === 'paid' ? ' on' : x.st === 'owe' ? ' owe' : ''); el.setAttribute('aria-pressed', String(x.st === 'paid')); el.firstElementChild.innerHTML = x.st === 'owe' ? T.oweMark : ICON.check; const s = el.parentNode.querySelector('.row-s .chip.owe-now'); if (s && x.st !== 'owe') s.remove(); }
         renderHouse(h, 'paid');
         if (!h.demo) maybeSettled(S.month);
       }
@@ -1483,7 +1398,7 @@ function act(name, el) {
       if (St.bip) { const e = St.bip; St.bip = null; e.prompt(); (e.userChoice || Promise.resolve({})).then(r => { if (r && r.outcome === 'accepted') { UI.a2hs = 1; saveUI(); toast(T.a2hsDone); } render(); }); }
       break;
     case 'load-demo':
-      for (const d of makeDemo(CUR)) { S.houses[d.id] = d; if (!S.order.includes(d.id)) S.order.push(d.id); }
+      for (const d of makeDemo(CUR, T.demo)) { S.houses[d.id] = d; if (!S.order.includes(d.id)) S.order.push(d.id); }
       save(); render(); break;
     case 'clear-demo': {
       const before = snap();
@@ -1546,7 +1461,7 @@ try {
 } catch (e) {}
 if ('serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {} }
 // test hook (pure functions only, no data)
-window.__bzs = { calc, span, dim, parseRoster, VERSION };
+window.__bzs = { calc, span, dim, parseRoster, VERSION, lang: () => LANG };
 })();
 </script>
 </body>

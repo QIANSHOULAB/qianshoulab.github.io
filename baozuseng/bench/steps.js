@@ -1,6 +1,7 @@
 // 步骤账：用手机宽度把主流程从「第一次打开」走到「结果到手」（账单发出去、钱收齐、备份存好），
 // 第一次用（8 月：建房、贴名单、网费、电费、发账单、收钱）和第二次用（9 月：没人搬动的普通月份）各走一遍，每一下都记下来。
-// 用法：node steps.js <网址> <0.2|0.3> <输出.json>
+// 0.4.0 起界面跟浏览器语言走，这里固定 zh-CN，跟 0.3.0 比同一套中文界面。
+// 用法：node steps.js <网址> <0.2|0.3> <输出.json>（0.4 照 0.3 的流程走）
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 const [BASE, VER, OUT] = process.argv.slice(2);
@@ -11,7 +12,7 @@ const NAMES = aug.add.map(x => x.name);
 
 (async () => {
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE_UA, hasTouch: true, acceptDownloads: true });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE_UA, hasTouch: true, acceptDownloads: true, locale: 'zh-CN' });
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(BASE).origin });
   const page = await ctx.newPage();
   const errors = [];

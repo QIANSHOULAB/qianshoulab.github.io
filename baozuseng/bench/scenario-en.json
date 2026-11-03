@@ -1,0 +1,10 @@
+{
+  "说明": "英文界面真流程（run-baozuseng.js 第三个参数 en）用：账还是 scenario.json 那四个月，名字、小区、门牌、名单换成英文用户会写的样子；answer.json 不变，比对时把名字映射回去。11 月 B 套名单里的「from 11th」走英文日期识别。",
+  "names": { "阿明": "Ming", "小美": "Mei", "阿强": "Keong", "阿杰": "Jay", "Raj": "Raj", "Ken": "Ken", "陈姐": "Linda", "小李": "Lee", "Tom": "Tom", "Amy": "Amy", "Sara": "Sara", "Lily": "Lily" },
+  "houses": { "A": { "estate": "Bayview", "unit": "Blk 12 #08-21" }, "B": { "estate": "Sandy Court", "unit": "Blk 3 #11-05" } },
+  "paste": {
+    "2026-08A": "Ming  Master room  900\nMei  Common room 1  650 incl.\nKeong  Common room 2  400\nJay  Common room 2  400\nRaj  Small room  520",
+    "2026-10B": "Lee  Master room  1100\nTom  Common room  750",
+    "2026-11B": "Amy  Common room  760  from 11th\nSara  Common room 2  380\nLily  Common room 2  380  incl."
+  }
+}

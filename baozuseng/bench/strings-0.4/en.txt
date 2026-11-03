@@ -1,0 +1,337 @@
+# Baozu 0.4.0 English UI copy (exported from strings.js). One per line: key<Tab>text; #2 = same string, other case (plural, sign).
+lang	en
+other	zh
+langOther	中文
+manifest	manifest.en.webmanifest
+app	Baozu
+appFull	Baozu · Rent Splitter
+appSub	Rent Splitter
+desc	For landlords who rent out rooms: rent and the power bill, split by head and by day, in one message for the whole house. Your books stay on your phone.
+tagline	Power bill, split to the cent. Drama not included.
+loading	Consulting the ledger…
+shareWord	Share
+fm.m	August
+fm.mL	August 2026
+fm.md	Sep 20
+fm.mdL	Nov 5
+fm.y	2026
+fm.col	A
+sep	, 
+c	, 
+end	.
+houses	Places
+ledger	Ledger
+houseMenu	Place settings
+emptyS	Paste in your tenants. Type in the power bill. Get who owes what, plus a message ready to send.
+firstHouse	Add a place
+seeDemo	Try a sample
+restore	Restore backup
+demoT	This is a sample
+demoS	Tap anything. None of it is real.
+demoClear	Clear sample
+demoCleared	Sample cleared
+undo	Undo
+undone	Undone
+net#1	Profit
+net#2	Loss
+monthNet#1	August profit
+monthNet#2	August loss
+yearNet#1	2026 profit
+yearNet#2	2026 loss
+inOut	In $3,948.03 · Out $2,913.30
+paidOf	Collected $3,000.00 of $3,948.03
+toLedger	Ledger ›
+missElec#1	1 place still needs a power bill, so this isn’t final
+missElec#2	2 places still need a power bill, so this isn’t final
+missElec1	No power bill yet, so this isn’t final.
+owedAll	Unpaid rent: $200.00
+noEstate	No building
+nHouses#1	1 place
+nHouses#2	2 places
+newHouse	New place
+opened	Starts October
+nTenants#1	1 tenant
+nTenants#2	6 tenants
+chipNoElec	Power TBD
+chipOwe	Owes $200.00
+chipLeft	2 unpaid
+chipDone	All paid
+chipDemo	Sample
+pickMonth	Choose month
+prevMonth	Previous month
+nextMonth	Next month
+thisMonth	This month
+backThis	Back to now
+pickYear	Choose year
+prevYear	Previous year
+nextYear	Next year
+notOpenYet	This place starts in October 2026. Nothing to see here yet.
+goto	Go to October
+elecThis	Power bill this month
+elecOf	Power bill, August
+tenants	Tenants
+byPerson	People
+byRoom	Rooms
+byWhat	Group tenants by
+paidN	4/6 paid
+allPaid	All paid
+expenses	Expenses
+expFoot	Anything marked Monthly carries over to next month.
+tenFootDone	Everyone’s paid. Treat yourself.
+tenFoot	Tap a circle to mark paid. Tap a name for everything else.
+allPaidT	Mark all paid
+allPaidS	The other 3, in one tap
+allPaidDone	5 marked paid
+elecHintPrev	Last month: $268.30. 
+elecHint	Type in the total. We’ll do the long division.
+elecErr	Numbers only, like 268.30
+elecNoTen	No tenants yet, so this one’s all yours.
+elecAllMine	Nobody to split with. The $268.30 is all yours.
+elecIncAll	Everyone’s rent includes power, so the $268.30 is all yours.
+heads#1	Split 5 ways: $53.66 each for a full month
+heads#2	Split 3 ways, you included: $55.20 each for a full month
+heads#3	One head: $250.00 for a full month
+youSelf	your share
+incN	1 with power incl.
+rounding	rounding
+sharersPay#1	4 tenants pay $214.64
+sharersPay#2	1 tenant pays $100.00
+youEat	 · you cover $67.06 (your share + 1 with power incl.)
+byDays	By the day: 
+dayPart	Raj $19.11 for 18 days
+copyBills	Copy bills
+copiedBills	Copied. Paste it in the group chat.
+sendNote	One message for the whole house: who owes what, and why.
+sendNoteTbd	No power bill yet? Send anyway. It says “to follow”.
+rowRent	Rent 900.00
+rowInc	Power incl.
+rowElec	Power 53.66
+rowElecTbd	Power TBD
+rowDays	18/30 days
+owe	Owes $200.00
+prevOwe	Back rent $200.00
+chipIn	In Sep 20
+chipOut	Out Sep 18
+chipEnd	Out month-end
+stPaid	Paid
+stOwe	Owes
+stOpen	Unpaid
+oweMark	!
+paidAria	Ming: Paid
+goneOwe	Still owed by people who left: $200.00 (Raj)
+emptyRoom	Empty rooms collect dust, not rent.
+addTenant	Add tenant
+paste	Paste list
+noRoom	No room
+roomSum#1	1 person · $400.00
+roomSum#2	2 people · $800.00
+roomN	Common room 2
+elecBill	Power bill
+elecBillS	The number above
+notFilled	Not yet
+noExp	No other expenses. Did the owner forget to collect?
+monthly	Monthly
+onlyThis	One-off
+addExp	Add expense
+noHouseYet	No places yet, so nothing to add up.
+goBuild	Add a place
+perHouse	By place
+perMonth	By month
+nMonths#1	1 month
+nMonths#2	4 months
+noYear	Nothing on the books this year.
+gotoMonth	Open month ›
+chartAria	Monthly profit, 2026
+noBook	December: no books
+book	Backup
+saveBk	Save backup
+lastBk	Last saved Nov 5
+neverBk	Never saved
+staleBk	45 days old
+restoreS	New phone? Start here.
+bkSaved	Saved
+bkNothing	Nothing of yours to save yet.
+bkBad	That’s not a Baozu backup. Try another file.
+bkDone	Restored 2 places
+bkSwapped	Swapped in 1 place from the backup
+dropT	Drop to restore
+settledT	August: all settled
+settledM	Save a backup to Files. New phone? Restore it in one tap.
+later	Later
+bkFile	baozu-backup-2026-11-05.json
+storeLocked	Your books live on this device only. Locked in, so the browser won’t clear them.
+storeLoose	Your books live on this device only. Save a backup now and then.
+foot	QIANSHOU LAB · Baozu 0.4.0
+footMail	Feature idea or a gripe? Email the abbot: 
+mail	oilsongchengmin@gmail.com
+a2hsT	Keep it on your Home Screen so your books stick around
+a2hsIOS	Tap [⬆], then “Add to Home Screen”.
+a2hsAnd	Opens like an app.
+a2hsAndMenu	In the browser menu, choose “Add to Home screen”.
+a2hsBtn	Add
+a2hsDone	Added
+close	Close
+billsHead	August bills · Bayview Blk 12 #08-21
+billsElec#1	Power $268.30, split 5 ways: $53.66 each for a full month.
+billsElec#2	Power $165.60, split 3 ways (me included): $55.20 each for a full month. Move-ins and move-outs pay by the day.
+billsElecTbd	Power bill isn’t in yet. I’ll add it when it lands.
+billsLine	Ming $953.66 (rent $900.00 + power $53.66)
+bpRent	rent $900.00
+bpElec	power $53.66
+bpInc	power incl.
+bpDays	18 days
+bpPrev	back rent $200.00
+bpTbd	power to follow
+bpPaid	paid
+billInc	Hi Mei, for August it’s $650.00 rent, power included
+billTbd	Hi Ming, for August it’s $900.00 rent. Power bill to follow
+billBoth	Hi Raj, for September it’s $312.00 rent (18 days, prorated from $520.00) + $19.11 power
+billDays	 (18 days, prorated from $520.00)
+billPrev	, plus $200.00 back rent: $1,153.66 in total.
+billTotal	: $953.66 in total.
+cancel	Cancel
+save	Save
+addT	Add tenant
+editT	Edit tenant
+fName	Name
+fNamePh	e.g. Ming
+fRent	Rent
+fShare	Splits power
+shareOn	Chips in on the power bill
+shareOff	Rent includes power
+fRoom	Room
+fRoomPh	Or type one, e.g. Common room 2
+fFrom	Moves in
+fFromS	Only if mid-month
+fTo	Moves out
+fToS	Only if leaving
+fOwe#1	Owes for this month
+fOwe#2	Owes for October
+oweOn	Marked as owing
+oweOff	Turn on if they haven’t paid
+fOweAmt	Amount
+prevOweLine	Back rent <b>$200.00</b> (October)
+prevClear	Paid up
+prevCleared	Back rent cleared
+copyBill	Copy bill
+copiedBill	Copied. Send it over.
+del	Delete
+delNote	Removes them from this month on. Moving out? Set a date instead.
+delOnly	Only removes them from October.
+deletedN	Deleted Raj
+saveMore	Add another
+savedNext	Saved. Next one.
+errName	No name? Then who’s paying?
+errRent	How much is the rent?
+errRentNum	Rent needs to be a number.
+errOwe	Owes how much?
+errDates	Moving out before moving in?
+startsOn	Starts Dec 1
+rooms.0	Master room
+rooms.1	Common room
+rooms.2	Small room
+rooms.3	Living room
+rooms.4	Store room
+bulkT	Tenant list
+bulkOk	Add
+fPaste	Tenant list
+fPasteS	one per line, or paste later
+bulkPh	Ming  Master room  900 ⏎ Mei  Common room 1  650 incl. ⏎ Raj  Small room  520
+bulkTip	One per line: name, room, rent. Rent covers power? Add “incl.” On paper? Snap a photo, then press and hold the text to copy it.
+bulkNone	Couldn’t find anyone. One per line, with at least a name and rent.
+bulkSeen	Found 5. Fix anything that’s off.
+bulkBad#1	1 still needs a name or rent
+bulkBad#2	2 still need a name or rent
+bulkGo#1	Add 1 tenant
+bulkGo#2	Add 5 tenants
+bulkDup	Already here
+bulkDel	Remove
+bulkDone	Added 5 tenants
+roomOpt	Room (optional)
+addE	Add expense
+editE	Edit expense
+eName	Name
+eNamePh	e.g. Wi-Fi
+eAmt	Amount
+eFix	Every month
+fixOn	Carries over to next month
+fixOff	Just this month
+errEName	Name it, so you know where the money went.
+errAmt	How much?
+delExp	Delete
+delExpFix	Gone from next month on, too.
+delExpOnly	Only removes it from this month.
+quick.0	Rent to owner (monthly)
+quick.1	Wi-Fi (monthly)
+quick.2	Water
+quick.3	Building fees (monthly)
+quick.4	Cleaning
+quick.5	Repairs
+newHouseOk	Add
+estate	Building
+estatePh	e.g. Bayview
+unit	Unit
+unitPh	e.g. Apt 4B
+headRent	Rent you pay
+headRentS	To the owner, monthly. Blank if none.
+selfLive	I live here too
+selfLiveS	You chip in on power, too
+knownEstates	Your buildings
+errEstate	Which building?
+errUnit	Which unit?
+errHead	Rent you pay needs to be a number.
+headName	Rent to owner
+thisHouse	This place
+delHouse	Delete place
+manualCopy	Copy
+done	Done
+manualTip	Auto-copy isn’t allowed here. Press and hold the text, then Select All and Copy.
+thisM	this month
+demo.e1	Bayview
+demo.u1	Blk 12 #08-21
+demo.e2	Sandy Court
+demo.u2	Blk 3 #11-05
+demo.head	Rent to owner
+demo.wifi	Wi-Fi
+demo.ac	Aircon repair
+demo.t.t1.0	Ming
+demo.t.t1.1	Master room
+demo.t.t2.0	Mei
+demo.t.t2.1	Common room 1
+demo.t.t3.0	Keong
+demo.t.t3.1	Common room 2
+demo.t.t4.0	Jay
+demo.t.t4.1	Common room 2
+demo.t.t5.0	Raj
+demo.t.t5.1	Small room
+demo.t.t6.0	Linda
+demo.t.t6.1	Living room
+demo.t.t9.0	Ken
+demo.t.t9.1	Small room
+demo.t.t7.0	Lee
+demo.t.t7.1	Master room
+demo.t.t8.0	Tom
+demo.t.t8.1	Common room
+sample.bills.2026-09A.1	September bills · Bayview Blk 12 #08-21
+sample.bills.2026-09A.2	Power $301.75, split 6 ways: $60.76 each for a full month. Move-ins and move-outs pay by the day.
+sample.bills.2026-09A.3	Ming $960.76 (rent $900.00 + power $60.76)
+sample.bills.2026-09A.4	Mei $650.00 (rent $650.00, power incl.)
+sample.bills.2026-09A.5	Keong $460.76 (rent $400.00 + power $60.76)
+sample.bills.2026-09A.6	Jay $460.76 (rent $400.00 + power $60.76)
+sample.bills.2026-09A.7	Raj $348.45 (18 days, rent $312.00 + power $36.45)
+sample.bills.2026-09A.8	Ken $220.28 (11 days, rent $198.00 + power $22.28)
+sample.bills.2026-10A.1	October bills · Bayview Blk 12 #08-21
+sample.bills.2026-10A.2	Power $284.10, split 6 ways: $49.48 each for a full month.
+sample.bills.2026-10A.3	Ming $949.48 (rent $900.00 + power $49.48)
+sample.bills.2026-10A.4	Mei $680.00 (rent $680.00, power incl.)
+sample.bills.2026-10A.5	Keong $449.48 (rent $400.00 + power $49.48)
+sample.bills.2026-10A.6	Jay $449.48 (rent $400.00 + power $49.48)
+sample.bills.2026-10A.7	Ken $589.48 (rent $540.00 + power $49.48)
+sample.bills.2026-10A.8	Linda $333.87 (23 days, rent $333.87, power incl.)
+sample.bills.2026-11B.1	November bills · Sandy Court Blk 3 #11-05
+sample.bills.2026-11B.2	Power $172.50, split 6 ways (me included): $34.50 each for a full month. Move-ins and move-outs pay by the day.
+sample.bills.2026-11B.3	Lee $1,134.50 (rent $1,100.00 + power $34.50)
+sample.bills.2026-11B.4	Tom $261.50 (10 days, rent $250.00 + power $11.50)
+sample.bills.2026-11B.5	Amy $529.67 (20 days, rent $506.67 + power $23.00)
+sample.bills.2026-11B.6	Sara $414.50 (rent $380.00 + power $34.50)
+sample.bills.2026-11B.7	Lily $380.00 (rent $380.00, power incl.)

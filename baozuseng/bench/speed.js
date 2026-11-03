@@ -1,5 +1,5 @@
 // 快：同一台机器、同一次跑，新旧两版轮流各测 N 回取中位数。
-// 打开 = 新浏览器打开到首屏出字；填电费 = 在示例账本里改电费到分摊数出来。用法：node speed.js <旧版网址> <新版网址> [N]
+// 打开 = 新浏览器打开到首屏出字；填电费 = 在示例账本里改电费到分摊数出来。用法：node speed.js <旧版网址> <新版网址> [N]（固定 zh-CN，新旧同一套中文界面）
 const { chromium } = require('playwright');
 const [OLD, NEW, N0] = process.argv.slice(2), N = +N0 || 15;
 const med = a => { const s = a.slice().sort((x, y) => x - y); return s[s.length >> 1]; };
@@ -8,7 +8,7 @@ const med = a => { const s = a.slice().sort((x, y) => x - y); return s[s.length 
   const out = {};
   for (const [k, url] of [['old', OLD], ['new', NEW]]) out[k] = { open: [], elec: [] };
   for (let i = 0; i < N; i++) for (const [k, url] of [['old', OLD], ['new', NEW]]) {
-    const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'zh-CN' });
     const p = await ctx.newPage();
     await p.clock.setFixedTime(new Date('2026-11-05T10:00:00'));
     const t0 = Date.now(); await p.goto(url); await p.waitForSelector('.lt h1'); out[k].open.push(Date.now() - t0);
