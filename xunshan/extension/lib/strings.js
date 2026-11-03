@@ -91,6 +91,7 @@
       noHistory: '还没变过。没变化就是好变化。',
       before: '之前',
       after: '之后',
+      shotNow: '这一刻',
       firstSeen: '开盯',
       hitTag: '叫了',
       movedTag: '网页改版，已重新找到',

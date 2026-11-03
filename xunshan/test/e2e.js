@@ -142,6 +142,13 @@ const get = p => fetch(BASE + p).then(r => r.json());
   ok('弹出系统通知', Object.keys(n1).length === 1, Object.keys(n1).join(','));
   ok('工具栏角标 = 1', (await badge()) === '1');
 
+  // 截图：开盯、每次变化各一张，存在本机，有大小上限
+  await sw.evaluate(() => snapChain);
+  const shots = await sw.evaluate(id => chrome.storage.local.get('shot:' + id).then(o => o['shot:' + id] || {}), priceW.id);
+  const shotList = Object.values(shots);
+  ok('开盯和两次变化各存一张所盯区域的截图', shotList.length === 3 && shotList.every(x => /^data:image\/webp/.test(x.src) && x.src.length < 90000) && h.every(e => shots[e.t]), shotList.map(x => Math.round(x.src.length / 1024) + 'KB ' + x.w + '×' + x.h).join(', '));
+  fs.writeFileSync(path.join(OUT, 'shot-price.webp'), Buffer.from(shotList[shotList.length - 1].src.split(',')[1], 'base64'));
+
   // 库存：缺货 → 有货
   await get('/_set?stock=' + encodeURIComponent('有货'));
   await sw.evaluate(id => handlers.checkNow({ id }), stockW.id);
@@ -152,6 +159,9 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await get('/_set?seats=3');
   await sw.evaluate(id => handlers.checkNow({ id }), spaW.id);
   ok('脚本渲染页的名额变化被抓到', /剩余名额：3/.test((await W())[spaW.id].lastText));
+  const spaShots = await sw.evaluate(id => chrome.storage.local.get('shot:' + id).then(o => Object.values(o['shot:' + id] || {})), spaW.id);
+  ok('小窗读的时候顺手拍照（开盯 + 变化）', spaShots.length === 2 && spaShots.every(x => x.src.length > 1000), spaShots.map(x => Math.round(x.src.length / 1024) + 'KB').join(', '));
+  if (spaShots[1]) fs.writeFileSync(path.join(OUT, 'shot-spa.webp'), Buffer.from(spaShots[1].src.split(',')[1], 'base64'));
 
   // ---- 7. 点通知直接打开那一页 ----
   const nid = Object.keys(n1)[0];
@@ -195,8 +205,9 @@ const get = p => fetch(BASE + p).then(r => r.json());
   const cap2 = await sw.evaluate(() => handlers.add({ watch: { url: 'http://localhost:8787/captcha', title: '验证', selector: null } }));
   await sw.evaluate(id => handlers.checkNow({ id }), cap2.id);
   await sw.evaluate(id => handlers.checkNow({ id }), cap2.id);
-  const brokenN = Object.keys(await notifs()).filter(k => k.startsWith('e:' + cap2.id));
-  ok('连着 3 回没看成，发「盯不了了」通知（只发一次）', brokenN.length === 1);
+  const brokenN = await until(async () => { const k = Object.keys(await notifs()).filter(k => k.startsWith('e:' + cap2.id)); return k.length ? k : null; }, 3000) || [];
+  const cw = (await W())[cap2.id] || {};
+  ok('连着 3 回没看成，发「盯不了了」通知（只发一次）', brokenN.length === 1, JSON.stringify({ n: brokenN.length, err: cw.err, errCount: cw.errCount, told: cw.errNotified }));
   await sw.evaluate(id => handlers.checkNow({ id }), cap2.id);
   ok('之后不重复发', Object.keys(await notifs()).filter(k => k.startsWith('e:' + cap2.id)).length === 1);
   await sw.evaluate(id => handlers.remove({ id }), cap2.id);
@@ -241,6 +252,10 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await sw.evaluate(() => new Promise(r => chrome.notifications.getAll(n => { Object.keys(n).filter(k => !k.includes('w:') ).forEach(k => chrome.notifications.clear(k)); r(); })));
 
   // ---- 10. 同站排队：一轮里同一网站挨个查完，同一网址只抓一次 ----
+  await sw.evaluate(() => snapChain);
+  const spa2 = await sw.evaluate(() => handlers.add({ watch: { url: 'http://localhost:8787/spa', title: '名额 2', selector: '#seats', pickedText: '3' } }));
+  ok('同一网址第二条也走小窗', spa2 && spa2.mode === 'frame' && spa2.lastText === '3', spa2 && JSON.stringify({ mode: spa2.mode, text: spa2.lastText }));
+  await sw.evaluate(() => snapChain);
   await sw.evaluate(async () => { const ws = (await chrome.storage.local.get('watches')).watches; for (const w of Object.values(ws)) w.nextCheck = 0; await chrome.storage.local.set({ watches: ws }); });
   const hits0 = await get('/_hits');
   const r0 = Date.now();
@@ -252,6 +267,23 @@ const get = p => fetch(BASE + p).then(r => r.json());
   ok('一轮把同站到期的全查完', wsAfter.every(w => w.nextCheck > Date.now()), roundSec.toFixed(1) + ' 秒');
   ok('同一网址两条只抓一次', total('/shop') === 1, JSON.stringify({ shop: total('/shop'), spa: total('/spa'), news: total('/news'), member: total('/member') }));
   ok('同站之间隔开几秒，不扎堆', roundSec >= 6 && roundSec < 40, roundSec.toFixed(1) + ' 秒');
+  ok('小窗模式同一网址两条只开一个小窗', total('/spa') === 1 && total('/api/stock') === 1, JSON.stringify({ spa: total('/spa'), api: total('/api/stock') }));
+  await sw.evaluate(id => handlers.remove({ id }), spa2.id);
+
+  // ---- 10b. 临近到期提前抓 + 掐着点醒：同站两条快到期，提前开工，最后一条不晚于到期 ----
+  const T = await sw.evaluate(async ([a, b]) => {
+    const T = Date.now() + 12000;
+    const ws = (await chrome.storage.local.get('watches')).watches;
+    for (const w of Object.values(ws)) w.nextCheck = w.id === a ? T : w.id === b ? T + 1000 : Date.now() + 3600e3;
+    await chrome.storage.local.set({ watches: ws });
+    await runDue();
+    return T;
+  }, [spaW.id, newsW.id]);
+  await until(async () => { const ws = await W(); return ws[newsW.id].lastCheck > T - 10000 && ws[spaW.id].lastCheck > T - 10000; }, 30000, 250);
+  const wsT = await W();
+  const ds = [wsT[spaW.id].lastCheck - T, wsT[newsW.id].lastCheck - (T + 1000)];
+  ok('同站快到期的并一批提前开工，都不晚于到期', ds.every(d => d <= 1500) && ds[0] >= -5000, '相对到期 ' + ds.map(d => (d / 1000).toFixed(1) + ' 秒').join(' / '));
+  ok('下次照原节奏排（不往后漂）', wsT[spaW.id].nextCheck === T + wsT[spaW.id].interval * 60000 && wsT[newsW.id].nextCheck === T + 1000 + wsT[newsW.id].interval * 60000);
 
   // ---- 11. 真闹钟：不点按钮，等后台自己去看 ----
   if (SLOW) {
@@ -270,12 +302,17 @@ const get = p => fetch(BASE + p).then(r => r.json());
   ok('总览页列出全部', (await app.locator('.li').count()) === 5);
   ok('变化记录 3 条（含开盯）', (await app.locator('.he').count()) === 3);
   ok('最新一条自动展开前后对比', (await app.locator('.dif ins').count()) > 0 && (await app.locator('.dif del').count()) > 0);
+  await app.waitForFunction(() => [...document.querySelectorAll('.shots img')].every(i => i.complete && i.naturalWidth > 0), null, { timeout: 5000 }).catch(() => {});
+  ok('历史里截图前后对比', (await app.locator('.shots img').count()) === 2 && await app.evaluate(() => [...document.querySelectorAll('.shots img')].every(i => i.naturalWidth > 0)));
   await app.screenshot({ path: path.join(OUT, '05-app-price.png') });
+  const clipHist = async () => { const hb = await app.locator('.hist-h').boundingBox(), cb = await app.locator('#hist .he').first().boundingBox(); return { x: cb.x - 24, y: hb.y - 20, width: cb.width + 48, height: cb.y + cb.height - hb.y + 44 }; };
+  await app.screenshot({ path: path.join(OUT, '05b-app-shots.png'), fullPage: true, clip: await clipHist() });
   await app.goto(X('app.html#' + newsW.id)); await app.waitForSelector('.he'); await sleep(200);
   await app.screenshot({ path: path.join(OUT, '06-app-news.png') });
   await app.emulateMedia({ colorScheme: 'dark' });
   await app.goto(X('app.html#' + priceW.id)); await app.waitForSelector('.he'); await sleep(200);
   await app.screenshot({ path: path.join(OUT, '07-app-dark.png') });
+  await app.screenshot({ path: path.join(OUT, '07b-app-shots-dark.png'), fullPage: true, clip: await clipHist() });
   await app.emulateMedia({ colorScheme: 'light' });
 
   // 改频率、改条件、暂停（走界面）

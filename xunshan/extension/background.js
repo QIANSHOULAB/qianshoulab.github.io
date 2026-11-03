@@ -5,6 +5,10 @@ const KEY = 'watches';
 const HKEY = id => 'h:' + id;
 const HMAX = 40;
 const MIN = 60000;
+const SKEY = id => 'shot:' + id;
+const SHOT_KEEP = 12;          // 每条最多留几张照（开盯那张一直留着）
+const SHOT_BUDGET = 4e6;       // 全部照片加起来的上限（字节），超了从最旧的删
+const BATCH_WIN = 90 * 1000;   // 同一网站到期时间差不到这么多的，并成一批
 const running = new Map(); // id → 正在进行的检查，重复请求等同一个结果
 
 /* ---------- 闹钟 ---------- */
@@ -23,40 +27,80 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* ---------- 一轮巡山 ----------
-   到期的按网站分组：不同网站一起查（最多 4 个），同一网站挨个查、中间隔几秒；同一网址这一轮只抓一次。 */
-let roundBusy = false;
+   到期的按网站分组：不同网站一起查（最多 4 个），同一网站挨个查、中间隔几秒；同一网址这一轮只抓一次（小窗也只开一个）。
+   临近到期提前抓：同一网站到期时间相近的并成一批，提前「排队要花的时间」开工，让最后一条也在它到期那一刻查完。
+   不等 30 秒一跳的闹钟：算好下一批开工的时刻，掐着点醒。 */
+let roundBusy = false, again = false, wakeTimer = null;
+// 一个网站这一批：到期最早那条 + 跟它差不到 BATCH_WIN（且不超过各自间隔四分之一）的；开工时刻 = 最早到期 − 排队时间
+function planHost(list, gap, now) {
+  const first = list[0];
+  const ref = Math.max(first.nextCheck || 0, now); // 已经过点的全算进这一批
+  const batch = list.filter(w => (w.nextCheck || 0) <= ref + Math.min(BATCH_WIN, w.interval * MIN / 4));
+  const fetches = new Set(batch.map(w => w.url)).size;
+  const lead = Math.min(gap * (fetches - 1), first.interval * MIN / 4);
+  return { batch, start: (first.nextCheck || 0) - lead };
+}
+function plan(ws, gap, now = Date.now()) {
+  const groups = new Map();
+  for (const w of Object.values(ws)) {
+    if (w.paused) continue;
+    const h = hostOf(w.url);
+    if (!groups.has(h)) groups.set(h, []);
+    groups.get(h).push(w);
+  }
+  return [...groups.values()].map(list => planHost(list.sort((a, b) => (a.nextCheck || 0) - (b.nextCheck || 0)), gap, now));
+}
+function wakeAt(t) {
+  clearTimeout(wakeTimer); wakeTimer = null;
+  const d = t - Date.now();
+  if (d < 45000) wakeTimer = setTimeout(runDue, Math.max(0, d) + 50); // 远的交给闹钟；近的掐着点
+}
 async function runDue() {
-  if (roundBusy) return;
-  roundBusy = true;
+  if (roundBusy) { again = true; return; }
+  roundBusy = true; again = false;
+  let gap = 3000;
   try {
-    const [ws, set] = [await store.get(KEY, {}), await QS.settings.all()];
+    const set = await QS.settings.all();
+    gap = Math.max(1, +set.hostGapSec || 3) * 1000;
     const now = Date.now();
-    const gap = Math.max(1, +set.hostGapSec || 3) * 1000;
-    const due = Object.values(ws).filter(w => !w.paused && (w.nextCheck || 0) <= now).sort((a, b) => (a.nextCheck || 0) - (b.nextCheck || 0));
-    if (!due.length) return;
-    const groups = new Map();
-    for (const w of due) { const h = hostOf(w.url); if (!groups.has(h)) groups.set(h, []); groups.get(h).push(w); }
+    const plans = plan(await store.get(KEY, {}), gap, now).filter(p => p.start <= now);
+    if (!plans.length) return;
     const cache = new Map();
-    const queue = [...groups.values()];
+    // 小窗模式：同一网址这一轮要读的几条，交给同一个小窗一次读齐
+    for (const p of plans) for (const w of p.batch) if (w.mode === 'frame' || w.mode === 'tab') {
+      const k = 'F:' + w.url;
+      if (!cache.has(k)) cache.set(k, { items: [] });
+      cache.get(k).items.push(frameItem(w));
+    }
+    const queue = plans.map(p => p.batch);
+    const shared = w => cache.has('U:' + w.url) || !!(cache.get('F:' + w.url) || {}).p;
     const worker = async () => {
       for (let list = queue.shift(); list; list = queue.shift()) {
         let last = 0;
         for (const w of list) {
-          if (last && !cache.has(w.url)) await sleep(Math.max(0, gap - (Date.now() - last)));
+          if (last && !shared(w)) await sleep(Math.max(0, gap - (Date.now() - last)));
           await check(w.id, cache).catch(e => console.warn('check', e));
           last = Date.now();
         }
       }
     };
     await Promise.all(Array.from({ length: Math.min(4, queue.length) }, worker));
-  } finally { roundBusy = false; }
+  } finally {
+    roundBusy = false;
+    if (again) runDue();
+    else {
+      const ps = plan(await store.get(KEY, {}), gap);
+      if (ps.length) wakeAt(Math.min(...ps.map(p => p.start)));
+    }
+  }
 }
 
 /* ---------- 看不见的小窗：只对插件自己发起、只对用户加过的网站，去掉「不许被嵌」的响应头 ---------- */
 async function syncFrameRules() {
   try {
     const ws = await store.get(KEY, {});
-    const hosts = [...new Set(Object.values(ws).filter(w => w.mode === 'frame' || w.mode === 'tab' || w.lastText == null).map(w => { try { return new URL(w.url).hostname; } catch (e) { return null; } }).filter(Boolean))];
+    // 小窗要读、要拍照的网站：就是盯梢里的这些网站
+    const hosts = [...new Set(Object.values(ws).map(w => { try { return new URL(w.url).hostname; } catch (e) { return null; } }).filter(Boolean))];
     const old = (await chrome.declarativeNetRequest.getSessionRules()).map(r => r.id);
     const rules = hosts.length ? [{
       id: 1, priority: 1,
@@ -66,11 +110,15 @@ async function syncFrameRules() {
     await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: old, addRules: rules });
   } catch (e) { console.warn('rules', e); }
 }
-async function ensureFrameScript() {
+let frameScriptP = null;
+function ensureFrameScript() { return frameScriptP || (frameScriptP = registerFrameScript().finally(() => { frameScriptP = null; })); }
+async function registerFrameScript() {
   try {
+    const js = ['lib/page.js', 'lib/shot.js', 'content/frame.js'];
     const has = await chrome.scripting.getRegisteredContentScripts({ ids: ['xs-frame'] });
-    if (has.length) return;
-    await chrome.scripting.registerContentScripts([{ id: 'xs-frame', matches: ['http://*/*', 'https://*/*'], js: ['lib/page.js', 'content/frame.js'], allFrames: true, runAt: 'document_idle', persistAcrossSessions: true }]);
+    if (has.length && JSON.stringify(has[0].js) === JSON.stringify(js)) return;
+    if (has.length) await chrome.scripting.unregisterContentScripts({ ids: ['xs-frame'] });
+    await chrome.scripting.registerContentScripts([{ id: 'xs-frame', matches: ['http://*/*', 'https://*/*'], js, allFrames: true, runAt: 'document_idle', persistAcrossSessions: true }]);
   } catch (e) { console.warn('frame script', e); }
 }
 syncFrameRules(); ensureFrameScript(); ensureAlarm();
@@ -108,20 +156,74 @@ async function viaFetch(w, cache) {
   if (!res.ok) return { err: 'fetch', detail: res.status };
   await ensureOffscreen();
   const r = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'parse', html: res.html, spec: specOf(w) });
+  if (r) Object.defineProperty(r, 'html', { value: res.html, enumerable: false }); // 留着给拍照用
   const loginish = /login|signin|sign-in|passport|auth/i.test(res.url) && !/login|signin/i.test(w.url);
   if (r && !r.found && loginish) return { err: 'login' };
   return r || { err: 'fetch', detail: 'parse' };
 }
 // 要靠脚本渲染的页面：在离屏页里开一个看不见的小窗，等脚本跑完再读。用的是你浏览器自己的登录。
-async function viaFrame(w) {
+// 同一网址这一轮有几条，就一个小窗一次读齐；字变了的顺手拍照。
+const frameItem = (w, snap) => ({ k: w.id, spec: specOf(w), snap: snap || true, prev: w.lastText, lines: !w.selector && (!w.cond || w.cond.type === 'any') });
+async function render(url, items) {
   await syncFrameRules();
   await ensureOffscreen();
-  const r = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'render', url: w.url, spec: specOf(w), maxMs: 7000 });
+  return chrome.runtime.sendMessage({ target: 'offscreen', type: 'render', url, items, maxMs: 7000 });
+}
+async function viaFrame(w, cache) {
+  let ent = cache && cache.get('F:' + w.url);
+  if (!ent || !ent.items.some(i => i.k === w.id)) ent = { items: [frameItem(w)] };
+  if (!ent.p) ent.p = render(w.url, ent.items).catch(() => null);
+  const R = await ent.p;
+  if (!R) return { err: 'fetch', detail: 'frame' };
+  if (R.err) return R;
+  if (R.wall) return { err: R.wall };
+  const r = R.parts && R.parts[w.id];
   if (!r) return { err: 'fetch', detail: 'frame' };
-  if (r.err) return r;
-  if (r.wall) return { err: r.wall };
-  if (!r.found && /login|signin|passport|auth/i.test(r.href || '')) return { err: 'login' };
-  return r;
+  if (!r.found && /login|signin|passport|auth/i.test(R.href || '')) return { err: 'login' };
+  return Object.assign({ title: R.title }, r);
+}
+
+/* ---------- 截图：变了、叫了的那一刻，拍下所盯的那块，存在本机 ---------- */
+let snapChain = Promise.resolve();
+// 直接抓的那种：拿抓回来的同一份 HTML 在离屏页里排出来拍；排着队一张张来，不跟巡山抢
+function snapLater(w, t, html) {
+  snapChain = snapChain.then(async () => {
+    await ensureOffscreen();
+    const shot = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'snapHtml', html, url: w.url, spec: specOf(w) }).catch(() => null);
+    if (shot) await saveShot(w.id, t, shot);
+  }).catch(e => console.warn('snap', e));
+  return snapChain;
+}
+async function saveShot(id, t, shot) {
+  if (!shot || !shot.src) return;
+  const ws = await store.get(KEY, {});
+  if (!ws[id]) return;
+  await store.update(SKEY(id), m => {
+    m[t] = shot;
+    const ts = Object.keys(m).map(Number).sort((a, b) => a - b);
+    for (const x of ts.slice(1, Math.max(1, ts.length - (SHOT_KEEP - 1)))) delete m[x]; // 留开盯那张 + 最近几张
+    return m;
+  }, {});
+  await trimShots(Object.keys(ws));
+}
+// 全部照片超了上限，从最旧的删（每条最新那张留着）
+async function trimShots(ids) {
+  const keys = ids.map(SKEY);
+  let used = await chrome.storage.local.getBytesInUse(keys);
+  if (used <= SHOT_BUDGET) return;
+  const all = await chrome.storage.local.get(keys);
+  const list = [];
+  for (const k of Object.keys(all)) {
+    const ts = Object.keys(all[k]).map(Number).sort((a, b) => a - b);
+    for (const t of ts.slice(0, -1)) list.push({ k, t, n: JSON.stringify(all[k][t]).length });
+  }
+  list.sort((a, b) => a.t - b.t);
+  const touched = new Set();
+  for (const x of list) {
+    if (used <= SHOT_BUDGET * 0.9) break;
+    delete all[x.k][x.t]; used -= x.n; touched.add(x.k);
+  }
+  for (const k of touched) await store.update(k, () => all[k], {});
 }
 const norm = s => String(s || '').replace(/\s+/g, ' ').trim();
 
@@ -140,7 +242,7 @@ async function doCheck(id, cache) {
   const pat = originPat(w.url);
   if (!(await chrome.permissions.contains({ origins: [pat] }))) return await fail(w, { err: 'perm' });
   let mode = w.mode === 'tab' ? 'frame' : (w.mode || 'fetch');
-  let r = mode === 'frame' ? await viaFrame(w) : await viaFetch(w, cache);
+  let r = mode === 'frame' ? await viaFrame(w, cache) : await viaFetch(w, cache);
   // 头一回：直接抓的结果对不上框选时看到的，就改用看不见的小窗（适配脚本渲染的页面）
   if (w.lastText == null && mode === 'fetch' && (r.err === 'fetch' || !r.found || !r.text || (w.pickedText && norm(r.text) !== norm(w.pickedText)))) {
     const r2 = await viaFrame(w);
@@ -149,12 +251,16 @@ async function doCheck(id, cache) {
   if (r.err || !r.found) return await fail(w, { err: r.err || 'gone', detail: r.detail, mode });
   const now = Date.now();
   const next = { text: r.text, num: page.parseNumber(r.text) };
-  const patch = { err: null, errCount: 0, errNotified: false, mode, lastCheck: now, nextCheck: now0 + w.interval * MIN, lastText: next.text, lastNum: next.num };
+  // 闹钟对齐：下次 = 这次该查的时刻 + 间隔，不按实际开查时刻算，就不会一轮轮往后漂；提前抓的也不改节奏
+  const iv = w.interval * MIN, due = w.nextCheck || now0;
+  const base = due > now0 - iv && due <= now0 + iv / 2 ? due : now0;
+  const patch = { err: null, errCount: 0, errNotified: false, mode, lastCheck: now, nextCheck: base + iv, lastText: next.text, lastNum: next.num };
   if (!w.selector && r.title) patch.title = r.title;
   if (r.moved && r.newSel) patch.selector = r.newSel;
-  let hit = false;
+  let hit = false, logged = false;
   if (w.lastText == null) {
     await pushHist(id, { t: now, text: next.text, num: next.num, first: true });
+    logged = true;
   } else if (next.text !== w.lastText || r.moved) {
     const changed = next.text !== w.lastText;
     let fresh = [];
@@ -169,11 +275,13 @@ async function doCheck(id, cache) {
         if (hit) { patch.unread = true; patch.lastHit = now; } else patch.fresh = true;
       }
       await pushHist(id, Object.assign({ t: now, text: next.text, num: next.num, hit }, r.moved ? { moved: true } : {}, fresh.length ? { added: fresh.slice(0, 5) } : {}));
+      logged = true;
     }
   }
   const saved = await save(id, patch);
   if (hit && saved) notify(saved, next, patch.lastNew);
-  if (mode === 'frame' && w.mode !== 'frame') syncFrameRules();
+  // 记了一笔就配一张照：小窗读的时候已经拍了；直接抓的另排队拍
+  if (logged && saved) { if (r.shot) await saveShot(id, now, r.shot); else if (mode === 'fetch' && r.html) snapLater(saved, now, r.html); }
   return saved;
 }
 async function fail(w, { err, detail, mode }) {
@@ -265,7 +373,7 @@ const handlers = {
     }
     return save(id, p);
   },
-  async remove({ id }) { await store.update(KEY, ws => { delete ws[id]; return ws; }, {}); await store.remove(HKEY(id)); badge(); return true; },
+  async remove({ id }) { await store.update(KEY, ws => { delete ws[id]; return ws; }, {}); await store.remove([HKEY(id), SKEY(id)]); badge(); syncFrameRules(); return true; },
   async markAllRead() { await store.update(KEY, ws => { for (const w of Object.values(ws)) { w.unread = false; w.fresh = false; } return ws; }, {}); badge(); return true; },
   async open({ id }) { return openWatch(id); },
   async import({ data }) {

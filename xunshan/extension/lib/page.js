@@ -160,10 +160,11 @@
     return first ? { el: first, via: 'sel' } : { el: null, via: null };
   }
   // 读一块：给离屏页、后台标签、网页小窗共用
-  function readPart(doc, spec) {
+  function readPart(doc, spec, withEl) {
     const r = locate(doc, spec);
     const out = { found: !!r.el, text: r.el ? readText(r.el) : '', title: (doc.title || '').trim() };
     if (r.el && (r.via === 'alt' || r.via === 'anchor')) { out.moved = r.via; out.newSel = cssPath(r.el); }
+    if (withEl) out.el = r.el;
     return out;
   }
 

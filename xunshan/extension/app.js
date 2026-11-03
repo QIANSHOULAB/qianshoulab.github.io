@@ -7,7 +7,7 @@ $('#exp').innerHTML = ui.ICON.up + '<span>' + t('exportBtn') + '</span>';
 $('#gear').innerHTML = ui.ICON.gear;
 $('#ver').textContent = chrome.runtime.getManifest().version;
 
-const S = { ws: {}, sel: location.hash.slice(1) || null, hist: [], open: null, pendingOrigins: [] };
+const S = { ws: {}, sel: location.hash.slice(1) || null, hist: [], shots: {}, open: null, pendingOrigins: [] };
 const send = msg => chrome.runtime.sendMessage(msg);
 const name = w => w.label || w.title || ui.host(w.url);
 const oneLine = s => String(s || '').replace(/\s+/g, ' ').trim();
@@ -58,7 +58,7 @@ function condCtl(w) {
 
 function histRows(w) {
   const h = S.hist.slice().reverse();
-  if (h.length <= 1) return `<div class="none">${t('noHistory')}</div>`;
+  if (h.length <= 1) return `<div class="none">${t('noHistory')}</div>` + (h[0] && S.shots[h[0].t] ? `<div class="he">${shotPair(h, 0)}</div>` : '');
   return h.map((e, i) => {
     const prev = h[i + 1];
     let chg = '';
@@ -77,8 +77,18 @@ function histRows(w) {
     } else if (open) {
       body = `<div class="dif">${ui.esc(e.text)}</div>`;
     }
+    if (open) body += shotPair(h, i);
     return `<div class="he" role="button" tabindex="0" data-t="${e.t}" aria-expanded="${open}"><div class="he-t"><span class="tm">${ui.stamp(e.t)}</span>${chg}${tag}</div>${body}</div>`;
   }).join('');
+}
+
+// 截图前后对比：这一条的照片，配上更早一条有照片的
+function shotPair(h, i) {
+  const cur = S.shots[h[i].t];
+  if (!cur) return '';
+  const old = h.slice(i + 1).find(x => S.shots[x.t]);
+  const fig = (s, cap) => `<figure><img src="${s.src}" width="${s.cw || s.w / 2}" height="${s.ch || s.h / 2}" alt="${ui.esc(cap)}" loading="lazy"><figcaption>${ui.esc(cap)}</figcaption></figure>`;
+  return `<div class="shots${old ? '' : ' one'}">${old ? fig(S.shots[old.t], t('before') + ' · ' + ui.stamp(old.t)) : ''}${fig(cur, (old ? t('after') : t('shotNow')) + ' · ' + ui.stamp(h[i].t))}</div>`;
 }
 
 function renderDet() {
@@ -121,6 +131,7 @@ function renderDet() {
 
 async function loadHist() {
   S.hist = S.sel ? await store.get('h:' + S.sel, []) : [];
+  S.shots = S.sel ? await store.get('shot:' + S.sel, {}) : {};
   if (S.open == null && S.hist.length > 1) S.open = S.hist[S.hist.length - 1].t;
 }
 async function refresh(full) {
@@ -142,7 +153,7 @@ $('#lst').addEventListener('click', e => { const b = e.target.closest('.li'); if
 $('#det').addEventListener('click', async e => {
   const w = S.ws[S.sel]; if (!w) return;
   const he = e.target.closest('.he');
-  if (he && !e.target.closest('.dif')) { S.open = S.open === +he.dataset.t ? -1 : +he.dataset.t; renderDet(); return; }
+  if (he && !e.target.closest('.dif, .shots')) { S.open = S.open === +he.dataset.t ? -1 : +he.dataset.t; renderDet(); return; }
   const c = e.target.closest('[data-c]');
   if (c) {
     const type = c.dataset.c;
@@ -231,6 +242,7 @@ $('#sGap').addEventListener('change', e => QS.settings.set({ hostGapSec: +e.targ
 
 store.onChange(ch => {
   const histChanged = S.sel && ch['h:' + S.sel];
+  if (S.sel && ch['shot:' + S.sel] && !ch.watches && !histChanged) { loadHist().then(renderDet); return; }
   if (ch.watches || histChanged) {
     if (histChanged) S.open = null;
     const ae = document.activeElement;

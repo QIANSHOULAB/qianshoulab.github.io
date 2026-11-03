@@ -1,4 +1,4 @@
-// 测快：巡山僧和 changedetection.io 都设成每 5 分钟查一次（巡山僧最短就是 5 分钟），真等闹钟。
+// 测快：巡山僧和 changedetection.io 都设成每 5 分钟查一次，真等闹钟。
 // 9 条：/fast/0 单独一个网站（127.0.0.1），/fast/1..8 同一个网站（localhost）。
 // 开盯 7 分钟后改一次价、再过 10 分钟改第二次，记「改价 → 弹提醒」用时。约 30 分钟。
 // 先起 site.js 8790，再 node speed.js   结果 → results/speed.json

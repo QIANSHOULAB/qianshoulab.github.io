@@ -81,6 +81,11 @@ body{font-size:14px}
 .dif .ctx{color:var(--fg2)}
 .dif-l{display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--fg2)}
 .dif-l i{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.shots.one{grid-template-columns:minmax(0,1fr)}
+.shots figure{margin:0;min-width:0}
+.shots img{display:block;max-width:100%;height:auto;max-height:420px;object-fit:contain;object-position:left top;border-radius:10px;background:var(--bg);box-shadow:0 0 0 1px var(--sep)}
+.shots figcaption{margin-top:6px;font-size:11px;color:var(--fg2);font-variant-numeric:tabular-nums}
 .none{padding:28px 16px;text-align:center;color:var(--fg2);font-size:13px}
 
 .hero{max-width:520px;margin:30px auto 0;text-align:center;padding:40px 32px}
@@ -101,4 +106,5 @@ body{font-size:14px}
   .lst{max-height:none}
   .top{flex-wrap:wrap}
   .big{font-size:36px}
+  .shots{grid-template-columns:1fr}
 }
