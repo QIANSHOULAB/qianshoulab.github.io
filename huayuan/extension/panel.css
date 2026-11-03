@@ -1,4 +1,4 @@
-/* 化缘僧侧栏：顶上名字，中间一张控制卡 + 整块表（表是主角），底下下载。宽 320 起，拉宽了控制卡横过来。 */
+/* 化缘僧侧栏：顶上名字，中间一张控制卡 + 整块表（表是主角），底下只有下载那一排。宽 320 起，拉宽了控制卡横过来。 */
 .app{display:flex;flex-direction:column;height:100vh;min-width:300px}
 
 /* 顶栏、底栏不压在内容上面（表自己滚），后面没东西可透，就不用毛玻璃：省下每屏重画的模糊，翻页滚动更快 */
@@ -16,6 +16,8 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pop{background:rgba(44,44,46,.86)}}
 .pop .row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding-right:12px;font-size:15px}
 .pop .row+.row{border-top:.5px solid var(--line)}
+/* 页脚收在设置浮层最底下，侧栏底部只留下载那一排 */
+.pop .pop-foot{flex-direction:column;align-items:flex-start;gap:4px;padding:12px 12px 12px 0;border-top:.5px solid var(--line)}
 .field{width:72px;height:32px;border:0;border-radius:var(--r-field);background:var(--fill);padding:0 8px;text-align:right;outline:none}
 .field:focus{box-shadow:0 0 0 2px var(--accent)}
 .field::-webkit-inner-spin-button{opacity:0}
@@ -56,11 +58,15 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 12px 0;
 .alert::before{content:"!";display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--warn);color:#fff;font-size:13px;font-weight:700;flex:none}
 .alert>span{flex:1;min-width:0}
 
-/* 表 */
-.grid-wrap{flex:1;min-height:120px;overflow:hidden;display:flex}
+/* 表：横向放不下就横着滚，右缘一道渐隐告诉人「右边还有」，滚到头渐隐自己去掉（panel.js 的 more-r） */
+.grid-wrap{flex:1;min-height:120px;overflow:hidden;display:flex;position:relative}
+.grid-wrap::after{content:"";position:absolute;top:0;right:var(--sb-r,0px);bottom:var(--sb-b,0px);width:48px;background:linear-gradient(90deg,transparent,var(--card) 85%);pointer-events:none;opacity:0;transition:opacity var(--t) var(--ease);z-index:4}
+.grid-wrap.more-r::after{opacity:1}
 .grid-scroll{flex:1;overflow:auto}
 .grid{border-collapse:separate;border-spacing:0;font-size:13px;min-width:100%}
-.grid th,.grid td{padding:0 12px;height:36px;text-align:left;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--line)}
+.grid th,.grid td{padding:0 12px;height:36px;text-align:left;white-space:nowrap;border-bottom:.5px solid var(--line)}
+/* 一格最宽 176，超出用省略号，不切半个字 */
+.grid td .c{display:block;max-width:176px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .grid td{color:var(--fg)}
 .grid td.u{color:var(--fg-2)}
 .grid td.n{font-variant-numeric:tabular-nums}
@@ -69,7 +75,7 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 12px 0;
 .grid th.idx,.grid td.idx{width:40px;min-width:40px;color:var(--fg-3);font-weight:400;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 4px;cursor:default;position:sticky;left:0;z-index:1;background:var(--card)}
 .grid th.idx{z-index:3}
 .grid th .hc{display:flex;align-items:center;gap:4px}
-.grid th .nm{cursor:text;padding:4px 8px;margin-left:-8px;border-radius:var(--r-chip);transition:background-color var(--t) var(--ease)}
+.grid th .nm{cursor:text;padding:4px 8px;margin-left:-8px;border-radius:var(--r-chip);transition:background-color var(--t) var(--ease);min-width:0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .grid th .nm:hover{background:var(--fill)}
 .grid th.doubt .nm{background:var(--doubt)}
 .grid td.doubt{background:var(--doubt)}
@@ -100,13 +106,12 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 12px 0;
 .empty-s:empty{display:none}
 .empty a{font-size:13px;margin-top:4px}
 
-.bottom{flex:none;display:flex;flex-direction:column;gap:12px;padding:12px;background:var(--card);border-top:.5px solid var(--line)}
+.bottom{flex:none;padding:12px;background:var(--card);border-top:.5px solid var(--line)}
 .exp{display:flex;gap:8px}
 .exp .btn{flex:none}
 .exp .btn.main{flex:1;order:3}
-.bottom .qs-foot{justify-content:center}
 
-/* 提示条浮在下载按钮上方，不盖页脚 */
+/* 提示条浮在下载按钮上方 */
 .toast{bottom:calc(var(--foot-h, 100px) + 12px);text-align:center;max-width:calc(100% - 32px)}
 
 /* 侧栏拉宽了：控制卡左右排 */

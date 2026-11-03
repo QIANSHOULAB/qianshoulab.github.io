@@ -1,5 +1,5 @@
 // 化缘僧 0.3.0 交货截图（照 _ops/设计规范.md 最后一节）：
-//   插件侧栏 400 宽 × 浅 / 深 × 空状态、干活中、结果、出错 = 8 张；介绍页 390 / 1280 × 浅 / 深 = 4 张。
+//   插件侧栏 400 宽 × 浅 / 深 × 空状态、干活中、结果、出错 = 8 张（另加设置浮层 2 张，页脚收在里面）；介绍页 390 / 1280 × 浅 / 深 = 4 张。
 // 用法：LANG=C.UTF-8 node huayuan/bench/shots-0.3.js [输出目录，默认 huayuan/bench/shots-0.3]
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os');
@@ -81,6 +81,9 @@ async function main() {
     await panel.waitForFunction(() => /化完了/.test(document.getElementById('status').textContent), null, { timeout: 60000 });
     await dl; await panel.waitForTimeout(2600); // 等提示条退了再截
     await shot(panel, `panel-${scheme}-3-result`);
+    // 页脚收在设置浮层里：开浮层截一张
+    await panel.click('#gear'); await panel.waitForTimeout(300);
+    await shot(panel, `panel-${scheme}-5-settings`);
     await panel.close(); await page.close();
     await sw.evaluate(() => chrome.storage.local.set({ delay: 0.3 }));
 

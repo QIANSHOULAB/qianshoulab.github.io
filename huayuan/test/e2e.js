@@ -111,6 +111,14 @@ async function main() {
   ok(await panel.locator('#seg button[data-mode=next][aria-pressed=true]').count() === 1, '自动选了「翻页」');
   ok((await panel.locator('#hint').textContent()).includes('下一页'), '自动找到下一页按钮');
   ok(await page.locator('[data-qs-list]').count() === 1 && await page.locator('[data-qs-next]').count() === 1, '网页上高亮了名单和下一页');
+  // 表横向放不下：右缘渐隐；滚到头渐隐去掉；一格不超过 176 宽（省略号），不切半个字
+  ok(await panel.evaluate(() => document.getElementById('gridWrap').classList.contains('more-r')), '表横向放不下，右缘有渐隐');
+  ok(await panel.evaluate(() => Math.max(...[...document.querySelectorAll('#grid td .c')].map((e) => e.getBoundingClientRect().width)) <= 176.5), '格子最宽 176，超出用省略号');
+  await panel.evaluate(() => { const sc = document.getElementById('gridScroll'); sc.scrollLeft = sc.scrollWidth; });
+  await panel.waitForFunction(() => !document.getElementById('gridWrap').classList.contains('more-r'));
+  ok(true, '滚到最右，渐隐自己去掉');
+  await panel.evaluate(() => { document.getElementById('gridScroll').scrollLeft = 0; });
+  ok(await panel.locator('.bottom .qs-foot').count() === 0 && await panel.locator('#pop .qs-foot').count() === 1, '侧栏底部只留下载那一排，页脚收进设置浮层');
   await page.screenshot({ path: path.join(SHOTS, 'page-table-highlight.png') });
   await panel.screenshot({ path: path.join(SHOTS, 'panel-table-start.png') });
   await panel.emulateMedia({ colorScheme: 'dark' }); await page.emulateMedia({ colorScheme: 'dark' });

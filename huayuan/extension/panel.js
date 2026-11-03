@@ -463,6 +463,7 @@
       th.draggable = !demo;
       th.innerHTML = '<div class="hc"><span class="nm"></span><button type="button" class="x"></button></div>';
       th.querySelector('.nm').textContent = c.name;
+      if (c.name.length > 8) th.title = c.name; // 名字太长被省略时，悬停看全名
       if (weak.has(c.key)) { th.classList.add('doubt'); th.title = T('doubtCol'); }
       const x = th.querySelector('.x'); x.innerHTML = X; x.setAttribute('aria-label', T('delCol')); x.title = T('delCol');
       if (demo) x.remove();
@@ -480,7 +481,11 @@
         const td = document.createElement('td');
         const v = sheet.value(r, c);
         if (c.type === 'src' && isUrl(v)) { const im = document.createElement('img'); im.src = v; im.loading = 'lazy'; im.alt = ''; im.referrerPolicy = 'no-referrer'; td.append(im); td.title = v; }
-        else { td.textContent = v; if (v.length > 30) td.title = v; if (isUrl(v)) td.className = 'u'; else if (isNum(v)) td.className = 'n'; }
+        else {
+          const sp = document.createElement('span'); sp.className = 'c'; sp.textContent = v; td.append(sp); // 一格最宽 176，超出省略号
+          if (v.length > 12) td.title = v;
+          if (isUrl(v)) td.className = 'u'; else if (isNum(v)) td.className = 'n';
+        }
         tr.append(td);
       }
       frag.append(tr);
@@ -489,7 +494,18 @@
     grid.replaceChildren(thead, tbody);
     S.lastCount = Math.min(sheet.rows.length, PREVIEW);
     sc.scrollTop = keepTop; sc.scrollLeft = keepLeft;
+    fade();
   }
+
+  // 右缘渐隐：横向还有没露出来的列才显示，滚到头就去掉；让开滚动条
+  function fade() {
+    const sc = $('gridScroll'), w = $('gridWrap');
+    w.style.setProperty('--sb-r', (sc.offsetWidth - sc.clientWidth) + 'px');
+    w.style.setProperty('--sb-b', (sc.offsetHeight - sc.clientHeight) + 'px');
+    w.classList.toggle('more-r', sc.scrollLeft + sc.clientWidth < sc.scrollWidth - 2);
+  }
+  $('gridScroll').addEventListener('scroll', fade, { passive: true });
+  try { new ResizeObserver(fade).observe($('gridScroll')); } catch {}
 
   // ---------- 表头：改名、删列、拖动 ----------
   const grid = $('grid');
