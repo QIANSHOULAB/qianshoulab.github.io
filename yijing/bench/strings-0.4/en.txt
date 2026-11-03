@@ -1,0 +1,206 @@
+htmlLang	en
+title	Yijing · Data Mover — data migration, minus the suffering
+desc	Turn one system’s export into a file the next system will actually import. CSV, Excel or JSON, right in your browser. Your files never leave your computer.
+name	Yijing
+nameD	Data Mover
+full	Yijing · Data Mover
+tag	Data migration, minus the suffering.
+heroSub	Moving data between systems is torture. Hand it over — even the cursed formats come out lined up.
+home	Qianshou Lab
+recipes	Recipes
+src	From
+tgt	To
+demo	Sample
+recChip	Saved recipe
+rc	1,234 rows · 11 columns
+cols	13 columns
+rcOut	1,300 rows in · 1,200 out
+pickSrc	Change
+pickTgt	Change
+dropT	Drop your export here
+dropS	CSV, Excel or JSON. Nothing leaves your computer.
+pickBtn	Choose file
+demoBtn	Try a sample
+dropMore	Got their import template too? Drop both files at once — we’ll work out which is which.
+tgtAsk	Where’s it going?
+tgtAskS	Pick once. We’ll remember.
+tgtH	Going to
+tgtKeep	Same as last time.
+mapH	Columns
+mapSub	13 columns · 9 matched · 2 unsure · 1 missing (required) · 1 blank
+colT	Target column
+colS	Comes from
+colX	First row
+unused	Unused source columns: 备注, Tags
+allUsed	Every source column got used.
+listSep	, 
+blank	Blank
+constOf	Always “VIP”
+noteAmb	Day or month? Read as M/D/Y
+noteGuess	Similar name, not 100% sure
+noteByVal	Name doesn’t match; the values do
+noteReq	Required by the target, but not found
+noteMiss	Last time’s column isn’t here
+noteHandle	Handle copied from SKU. Variants of one product need to share one
+noteRule	“损益” split by “Account Code”. Worth a look
+noteAmbig	“Other” could go several ways, so it’s left alone
+badN	12 won’t convert
+doubtH	Quick look
+doubtSub	3 columns worth a second look. Right? Hit OK. Wrong? Open the row.
+okBtn	OK
+okUndo	Undo
+okDone	“Email” is OK · 2 to go
+prevH	Preview
+prevSub	First 20 rows
+prevBad	12 cells won’t convert, highlighted
+prevOk	Every cell converts cleanly
+exportBtn	Download 1,234 rows
+exportOk	All good, download
+exportDone	Downloaded
+dockAuto	Nothing needed checking, so it’s already downloaded
+dockDone	contacts → CRM contacts.csv · downloaded 14:05
+dockWait	2 left to check
+done	Done
+cancel	Cancel
+fromWhere	Source column
+howTo	Transform
+preview	Preview
+sep	Separator
+value	Value
+optConst	(Fixed value)
+optBlank	(Leave blank)
+addCol	+ Add a column
+rmCol	Remove column
+ops.none	As is
+ops.date	Date
+ops.name	Split name
+ops.join	Combine
+ops.phone	Phone code
+ops.num	Number
+ops.map	Map values
+ops.list	Split & rejoin
+ops.case	Case
+opList	Split & rejoin “, ”
+types.text	
+types.list	list
+types.date	date
+types.number	number
+types.phone	phone
+types.enum	options
+types.email	email
+types.first	first name
+types.last	last name
+types.full	full name
+dFrom	Read as
+dTo	Write as
+dAuto	Auto (looks like M/D/Y)
+dOrders.YMD	Y/M/D
+dOrders.DMY	D/M/Y
+dOrders.MDY	M/D/Y
+dOrders.serial	Excel serial
+dOrders.unix	Unix time
+nameLast	Last name
+nameFirst	First name
+smartName	Smart name order
+smartNameS	Chinese names go surname first, no space. Western names go first name first.
+ccByOp	Code from “Country”
+cc	Default code
+ccBy	Country column
+ccByNone	None
+ccAuto	Guess from number
+ccAutoS	11 digits starting with 1 → +86. 8 digits → +65.
+e164	+14155550132
+spaced	+1 4155550132
+digits	14155550132
+dec	Decimals
+decKeep	As is
+thou	Thousands separator
+unit	Convert to
+unitKeep	Don’t convert
+listJoin	Join with
+listS	Splits on | , ; 、 tabs and line breaks, drops duplicates, joins it back.
+listSpace	Split on spaces
+listPhr	Kept whole: back to school, free shipping, gift ideas + 1 more
+listSpOff	Spaces never split. A cell with spaces stays one value.
+listSpAuto	Chinese splits on spaces. English: checked the whole column, and spaces don’t look like separators here.
+listSpOn	Splits on spaces, Chinese and English alike.
+fill	Fill down blanks
+fillS	Only within the same “Handle”
+mapKeep	Blank stays as is
+mapNone	This column is empty. Nothing to map.
+mModes.v	Value
+mModes.nil	Blank
+mModes.rule	Rule
+mNil	(blank)
+mRuleBy	If
+mRulePre	starts with
+mRuleEls	else
+caseLower	lowercase
+caseUpper	UPPERCASE
+caseTitle	Title Case
+caseTrim	Trim only
+constPh	Type a value
+sepPh	space
+tplH	Convert to
+tplFile	Use their import template
+tplFileS	CSV, Excel or JSON. Only the headers matter.
+tpl.crm	CRM contacts (English headers)
+tpl.contacts_cn	Customer list (Chinese headers)
+tpl.shopify	Shopify products
+tpl.shop_cn	Store products (Chinese headers)
+tpl.coa_cn	Chart of accounts (Chinese)
+tpl.coa_en	Chart of accounts (English)
+tpl.woo	WooCommerce products
+tpl.hubspot	HubSpot contacts
+tplOrder	crm | hubspot | shopify | woo | coa_en | contacts_cn | shop_cn | coa_cn
+recH	Recipes
+recEmpty	Nothing yet. Every download saves its column mapping here, so the same file next time converts itself.
+recSub	13 columns · 2026-11-03
+recDel	Delete
+recExport	Export recipes
+recImport	Import recipes
+recFile	yijing-recipes-2026-11-03.json
+savedMsg	Downloaded · 1,234 rows · 0.4s. Mapping saved for next time
+recForget	Don’t save
+recForgot	Not saved.
+recAuto	Used last time’s mapping: contacts → CRM
+recUndo	Rematch
+recImported	Imported 3 recipes
+recBadFile	That’s not a recipe file.
+dropSrc	Let go to convert
+dropSrcS	Two files? We’ll work out which one is the template.
+dropTgt	Drop here to use as the template
+reading	Reading “contacts.csv”…
+readErr	Can’t read “scan.pdf”: not a table. 
+emptyFile	no table in there
+notTable	not a table
+readHow	Save it as CSV, Excel or JSON and try again.
+exporting	Converting…
+exportFail	Download failed: 
+exported	Downloaded · 1,234 rows · 0.4s
+secs	0.4s
+sheetNote	3 sheets; used the first one with data
+prof	Shopify export
+colN	Column 3
+tidyH	Tidy-up
+tidyFill	Fill blanks down within each “Handle”
+tidyGroup	Regroup rows by “Handle” and fill blanks
+tidyFillS	Title, Vendor, Type, Tags + 1 more
+tidyDrop	Skip 12 rows with no “SKU”
+tidyDropS	The target requires “SKU”. These rows would just bounce.
+footApp	Yijing · Data Mover 0.4.0 · Qianshou Lab
+footMail	Want a feature, or is something driving you up the wall? Email the abbot: 
+footHome	Qianshou Lab
+langTo	中文
+langToCode	zh-CN
+langToLabel	切换到中文
+demoData.name	old-crm-contacts.csv
+demoData.H	Customer No. | Full Name | Sex | Mobile | E-mail | Organisation | Position | City | Date Added | Total Spent ($) | Remarks
+demoData.people	Alex M | Priya F | Marcus M | Chloe F | Ryan M | Sarah F | Daniel M | Mei Ling F | Jordan M | Emily F | Wei Jie M | Hannah F
+demoData.last	Tan | Nair | Lim | Ng | Goh | Lee | Wong | Chua | Smith | Clarke | Koh | Brown
+demoData.co	Inner Peace Logistics | Monk Mode Labs | Middle Path Consulting | Zen Garden Supply | Lotus Pond Media | Still Water Foods | Enlightened Metrics | Quiet Mind Design
+demoData.jt	Head of Sales | Procurement Manager | Office Manager | Founder | Finance | Operations | Marketing Lead | CTO
+demoData.city	Singapore | Kuala Lumpur | London | San Francisco | Sydney | Hong Kong | Singapore | Toronto
+demoData.note	 |  |  |  | Long-time client. Do not chase invoices. | Only replies on Wednesdays | Tea, never coffee |  | Wants the invoice before year end | 
+demoData.g	Male | Female | Unknown
+demoData.cur	$

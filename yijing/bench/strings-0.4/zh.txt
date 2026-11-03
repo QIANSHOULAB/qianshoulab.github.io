@@ -1,0 +1,209 @@
+htmlLang	zh-CN
+title	译经僧 · 凡表皆可转，万物皆可通
+desc	跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。网页打开就用，文件不出浏览器。
+name	译经僧
+nameD	
+full	译经僧
+tag	凡表皆可转，万物皆可通
+heroSub	跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。
+home	千手院
+recipes	配方
+src	来源
+tgt	译成
+demo	示例
+recChip	上回的对法
+rc	1,234 行 · 11 列
+cols	13 列
+rcOut	1,300 行进 · 1,200 行出
+pickSrc	换
+pickTgt	换
+dropT	把要搬的表丢进来
+dropS	CSV、Excel、JSON 都吃，文件不出本机。
+pickBtn	选文件
+demoBtn	用示例试试
+dropMore	两个文件一起丢也行：一份数据、一份目标模板，贫僧自己分。
+tgtAsk	译成哪家的格式？
+tgtAskS	选一次就记住，下回不问。
+tgtH	译成
+tgtKeep	还是上回那个，要换点「换」。
+mapH	对列
+mapSub	13 列 · 9 对上 · 2 存疑 · 1 必填没着落 · 1 留空
+colT	目标列
+colS	从哪来
+colX	第一行译出来
+unused	没用上的来源列：备注、Tags
+allUsed	来源列一个没落下。
+listSep	、
+blank	留空
+constOf	固定值「VIP」
+noteAmb	日/月分不清，按 月/日/年 译的
+noteGuess	列名像，没十成把握
+noteByVal	列名不像，看内容猜的
+noteReq	目标系统要这列，没找着
+noteMiss	上回的列这次没见到
+noteHandle	拿货号顶的网址别名，一款多规格的得改成同一个
+noteRule	「损益」按「Account Code」分了，瞄一眼
+noteAmbig	「Other」一对多，贫僧不敢瞎换
+badN	12 处译不动
+doubtH	瞄一眼
+doubtSub	3 处没十成把握，对就点「对」，不对点进去改
+okBtn	对
+okUndo	撤销
+okDone	「Email」算对，还剩 2 处
+prevH	预览
+prevSub	前 20 行
+prevBad	全表 12 处译不动，标黄了
+prevOk	全表译完没毛病
+exportBtn	下载 1,234 行
+exportOk	都对，下载
+exportDone	下好了
+dockAuto	没啥要看的，已经直接下好了
+dockDone	contacts → CRM contacts.csv · 14:05 下好的
+dockWait	还有 2 处要你瞄一眼
+done	好了
+cancel	取消
+fromWhere	从哪列来
+howTo	怎么译
+preview	前几行
+sep	分隔符
+value	值
+optConst	（固定值）
+optBlank	（留空）
+addCol	＋ 再合并一列
+rmCol	去掉这列
+ops.none	原样
+ops.date	改日期
+ops.name	拆姓名
+ops.join	合并
+ops.phone	加国家码
+ops.num	理数字
+ops.map	换值
+ops.list	拆了再拼
+ops.case	大小写
+opList	拆了再拼「, 」
+types.text	
+types.list	多值
+types.date	日期
+types.number	数字
+types.phone	电话
+types.enum	选项
+types.email	邮箱
+types.first	名
+types.last	姓
+types.full	姓名
+dFrom	原来长这样
+dTo	译成
+dAuto	自动（看着像月/日/年）
+dOrders.YMD	年/月/日
+dOrders.DMY	日/月/年
+dOrders.MDY	月/日/年
+dOrders.serial	Excel 序号
+dOrders.unix	时间戳
+nameLast	取姓
+nameFirst	取名
+smartName	按姓名规矩排
+smartNameS	中文姓在前不加空格，英文名在前姓在后
+ccByOp	国家码看「Country」
+cc	默认国家码
+ccBy	看哪列的国家
+ccByNone	不看
+ccAuto	号码自己会说话
+ccAutoS	11 位 1 开头按 +86，8 位按 +65
+e164	+8613800138000
+spaced	+86 13800138000
+digits	8613800138000
+dec	小数
+decKeep	原样
+thou	千分位
+unit	换算成
+unitKeep	不换算
+listJoin	拼成
+listS	按 | ， ; 、 换行拆开，去重后拼回去。
+listSpace	按空格拆
+listPhr	粘在一起不拆：back to school、free shipping、gift ideas 等 4 个
+listSpOff	中英文都不按空格拆，一格里有空格也算一个。
+listSpAuto	中文按空格拆；英文看过整列，空格不像分隔符，没拆。
+listSpOn	中文、英文都按空格拆。
+fill	空格照抄上一行
+fillS	只在同一个「Handle」里抄
+mapKeep	没填的保持原样
+mapNone	这列是空的，没东西可换
+mModes.v	填值
+mModes.nil	留空
+mModes.rule	按条件
+mNil	（留空）
+mRuleBy	看
+mRulePre	开头是
+mRuleEls	不然
+caseLower	全小写
+caseUpper	全大写
+caseTitle	首字母大写
+caseTrim	只去空格
+constPh	填个值
+sepPh	空格
+tplH	译成哪家
+tplFile	用目标系统的导入模板
+tplFileS	CSV、Excel、JSON 都行，贫僧只看表头
+tpl.crm	CRM 联系人（通用英文表头）
+tpl.contacts_cn	客户名单（中文通用）
+tpl.shopify	Shopify 商品（常用列）
+tpl.shop_cn	网店商品（中文通用）
+tpl.coa_cn	会计科目（中文通用）
+tpl.coa_en	Chart of Accounts（通用英文）
+tpl.woo	WooCommerce 商品（常用列）
+tpl.hubspot	HubSpot 联系人
+tplOrder	crm | contacts_cn | shopify | shop_cn | coa_cn | coa_en | woo | hubspot
+recH	配方
+recEmpty	还没有。下载一次就自动记一套，下回同样的表丢进来直接出。
+recSub	13 列 · 2026-11-03
+recDel	删除
+recExport	导出配方
+recImport	导入配方
+recFile	译经僧配方-2026-11-03.json
+savedMsg	下好了 · 1,234 行 · 0.4 秒。这套对法记住了，下回同样的表直接出
+recForget	不记
+recForgot	行，不记了
+recAuto	照上回的对法译的：contacts → CRM
+recUndo	重新对
+recImported	导入了 3 个配方
+recBadFile	这不是配方文件
+dropSrc	松手就译
+dropSrcS	两个文件一起丢，贫僧自己分哪个是模板
+dropTgt	丢这儿当目标模板
+reading	在读「contacts.csv」…
+readErr	「scan.pdf」读不动：不像表格。
+emptyFile	里面没找到表格
+notTable	不像表格
+readHow	换成 CSV、Excel 或 JSON 再丢一次。
+exporting	贫僧在译…
+exportFail	没下成：
+exported	下好了 · 1,234 行 · 0.4 秒
+secs	0.4 秒
+sheetNote	有 3 个工作表，用的第一个有数据的
+prof	Shopify 导出
+colN	列3
+tidyH	顺手整理
+tidyFill	同一个「Handle」的空格往下补
+tidyGroup	同一个「Handle」排回一起，空格补齐
+tidyFillS	Title、Vendor、Type、Tags 等 5 列
+tidyDrop	跳过「SKU」为空的 12 行
+tidyDropS	目标的「SKU」必填，这些行导过去也是废行
+footApp	千手院 · 译经僧 0.4.0
+footMail	要新花样、嫌哪里反人类，找方丈：
+footHome	千手院总舵
+langTo	English
+langToCode	en
+langToLabel	Switch to English
+demoData.name	旧 CRM 客户表.csv
+demoData.H	客户编号 | 姓名 | 性别 | 手机 | 邮箱 | 公司 | 职位 | 所在城市 | 创建时间 | 累计消费(元) | 备注
+demoData.sur	王 | 李 | 张 | 刘 | 陈 | 杨 | 黄 | 赵 | 周 | 吴 | 司马 | 林
+demoData.giv	子涵 | 浩然 | 雨桐 | 思远 | 晓峰 | 若溪 | 嘉怡 | 俊杰 | 梦琪 | 文博 | 欣然 | 志强
+demoData.py	zihan | haoran | yutong | siyuan | xiaofeng | ruoxi | jiayi | junjie | mengqi | wenbo | xinran | zhiqiang
+demoData.en	Alex Lim | Mia Tan | Ryan Goh | Chloe Ng
+demoData.first	欧阳晓峰
+demoData.co	一苇渡江科技 | 不二法门咨询 | 菩提树下贸易 | 明镜台设计 | 拈花微笑文化 | 南山南物流 | 山高水长传媒 | 松风明月食品
+demoData.jt	销售总监 | 采购经理 | 行政主管 | 创始人 | 财务 | 运营专员 | 市场经理 | 技术负责人
+demoData.city	上海 | 北京 | 深圳 | 杭州 | 成都 | 新加坡 | 广州 | 苏州
+demoData.note	 |  |  |  | 老客户，别催款 | 只在周三回消息 | 爱喝茶 |  | 年底要发票 | 
+demoData.g	男 | 女 | 未知
+demoData.cur	¥

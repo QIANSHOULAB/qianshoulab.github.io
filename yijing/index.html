@@ -50,6 +50,8 @@
   --toast-bg:rgba(58,58,60,.96);
   color-scheme:dark;
 }
+/* 英文版：西文字体排前面（不然 Windows 上英文会用雅黑的西文字形） */
+:root:lang(en){--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI Variable Text","Segoe UI",system-ui,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei UI",sans-serif}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;min-height:100vh;background:var(--bg-group);color:var(--fg);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums}
@@ -83,6 +85,8 @@ body[data-view="empty"] .nav,body[data-view="pick"] .nav{padding:0 max(16px,calc
 .hero img{width:64px;height:64px;border-radius:15px;margin-bottom:16px}
 .hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.02em}
 .hero p{margin:8px 0 0;font-size:21px;line-height:1.4;color:var(--fg-2);max-width:30em}
+.hero h1 .h1-d{color:var(--fg-2)} /* 英文名的大白话那半截：灰一档，手机上自己一行 */
+@media (max-width:759px){.hero h1 .h1-d{display:block}.hero h1 .h1-d .dot{display:none}}
 .hero .tag{margin-top:12px;font-size:clamp(22px,3vw,28px);line-height:1.2;font-weight:600;color:var(--fg)}
 .hero .tag+p{margin-top:12px}
 .hero h1,.hero p{word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance} /* 中文只在标点、空格处换行，词不拆开 */
@@ -139,7 +143,7 @@ body[data-view="empty"] .nav,body[data-view="pick"] .nav{padding:0 max(16px,calc
 .end.tgt .end-ico{background:var(--accent-tint);color:var(--accent-ink)}
 .end-main{flex:1;min-width:0}
 .end-k{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-2)}
-.end-t{font-size:17px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.end-t{font-size:17px;font-weight:600;line-height:1.3;overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2} /* 名字长就折一行，不切字 */
 .end-s{font-size:13px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .end-s.err{color:var(--bad-ink);white-space:normal}
 .end .busy{font-size:13px}
@@ -177,6 +181,10 @@ button.li-row:hover,button.li-row:active{background:var(--fill)}
   .tpl-grid .li-row:nth-child(2n)::after{content:"";position:absolute;top:12px;bottom:12px;left:0;width:.5px;background:var(--line)}
 }
 .tpl-grid .li-row.wide{grid-column:1/-1;color:var(--accent-ink)}
+/* 弹层只有 600 宽：模板单子排一列，名字不切 */
+.sheet .tpl-grid{grid-template-columns:minmax(0,1fr)}
+.sheet .tpl-grid .li-row:nth-child(2)::before{display:block}
+.sheet .tpl-grid .li-row:nth-child(2n)::after{content:none}
 .tpl-grid .li-row.wide b{color:var(--accent-ink)}
 
 /* 对列行 */
@@ -240,6 +248,9 @@ tr:last-child td{border-bottom:0}
 /* 页脚 */
 .foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.8;color:var(--fg-2);text-align:center}
 .mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
+.foot .row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0 4px}
+.foot .lang{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 8px;font-size:12px;color:var(--accent-ink)}
+.foot .lang svg{width:14px;height:14px}
 
 /* 弹层 */
 #sheets{position:fixed;inset:0;z-index:50}
@@ -299,8 +310,8 @@ tr:last-child td{border-bottom:0}
 .pv .ar{color:var(--fg-3);flex:none}
 .list .f-row{min-height:56px}
 .list .li{flex:1;min-width:0;padding:8px 0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:44px;justify-content:center}
-.list .li b{font-weight:400;font-size:17px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.list .li small{font-size:13px;color:var(--fg-2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .li b{font-weight:400;font-size:17px;max-width:100%;overflow-wrap:anywhere} /* 配方名长就折行，不切字 */
+.list .li small{font-size:13px;color:var(--fg-2);max-width:100%;overflow-wrap:anywhere}
 .list .ck{color:var(--accent-ink);flex:none}
 .list .ck svg{width:20px;height:20px}
 .empty-note{font-size:15px;color:var(--fg-2);text-align:center;padding:24px 16px}
@@ -335,72 +346,20 @@ tr:last-child td{border-bottom:0}
 <input type="file" id="fSrc" hidden multiple accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fTgt" hidden accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fRec" hidden accept=".json,application/json">
+<script src="strings.js?v=0.4.0"></script>
 <script>
 'use strict';
-/* ================= 界面文字（全在这里，加英文就再抄一份） ================= */
-const STR = {
-  app: '译经僧', tag: '凡表皆可转，万物皆可通',
-  heroSub: '跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。',
-  home: '千手院', recipes: '配方',
-  src: '来源', tgt: '译成', demo: '示例', recChip: '上回的对法',
-  demoName: '旧 CRM 客户表.csv',
-  rc: (r, c) => `${fmtInt(r)} 行 · ${c} 列`,
-  tgtSub: c => `${c} 列`,
-  pickSrc: '换', pickTgt: '换',
-  dropT: '把要搬的表丢进来', dropS: 'CSV、Excel、JSON 都吃，文件不出本机。', pickBtn: '选文件', demoBtn: '用示例试试',
-  dropMore: '两个文件一起丢也行：一份数据、一份目标模板，贫僧自己分。',
-  tgtAsk: '译成哪家的格式？', tgtAskS: '选一次就记住，下回不问。',
-  tgtH: '译成', tgtKeep: '上回选的，换就点一下。',
-  mapH: '对列',
-  mapSub: (n, ok, q, b, r) => [`${n} 列`, ok && `<b>${ok} 对上</b>`, q && `<b class="a">${q} 存疑</b>`, r && `<b class="r">${r} 必填没着落</b>`, b && `${b} 留空`].filter(Boolean).join(' · '),
-  colT: '目标列', colS: '从哪来', colX: '第一行译出来',
-  unused: n => `没用上的来源列：${n}`,
-  allUsed: '来源列一个没落下。',
-  blank: '留空', constOf: v => `固定值「${v}」`,
-  noteAmb: '日/月分不清，按 月/日/年 译的', noteGuess: '名字像，没十成把握', noteByVal: '列名不像，看内容猜的',
-  noteReq: '目标系统要这列，没找着', noteMiss: '上回的列这次没见到', noteHandle: '借货号当网址别名，同款多规格要改', noteUser: '',
-  badN: n => `${fmtInt(n)} 处译不动`,
-  doubtH: '瞄一眼', doubtSub: n => `${n} 处没十成把握，对就点「对」，不对点进去改`,
-  okBtn: '对', okUndo: '撤销', okDone: (n, left) => `「${n}」算对${left ? `，还剩 ${left} 处` : ''}`,
-  prevH: '预览', prevSub: n => `前 ${n} 行`, prevBad: n => `全表 ${fmtInt(n)} 处译不动，标黄了`, prevOk: '全表译完没毛病',
-  exportBtn: n => `下载 ${fmtInt(n)} 行`, exportOk: '都对，下载', exportDone: '下好了',
-  dockAuto: '没啥要看的，已经直接下好了', dockDone: (f, t) => `<b>${esc(f)}</b> · ${t} 下好的`, dockWait: n => `还有 ${n} 处要你瞄一眼`,
-  done: '好了', cancel: '取消', close: '关闭',
-  fromWhere: '从哪列来', howTo: '怎么译', preview: '前几行', sep: '分隔符', value: '值',
-  optConst: '（固定值）', optBlank: '（留空）', addCol: '再合并一列',
-  ops: { none: '原样', date: '改日期', name: '拆姓名', join: '合并', phone: '加国家码', num: '理数字', map: '换值', list: '拆了再拼', case: '大小写' },
-  types: { text: '', list: '多值', date: '日期', number: '数字', phone: '电话', enum: '选项', email: '邮箱', first: '名', last: '姓', full: '姓名' },
-  dFrom: '原来长这样', dTo: '译成', dAuto: o => `自动（看着像${o}）`, dOrders: { YMD: '年/月/日', DMY: '日/月/年', MDY: '月/日/年', serial: 'Excel 序号', unix: '时间戳' },
-  nameLast: '取姓', nameFirst: '取名',
-  smartName: '按姓名规矩排', smartNameS: '中文姓在前不加空格，英文名在前姓在后',
-  ccByOp: h => `国家码看「${h}」`, cc: '默认国家码', ccBy: '看哪列的国家', ccByNone: '不看', ccAuto: '号码自己会说话', ccAutoS: '11 位 1 开头按 +86，8 位按 +65', style: '写法', e164: '+8613800138000', spaced: '+86 13800138000', digits: '8613800138000',
-  dec: '小数', decKeep: '原样', thou: '千分位', unit: '换算成', unitKeep: '不换算',
-  listJoin: '拼成', listS: '按 | ， ; 、 换行拆开，去重后拼回去。',
-  listSpace: '按空格拆', listPhr: ps => `粘在一起不拆：${ps.slice(0, 3).join('、')}${ps.length > 3 ? ` 等 ${ps.length} 个` : ''}`, listSpOff: '中英文都不按空格拆，一格里有空格也算一个。', listSpAuto: '中文按空格拆；英文看过整列，空格不像分隔符，没拆。', listSpOn: '中文、英文都按空格拆。',
-  fill: '空格照抄上一行', fillS: g => g ? `只在同一个「${g}」里抄` : '',
-  mapKeep: '没填的保持原样', mapNone: '这列是空的，没东西可换',
-  mModes: { v: '填值', nil: '留空', rule: '按条件' }, mNil: '（留空）', mRuleBy: '看', mRulePre: '开头是', mRuleEls: '不然',
-  noteRule: (a, c) => `「${a}」按「${c}」分了，瞄一眼`, noteAmbig: a => `「${a}」一对多，贫僧不敢瞎换`,
-  caseLower: '全小写', caseUpper: '全大写', caseTitle: '首字母大写', caseTrim: '只去空格',
-  constPh: '填个值', sepPh: '空格',
-  tplH: '译成哪家', tplFile: '用目标系统的导入模板', tplFileS: 'CSV、Excel、JSON 都行，贫僧只看表头',
-  recH: '配方', recEmpty: '还没有。下载过一次，那套对法就自动记在这，下回同样的表丢进来直接出。',
-  recSub: (n, d) => `${n} 列 · ${d}`, recDel: '删除',
-  recExport: '导出配方文件', recImport: '导入配方文件',
-  recKept: '这套对法记住了，下回同样的表直接出', recForget: '不记', recForgot: '没记',
-  recAuto: n => `照上回的对法译的：${n}`, recUndo: '重新对',
-  recImported: n => `导入 ${n} 个配方`, recBadFile: '这不是配方文件',
-  dropSrc: '松手就译', dropSrcS: '两个文件一起丢，贫僧自己分哪个是模板', dropTgt: '丢这儿当目标模板',
-  reading: n => `在读「${n}」…`, readFail: n => `「${n}」读不动`, readHow: '换成 CSV、Excel 或 JSON 再丢一次。', emptyFile: '里面没找到表格', notTable: '不像表格', exporting: '贫僧在译…', exportFail: '没下成：',
-  exported: (n, s) => `下好了 · ${fmtInt(n)} 行 · ${s} 秒`,
-  sheetNote: n => `有 ${n} 个工作表，用的第一个有数据的`,
-  prof: n => `${n} 导出`,
-  tidyH: '顺手整理',
-  tidyFill: g => `同一个「${g}」的空格往下补`, tidyGroup: g => `同一个「${g}」排回一起，空格补齐`, tidyFillS: (cs, n) => `${cs.slice(0, 4).join('、')}${n > 4 ? ` 等 ${n} 列` : ''}`,
-  tidyDrop: (h, n) => `跳过「${h}」为空的 ${fmtInt(n)} 行`, tidyDropS: t => `目标的「${t}」必填，这些行导过去也是废行`,
-  rcOut: (a, b) => `${fmtInt(a)} 行进 · ${fmtInt(b)} 行出`,
-  footApp: '千手院 · 译经僧 0.3.0', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
-};
+/* ================= 界面文字：全在 strings.js（中文、英文各一套），这里只挑用哪套 ================= */
+// 挑语言：网址带 ?lang=zh|en 先听网址；再看页脚切换记下的；都没有就看浏览器语言（zh 开头用中文，别的一律英文）
+const STRS = window.YJ_STR, LGK = 'yijing.lang.v1';
+function pickLang() {
+  let l = null;
+  try { l = new URLSearchParams(location.search).get('lang'); } catch (e) { }
+  if (!STRS[l]) try { l = localStorage.getItem(LGK); } catch (e) { }
+  if (!STRS[l]) l = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
+  return l;
+}
+let LANG = pickLang(), STR = STRS[LANG];
 
 /* ================= 小工具 ================= */
 const $ = (s, r = document) => r.querySelector(s);
@@ -420,6 +379,7 @@ const ICON = {
   tray: SV('<path d="M12 3.5v10M7.5 9.5 12 14l4.5-4.5"/><path d="M3.5 14.5v3a3 3 0 0 0 3 3h11a3 3 0 0 0 3-3v-3"/>'),
   book: SV('<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15Z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7.5h6"/>'),
   down: SV('<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>'),
+  globe: SV('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"/>'),
   x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>',
 };
 /* ================= 概念词典（列名同义词，中英都认） ================= */
@@ -508,71 +468,86 @@ const PROFILES = [
 ];
 
 /* ================= 内置目标模板 ================= */
-// c: 指定概念（不靠猜）；t: 类型；v: 选项；fmt: 日期格式；dec: 小数位；req: 必填
+// 名字在 strings.js 的 tpl 里（中英两套）。c: 指定概念（不靠猜）；t: 类型；v: 选项；fmt: 日期格式；dec: 小数位；req: 必填
 const TPL = {
-  crm: { name: 'CRM 联系人（通用英文表头）', fmt: 'csv', cols: [
+  crm: { fmt: 'csv', cols: [
     { name: 'Customer ID', c: 'id' }, { name: 'First Name', c: 'first', t: 'first' }, { name: 'Last Name', c: 'last', t: 'last', req: 1 },
     { name: 'Email', c: 'email', t: 'email', req: 1 }, { name: 'Phone', c: 'phone', t: 'phone' }, { name: 'Gender', c: 'gender', t: 'enum', v: ['M', 'F'] },
     { name: 'Company', c: 'company' }, { name: 'Job Title', c: 'jtitle' }, { name: 'City', c: 'city' }, { name: 'Country', c: 'country' },
     { name: 'Created Date', c: 'created', t: 'date', fmt: 'YYYY-MM-DD' }, { name: 'Lifetime Value', c: 'ltv', t: 'number', dec: 2 }, { name: 'Notes', c: 'notes' }] },
-  contacts_cn: { name: '客户名单（中文通用）', fmt: 'xlsx', cols: [
+  contacts_cn: { fmt: 'xlsx', cols: [
     { name: '姓名', c: 'full', t: 'full', req: 1 }, { name: '手机', c: 'phone', t: 'phone' }, { name: '邮箱', c: 'email', t: 'email' }, { name: '公司', c: 'company' },
     { name: '职位', c: 'jtitle' }, { name: '城市', c: 'city' }, { name: '创建日期', c: 'created', t: 'date', fmt: 'YYYY-MM-DD' }, { name: '备注', c: 'notes' }] },
-  shopify: { name: 'Shopify 商品（常用列）', fmt: 'csv', cols: [
+  shopify: { fmt: 'csv', cols: [
     { name: 'Handle', c: 'handle', req: 1 }, { name: 'Title', c: 'pname', req: 1 }, { name: 'Body (HTML)', c: 'desc' }, { name: 'Vendor', c: 'vendor' }, { name: 'Type', c: 'ptype' },
     { name: 'Tags', c: 'tags', t: 'list', sep: ', ' }, { name: 'Published', c: 'published', t: 'enum', v: ['TRUE', 'FALSE'] }, { name: 'Variant SKU', c: 'sku' },
     { name: 'Variant Grams', c: 'weight', t: 'number', dec: 0, unit: 'g' }, { name: 'Variant Inventory Qty', c: 'stock', t: 'number', dec: 0 }, { name: 'Variant Price', c: 'price', t: 'number', dec: 2 },
     { name: 'Variant Compare At Price', c: 'cprice', t: 'number', dec: 2 }, { name: 'Variant Barcode', c: 'barcode' }, { name: 'Image Src', c: 'image' },
     { name: 'Status', c: 'pstatus', t: 'enum', v: ['active', 'draft', 'archived'] }] },
-  shop_cn: { name: '网店商品（中文通用）', fmt: 'xlsx', cols: [
+  shop_cn: { fmt: 'xlsx', cols: [
     { name: '商品编码', c: 'sku', req: 1 }, { name: '商品名称', c: 'pname', req: 1 }, { name: '分类', c: 'ptype' }, { name: '品牌', c: 'vendor' },
     { name: '售价', c: 'price', t: 'number', dec: 2 }, { name: '划线价', c: 'cprice', t: 'number', dec: 2 }, { name: '库存', c: 'stock', t: 'number', dec: 0 },
     { name: '条码', c: 'barcode' }, { name: '上架状态', c: 'pstatus', t: 'enum', v: ['上架', '下架'] }, { name: '商品描述', c: 'desc' }, { name: '主图链接', c: 'image' }] },
-  coa_cn: { name: '会计科目（中文通用）', fmt: 'xlsx', cols: [
+  coa_cn: { fmt: 'xlsx', cols: [
     { name: '科目编码', c: 'acode', req: 1 }, { name: '科目名称', c: 'aname', req: 1 }, { name: '科目类别', c: 'atype', t: 'enum', v: ['资产', '负债', '所有者权益', '成本', '损益'] },
     { name: '余额方向', c: 'adir', t: 'enum', v: ['借', '贷'] }, { name: '期初余额', c: 'abal', t: 'number', dec: 2 }] },
-  coa_en: { name: 'Chart of Accounts（通用英文）', fmt: 'csv', cols: [
+  coa_en: { fmt: 'csv', cols: [
     { name: 'Code', c: 'acode', req: 1 }, { name: 'Name', c: 'aname', req: 1 }, { name: 'Type', c: 'atype', t: 'enum', v: ['Asset', 'Liability', 'Equity', 'Revenue', 'Expense'], req: 1 },
     { name: 'Description', c: 'desc', alt: ['afull'] }, { name: 'Opening Balance', c: 'abal', t: 'number', dec: 2 }] },
-  woo: { name: 'WooCommerce 商品（常用列）', fmt: 'csv', cols: [
+  woo: { fmt: 'csv', cols: [
     { name: 'SKU', c: 'sku', req: 1 }, { name: 'Name', c: 'pname', req: 1 }, { name: 'Published', c: 'published', t: 'enum', v: ['1', '0'] }, { name: 'Description', c: 'desc' },
     { name: 'Regular price', c: 'price', t: 'number', dec: 2 }, { name: 'Stock', c: 'stock', t: 'number', dec: 0 }, { name: 'Weight (kg)', c: 'weight', t: 'number', dec: 'keep', unit: 'kg' },
     { name: 'Categories', c: 'ptype' }, { name: 'Tags', c: 'tags', t: 'list', sep: ', ' }, { name: 'Images', c: 'image' }] },
-  hubspot: { name: 'HubSpot 联系人', fmt: 'csv', cols: [
+  hubspot: { fmt: 'csv', cols: [
     { name: 'First Name', c: 'first', t: 'first' }, { name: 'Last Name', c: 'last', t: 'last' }, { name: 'Email', c: 'email', t: 'email', req: 1 }, { name: 'Phone Number', c: 'phone', t: 'phone' },
     { name: 'Company Name', c: 'company' }, { name: 'Job Title', c: 'jtitle' }, { name: 'City', c: 'city' }, { name: 'Country/Region', c: 'country' }] },
 };
-function tplFrom(key) { const t = clone(TPL[key]); t.id = key; t.cols.forEach(c => { c.t = c.t || 'text'; }); return t; }
+function tplFrom(key) { const t = clone(TPL[key]); t.id = key; t.name = STR.tpl[key]; t.cols.forEach(c => { c.t = c.t || 'text'; }); return t; }
+// 目标的名字：内置模板跟着语言走，用户自己的模板用文件名
+const tgtName = t => !t ? '' : t.id && STR.tpl[t.id] ? STR.tpl[t.id] : t.name;
 
-/* ================= 示例数据（虚构） ================= */
+/* ================= 示例数据（虚构；字在 strings.js 的 demoData，中文、英文各一份「旧系统导出」） ================= */
 function demoSource() {
+  const D = STR.demoData, rows = [];
   let seed = 7; const r = n => (seed = (seed * 16807) % 2147483647) % n;
-  const sur = ['王', '李', '张', '刘', '陈', '杨', '黄', '赵', '周', '吴', '司马', '林'];
-  const giv = ['子涵', '浩然', '雨桐', '思远', '晓峰', '若溪', '嘉怡', '俊杰', '梦琪', '文博', '欣然', '志强'];
-  const py = ['zihan', 'haoran', 'yutong', 'siyuan', 'xiaofeng', 'ruoxi', 'jiayi', 'junjie', 'mengqi', 'wenbo', 'xinran', 'zhiqiang'];
-  const en = ['Alex Lim', 'Mia Tan', 'Ryan Goh', 'Chloe Ng'];
-  const co = ['一苇渡江科技', '不二法门咨询', '菩提树下贸易', '明镜台设计', '拈花微笑文化', '南山南物流', '山高水长传媒', '松风明月食品'];
-  const jt = ['销售总监', '采购经理', '行政主管', '创始人', '财务', '运营专员', '市场经理', '技术负责人'];
-  const city = ['上海', '北京', '深圳', '杭州', '成都', '新加坡', '广州', '苏州'];
-  const note = ['', '', '', '', '老客户，别催款', '只在周三回消息', '爱喝茶', '', '年底要发票', ''];
-  const H = ['客户编号', '姓名', '性别', '手机', '邮箱', '公司', '职位', '所在城市', '创建时间', '累计消费(元)', '备注'];
-  const rows = [];
-  for (let i = 0; i < 60; i++) {
-    let name, mail, ph, g = r(2) ? '男' : '女';
-    if (i === 0) { name = '欧阳晓峰'; mail = 'Ouyang.XiaoFeng@Example.com'; g = '男'; }
-    else if (i % 15 === 7) { name = en[r(4)]; mail = name.toLowerCase().replace(' ', '.') + '@example.com'; }
-    else { const s = r(12), k = r(12); name = sur[s] + giv[k]; mail = py[k] + (100 + i) + '@example.cn'; }
-    const city1 = city[r(8)];
-    ph = city1 === '新加坡' ? `+65 ${8 + r(2)}${r(10)}${r(10)}${r(10)} ${1000 + r(9000)}` : `1${3 + r(6)}${r(10)}${String(r(100000000)).padStart(8, '0')}`;
-    if (i === 3) ph = '139-0012-3456';
-    if (i === 11) ph = '';
-    if (i === 5) g = '未知';
-    if (i === 9) mail = 'zhao.wenbo#example.cn';
-    const d = `20${22 + r(3)}/${1 + r(12)}/${1 + r(28)} ${r(24)}:${String(r(60)).padStart(2, '0')}`;
-    const amt = r(5) === 0 ? '0' : (r(3) === 0 ? '¥' : '') + fmtInt(r(80000)) + (r(2) ? '.' + String(r(100)).padStart(2, '0') : '');
-    rows.push([`C${10001 + i}`, name, g, ph, mail, co[r(8)], jt[r(8)], city1, d, amt, note[r(10)]]);
+  if (D.people) {
+    // 英文：新马、英美客户混着，电话有的带国家码有的不带，日期 月/日/年，金额带 $ 和千分位
+    const tel = [
+      () => `${8 + r(2)}${r(10)}${r(10)}${r(10)} ${1000 + r(9000)}`, () => `+60 1${r(10)}-${100 + r(900)} ${1000 + r(9000)}`, () => `+44 7${r(10)}${r(10)}${r(10)} ${100000 + r(900000)}`,
+      () => `+1 (${200 + r(800)}) 555-${String(r(10000)).padStart(4, '0')}`, () => `+61 4${r(10)}${r(10)} ${100 + r(900)} ${100 + r(900)}`, () => `+852 ${5 + r(5)}${r(10)}${r(10)}${r(10)} ${1000 + r(9000)}`,
+      () => `${8 + r(2)}${r(10)}${r(10)}${r(10)} ${1000 + r(9000)}`, () => `+1 416-${100 + r(900)}-${1000 + r(9000)}`];
+    for (let i = 0; i < 60; i++) {
+      const [f, g0] = D.people[r(D.people.length)], l = D.last[r(D.last.length)];
+      let name = `${f} ${l}`, mail = `${f}.${l}`.toLowerCase().replace(/\s+/g, '') + '@example.com', g = D.g[g0];
+      if (i === 0) { name = 'Alex Tan'; mail = 'Alex.Tan@Example.com'; g = D.g.M; }
+      if (i === 5) g = D.g.U;
+      if (i === 9) mail = mail.replace('@', '#');
+      const ci = r(D.city.length);
+      let ph = tel[ci]();
+      if (i === 3) ph = `(+65) ${8 + r(2)}${r(10)}${r(10)}${r(10)} ${1000 + r(9000)}`;
+      if (i === 11) ph = '';
+      const h = 1 + r(12), d = `${1 + r(12)}/${1 + r(28)}/20${22 + r(3)} ${h}:${String(r(60)).padStart(2, '0')} ${r(2) ? 'AM' : 'PM'}`;
+      const amt = r(5) === 0 ? '0' : (r(3) === 0 ? D.cur : '') + fmtInt(r(80000)) + (r(2) ? '.' + String(r(100)).padStart(2, '0') : '');
+      rows.push([`C${10001 + i}`, name, g, ph, mail, D.co[r(D.co.length)], D.jt[r(D.jt.length)], D.city[ci], d, amt, D.note[r(D.note.length)]]);
+    }
+  } else {
+    for (let i = 0; i < 60; i++) {
+      let name, mail, ph, g = r(2) ? D.g[0] : D.g[1];
+      if (i === 0) { name = D.first; mail = 'Ouyang.XiaoFeng@Example.com'; g = D.g[0]; }
+      else if (i % 15 === 7) { name = D.en[r(4)]; mail = name.toLowerCase().replace(' ', '.') + '@example.com'; }
+      else { const s = r(12), k = r(12); name = D.sur[s] + D.giv[k]; mail = D.py[k] + (100 + i) + '@example.cn'; }
+      const ci = r(8), city1 = D.city[ci];
+      ph = ci === 5 ? `+65 ${8 + r(2)}${r(10)}${r(10)}${r(10)} ${1000 + r(9000)}` : `1${3 + r(6)}${r(10)}${String(r(100000000)).padStart(8, '0')}`;
+      if (i === 3) ph = '139-0012-3456';
+      if (i === 11) ph = '';
+      if (i === 5) g = D.g[2];
+      if (i === 9) mail = 'zhao.wenbo#example.cn';
+      const d = `20${22 + r(3)}/${1 + r(12)}/${1 + r(28)} ${r(24)}:${String(r(60)).padStart(2, '0')}`;
+      const amt = r(5) === 0 ? '0' : (r(3) === 0 ? D.cur : '') + fmtInt(r(80000)) + (r(2) ? '.' + String(r(100)).padStart(2, '0') : '');
+      rows.push([`C${10001 + i}`, name, g, ph, mail, D.co[r(8)], D.jt[r(8)], city1, d, amt, D.note[r(10)]]);
+    }
   }
-  return { name: STR.demoName, demo: true, kind: 'csv', headers: H, rows };
+  return { name: D.name, demo: true, kind: 'csv', headers: D.H.slice(), rows };
 }
 
 /* ================= 读文件 ================= */
@@ -627,7 +602,7 @@ function tableFromRows(rows) {
   let width = raw.length; for (let k = hi + 1; k < Math.min(rows.length, hi + 200); k++) width = Math.max(width, rows[k].length);
   const seen = {}, headers = [];
   for (let k = 0; k < width; k++) {
-    let h = raw[k] || `列${k + 1}`;
+    let h = raw[k] || STR.colN(k + 1);
     if (seen[h]) { seen[h]++; h = `${h} (${seen[h]})`; } else seen[h] = 1;
     headers.push(h);
   }
@@ -676,21 +651,21 @@ function cellStr(v) {
 async function readFile(file) {
   const buf = await file.arrayBuffer();
   const ext = (file.name.split('.').pop() || '').toLowerCase();
-  let t, kind = 'csv', note = '';
+  let t, kind = 'csv', sheets = 1;
   if (['xlsx', 'xls', 'xlsm', 'ods'].includes(ext)) {
     const X = await loadXLSX();
     const wb = X.read(buf, { type: 'array', cellDates: true, dense: true });
     let rows = [];
     for (const nm of wb.SheetNames) { rows = X.utils.sheet_to_json(wb.Sheets[nm], { header: 1, raw: true, defval: '' }); if (rows.length) break; }
-    if (wb.SheetNames.length > 1) note = STR.sheetNote(wb.SheetNames.length);
+    sheets = wb.SheetNames.length;
     t = tableFromRows(rows.map(r => r.map(cellStr))); kind = 'xlsx';
   } else {
     const text = decodeText(buf);
     if (ext === 'json' || /^\s*[\[{]/.test(text.slice(0, 200))) { t = tableFromJSON(text); kind = 'json'; }
     else t = tableFromRows(parseCSV(text, ext === 'tsv' ? '\t' : sniffDelim(text)));
   }
-  if (!t || !t.headers.length) throw new Error(STR.emptyFile);
-  return { name: file.name, kind, note, ...t };
+  if (!t || !t.headers.length) throw new Error('emptyFile');
+  return { name: file.name, kind, sheets, ...t };
 }
 
 /* ================= 转换 ================= */
@@ -1029,7 +1004,7 @@ function inferOp(tc, j, sample) {
   if (t === 'list') return { op: { t: 'list', sep: tc.sep ?? ', ' } };
   if (t === 'enum' && tc.v && tc.v.length) {
     const ctx = { H }, pairs = autoPairs(tc.v, distinctOf(j), ctx);
-    const note = ctx.rule ? STR.noteRule(ctx.rule.v, ctx.rule.by) : ctx.ambig ? STR.noteAmbig(ctx.ambig[0]) : '';
+    const note = ctx.rule ? ['noteRule', ctx.rule.v, ctx.rule.by] : ctx.ambig ? ['noteAmbig', ctx.ambig[0]] : '';
     return { op: { t: 'map', pairs }, note };
   }
   return { op: { t: 'none' } };
@@ -1065,24 +1040,24 @@ function autoMap() {
     const cp = tgtConcept(tc), t = tc.t;
     // 姓名拆/合
     if (!hit[i] && (cp === 'first' || cp === 'last') && fullJ >= 0) return { src: [fullJ], cnst: null, op: { t: 'name', part: cp }, conf: 'sure', note: '' };
-    if (!hit[i] && cp === 'handle') { const sj = HC.findIndex(x => x && x.c === 'sku'); if (sj >= 0) return { src: [sj], cnst: null, op: { t: 'case', mode: 'lower' }, conf: 'guess', note: STR.noteHandle }; }
+    if (!hit[i] && cp === 'handle') { const sj = HC.findIndex(x => x && x.c === 'sku'); if (sj >= 0) return { src: [sj], cnst: null, op: { t: 'case', mode: 'lower' }, conf: 'guess', note: 'noteHandle' }; }
     if (!hit[i] && cp === 'full' && firstJ >= 0 && lastJ >= 0) return { src: [firstJ, lastJ], cnst: null, op: { t: 'join', sep: ' ', smart: true }, conf: 'sure', note: '' };
     let h = hit[i], note = '';
     if (!h && looks[t]) {
       const j = H.findIndex((_, j) => !usedS.has(j) && samples[j].length && samples[j].filter(looks[t]).length / samples[j].length >= .8);
-      if (j >= 0) { h = { j, s: 58 }; usedS.add(j); note = STR.noteByVal; }
+      if (j >= 0) { h = { j, s: 58 }; usedS.add(j); note = 'noteByVal'; }
     }
     // 选项列名字对不上：看哪列的值能换成它的选项（同一来源列可以喂两个目标列）
     if (!h && t === 'enum' && tc.v && tc.v.length) {
       let bj = -1, bc = 0;
       H.forEach((_, j) => { const c = enumCover(tc, j); if (c > bc) { bc = c; bj = j; } });
-      if (bc >= .9) { h = { j: bj, s: 58 }; note = STR.noteByVal; }
+      if (bc >= .9) { h = { j: bj, s: 58 }; note = 'noteByVal'; }
     }
-    if (!h) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'blank', note: tc.req ? STR.noteReq : '' };
+    if (!h) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'blank', note: tc.req ? 'noteReq' : '' };
     const r = inferOp(tc, h.j, samples[h.j]);
     let conf = h.s >= 80 ? 'sure' : 'guess';
-    if (h.s < 80 && !note) note = STR.noteGuess;
-    if (r.amb) { conf = 'guess'; note = STR.noteAmb; }
+    if (h.s < 80 && !note) note = 'noteGuess';
+    if (r.amb) { conf = 'guess'; note = 'noteAmb'; }
     if (r.note) { conf = 'guess'; note = r.note; }
     return { src: [h.j], cnst: null, op: r.op, conf, note };
   });
@@ -1248,6 +1223,9 @@ function lastSet() { if (!S.tgt) return; try { localStorage.setItem(LK, JSON.str
 /* ================= 渲染 ================= */
 const app = $('#app');
 const typeLabel = tc => STR.types[tc.t] || '';
+// 列旁边那句小字：存的是 strings 里的键（带参数的存成数组），渲染时按当前语言出字
+const noteTxt = k => !k ? '' : Array.isArray(k) ? STR[k[0]](...k.slice(1)) : STR[k] || '';
+const errTxt = er => STR.readErr(er.name, STR[er.why] || STR.notTable);
 const fmtName = f => ({ csv: 'CSV', xlsx: 'Excel', json: 'JSON' }[f]);
 function opLabel(m) {
   const o = m.op || {};
@@ -1256,7 +1234,7 @@ function opLabel(m) {
     case 'name': return o.part === 'last' ? STR.nameLast : STR.nameFirst;
     case 'join': return STR.ops.join;
     case 'phone': return o.by ? STR.ccByOp(o.by) : `+${o.cc}`;
-    case 'list': return `${STR.ops.list}「${o.sep ?? ', '}」`;
+    case 'list': return STR.opList(o.sep ?? ', ');
     case 'num': return o.thou ? STR.thou : STR.ops.num;
     case 'map': return `${STR.ops.map} ${(o.pairs || []).filter(p => p[1] !== '').length}`;
     case 'case': return { lower: STR.caseLower, upper: STR.caseUpper, title: STR.caseTitle, trim: STR.caseTrim }[o.mode] || '';
@@ -1278,8 +1256,8 @@ const segHTML = () => `<span class="seg-wrap"><span class="seg" role="group">${[
 function srcLine() {
   const s = S.src;
   if (S.busy) return `<div class="busy"><span class="spin"></span>${esc(STR.reading(S.busy))}</div>`;
-  if (S.err) return `<div class="end-s err">${esc(S.err.msg)}${STR.readHow}</div>`;
-  return `<div class="end-s">${S.rows.length !== s.rows.length ? `${STR.rcOut(s.rows.length, S.rows.length)} · ${s.headers.length} 列` : STR.rc(s.rows.length, s.headers.length)}${s.note ? ' · ' + esc(s.note) : ''}</div>`;
+  if (S.err) return `<div class="end-s err">${esc(errTxt(S.err))}${STR.readHow}</div>`;
+  return `<div class="end-s">${S.rows.length !== s.rows.length ? `${STR.rcOut(s.rows.length, S.rows.length)} · ${STR.cols(s.headers.length)}` : STR.rc(s.rows.length, s.headers.length)}${s.sheets > 1 ? ' · ' + esc(STR.sheetNote(s.sheets)) : ''}</div>`;
 }
 function srcCard() {
   const s = S.src;
@@ -1294,8 +1272,8 @@ function tgtCard() {
   const t = S.tgt;
   return `<div class="end tgt card" data-zone="tgt">
       <div class="end-ico">${ICON.swap}</div>
-      <div class="end-main"><div class="end-k">${STR.tgt} · ${STR.tgtSub(t.cols.length)}${S.recipe ? `<span class="chip on">${STR.recChip}</span>` : ''}</div>
-      <div class="end-t" title="${esc(t.name)}">${esc(t.name)}</div>
+      <div class="end-main"><div class="end-k">${STR.tgt} · ${STR.cols(t.cols.length)}${S.recipe ? `<span class="chip on">${STR.recChip}</span>` : ''}</div>
+      <div class="end-t" title="${esc(tgtName(t))}">${esc(tgtName(t))}</div>
       <div class="end-row">${segHTML()}</div></div>
       <button type="button" class="btn small gray" data-act="pick-tgt">${STR.pickTgt}</button>
     </div>`;
@@ -1305,7 +1283,7 @@ function renderEnds() {
 }
 function tplList() {
   const cur = S.tgt && S.tgt.id;
-  return `<div class="card tpl-grid">${Object.entries(TPL).map(([k, t]) => `<button type="button" class="li-row" data-act="tpl" data-k="${k}"><span class="li-main"><b>${esc(t.name)}</b><small>${esc(t.cols.map(c => c.name).join(' · '))}</small></span>${cur === k ? `<span class="ck">${ICON.check}</span>` : `<span class="go">${ICON.chevR}</span>`}</button>`).join('')}
+  return `<div class="card tpl-grid">${STR.tplOrder.map(k => [k, TPL[k]]).map(([k, t]) => `<button type="button" class="li-row" data-act="tpl" data-k="${k}"><span class="li-main"><b>${esc(STR.tpl[k])}</b><small>${esc(t.cols.map(c => c.name).join(' · '))}</small></span>${cur === k ? `<span class="ck">${ICON.check}</span>` : `<span class="go">${ICON.chevR}</span>`}</button>`).join('')}
     <button type="button" class="li-row wide" data-act="pick-tgt-file"><span class="li-main"><b>${STR.tplFile}</b><small>${STR.tplFileS}</small></span><span class="go">${ICON.chevR}</span></button></div>`;
 }
 function tgtSection() {
@@ -1316,7 +1294,7 @@ function dropCard() {
   const inner = S.busy ? `<div class="busy"><span class="spin"></span>${esc(STR.reading(S.busy))}</div>`
     : `<div class="acts"><button type="button" class="btn primary big" data-act="pick-src">${STR.pickBtn}</button><button type="button" class="btn plain" data-act="demo">${STR.demoBtn}</button></div>`;
   return `<section class="card dropc" data-zone="src"><div class="ico">${ICON.tray}</div><h2>${STR.dropT}</h2><p>${STR.dropS}</p>${inner}
-    ${S.err ? `<p class="err" role="alert"><b>${esc(S.err.msg)}</b>${STR.readHow}</p>` : ''}</section>`;
+    ${S.err ? `<p class="err" role="alert"><b>${esc(errTxt(S.err))}</b>${STR.readHow}</p>` : ''}</section>`;
 }
 function mapRow(i, okBtn) {
   const tc = S.tgt.cols[i], m = S.maps[i], c = m.conf, ex = firstExample(i);
@@ -1331,7 +1309,7 @@ function mapRow(i, okBtn) {
   return `<div class="mrow${okBtn ? ' doubt' : ''}" role="button" tabindex="0" data-act="col" data-i="${i}">
       <span class="st ${st}">${stIcon(st)}</span>
       <span class="m-t"><span>${esc(tc.name)}</span>${typeLabel(tc) ? `<em class="ty">${typeLabel(tc)}</em>` : ''}</span>
-      <span class="m-s">${from}${ol ? `<span class="op">${esc(ol)}</span>` : ''}${m.note && !S.ack.has(i) ? `<span class="note${c === 'req' ? ' r' : ''}">${esc(m.note)}</span>` : ''}</span>
+      <span class="m-s">${from}${ol ? `<span class="op">${esc(ol)}</span>` : ''}${m.note && !S.ack.has(i) ? `<span class="note${c === 'req' ? ' r' : ''}">${esc(noteTxt(m.note))}</span>` : ''}</span>
       <span class="m-x">${x}${bc}</span>
       <span class="m-ok">${okBtn ? `<button type="button" class="btn" data-act="ok" data-i="${i}">${STR.okBtn}</button>` : `<span class="chev">${ICON.chevR}</span>`}</span></div>`;
 }
@@ -1349,7 +1327,7 @@ function renderMapsInner() {
   const un = S.src.headers.filter((_, j) => !used.has(j));
   return `<div class="grp-h"><h2>${STR.mapH}<span class="grp-sub">${STR.mapSub(cs.length, ok, q, b, r)}</span></h2></div>
     <div class="card">${mhead()}${S.tgt.cols.map((_, i) => mapRow(i, false)).join('')}</div>
-    <p class="grp-foot">${un.length ? esc(STR.unused(un.join('、'))) : STR.allUsed}</p>`;
+    <p class="grp-foot">${un.length ? esc(STR.unused(un.join(STR.listSep))) : STR.allUsed}</p>`;
 }
 const PREV_N = 20;
 function renderPreviewInner() {
@@ -1375,7 +1353,7 @@ function renderMaps() { const el = $('#maps'); if (el) el.innerHTML = renderMaps
 function renderPreview() { const el = $('#prev'); if (el) el.innerHTML = renderPreviewInner(); }
 function renderDoubt() { const el = $('#doubt'); if (el) { const h = renderDoubtInner(); el.innerHTML = h; el.hidden = !h; } }
 function outName() {
-  const base = S.src.name.replace(/\.[^.]+$/, ''), tn = S.tgt.name.replace(/（.*?）|\(.*?\)/g, '').trim();
+  const base = S.src.name.replace(/\.[^.]+$/, ''), tn = tgtName(S.tgt).replace(/（.*?）|\(.*?\)/g, '').trim();
   return `${base} → ${tn}`.replace(/[\\/:*?"<>|]/g, '').slice(0, 120) + '.' + S.fmt;
 }
 const view = () => !S.src ? 'empty' : !S.tgt ? 'pick' : 'work';
@@ -1393,13 +1371,13 @@ function render() {
   app.className = 'wrap' + (v === 'work' ? '' : ' narrow');
   document.body.dataset.view = v;
   let h;
-  if (v === 'empty') h = `<section class="hero"><img src="icon.svg" alt=""><h1>${STR.app}</h1><p class="tag">${STR.tag}</p><p>${STR.heroSub}</p></section>${dropCard()}${tgtSection()}<p class="grp-foot" style="text-align:center">${STR.dropMore}</p>`;
+  if (v === 'empty') h = `<section class="hero"><img src="icon.svg" alt=""><h1>${STR.name}${STR.nameD ? `<span class="h1-d"><span class="dot"> · </span>${STR.nameD}</span>` : ''}</h1><p class="tag">${STR.tag}</p><p>${STR.heroSub}</p></section>${dropCard()}${tgtSection()}<p class="grp-foot" style="text-align:center;text-wrap:balance">${STR.dropMore}</p>`;
   else {
-    h = `<div class="pt"><h1>${STR.app}</h1><p>${STR.tag}</p></div>`;
+    h = `<div class="pt"><h1>${STR.full}</h1><p>${STR.tag}</p></div>`;
     if (v === 'pick') h += `<section class="ends">${srcCard()}</section>${tgtSection()}`;
     else h += `${renderEnds()}<section class="grp" id="doubt" hidden></section><section class="grp" id="tidy"${S.prep && (S.prep.g || S.prep.nb) ? '' : ' hidden'}>${renderTidyInner()}</section><section class="grp" id="maps">${renderMapsInner()}</section><section class="grp" id="prev">${renderPreviewInner()}</section>`;
   }
-  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp}</div><div>${STR.footMail}<span class="mail">oilsongchengmin@gmail.com</span></div><div><a href="https://qianshoulab.github.io/">${STR.footHome}</a></div></footer>`;
+  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp}</div><div>${STR.footMail}<span class="mail">oilsongchengmin@gmail.com</span></div><div class="row"><a href="https://qianshoulab.github.io/">${STR.footHome}</a><span aria-hidden="true">·</span><button type="button" class="lang" data-act="lang" lang="${STR.langToCode}" aria-label="${STR.langToLabel}">${ICON.globe}${STR.langTo}</button></div></footer>`;
   if (v === 'work') renderDoubt();
   renderDock();
   const n = recipes().length;
@@ -1436,8 +1414,8 @@ function colSheetBody(i) {
   const mode = m.cnst != null ? 'const' : !m.src.length ? 'blank' : m.src[0];
   let h = `<div class="lab"><span>${STR.fromWhere}</span></div>`;
   if (o.t === 'join' && m.cnst == null) {
-    h += `<div class="form">${m.src.map((j, k) => `<div class="f-row"><select data-in="joinsrc" data-k="${k}" aria-label="${STR.fromWhere}">${srcOptions(j)}</select>${m.src.length > 1 ? `<button type="button" class="x" data-act="join-rm" data-k="${k}" aria-label="${STR.recDel}">${ICON.x}</button>` : ''}</div>`).join('')}
-      <div class="f-row"><button type="button" class="btn plain small" data-act="join-add" style="padding:0">＋ ${STR.addCol}</button></div></div>`;
+    h += `<div class="form">${m.src.map((j, k) => `<div class="f-row"><select data-in="joinsrc" data-k="${k}" aria-label="${STR.fromWhere}">${srcOptions(j)}</select>${m.src.length > 1 ? `<button type="button" class="x" data-act="join-rm" data-k="${k}" aria-label="${STR.rmCol}">${ICON.x}</button>` : ''}</div>`).join('')}
+      <div class="f-row"><button type="button" class="btn plain small" data-act="join-add" style="padding:0">${STR.addCol}</button></div></div>`;
   } else {
     const fj = m.cnst == null && m.src.length === 1 ? m.src[0] : -1, fon = fj >= 0 && S.prep && S.prep.fill && S.prep.fill.includes(fj);
     const gname = S.prep && S.prep.g ? S.src.headers[S.prep.g.j] : '';
@@ -1528,7 +1506,7 @@ function saveRecipes(a) { try { localStorage.setItem(RK, JSON.stringify(a)); ret
 function currentRecipe(name) {
   const H = S.src.headers;
   return { v: 1, id: 'r' + Date.now().toString(36), name, created: new Date().toISOString(), srcHeaders: H.slice(), fmt: S.fmt,
-    tgt: { id: S.tgt.id, name: S.tgt.name, cols: S.tgt.cols }, tidy: clone(S.tidy), maps: S.maps.map(m => ({ src: m.src.map(j => H[j]), cnst: m.cnst, op: m.op })) };
+    tgt: { id: S.tgt.id, name: tgtName(S.tgt), cols: S.tgt.cols }, tidy: clone(S.tidy), maps: S.maps.map(m => ({ src: m.src.map(j => H[j]), cnst: m.cnst, op: m.op })) };
 }
 function applyRecipe(r) {
   const H = S.src.headers, N = H.map(norm);
@@ -1541,8 +1519,8 @@ function applyRecipe(r) {
     const tc = S.tgt.cols[i];
     if (m.cnst != null) return { src: [], cnst: m.cnst, op: m.op, conf: 'sure', note: '' };
     if (!m.src.length) return { src: [], cnst: null, op: { t: 'none' }, conf: 'blank', note: '' };
-    if (!ok.length) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'guess', note: STR.noteMiss };
-    return { src: ok, cnst: null, op: clone(m.op), conf: miss ? 'guess' : 'sure', note: miss ? STR.noteMiss : '' };
+    if (!ok.length) return { src: [], cnst: null, op: { t: 'none' }, conf: tc.req ? 'req' : 'guess', note: 'noteMiss' };
+    return { src: ok, cnst: null, op: clone(m.op), conf: miss ? 'guess' : 'sure', note: miss ? 'noteMiss' : '' };
   });
 }
 function matchRecipe() {
@@ -1560,9 +1538,10 @@ function matchRecipe() {
 function remember() {
   if (!S.src || S.src.demo) return null;
   const key = new Set(S.src.headers.map(norm));
-  const same = r => r.id === S.recipe || (r.tgt.name === S.tgt.name && r.srcHeaders.length === key.size && r.srcHeaders.every(h => key.has(norm(h))));
+  const sameTgt = r => STR.tpl[S.tgt.id] ? r.tgt.id === S.tgt.id : r.tgt.name === S.tgt.name; // 内置模板认 id（名字跟语言变），自己的模板认名字
+  const same = r => r.id === S.recipe || (sameTgt(r) && r.srcHeaders.length === key.size && r.srcHeaders.every(h => key.has(norm(h))));
   let rs = recipes(); const old = rs.find(same);
-  const name = old ? old.name : `${S.src.name.replace(/\.[^.]+$/, '')} → ${S.tgt.name.replace(/（.*?）|\(.*?\)/g, '').trim()}`;
+  const name = old ? old.name : `${S.src.name.replace(/\.[^.]+$/, '')} → ${tgtName(S.tgt).replace(/（.*?）|\(.*?\)/g, '').trim()}`;
   const r = currentRecipe(name); if (old) { r.id = old.id; r.created = old.created; }
   rs = rs.filter(x => !same(x)); rs.unshift(r);
   if (!saveRecipes(rs)) return null;
@@ -1571,7 +1550,7 @@ function remember() {
 }
 function openRecipes() {
   const rs = recipes();
-  const body = (rs.length ? `<div class="form list">${rs.map(r => `<div class="f-row"><button type="button" class="li" data-act="rec-apply" data-id="${r.id}"><b>${esc(r.name)}</b><small>${esc(STR.recSub(r.tgt.cols.length, r.created.slice(0, 10)))} · ${esc(r.tgt.name)}</small></button>${S.recipe === r.id ? `<span class="ck">${ICON.check}</span>` : ''}<button type="button" class="btn small danger" data-act="rec-del" data-id="${r.id}">${STR.recDel}</button></div>`).join('')}</div>`
+  const body = (rs.length ? `<div class="form list">${rs.map(r => `<div class="f-row"><button type="button" class="li" data-act="rec-apply" data-id="${r.id}"><b>${esc(r.name)}</b><small>${esc(STR.recSub(r.tgt.cols.length, r.created.slice(0, 10)))} · ${esc(tgtName(r.tgt))}</small></button>${S.recipe === r.id ? `<span class="ck">${ICON.check}</span>` : ''}<button type="button" class="btn small danger" data-act="rec-del" data-id="${r.id}">${STR.recDel}</button></div>`).join('')}</div>`
     : `<div class="empty-note">${STR.recEmpty}</div>`) +
     `<div class="sh-acts">${rs.length ? `<button type="button" class="btn plain small" data-act="rec-export">${STR.recExport}</button>` : ''}<button type="button" class="btn plain small" data-act="rec-import">${STR.recImport}</button></div>`;
   openSheet('rec', STR.recH, body);
@@ -1619,9 +1598,9 @@ async function doExport(auto) {
     renderDock(); $('#navRec').innerHTML = `${ICON.book}${STR.recipes}<span class="n">${recipes().length}</span>`;
     const tc = $('.end.tgt .end-k'); if (tc && S.recipe && !tc.querySelector('.chip')) tc.insertAdjacentHTML('beforeend', `<span class="chip on">${STR.recChip}</span>`);
     const btn = $('#dock .btn'); if (btn) { btn.classList.add('done'); btn.innerHTML = `${ICON.check}${STR.exportDone}`; setTimeout(() => renderDock(), 1600); }
-    const msg = S.recipeHit && auto ? `${STR.recAuto(S.recipeHit)} · ${STR.exported(rows.length, s)}` : auto ? `${STR.dockAuto} · ${s} 秒` : STR.exported(rows.length, s);
+    const msg = S.recipeHit && auto ? `${STR.recAuto(S.recipeHit)} · ${STR.exported(rows.length, s)}` : auto ? `${STR.dockAuto} · ${STR.secs(s)}` : STR.exported(rows.length, s);
     if (S.recipeHit && auto) toast(msg, STR.recUndo, undoRecipe);
-    else if (fresh) toast(`${msg}。${STR.recKept}`, STR.recForget, () => { saveRecipes(recipes().filter(r => r.id !== fresh)); if (S.recipe === fresh) S.recipe = null; render(); toast(STR.recForgot); });
+    else if (fresh) toast(STR.savedMsg(msg), STR.recForget, () => { saveRecipes(recipes().filter(r => r.id !== fresh)); if (S.recipe === fresh) S.recipe = null; render(); toast(STR.recForgot); });
     else toast(msg);
   } catch (e) { exporting = false; toast(STR.exportFail + (e.message || e)); }
 }
@@ -1666,18 +1645,18 @@ function useTarget() {
 }
 const TABLE_EXT = /\.(csv|tsv|txt|xlsx|xls|xlsm|ods|json)$/i;
 async function readOne(file) {
-  if (!TABLE_EXT.test(file.name)) throw new Error(STR.notTable);
+  if (!TABLE_EXT.test(file.name)) throw new Error('notTable');
   return readFile(file);
 }
-const errMsg = (f, e) => `${STR.readFail(f.name)}：${[STR.emptyFile, STR.notTable].includes(e && e.message) ? e.message : STR.notTable}。`;
+const errOf = (f, e) => ({ name: f.name, why: e && e.message === 'emptyFile' ? 'emptyFile' : 'notTable' });
 async function loadFiles(list, as) {
   list = [...list].filter(Boolean); if (!list.length) return;
   if (as === 'tgt' || list.length < 2) return loadFile(list[0], as);
-  S.busy = list.map(f => f.name).join('、'); S.err = null; render();
+  S.busy = list.map(f => f.name).join(STR.listSep); S.err = null; render();
   await new Promise(r => setTimeout(r, 20));
   const t0 = performance.now(); let a, b;
-  try { a = await readOne(list[0]); } catch (e) { S.busy = null; S.err = { msg: errMsg(list[0], e) }; return render(); }
-  try { b = await readOne(list[1]); } catch (e) { S.busy = null; S.err = { msg: errMsg(list[1], e) }; return render(); }
+  try { a = await readOne(list[0]); } catch (e) { S.busy = null; S.err = errOf(list[0], e); return render(); }
+  try { b = await readOne(list[1]); } catch (e) { S.busy = null; S.err = errOf(list[1], e); return render(); }
   window.__lastRead = { ms: performance.now() - t0, rows: a.rows.length + b.rows.length };
   S.busy = null;
   // 行少的那份当目标模板（模板一般只有表头，最多几行样例）
@@ -1696,7 +1675,7 @@ async function loadFile(file, as) {
     S.busy = null;
     if (as === 'tgt') { setTarget(t, file.name); useTarget(); }
     else setSource(t, true);
-  } catch (e) { S.busy = null; S.err = { msg: errMsg(file, e) }; render(); }
+  } catch (e) { S.busy = null; S.err = errOf(file, e); render(); }
 }
 function guessFmt(ex) {
   ex = ex.trim();
@@ -1733,9 +1712,10 @@ document.addEventListener('click', e => {
   if (a === 'export') { doubts().forEach(i => S.ack.add(i)); renderMaps(); renderDoubt(); return doExport(); }
   if (a === 'tidy') { const k = b.dataset.k; S.tidy[k] = S.tidy[k] === false; return changed(); }
   if (a === 'recipes') return openRecipes();
+  if (a === 'lang') return setLang(LANG === 'zh' ? 'en' : 'zh');
   if (a === 'rec-apply') { const r = recipes().find(x => x.id === b.dataset.id); if (r && S.src) { applyRecipe(r); S.ack = new Set(); closeSheet(); changed(); toast(STR.recAuto(r.name)); } return; }
   if (a === 'rec-del') { saveRecipes(recipes().filter(x => x.id !== b.dataset.id)); if (S.recipe === b.dataset.id) S.recipe = null; render(); return openRecipes(); }
-  if (a === 'rec-export') { download(new Blob([JSON.stringify({ app: 'yijing', v: 1, recipes: recipes() }, null, 1)], { type: 'application/json' }), `译经僧配方-${new Date().toISOString().slice(0, 10)}.json`); return; }
+  if (a === 'rec-export') { download(new Blob([JSON.stringify({ app: 'yijing', v: 1, recipes: recipes() }, null, 1)], { type: 'application/json' }), STR.recFile(new Date().toISOString().slice(0, 10))); return; }
   if (a === 'rec-import') return $('#fRec').click();
   if (a === 'toast') { const f = toastFn; $('#toast').classList.remove('on'); toastFn = null; return f && f(); }
   if (sheetCol >= 0) {
@@ -1810,8 +1790,6 @@ $('#fRec').addEventListener('change', async e => {
 });
 // 拖放：整页都能丢，拖进来整页高亮；底下一条专收目标模板
 const drop = $('#drop'); let dragN = 0;
-drop.querySelector('[data-zone="src"]').innerHTML = `<div>${STR.dropSrc}<small>${STR.dropSrcS}</small></div>`;
-drop.querySelector('[data-zone="tgt"]').innerHTML = `<div>${STR.dropTgt}</div>`;
 const hasFiles = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
 window.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); dragN++; drop.hidden = false; });
 window.addEventListener('dragleave', e => { if (!hasFiles(e)) return; if (--dragN <= 0) { dragN = 0; drop.hidden = true; } });
@@ -1823,15 +1801,35 @@ window.addEventListener('drop', e => {
 });
 // 导航
 const nav = $('#nav');
-$('#navBack').innerHTML = `${ICON.chevL}<span>${STR.home}</span>`;
-$('#navT').innerHTML = `<img src="icon.svg" alt="">${STR.app}`;
 addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 24), { passive: true });
+
+/* ================= 语言：跟浏览器走，页脚留一个切换（记在本机） ================= */
+// 页面里不归 render() 管的字：<html lang>、<title>、meta description、顶栏、拖放层
+function applyLang() {
+  document.documentElement.lang = STR.htmlLang;
+  document.title = STR.title;
+  const md = $('meta[name="description"]'); if (md) md.content = STR.desc;
+  const ma = $('meta[name="apple-mobile-web-app-title"]'); if (ma) ma.content = STR.name;
+  $('#navBack').innerHTML = `${ICON.chevL}<span>${STR.home}</span>`;
+  $('#navT').innerHTML = `<img src="icon.svg" alt="">${STR.name}`;
+  drop.querySelector('[data-zone="src"]').innerHTML = `<div>${STR.dropSrc}<small>${STR.dropSrcS}</small></div>`;
+  drop.querySelector('[data-zone="tgt"]').innerHTML = `<div>${STR.dropTgt}</div>`;
+}
+function setLang(l) {
+  if (!STRS[l] || l === LANG) return;
+  LANG = l; STR = STRS[l];
+  try { localStorage.setItem(LGK, l); } catch (e) { }
+  applyLang(); $('#toast').classList.remove('on');
+  // 示例跟着换成这门语言的那份；别的东西（文件、对法、改过的列）原样留着，只换字
+  if (S.src && S.src.demo) setSource(demoSource(), false); else render();
+}
+applyLang();
 
 /* ================= 开张：记得上回选的目标格式；第一次来就是空的，一句话 + 用示例试试 ================= */
 S.ack = new Set(); S.busy = null; S.err = null; S.auto = false; S.dl = null; S.recipeHit = null;
 { const L = lastGet(); if (L && L.tgt && Array.isArray(L.tgt.cols)) { S.tgt = L.tgt; S.fmt = L.fmt || L.tgt.fmt || 'csv'; } }
 render();
-window.__yj = { S, loadFile, loadFiles, autoMap, parseDate, splitName, fmtPhone, parseNum, parseCSV, splitList, listPlan, outRow, render, doubts, demo: () => setSource(demoSource(), false) };
+window.__yj = { S, loadFile, loadFiles, autoMap, parseDate, splitName, fmtPhone, parseNum, parseCSV, splitList, listPlan, outRow, render, doubts, demo: () => setSource(demoSource(), false), setLang, lang: () => LANG };
 </script>
 </body>
 </html>
