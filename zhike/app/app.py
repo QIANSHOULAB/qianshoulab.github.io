@@ -1,7 +1,10 @@
 """知客僧 Windows 入口：窗口（pywebview / WebView2）+ 托盘（pystray）+ 后台收信线程。
 
+开机就在岗：头一个邮箱连上时写好开机自启（注册表 Run，带 --tray）。登录 Windows → 只进托盘、自己连上次的邮箱、
+接着上次的进度收信，不弹窗口；有事（草稿备好、拟了新规则、密码不对、Excel 被占着）才冒气泡。关窗口 = 收进托盘。
+
 用法：
-  知客僧.exe              打开窗口
+  知客僧.exe              打开窗口（已经在跑：把那个窗口亮出来）
   知客僧.exe --tray       开机自启用：只进托盘，不弹窗口
   知客僧.exe --selftest out.json   冒烟自测（打包后 CI 用）
   知客僧.exe --update-probe out.json   自动更新冒烟：换完自己、重启后写个文件就退（CI 用）
@@ -53,14 +56,9 @@ def single_instance(on_show):
 
 
 def tray_image():
-    from PIL import Image, ImageDraw
-    s = 64
-    img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.rounded_rectangle((2, 2, s - 2, s - 2), radius=14, fill=(10, 113, 227, 255))
-    d.rounded_rectangle((13, 19, s - 13, s - 19), radius=4, outline=(255, 255, 255, 255), width=4)
-    d.line((14, 21, s // 2, 36, s - 14, 21), fill=(255, 255, 255, 255), width=4, joint="curve")
-    return img
+    """托盘图标：跟 exe、总舵首页卡片同一个（赭色信封）。"""
+    from zhike.icon import draw
+    return draw(64)
 
 
 def js_facade(api):
@@ -108,8 +106,8 @@ def main():
 
     import webview
     import pystray
-    from zhike import APP_NAME, VERSION
-    from zhike.api import Api
+    from zhike import APP_NAME, VERSION, platform as P
+    from zhike.api import Api, S as TXT
 
     state = {"window": None, "icon": None, "quitting": False}
 
@@ -118,26 +116,23 @@ def main():
         if w:
             w.show()
             w.restore()
+            try:
+                w.evaluate_js("window.zkShown && window.zkShown()")   # 有新拟的规则：一打开就摆出来
+            except Exception:
+                pass
 
     if not single_instance(show):
         return
 
-    def notify(log):
+    def notify(title, body):
+        """托盘气泡。只有要人管的事才来（见 Api._tell）。"""
         icon = state["icon"]
         if not icon:
             return
-        parts = []
-        if log.get("excel") in ("ok", "pending"):
-            parts.append("进表")
-        if log.get("forward") == "ok":
-            parts.append("已转发")
-        if log.get("draft") == "ok":
-            parts.append("草稿已备好")
-        if parts:
-            try:
-                icon.notify(f"{log.get('subject', '')[:40]}\n{' · '.join(parts)}", f"{APP_NAME} · {log.get('rule')}")
-            except Exception:
-                pass
+        try:
+            icon.notify(body, title)
+        except Exception:
+            pass
 
     def quit_all():
         state["quitting"] = True
@@ -173,24 +168,31 @@ def main():
     api.on_restart = restart_for_update
 
     hidden = "--tray" in args
+    dark = P.prefers_dark()
     win = webview.create_window(f"{APP_NAME}", resource("ui", "index.html"), js_api=js_facade(api),
-                                width=1180, height=760, min_size=(860, 560), hidden=hidden,
-                                background_color="#FFFFFF", text_select=True)
+                                width=1180, height=760, min_size=(980, 640), hidden=hidden,
+                                background_color="#000000" if dark else "#F5F5F7", text_select=True)
     state["window"] = win
 
     def on_closing():
         if state["quitting"]:
             return True
         win.hide()
+        # 头一回关窗口：说一句贫僧还在托盘里，不然人以为关掉了
+        if not api.store.state.data.get("told_tray"):
+            api.store.state.data["told_tray"] = True
+            api.store.state.save()
+            notify(APP_NAME, TXT["tray_hint"])
         return False      # 关窗口 = 收进托盘，后台照常盯着
 
     win.events.closing += on_closing
 
     menu = pystray.Menu(
-        pystray.MenuItem("打开知客僧", lambda: show(), default=True),
-        pystray.MenuItem("现在就收", lambda: api.engine.wake()),
+        pystray.MenuItem(TXT["m_open"], lambda: show(), default=True),
+        pystray.MenuItem(TXT["m_run"], lambda: api.engine.wake()),
+        pystray.MenuItem(TXT["m_excel"], lambda: api.open_excel()),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("退出", lambda: quit_all()),
+        pystray.MenuItem(TXT["m_quit"], lambda: quit_all()),
     )
     icon = pystray.Icon("zhike", tray_image(), f"{APP_NAME} {VERSION}", menu)
     state["icon"] = icon
@@ -210,9 +212,9 @@ def main():
 
     threading.Thread(target=update_loop, daemon=True).start()
 
-    # 第一次跑：默认开机自启（设置里可以关）
-    from zhike import platform as P
-    if api.store.settings.get("autostart", True) and not api.store.state.data.get("autostart_set"):
+    # 开机自启：头一个邮箱连上那一刻写（Api._added，界面当场说一句、一下能关）。
+    # 邮箱是别处带来的（老版本升上来、配置拷过来）也补上；人关过就不再动。
+    if api.store.accounts and api.store.settings.get("autostart", True) and not api.store.state.data.get("autostart_set"):
         try:
             P.set_autostart(True)
             api.store.state.data["autostart_set"] = True

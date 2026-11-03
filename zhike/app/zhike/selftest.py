@@ -62,6 +62,11 @@ def run(out_path=None) -> int:
                     "Date: Mon, 2 Nov 2026 09:00:00 +0800\r\nSubject: Order 1\r\n\r\nhi\r\n").encode())
         assert fw.orig_from == "orders@shop.example", fw.orig_from
         res["steps"]["forward_unwrap"] = "ok"
+        # 贫僧拟规则（打包时 recommend 有没有漏掉、在 Windows 上认不认得示例信）
+        from .recommend import recommend
+        names = sorted(r["name"] for r in recommend(samples.mails(), []))
+        assert "订单" in names and "发票" in names, names
+        res["steps"]["recommend"] = names
         res["steps"]["forwards"] = len(smtp.sent)
         res["steps"]["drafts"] = len(imap.drafts)
         if sys.platform == "win32":

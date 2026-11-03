@@ -62,9 +62,11 @@ def test_network_down_then_back(env):
     res = eng.run_once()
     assert res["errors"] == [("t1", "net")]
     st = eng.status["t1"]
-    assert st["state"] == "net" and st["retry_in"] == 120
+    assert st["state"] == "net" and st["retry_in"] == 15     # 刚开机网常常还没通：15 秒就再试
+    assert 5 <= eng.next_wait() <= 15                         # 后台线程到点就醒，不等满「多久看一次」
     eng.run_once()                      # 退避期间不去连
     assert eng.status["t1"]["fails"] == 1
+    eng.started_at -= 600               # 开机过了一阵子：照常退避
     st["next_at"] = 0
     eng.run_once()
     assert eng.status["t1"]["retry_in"] == 240   # 翻倍

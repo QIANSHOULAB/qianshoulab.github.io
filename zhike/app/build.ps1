@@ -7,6 +7,7 @@ python make_icon.py
 python -m PyInstaller --noconfirm --clean --onefile --windowed --name Zhike --icon zhike.ico `
   --add-data "ui;ui" --collect-all webview --hidden-import clr `
   --hidden-import keyring.backends.Windows --collect-submodules keyring.backends `
+  --collect-submodules pypdf `
   app.py
 $p = Start-Process dist\Zhike.exe -ArgumentList "--selftest","selftest.json" -Wait -PassThru
 Get-Content selftest.json

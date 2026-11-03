@@ -39,6 +39,7 @@ class Engine:
         self._thread = None
         self._demo = None
         self._batch = None
+        self.started_at = clock()
 
     # ---------- 示例 ----------
     def demo(self):
@@ -150,7 +151,11 @@ class Engine:
                     res["errors"].append((acct["id"], "auth"))
                 except NetError as e:
                     st["fails"] = st.get("fails", 0) + 1
-                    wait = min(120 * (2 ** (st["fails"] - 1)), 1800)
+                    # 刚开机网常常还没通：头 3 分钟里每 15 秒再试；之后 2→4→…→30 分钟退避
+                    if self.clock() - self.started_at < 180 and st["fails"] <= 6:
+                        wait = 15
+                    else:
+                        wait = min(120 * (2 ** (st["fails"] - 1)), 1800)
                     st.update(state="net", message=str(e)[:200], next_at=self.clock() + wait, last_check=now_iso(), retry_in=wait)
                     res["errors"].append((acct["id"], "net"))
                 except MailError as e:
@@ -236,6 +241,33 @@ class Engine:
         self.on_change("held", log)
         return log
 
+    def catch_up(self, rule_id, keys) -> int:
+        """刚收下的规则：连上以后来过、当时没规则管的那几封，照这条规则补办（进表、转发、起草）。
+        连上之前的旧信不动（从连上那一刻开始盯）。返回补办了几封。"""
+        with self.lock:
+            un = self.store.state.data.get("unclaimed", [])
+            want = {u["key"]: u["acct"] for u in un if u["key"] in set(keys)}
+            if not want:
+                return 0
+            by = {m.key(): m for m in self.samples()}
+            n = 0
+            self._batch = []
+            try:
+                for k, aid in want.items():
+                    acct = next((a for a in self.store.accounts if a["id"] == aid), None)
+                    m = by.get(k)
+                    if not acct or not m:
+                        continue
+                    if self.process(acct, m, force_rule=rule_id):
+                        n += 1
+            finally:
+                batch, self._batch = self._batch, None
+                if batch:
+                    self.flush_excel()
+            un[:] = [u for u in un if u["key"] not in want]
+            self.store.state.save()
+            return n
+
     def release(self, log_id):
         """被挡下的信放行：照规则正常干活。"""
         with self.lock:
@@ -268,6 +300,10 @@ class Engine:
                 rule = R.first_match(self.store.rules, mail)
                 if not rule:
                     self.store.mark_processed(key)
+                    # 连上以后来的、没规则管的信记一笔：贫僧拟的规则一收下，这几封也照办（不用等下一封）
+                    un = self.store.state.data.setdefault("unclaimed", [])
+                    un.append({"key": key, "acct": acct["id"]})
+                    del un[:-200]
                     return None
             job = {"acct": acct["id"], "rule": rule["id"], "done": [], "tries": 0, "log": None}
         else:
@@ -418,6 +454,7 @@ class Engine:
     def start(self):
         if self._thread and self._thread.is_alive():
             return
+        self.started_at = self.clock()
         self._stop.clear()
         self._thread = threading.Thread(target=self._loop, name="zhike-engine", daemon=True)
         self._thread.start()
@@ -429,13 +466,21 @@ class Engine:
     def wake(self):
         self._wake.set()
 
+    def next_wait(self) -> float:
+        """下一轮等多久：平常照「多久看一次」；有邮箱在等重试（比如刚开机网没通），到点就醒。"""
+        every = max(30, int(self.store.settings.get("interval_sec", 120)))
+        due = [s["next_at"] for s in self.status.values() if s.get("next_at")]
+        if due:
+            return max(5.0, min(every, min(due) - self.clock()))
+        return every
+
     def _loop(self):
         while not self._stop.is_set():
             try:
                 self.run_once()
             except Exception as e:  # 后台线程不能死
                 self.on_change("crash", {"error": repr(e)})
-            self._wake.wait(max(30, int(self.store.settings.get("interval_sec", 120))))
+            self._wake.wait(self.next_wait())
             self._wake.clear()
 
 

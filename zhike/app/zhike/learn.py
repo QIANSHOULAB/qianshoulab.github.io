@@ -54,6 +54,9 @@ _SYN = {}
 for _g in SYNONYMS:
     for _w in _g:
         _SYN.setdefault(_w.lower(), _g)
+# 每组同义词的「规范名」：贫僧拟规则时，几家来信的同一个意思用同一个列名（Order Number、订单编号 → 订单号）
+CANON = {"订单号": "订单号", "发票号": "发票号", "实付金额": "金额", "付款期限": "到期日", "下单时间": "下单日期",
+         "运单号": "运单号", "预计送达": "预计送达", "联系电话": "电话", "数量": "数量", "产品": "产品", "收货人": "联系人"}
 
 BUILTINS = {
     "@received": "收到时间",
@@ -331,6 +334,37 @@ def _stem(label: str) -> str:
     return re.sub(r"\s*[:：]$", "", _norm_label(label)).strip()
 
 
+def canonical(label: str) -> str:
+    """标签的规范名：认得的同义词换成统一叫法，不认得的原样（去掉冒号）。"""
+    st = _stem(label)
+    g = _SYN.get(st.lower())
+    return CANON.get(g[0], g[0]) if g else st
+
+
+def merge_specs(old: dict, new: dict) -> dict:
+    """同一个字段又学了一回（比如新来一家的写法）：新学的为主，老的标签写法一个不丢。
+    老样例的信可能已经不在手边了，不能光靠重学。"""
+    out = dict(new)
+    labels = list(new.get("labels") or [])
+    for x in old.get("labels") or []:
+        if x not in labels:
+            labels.append(x)
+    out["labels"] = labels
+    if old.get("type") and old.get("type") != new.get("type"):
+        kinds = {old["type"], new["type"]}
+        if kinds <= {"id", "number"}:
+            out["type"] = "id"
+        elif kinds <= {"money", "number"}:
+            out["type"] = "money"
+        else:
+            for k in ("type", "stop_ws", "stop_ch"):
+                out[k] = old.get(k, out.get(k))
+    out["next_line"] = bool(old.get("next_line")) and bool(new.get("next_line"))
+    if not labels:
+        out["nth"] = old.get("nth", new.get("nth", 0))
+    return out
+
+
 def synonyms(labels: list) -> list:
     """学来的标签之外，同一字段的其它常见叫法（长的在前，免得「电话」抢在「联系电话」前面）。"""
     have = {_stem(x).lower() for x in labels}
@@ -433,7 +467,7 @@ def suggest_fields(text: str, limit: int = 12) -> list:
         label, value = m.group("label").strip(), m.group("value").strip()
         if not value or len(value) > 80 or label in seen:
             continue
-        if re.fullmatch(r"https?|mailto|\d+", label, re.I):
+        if re.fullmatch(r"https?|mailto|\d+", label, re.I) or re.search(r"\bhttps?$", label, re.I) or value.startswith("//"):
             continue
         # 转发信里的信头（From/Date/To…）不是要收的字段
         if re.fullmatch(r"From|To|Cc|Date|Sent|Subject|发件人|收件人|抄送|发送时间|主题", label, re.I):

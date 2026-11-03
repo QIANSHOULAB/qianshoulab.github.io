@@ -85,6 +85,12 @@ jobs:
           if (Test-Path "$d\Zhike.exe.old") { throw "old exe not cleaned up" }
           if (-not (Test-Path "$d\Zhike.exe")) { throw "exe missing after swap" }
 
+      - name: 冒烟测试：开机就在岗（--tray 不弹窗、自己连上次的邮箱、新信进表、开机自启写对、再打开亮出窗口）
+        shell: pwsh
+        run: |
+          python tests/win_boot_probe.py dist\Zhike.exe "$env:RUNNER_TEMP\zhike-boot"
+          if ($LASTEXITCODE -ne 0) { throw "boot probe failed" }
+
       - uses: actions/upload-artifact@v4
         with:
           name: Zhike-exe

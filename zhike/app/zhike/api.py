@@ -12,7 +12,7 @@ import threading
 import uuid
 from pathlib import Path
 
-from . import VERSION, ai, learn, oauth, platform as P, rules as R
+from . import VERSION, ai, learn, oauth, platform as P, recommend as RC, rules as R
 from .engine import Engine
 from .mailbox import PROVIDERS, AuthError, MailError, NetError, account_from, test_account
 from .secrets import Secrets
@@ -43,16 +43,53 @@ class Api:
         self.secrets = Secrets(self.store.root)
         self.engine = engine or Engine(self.store, self.secrets, on_change=self._changed)
         self.on_quit = on_quit
-        self.notify = notify or (lambda *a: None)
+        self.notify = notify or (lambda title, body: None)     # 托盘气泡：只在有事要人管的时候
         self._rev = 0
         self._update = None
         self.on_restart = None
+        self._undo = None
+        self._recs = (None, [])
+        self._run_logs = []
+        self._told = {"auth": set(), "excel": False}
 
     # ---------- 内部 ----------
     def _changed(self, kind, payload):
         self._rev += 1
-        if kind == "mail" and payload:
-            self.notify(payload)
+        if kind in ("mail", "held") and payload:
+            self._run_logs.append(payload)
+        elif kind == "run":
+            logs, self._run_logs = self._run_logs, []
+            try:
+                self._tell(logs)
+            except Exception:
+                pass
+
+    def _tell(self, logs):
+        """有事才叫人：回信草稿备好了、拟了新规则、邮箱密码不对、Excel 被占着。进表、转发这种照常的事不吵。"""
+        from . import APP_NAME
+        drafts = [lg for lg in logs if lg.get("draft") == "ok"]
+        if drafts:
+            self.notify(APP_NAME, S["n_drafts"].format(n=len(drafts)))
+        for aid, st in self.engine.status.items():
+            if st.get("state") == "auth" and aid not in self._told["auth"]:
+                self._told["auth"].add(aid)
+                who = next((a["email"] for a in self.store.accounts if a["id"] == aid), "")
+                self.notify(APP_NAME, S["n_auth"].format(who=who))
+            elif st.get("state") == "ok":
+                self._told["auth"].discard(aid)
+        pend = len(self.store.state.data.get("pending_rows", []))
+        if pend and not self._told["excel"]:
+            self._told["excel"] = True
+            self.notify(APP_NAME, S["n_excel"].format(n=pend))
+        elif not pend:
+            self._told["excel"] = False
+        told = self.store.state.data.setdefault("rec_told", [])
+        fresh = [r for r in self.recs() if r["id"] not in told]
+        if fresh:
+            told.extend(r["id"] for r in fresh)
+            del told[:-200]
+            self.store.state.save()
+            self.notify(APP_NAME, S["n_recs"].format(n=len(fresh), r="、".join(r["name"] for r in fresh[:3])))
 
     @property
     def demo(self):
@@ -84,6 +121,7 @@ class Api:
             "accounts": [{k: v for k, v in a.items()} for a in self.store.accounts],
             "providers": list(PROVIDERS.keys()),
             "rules": self._rules(),
+            "samples": 0 if self.demo else len(self.store.state.data.get("samples", [])),
             "settings": {"interval_sec": s.get("interval_sec", 120), "excel_path": s.get("excel_path"),
                          "autostart": P.autostart_enabled(), "ai_model": s.get("ai_model")},
             "has_ai_key": bool(self.secrets.get("ai:gemini")),
@@ -97,16 +135,108 @@ class Api:
         st = self.engine.status
         pend = len(self.store.state.data.get("pending_rows", []))
         return {"rev": self._rev, "status": st, "pending_rows": pend, "demo": self.demo,
-                "update": self._update}
+                "update": self._update, "recs": len(self.recs())}
 
     # ---------- 邮件 ----------
     def mails(self):
         rules = self._rules()
+        of = {k: {"id": r["id"], "name": r["name"], "kind": r["kind"]} for r in self.recs() for k in r["mails"]}
         out = []
         for m in self._mails():
-            out.append(_mail_view(m, R.first_match(rules, m), rules=rules))
+            v = _mail_view(m, R.first_match(rules, m), rules=rules)
+            v["rec"] = of.get(v["key"])
+            out.append(v)
         out.sort(key=lambda x: x["date"], reverse=True)
         return out
+
+    # ---------- 贫僧拟的规则 ----------
+    def recs(self):
+        """看最近的信拟好的规则（还没收）。示例模式没有。同一个版本号内不重算。"""
+        if self.demo:
+            return []
+        if self._recs[0] == self._rev:
+            return self._recs[1]
+        out = RC.recommend(self.engine.samples(), self.store.rules, self.store.config.data.get("dismissed", []))
+        self._recs = (self._rev, out)
+        return out
+
+    def accept_recs(self, items, skipped=()):
+        """收下：items = [{"id", "name"?, "forward"?: [地址]}]；skipped = 关掉的那几条（记住，不再拟）。
+        返回 {"created": n, "extended": n, "undo": 撤销用的号}。"""
+        recs = {r["id"]: r for r in self.recs()}
+        mails = {m.key(): m for m in self.engine.samples()}
+        token = self._snapshot()
+        made = ext = 0
+        todo = []
+        for it in items or []:
+            r = recs.get(it.get("id"))
+            if not r:
+                continue
+            if r["kind"] == "extend":
+                rules = self.store.rules
+                i = next((i for i, x in enumerate(rules) if x["id"] == r["rule_id"]), None)
+                if i is None:
+                    continue
+                rules[i] = RC.extend(rules[i], r, mails, it.get("forward"))
+                todo.append((rules[i]["id"], r["mails"]))
+                ext += 1
+            else:
+                rule = RC.to_rule(r, mails, it.get("name"), it.get("forward"))
+                self.store.rules.append(rule)
+                todo.append((rule["id"], r["mails"]))
+                made += 1
+        d = self.store.config.data.setdefault("dismissed", [])
+        for x in skipped or []:
+            if x in recs and x not in d:
+                d.append(x)
+        del d[:-300]
+        self.store.config.save()
+        # 连上以后来过、当时没规则管的那几封：照刚收下的规则补办，不用等下一封（连上之前的旧信不动）
+        caught = 0
+        if not self.demo:
+            for rid, keys in todo:
+                try:
+                    caught += self.engine.catch_up(rid, keys)
+                except Exception:
+                    pass
+        self._rev += 1
+        self.engine.wake()
+        return {"created": made, "extended": ext, "caught_up": caught, "undo": token}
+
+    def dismiss_recs(self, ids):
+        token = self._snapshot()
+        d = self.store.config.data.setdefault("dismissed", [])
+        for x in ids or []:
+            if x not in d:
+                d.append(x)
+        self.store.config.save()
+        self._rev += 1
+        return {"undo": token}
+
+    def _snapshot(self, extra=None):
+        token = uuid.uuid4().hex[:8]
+        self._undo = {"token": token, "rules": copy.deepcopy(self._rules()),
+                      "dismissed": list(self.store.config.data.get("dismissed", [])), "extra": extra}
+        return token
+
+    def undo(self, token):
+        """撤销上一下（收下拟好的规则、删规则、移除邮箱）。只认最近那一下。"""
+        u = self._undo
+        if not u or u["token"] != token:
+            return False
+        self._undo = None
+        self._rules()[:] = u["rules"]
+        self.store.config.data["dismissed"] = u["dismissed"]
+        ex = u.get("extra") or {}
+        if ex.get("account"):
+            self.store.accounts.append(ex["account"])
+            for k, v in (ex.get("secrets") or {}).items():
+                if v:
+                    self.secrets.set(k, v)
+            self.engine.start()
+        self._save()
+        self.engine.wake()
+        return True
 
     def preview_rule(self, rid):
         r = self._rule(rid)
@@ -138,10 +268,12 @@ class Api:
         return rule
 
     def delete_rule(self, rid):
+        """删规则不问「确定吗」，给「撤销」。"""
+        token = self._snapshot()
         rules = self._rules()
         rules[:] = [r for r in rules if r["id"] != rid]
         self._save()
-        return True
+        return {"undo": token}
 
     def move_rule(self, rid, delta):
         rules = self._rules()
@@ -269,6 +401,7 @@ class Api:
 
     def _added(self, acct):
         was_demo = self.demo
+        first = not self.store.accounts
         self.store.accounts.append(acct)
         self.store.settings["demo"] = False
         if was_demo:
@@ -276,11 +409,20 @@ class Api:
         self.store.config.save()
         try:
             n = len(self.engine.connect_new(acct))
-        except MailError as e:
+        except MailError:
             n = 0
         self.engine.start()
+        # 头一个邮箱连上：开机自己跑（登录 Windows 就进托盘、自己连这个邮箱）。界面上当场说一句，一下能关。
+        auto = False
+        if first and self.store.settings.get("autostart", True):
+            try:
+                auto = P.set_autostart(True)
+                self.store.state.data["autostart_set"] = True
+                self.store.state.save()
+            except Exception:
+                auto = False
         self._rev += 1
-        return {"ok": True, "account": acct, "samples": n}
+        return {"ok": True, "account": acct, "samples": n, "autostart": bool(auto), "recs": len(self.recs())}
 
     def add_microsoft(self, email_addr):
         """Outlook / Hotmail / Microsoft 365：打开浏览器走微软登录，不要密码。"""
@@ -336,13 +478,17 @@ class Api:
         return {"ok": True}
 
     def remove_account(self, acct_id):
+        """移除邮箱不问「确定吗」，给「撤销」（密码先在内存里留着，撤销时放回去）。"""
+        acct = next((a for a in self.store.accounts if a["id"] == acct_id), None)
+        keep = {k: self.secrets.get(k) for k in (f"pw:{acct_id}", f"ms:{acct_id}")}
+        token = self._snapshot({"account": acct, "secrets": keep} if acct else None)
         self.store.config.data["accounts"] = [a for a in self.store.accounts if a["id"] != acct_id]
         self.secrets.delete(f"pw:{acct_id}")
         self.secrets.delete(f"ms:{acct_id}")
         self.engine.status.pop(acct_id, None)
         self.store.config.save()
         self._rev += 1
-        return True
+        return {"undo": token}
 
     def run_now(self):
         if self.demo:
@@ -420,6 +566,9 @@ class Api:
     def set_setting(self, k, v):
         if k == "autostart":
             P.set_autostart(bool(v))
+            self.store.settings["autostart"] = bool(v)
+            self.store.state.data["autostart_set"] = True
+            self.store.state.save()
         elif k == "interval_sec":
             self.store.settings[k] = max(60, int(v))
             self.engine.wake()
@@ -461,6 +610,17 @@ class Api:
         if self.on_quit:
             threading.Timer(0.05, self.on_quit).start()
         return True
+
+
+# 托盘里的字（界面上的字都在 ui/strings.js，这几句是托盘和气泡自己说的）
+S = {
+    "n_drafts": "{n} 封回信草稿备好了，在邮箱草稿箱里，看一眼就能发。",
+    "n_auth": "{who} 密码不对，贫僧先停下，免得被锁。打开知客僧改一下。",
+    "n_excel": "Excel 开着，{n} 行候着。关掉它，贫僧自己补上。",
+    "n_recs": "新来一类信，贫僧拟了 {n} 条规则：{r}。收不收你定。",
+    "tray_hint": "关了窗口，贫僧在托盘里接着盯。右键图标能退出。",
+    "m_open": "打开知客僧", "m_run": "现在就收", "m_excel": "打开 Excel", "m_quit": "退出",
+}
 
 
 def _short(s):
