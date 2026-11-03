@@ -80,5 +80,104 @@
     return null;
   }
 
-  QS.page = { readText, parseNumber, cssPath, detectWall };
+  // ---------- 改版不丢：框选时多记几条路，找的时候按顺序兜底 ----------
+  const okCls = c => c && c.length < 40 && !looksRandom(c) && /^[a-zA-Z][\w-]*$/.test(c);
+  // 类名、itemprop、data-testid 这类改版也常留着的记号，只收全页唯一能指回这个元素的
+  function altSelectors(el) {
+    if (!el || el.nodeType !== 1) return [];
+    const doc = el.ownerDocument, out = [];
+    const uniq = s => { try { const a = doc.querySelectorAll(s); return a.length === 1 && a[0] === el; } catch (e) { return false; } };
+    const add = s => { if (s && !out.includes(s) && uniq(s)) out.push(s); };
+    for (const a of ['itemprop', 'data-testid', 'data-test', 'data-qa', 'data-field', 'name']) {
+      const v = el.getAttribute(a); if (v && v.length < 60) add(`[${a}="${v.replace(/"/g, '\\"')}"]`);
+    }
+    const cls = Array.from(el.classList || []).filter(okCls);
+    cls.forEach(c => add('.' + esc(c)));
+    if (cls.length > 1) add('.' + cls.map(esc).join('.'));
+    const tag = el.tagName.toLowerCase();
+    cls.forEach(c => add(tag + '.' + esc(c)));
+    // 往上一层借个类名：.info .price
+    const p = el.parentElement;
+    if (p && cls.length) Array.from(p.classList || []).filter(okCls).forEach(pc => cls.forEach(c => add('.' + esc(pc) + ' .' + esc(c))));
+    return out.slice(0, 6);
+  }
+  // 文字的「长相」：数字换成 #，¥459.00 → ¥#
+  const shape = s => String(s || '').replace(/\d[\d,.，]*/g, '#').replace(/\s+/g, ' ').trim();
+  // 元素前面最近的几个字（标题、标签），当锚
+  function textBefore(el, n) {
+    const doc = el.ownerDocument, body = doc.body;
+    if (!body) return '';
+    const tw = doc.createTreeWalker(body, 4);
+    let acc = '';
+    const parts = [];
+    for (let t = tw.nextNode(); t; t = tw.nextNode()) {
+      if (el.contains(t)) break;
+      if (el.compareDocumentPosition(t) & 4) break;
+      const pe = t.parentElement;
+      if (pe && SKIP.has(pe.tagName.toUpperCase())) continue;
+      const v = t.nodeValue.replace(/\s+/g, ' ').trim();
+      if (v) parts.push(v);
+      if (parts.length > 6) parts.shift();
+    }
+    acc = parts.join(' ');
+    return acc.slice(-(n || 24));
+  }
+  function anchorOf(el) {
+    const tx = readText(el);
+    if (!tx || tx.length > 200) return null;
+    return { shape: shape(tx), before: textBefore(el, 24) };
+  }
+  function byAnchor(doc, a) {
+    if (!a || !a.shape || !doc.body) return null;
+    const key = a.before ? a.before.slice(-8) : '';
+    let best = null;
+    for (const el of doc.body.querySelectorAll('*')) {
+      if (SKIP.has(el.tagName.toUpperCase())) continue;
+      const raw = el.textContent || '';
+      if (raw.length > 400) continue;
+      if (shape(readText(el)) !== a.shape) continue;
+      if (key && !textBefore(el, 40).endsWith(key)) continue;
+      if (!best || best.contains(el)) best = el; // 要最里面那层
+    }
+    return best;
+  }
+  // 按顺序找：原路径 → 备用选择器 → 文字锚点。spec: { selector, alts, anchor, numeric }
+  function locate(doc, spec) {
+    if (!spec || !spec.selector) return { el: doc.body, via: 'page' };
+    const good = el => { if (!el) return false; const tx = readText(el); return !!tx && (!spec.numeric || parseNumber(tx) != null) && (!spec.anchor || !spec.anchor.shape || tx.length < 400); };
+    let el = null;
+    try { el = doc.querySelector(spec.selector); } catch (e) {}
+    if (good(el)) return { el, via: 'sel' };
+    for (const s of spec.alts || []) {
+      let all = [];
+      try { all = Array.from(doc.querySelectorAll(s)); } catch (e) {}
+      const pick = all.length === 1 ? all[0] : all.find(x => spec.anchor && shape(readText(x)) === spec.anchor.shape);
+      if (good(pick)) return { el: pick, via: 'alt' };
+    }
+    const first = el && readText(el) ? el : null; // 原路径还在、只是不像数字了（比如「暂无报价」），兜底找不到更像的就还用它
+    el = byAnchor(doc, spec.anchor);
+    if (good(el)) return { el, via: 'anchor' };
+    return first ? { el: first, via: 'sel' } : { el: null, via: null };
+  }
+  // 读一块：给离屏页、后台标签、网页小窗共用
+  function readPart(doc, spec) {
+    const r = locate(doc, spec);
+    const out = { found: !!r.el, text: r.el ? readText(r.el) : '', title: (doc.title || '').trim() };
+    if (r.el && (r.via === 'alt' || r.via === 'anchor')) { out.moved = r.via; out.newSel = cssPath(r.el); }
+    return out;
+  }
+
+  // ---------- 整页去噪：只看新增的行，只变数字、时间的行不算 ----------
+  function newLines(prev, next) {
+    const seen = new Set(String(prev || '').split('\n').map(shape).filter(Boolean));
+    const out = [];
+    for (const l of String(next || '').split('\n')) {
+      const k = shape(l);
+      if (!k || seen.has(k) || !/[^\s#:：/.\-·,，|]/.test(k)) continue;
+      seen.add(k); out.push(l.trim());
+    }
+    return out;
+  }
+
+  QS.page = { readText, parseNumber, cssPath, detectWall, altSelectors, anchorOf, locate, readPart, newLines, shape };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

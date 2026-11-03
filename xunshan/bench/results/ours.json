@@ -1,5 +1,5 @@
 {
- "tool": "巡山僧 0.1.0",
+ "tool": "巡山僧 0.2.0",
  "clicks": {
   "W1": 5,
   "W2": 5,
@@ -59,19 +59,19 @@
    "same",
    "same",
    "alert",
-   "alert",
+   "change",
    "change",
    "same",
    "alert"
   ],
   "W4": [
+   "same",
+   "same",
+   "same",
    "alert",
+   "same",
    "alert",
-   "alert",
-   "alert",
-   "alert",
-   "alert",
-   "alert"
+   "same"
   ],
   "W5": [
    "same",
@@ -85,11 +85,11 @@
   "W6": [
    "same",
    "same",
-   "err:gone",
-   "err:gone",
-   "err:gone",
-   "err:gone",
-   "err:gone"
+   "change",
+   "same",
+   "alert",
+   "same",
+   "alert"
   ],
   "W7": [
    "same",

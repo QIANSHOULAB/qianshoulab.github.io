@@ -86,6 +86,6 @@ const TARGET = { W1: '.price', W2: '#stock', W3: '.seats', W5: '.price', W6: '.p
 
   const app = await ctx.newPage(); await app.goto(X('app.html')); await sleep(800);
   await app.screenshot({ path: path.join(SHOT, 'ours-3-list.png') });
-  fs.writeFileSync(path.join(RES, 'ours.json'), JSON.stringify({ tool: '巡山僧 0.1.0', clicks, typed, steps: out }, null, 1));
+  fs.writeFileSync(path.join(RES, 'ours.json'), JSON.stringify({ tool: '巡山僧 ' + mf.version, clicks, typed, steps: out }, null, 1));
   await ctx.close(); if (site) site.kill();
 })().catch(e => { console.error(e); process.exit(1); });

@@ -68,6 +68,8 @@ http.createServer((req, res) => {
     if (u.searchParams.get('go')) return send(302, '', 'text/plain', { location: '/orders', 'set-cookie': 'sid=ok; Path=/; Max-Age=86400; SameSite=Lax' });
     return send(200, page('登录', `<main><div></div><div><h1>请登录</h1><a id="go" href="/login?go=1">一键登录（测试）</a></div></main>`));
   }
+  // 脚本渲染页另外不许被别人嵌进框里（很多大站都这样），还带一段「跳出框架」脚本
+  if (p === '/spa') return send(200, R[p]().replace('<script>', '<script>if(top!==self)try{top.location=location.href}catch(e){}\n'), undefined, { 'x-frame-options': 'DENY', 'content-security-policy': "frame-ancestors 'none'" });
   if (R[p]) return send(200, R[p](), p.startsWith('/api/') ? 'application/json' : p.endsWith('.js') ? 'text/javascript' : undefined);
   send(404, 'not found', 'text/plain');
 }).listen(+process.argv[2] || 8790, () => console.log('bench site on', +process.argv[2] || 8790));

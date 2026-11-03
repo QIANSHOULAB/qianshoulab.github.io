@@ -1,7 +1,7 @@
 // 巡山僧测试网站：价格、库存、公告会变，有脚本渲染页、登录页、验证码页。
 // node site.js [port]   AUTO=1 时价格和公告每 20 秒自己变一次。
 const http = require('http');
-const S = { price: 1299, stock: '缺货', news: ['10/28 双十一预售规则公布', '10/20 会员积分翻倍'], seats: 0, hits: {} };
+const S = { price: 1299, stock: '缺货', news: ['10/28 双十一预售规则公布', '10/20 会员积分翻倍'], seats: 0, lamp: 459, redesign: 0, hits: {} };
 const PRICES = [1299, 1249, 1199, 1099, 999, 899];
 if (process.env.AUTO) setInterval(() => {
   S.price = PRICES[(PRICES.indexOf(S.price) + 1) % PRICES.length];
@@ -30,6 +30,13 @@ function spa() {
   return page('山货铺 · 限量款', `<main><div class="pic">⌚</div><div><h1>限量款手表</h1><div id="app">加载中…</div></div></main>
   <script>setTimeout(()=>fetch('/api/stock').then(r=>r.json()).then(d=>{document.getElementById('app').innerHTML='<div class="seats">剩余名额：<b id="seats">'+d.seats+'</b></div>'}),500)</script>`);
 }
+// 台灯：可以一键「改版」，结构全变、类名还在
+function lamp() {
+  const p = '¥' + S.lamp + '.00';
+  return S.redesign
+    ? page('山货铺 · 台灯', `<div class="promo">新版上线</div><main><div class="pic">💡</div><section><div class="info"><h1>护眼台灯</h1><p>限时直降</p><div class="prices"><span class="price">${p}</span></div></div></section></main>`)
+    : page('山货铺 · 台灯', `<main><div class="pic">💡</div><div><h1>护眼台灯</h1><div class="price">${p}</div><div class="stock">现货</div></div></main>`);
+}
 function news() {
   return page('山货铺 · 公告', `<ul class="news">${S.news.map(n => `<li>${n}</li>`).join('')}</ul>`);
 }
@@ -40,7 +47,8 @@ http.createServer((req, res) => {
   const cookie = req.headers.cookie || '';
   switch (u.pathname) {
     case '/': case '/shop': return send(200, shop());
-    case '/spa': return send(200, spa());
+    case '/spa': return send(200, spa(), undefined, { 'x-frame-options': 'DENY', 'content-security-policy': "frame-ancestors 'none'" });
+    case '/lamp': return send(200, lamp());
     case '/api/stock': return send(200, JSON.stringify({ seats: S.seats }), 'application/json');
     case '/news': return send(200, news());
     case '/member':
@@ -56,6 +64,8 @@ http.createServer((req, res) => {
         if (k === 'stock') S.stock = v;
         if (k === 'seats') S.seats = +v;
         if (k === 'news') S.news.unshift(v);
+        if (k === 'lamp') S.lamp = +v;
+        if (k === 'redesign') S.redesign = +v;
       }
       return send(200, JSON.stringify(S), 'application/json');
     case '/_hits': return send(200, JSON.stringify(S.hits), 'application/json');

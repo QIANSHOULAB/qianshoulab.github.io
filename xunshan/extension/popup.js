@@ -19,12 +19,14 @@ async function getTab() {
 function statusOf(w) {
   if (w.paused) return `<span class="pill off">${t('paused')}</span>`;
   if (w.err) return `<span class="pill err">${t('error')}</span>`;
-  if (w.unread) return `<span class="pill hit">${t('changed')}</span>`;
+  if (w.unread) return `<span class="pill hit">${t('hitPill')}</span>`;
+  if (w.fresh) return `<span class="pill off">${t('changed')}</span>`;
   return '';
 }
 function valueOf(w) {
   if (w.lastText == null) return t('waitingFirst');
   if (w.selector && w.lastNum != null && String(w.lastText).length < 60) return `<span class="num">${ui.esc(w.lastText.replace(/\s+/g, ' '))}</span>`;
+  if (!w.selector) return ui.esc(w.lastNew ? t('newPrefix') + w.lastNew : (w.title || ui.host(w.url)));
   return ui.esc(String(w.lastText).replace(/\s+/g, ' ').slice(0, 80));
 }
 

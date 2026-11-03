@@ -109,7 +109,7 @@
     const base = (document.title || location.hostname).replace(/\s+/g, ' ').trim().slice(0, 50);
     const label = kind ? base + ' · ' + kind : base;
     panel.innerHTML = `<div class="ok"><i>✓</i><span>${t('added')}</span></div>`;
-    chrome.runtime.sendMessage({ type: 'add', watch: { url: location.href, title: document.title, label, selector, pickedText: text, interval: state.iv, cond } });
+    chrome.runtime.sendMessage({ type: 'add', watch: { url: location.href, title: document.title, label, selector, alts: P.altSelectors(el), anchor: P.anchorOf(el), pickedText: text, interval: state.iv, cond } });
     setTimeout(() => ctl.stop(), 1800);
   }
 

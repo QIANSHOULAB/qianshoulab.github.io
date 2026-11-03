@@ -5,6 +5,7 @@ QS.applyT();
 $('#imp').innerHTML = ui.ICON.down + '<span>' + t('importBtn') + '</span>';
 $('#exp').innerHTML = ui.ICON.up + '<span>' + t('exportBtn') + '</span>';
 $('#gear').innerHTML = ui.ICON.gear;
+$('#ver').textContent = chrome.runtime.getManifest().version;
 
 const S = { ws: {}, sel: location.hash.slice(1) || null, hist: [], open: null, pendingOrigins: [] };
 const send = msg => chrome.runtime.sendMessage(msg);
@@ -15,9 +16,12 @@ const isNum = w => w.selector && w.lastNum != null && oneLine(w.lastText).length
 function status(w) {
   if (w.paused) return `<span class="pill off">${t('paused')}</span>`;
   if (w.err) return `<span class="pill err">${t('error')}</span>`;
-  if (w.unread) return `<span class="pill hit">${t('changed')}</span>`;
+  if (w.unread) return `<span class="pill hit">${t('hitPill')}</span>`;
+  if (w.fresh) return `<span class="pill off">${t('changed')}</span>`;
   return '';
 }
+// 列表副标题：框选的放当前值；整页放「新增了什么」，没有就放网页标题
+const sub = w => w.lastText == null ? t('waitingFirst') : !w.selector ? (w.lastNew ? t('newPrefix') + w.lastNew : (w.title || ui.host(w.url))) : oneLine(w.lastText).slice(0, 70);
 function errText(w) {
   const m = { fetch: t('errFetch', w.errDetail || '?'), blocked: t('errBlocked'), gone: t('errGone'), login: t('errLogin'), perm: t('errPerm') };
   return m[w.err] || t('error');
@@ -31,13 +35,13 @@ function renderList() {
   $('#cnt').textContent = t('count', list.length);
   $('#hero').hidden = list.length > 0;
   $('#main').hidden = list.length === 0;
-  $('#readAll').hidden = !list.some(w => w.unread);
+  $('#readAll').hidden = !list.some(w => w.unread || w.fresh);
   if (!S.ws[S.sel]) S.sel = list[0] ? list[0].id : null;
   $('#lst').innerHTML = list.map(w => `
     <button class="li" data-id="${w.id}" aria-current="${w.id === S.sel}">
       ${ui.avatar(w.url)}
       <div class="li-m"><div class="li-t">${ui.esc(name(w))}</div>
-        <div class="li-s">${w.lastText == null ? t('waitingFirst') : ui.esc(oneLine(w.lastText).slice(0, 70))}</div></div>
+        <div class="li-s">${ui.esc(sub(w))}</div></div>
       <div class="li-r">${status(w)}<span>${ui.ago(w.lastChange || w.lastCheck)}</span></div>
     </button>`).join('');
 }
@@ -62,9 +66,10 @@ function histRows(w) {
       const dn = e.num < prev.num;
       chg = `<span class="chg ${dn ? 'dn' : 'upv'}">${rules.fmtNum(prev.num)} → ${rules.fmtNum(e.num)}</span>`;
     }
-    const tag = e.first ? `<span class="pill off tag">${t('firstSeen')}</span>` : (e.hit ? `<span class="pill hit tag">${t('hitTag')}</span>` : '');
+    const tag = (e.first ? `<span class="pill off tag">${t('firstSeen')}</span>` : (e.hit ? `<span class="pill hit tag">${t('hitTag')}</span>` : ''))
+      + (e.moved ? `<span class="pill off tag">${t('movedTag')}</span>` : '');
     const open = S.open === e.t;
-    let body = `<div class="he-s">${ui.esc(oneLine(e.text).slice(0, 140))}</div>`;
+    let body = `<div class="he-s">${ui.esc(e.added ? t('newPrefix') + e.added.join(' · ') : oneLine(e.text).slice(0, 140))}</div>`;
     if (open && prev) {
       const d = QS.diff(prev.text, e.text);
       body = `<div class="dif">${d.map(p => p.op === '+' ? `<ins>${ui.esc(p.s)}</ins>` : p.op === '-' ? `<del>${ui.esc(p.s)}</del>` : `<span class="ctx">${ui.esc(p.s)}</span>`).join('')}</div>
@@ -123,7 +128,7 @@ async function refresh(full) {
   renderList();
   if (full !== false) await loadHist();
   renderDet();
-  if (S.sel && S.ws[S.sel] && S.ws[S.sel].unread && document.visibilityState === 'visible') send({ type: 'patch', id: S.sel, patch: { unread: false } });
+  if (S.sel && S.ws[S.sel] && (S.ws[S.sel].unread || S.ws[S.sel].fresh) && document.visibilityState === 'visible') send({ type: 'patch', id: S.sel, patch: { unread: false, fresh: false } });
 }
 async function select(id) {
   S.sel = id; S.open = null;
@@ -219,10 +224,10 @@ $('#gear').addEventListener('click', () => { $('#settings').hidden = !$('#settin
 (async () => {
   const s = await QS.settings.all();
   $('#sIv').innerHTML = rules.IV.map(m => `<option value="${m}" ${s.defaultInterval === m ? 'selected' : ''}>${t('every')} ${rules.ivLabel(m)}</option>`).join('');
-  $('#sGap').innerHTML = [30, 60, 120, 300].map(x => `<option value="${x}" ${s.siteGapSec === x ? 'selected' : ''}>${t('sec', x)}</option>`).join('');
+  $('#sGap').innerHTML = [1, 3, 10, 30, 60].map(x => `<option value="${x}" ${s.hostGapSec === x ? 'selected' : ''}>${t('sec', x)}</option>`).join('');
 })();
 $('#sIv').addEventListener('change', e => QS.settings.set({ defaultInterval: +e.target.value }));
-$('#sGap').addEventListener('change', e => QS.settings.set({ siteGapSec: +e.target.value }));
+$('#sGap').addEventListener('change', e => QS.settings.set({ hostGapSec: +e.target.value }));
 
 store.onChange(ch => {
   const histChanged = S.sel && ch['h:' + S.sel];

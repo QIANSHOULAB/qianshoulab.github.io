@@ -47,6 +47,11 @@ const get = p => fetch(BASE + p).then(r => r.json());
   const until = async (fn, ms = 20000, step = 300) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await sleep(step); } return null; };
   const tabIdOf = url => sw.evaluate(u => chrome.tabs.query({}).then(ts => (ts.find(t => (t.url || '').startsWith(u)) || {}).id), url);
 
+  // 记一下后台有没有偷偷开标签（巡山时不该开）
+  let tabsOpened = 0;
+  await sw.evaluate(() => { globalThis.__tabs = 0; chrome.tabs.onCreated.addListener(t => { if (!t.active) globalThis.__tabs++; }); });
+  const bgTabs = () => sw.evaluate(() => globalThis.__tabs);
+
   // ---- 1. 空状态弹窗 ----
   const shop = await ctx.newPage(); watchPage(shop);
   await shop.goto(BASE + '/shop');
@@ -110,9 +115,10 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await spa.mouse.move(eb.x + 10, eb.y + 8); await spa.mouse.click(eb.x + 10, eb.y + 8);
   await spa.locator('qianshou-picker [data-a="go"]').click();
   const spaW = await until(async () => Object.values(await W()).find(w => w.url.endsWith('/spa') && w.lastText != null), 40000);
-  ok('脚本渲染页自动切到后台标签模式', spaW && spaW.mode === 'tab' && /剩余名额：0/.test(spaW.lastText), spaW && JSON.stringify({ mode: spaW.mode, text: spaW.lastText }));
-  const leftover = await sw.evaluate(() => chrome.tabs.query({}).then(ts => ts.filter(t => (t.url || '').endsWith('/spa')).length));
-  ok('后台标签读完就关', leftover === 1, 'spa 标签数 ' + leftover);
+  ok('脚本渲染页（还不许被嵌）自动改用看不见的小窗', spaW && spaW.mode === 'frame' && /剩余名额：0/.test(spaW.lastText), spaW && JSON.stringify({ mode: spaW.mode, text: spaW.lastText }));
+  tabsOpened = await bgTabs();
+  const spaTabs = await sw.evaluate(() => chrome.tabs.query({}).then(ts => ts.filter(t => (t.url || '').endsWith('/spa')).length));
+  ok('巡山不在用户窗口里开标签', spaTabs === 1 && tabsOpened === 0, 'spa 标签数 ' + spaTabs + '，巡山开过的标签 ' + tabsOpened);
 
   // ---- 5. 盯整页（公告）----
   const nws = await ctx.newPage(); await nws.goto(BASE + '/news');
@@ -131,9 +137,9 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await get('/_set?price=899');
   await sw.evaluate(id => handlers.checkNow({ id }), priceW.id);
   h = await H(priceW.id);
-  const n1 = await notifs();
+  const n1 = await until(async () => { const n = await notifs(); return Object.keys(n).length ? n : null; }, 3000) || {};
   ok('降到 899 低于 1000 → 触发', h.length === 3 && h[2].hit === true);
-  ok('弹出系统通知', Object.keys(n1).length === 1, Object.keys(n1)[0]);
+  ok('弹出系统通知', Object.keys(n1).length === 1, Object.keys(n1).join(','));
   ok('工具栏角标 = 1', (await badge()) === '1');
 
   // 库存：缺货 → 有货
@@ -170,6 +176,14 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await lg.locator('qianshou-picker [data-a="go"]').click();
   const memW = await until(async () => Object.values(await W()).find(w => w.url.endsWith('/member') && (w.lastText != null || w.err)));
   ok('登录后的会员价能盯（带上浏览器登录）', memW && !memW.err && /¥809/.test(memW.lastText), memW && JSON.stringify({ err: memW.err, text: memW.lastText }));
+  // 同一页换成看不见的小窗读，也带着登录
+  await sw.evaluate(async id => { await store.update('watches', ws => { ws[id].mode = 'frame'; return ws; }, {}); }, memW.id);
+  await get('/_set?price=1199');
+  await sw.evaluate(id => handlers.checkNow({ id }), memW.id);
+  const memF = (await W())[memW.id];
+  ok('看不见的小窗里也带着浏览器登录', memF.mode === 'frame' && !memF.err && /¥1079/.test(memF.lastText), JSON.stringify({ err: memF.err, text: memF.lastText }));
+  await get('/_set?price=899');
+  await sw.evaluate(id => handlers.checkNow({ id }), memW.id);
   await lg.close();
 
   // ---- 9. 验证码页：识别出来，不硬闯 ----
@@ -177,23 +191,76 @@ const get = p => fetch(BASE + p).then(r => r.json());
   ok('验证码页标成「被拦」并退避', cap && cap.err === 'blocked' && cap.nextCheck - Date.now() > 25 * 60000, cap && cap.err);
   await sw.evaluate(id => handlers.remove({ id }), cap.id);
 
-  // ---- 10. 同一网站最小间隔 ----
-  await sw.evaluate(async () => { await chrome.storage.session.set({ hostHits: {} }); const ws = (await chrome.storage.local.get('watches')).watches; for (const w of Object.values(ws)) w.nextCheck = 0; await chrome.storage.local.set({ watches: ws }); });
+  // ---- 9b. 盯不了要叫人：连着 3 回被拦，发一条「盯不了了」----
+  const cap2 = await sw.evaluate(() => handlers.add({ watch: { url: 'http://localhost:8787/captcha', title: '验证', selector: null } }));
+  await sw.evaluate(id => handlers.checkNow({ id }), cap2.id);
+  await sw.evaluate(id => handlers.checkNow({ id }), cap2.id);
+  const brokenN = Object.keys(await notifs()).filter(k => k.startsWith('e:' + cap2.id));
+  ok('连着 3 回没看成，发「盯不了了」通知（只发一次）', brokenN.length === 1);
+  await sw.evaluate(id => handlers.checkNow({ id }), cap2.id);
+  ok('之后不重复发', Object.keys(await notifs()).filter(k => k.startsWith('e:' + cap2.id)).length === 1);
+  await sw.evaluate(id => handlers.remove({ id }), cap2.id);
+  await sw.evaluate(() => new Promise(r => chrome.notifications.getAll(n => { Object.keys(n).filter(k => k.startsWith('e:')).forEach(k => chrome.notifications.clear(k)); r(); })));
+
+  // ---- 9c. 整页去噪：只变时间、人数，不记不叫 ----
+  const noisy = await sw.evaluate(() => handlers.add({ watch: { url: 'http://localhost:8787/shop', title: '整页', selector: null } }));
+  await sleep(1100);
+  await sw.evaluate(id => handlers.checkNow({ id }), noisy.id);
+  await sw.evaluate(id => handlers.checkNow({ id }), noisy.id);
+  const nh = await H(noisy.id), nw = (await W())[noisy.id];
+  ok('整页只变时钟和在看人数：不记、不叫', nh.length === 1 && !nw.unread && !nw.fresh, JSON.stringify({ hist: nh.length }));
+  await sw.evaluate(id => handlers.remove({ id }), noisy.id);
+
+  // ---- 9d. 网页改版：路径断了，按类名 / 文字锚点重新找到 ----
+  const lp = await ctx.newPage(); await lp.goto(BASE + '/lamp');
+  const lampTab = await tabIdOf(BASE + '/lamp');
+  await pop.goto(X('popup.html?tab=' + lampTab)); await pop.click('#pick');
+  await lp.bringToFront(); await lp.waitForSelector('qianshou-picker');
+  const lb = await lp.locator('.price').boundingBox();
+  await lp.mouse.move(lb.x + 10, lb.y + 10); await lp.mouse.click(lb.x + 10, lb.y + 10);
+  await lp.locator('qianshou-picker [data-c="below"]').click(); await lp.locator('qianshou-picker #cv').fill('420');
+  await lp.locator('qianshou-picker [data-a="go"]').click();
+  const lampW = await until(async () => Object.values(await W()).find(w => w.url.endsWith('/lamp') && w.lastText != null));
+  ok('框选时多记了备用找法', lampW && lampW.alts.length > 0 && lampW.anchor && lampW.anchor.shape === '¥#', lampW && JSON.stringify({ alts: lampW.alts, anchor: lampW.anchor }));
+  await get('/_set?redesign=1');
+  await sw.evaluate(id => handlers.checkNow({ id }), lampW.id);
+  let lw = (await W())[lampW.id], lh = await H(lampW.id);
+  ok('改版后重新找到，记一笔「改版」，不叫', !lw.err && lh.slice(-1)[0].moved === true && !lh.slice(-1)[0].hit && lw.selector !== lampW.selector, JSON.stringify({ err: lw.err, sel: lw.selector }));
+  await get('/_set?lamp=399');
+  await sw.evaluate(id => handlers.checkNow({ id }), lampW.id);
+  lh = await H(lampW.id);
+  ok('改版后降到 399 照样叫', lh.slice(-1)[0].hit === true && lh.slice(-1)[0].num === 399);
+  await get('/_set?lamp=410');
+  await sw.evaluate(id => handlers.checkNow({ id }), lampW.id);
+  ok('已在线下、往回涨（399→410）不叫', (await H(lampW.id)).slice(-1)[0].hit === false);
+  await get('/_set?lamp=379');
+  await sw.evaluate(id => handlers.checkNow({ id }), lampW.id);
+  ok('线下再降（410→379）叫', (await H(lampW.id)).slice(-1)[0].hit === true);
+  await sw.evaluate(id => handlers.remove({ id }), lampW.id);
+  await lp.close();
+  await sw.evaluate(() => new Promise(r => chrome.notifications.getAll(n => { Object.keys(n).filter(k => !k.includes('w:') ).forEach(k => chrome.notifications.clear(k)); r(); })));
+
+  // ---- 10. 同站排队：一轮里同一网站挨个查完，同一网址只抓一次 ----
+  await sw.evaluate(async () => { const ws = (await chrome.storage.local.get('watches')).watches; for (const w of Object.values(ws)) w.nextCheck = 0; await chrome.storage.local.set({ watches: ws }); });
   const hits0 = await get('/_hits');
+  const r0 = Date.now();
   await sw.evaluate(() => runDue());
+  const roundSec = (Date.now() - r0) / 1000;
   const hits1 = await get('/_hits');
   const total = k => (hits1[k] || 0) - (hits0[k] || 0);
-  const pageHits = total('/shop') + total('/spa') + total('/news') + total('/member');
-  ok('一轮里同一网站只去一次', pageHits === 1, JSON.stringify({ shop: total('/shop'), spa: total('/spa'), news: total('/news'), member: total('/member') }));
+  const wsAfter = Object.values(await W());
+  ok('一轮把同站到期的全查完', wsAfter.every(w => w.nextCheck > Date.now()), roundSec.toFixed(1) + ' 秒');
+  ok('同一网址两条只抓一次', total('/shop') === 1, JSON.stringify({ shop: total('/shop'), spa: total('/spa'), news: total('/news'), member: total('/member') }));
+  ok('同站之间隔开几秒，不扎堆', roundSec >= 6 && roundSec < 40, roundSec.toFixed(1) + ' 秒');
 
   // ---- 11. 真闹钟：不点按钮，等后台自己去看 ----
   if (SLOW) {
     await get('/_set?news=' + encodeURIComponent('11/02 补货通知：降噪耳机 Pro 到货 200 台'));
-    await sw.evaluate(async id => { await chrome.storage.session.set({ hostHits: {} }); const ws = (await chrome.storage.local.get('watches')).watches; for (const w of Object.values(ws)) w.nextCheck = w.id === id ? 0 : Date.now() + 3600e3; await chrome.storage.local.set({ watches: ws }); }, newsW.id);
+    await sw.evaluate(async id => { const ws = (await chrome.storage.local.get('watches')).watches; for (const w of Object.values(ws)) w.nextCheck = w.id === id ? 0 : Date.now() + 3600e3; await chrome.storage.local.set({ watches: ws }); }, newsW.id);
     const t0 = Date.now();
-    const got = await until(async () => /补货通知/.test((await W())[newsW.id].lastText || ''), 130000, 2000);
+    const got = await until(async () => /补货通知/.test((await W())[newsW.id].lastText || ''), 70000, 2000);
     ok('定时器自己巡到公告更新', !!got, Math.round((Date.now() - t0) / 1000) + ' 秒');
-    ok('整页变化也弹通知', Object.keys(await notifs()).some(k => k.includes(newsW.id)));
+    ok('整页有新公告就弹通知', Object.keys(await notifs()).some(k => k.includes(newsW.id)));
   }
 
   // ---- 12. 总览页：列表、详情、前后对比 ----

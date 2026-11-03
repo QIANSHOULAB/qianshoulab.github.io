@@ -43,7 +43,7 @@
       emptyPick: '这块是空的，换一块',
 
       // intervals
-      iv5: '5 分钟', iv15: '15 分钟', iv30: '30 分钟', iv60: '1 小时', iv180: '3 小时', iv360: '6 小时', iv1440: '1 天',
+      iv1: '1 分钟', iv5: '5 分钟', iv15: '15 分钟', iv30: '30 分钟', iv60: '1 小时', iv180: '3 小时', iv360: '6 小时', iv1440: '1 天',
 
       // states
       justNow: '刚刚',
@@ -55,6 +55,7 @@
       soon: '马上',
       paused: '歇着',
       changed: '变了',
+      hitPill: '该看了',
       checking: '正在看…',
       waitingFirst: '头一回去看…',
       noChange: '没动静',
@@ -92,6 +93,8 @@
       after: '之后',
       firstSeen: '开盯',
       hitTag: '叫了',
+      movedTag: '网页改版，已重新找到',
+      newPrefix: '新增：',
       lastCheck: '上次看 {0}',
       nextCheck: '下次 {0}',
       removeAsk: '删掉「{0}」？记录一起没。',
@@ -102,7 +105,7 @@
       grant: '放行',
       exported: '清单已导出',
       defaultIv: '新盯梢默认',
-      siteGap: '同一网站最短间隔',
+      siteGap: '同一网站两次之间隔',
       siteGapSub: '别把人家网站盯烦了',
       sec: '{0} 秒',
       privacy: '清单和记录只在这台电脑的浏览器里，哪儿也不去。',
@@ -116,6 +119,15 @@
 
       // notification
       notifTitle: '{0} 变了',
+      notifTitleNew: '{0} 有新内容',
+      notifNew: '新增：{0}',
+      brokenTitle: '{0} 盯不了了',
+      brokenOpen: '点一下看怎么办',
+      broken_gone: '框的那块连着几回都找不到，网页大改了。去重新框一下。',
+      broken_blocked: '网站连着几回要验证码。贫僧不硬闯，你手动开一下这页。',
+      broken_login: '连着几回被请去登录。在浏览器里登上就好。',
+      broken_perm: '这个网站的权限被收回了，去放行一下。',
+      broken_fetch: '网页连着几回打不开。',
       notifBelow: '降到 {0}',
       notifAbove: '涨到 {0}',
       notifHas: '出现了「{0}」',

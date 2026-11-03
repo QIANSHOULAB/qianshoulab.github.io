@@ -1,20 +1,43 @@
 {
   "manifest_version": 3,
-  "name": "巡山僧 · 网页盯梢",
+  "name": "巡山僧 - 降价补货提醒",
   "short_name": "巡山僧",
-  "version": "0.1.0",
-  "description": "价格、库存、公告，一变就叫你。框选网页任意一块，定时去看，变了弹通知。数据只存在你的浏览器里。",
+  "version": "0.2.0",
+  "description": "降价、补货、上新，一变就叫你。框选网页任意一块，定时去看，到线才弹通知。数据只存在你的浏览器里。",
   "author": "QIANSHOU LAB",
   "homepage_url": "https://qianshoulab.github.io/xunshan/",
-  "minimum_chrome_version": "116",
-  "permissions": ["storage", "alarms", "notifications", "activeTab", "scripting", "offscreen"],
-  "optional_host_permissions": ["https://*/*", "http://*/*"],
-  "background": { "service_worker": "background.js" },
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications",
+    "activeTab",
+    "scripting",
+    "offscreen",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "巡山僧",
-    "default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" }
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png",
+      "48": "icons/48.png",
+      "128": "icons/128.png"
+    }
   },
   "options_page": "app.html",
-  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" }
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  }
 }
