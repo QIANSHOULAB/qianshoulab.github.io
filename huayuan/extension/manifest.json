@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "化缘僧：网页名单一键成表",
+  "name": "化缘僧：过路留名，见网扒皮",
   "short_name": "化缘僧",
-  "version": "0.2.1",
-  "description": "点一下，侧边栏里把网页上的列表、表格抓成一张表：自动认列表、自动翻页和滚动、去重，导出 Excel / CSV。数据只在本机。",
+  "version": "0.3.0",
+  "description": "专治防复制网页。客户名录、商品列表，点一下抓成 Excel：自己认列表、自己翻页滚动、化完自己下载，同一个网站第二回照上次的改法办。数据只在本机。",
   "homepage_url": "https://qianshoulab.github.io/huayuan/",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -38,7 +38,7 @@
       "suggested_key": {
         "default": "Alt+Shift+H"
       },
-      "description": "打开化缘僧"
+      "description": "专治防复制网页。客户名录、商品列表，点一下抓成 Excel：自己认列表、自己翻页滚动、化完自己下载，同一个网站第二回照上次的改法办。数据只在本机。"
     }
   }
 }

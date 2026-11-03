@@ -345,7 +345,7 @@
       cache = scan();
       return {
         ok: true, host: location.hostname, title: document.title, url: location.href,
-        list: cache.map((c) => ({ path: P.cssPath(c.el), sig: c.sig, rows: c.kids.length, fields: c.fields })),
+        list: cache.map((c) => ({ path: P.cssPath(c.el), sig: c.sig, rows: c.kids.length, fields: c.fields, score: Math.round(c.score) })),
       };
     },
     extract,

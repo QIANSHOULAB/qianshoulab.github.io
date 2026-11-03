@@ -97,6 +97,8 @@ async function main() {
     await comp.close();
     await page.emulateMedia({ colorScheme: 'light' }); await panel.emulateMedia({ colorScheme: 'light' });
   }
+  const fresh = () => sw.evaluate(() => chrome.storage.local.clear()); // 当「第一次用」
+  const saveDl = async (d) => { const f = path.join(SHOTS, d.suggestedFilename()); await d.saveAs(f); return f; };
   const py = (code, f) => execFileSync('python3', ['-c', code, f], { encoding: 'utf8' }).trim();
 
   // ---------- 1. 表格 + 整页跳转翻页 ----------
@@ -117,8 +119,12 @@ async function main() {
   await panel.emulateMedia({ colorScheme: 'light' }); await page.emulateMedia({ colorScheme: 'light' });
   await duo(page, panel, 'duo-table-start', false);
   await duo(page, panel, 'duo-table-start-dark', true);
+  let auto = panel.waitForEvent('download', { timeout: 90000 });
   await crawl(panel);
   ok((await blk(panel)).startsWith('100'), '翻完 5 页，收 100 行：' + await status(panel));
+  let f = await saveDl(await auto);
+  ok(/已下载/.test(await status(panel)) && /^化缘_127\.0\.0\.1_\d{8}-\d{4}\.xlsx$/.test(path.basename(f)), '点了开始、没标黄：化完自己下好了，不用再点导出：' + path.basename(f));
+  ok(py("import sys,openpyxl;print(openpyxl.load_workbook(sys.argv[1]).active.max_row-1)", f) === '100', '自己下的 xlsx 100 行');
   ok(page.url().includes('p=5'), '网页停在第 5 页');
   // 改列：删「操作」链接列、改名、拖顺序
   const before = await heads(panel);
@@ -137,7 +143,7 @@ async function main() {
   ok((await heads(panel))[0] === '邮箱', '拖到第一列：' + (await heads(panel)).slice(0, 3).join(' | '));
   await panel.screenshot({ path: path.join(SHOTS, 'panel-table-done.png') });
   await panel.setViewportSize({ width: 400, height: 820 });
-  let f = await download(panel, '#xlsx');
+  f = await download(panel, '#xlsx');
   ok(/^化缘_127\.0\.0\.1_\d{8}-\d{4}\.xlsx$/.test(path.basename(f)), '下载文件名是中文：' + path.basename(f));
   let out = py("import sys,openpyxl;ws=openpyxl.load_workbook(sys.argv[1]).active;r=list(ws.values);print(len(r)-1,'|'.join(str(x) for x in r[0]),'|'.join(str(x) for x in r[1]))", f);
   console.log('    xlsx:', out);
@@ -149,8 +155,29 @@ async function main() {
   ok(d[0] === 3 && d[1] === 2, '去重：同页重复、换页又出现的都去掉');
   await panel.close(); await page.close();
 
+  console.log('1b. 同一个网站第二回：照上次的改法，自己翻、自己下');
+  ({ page, panel } = await openOn(`${BASE}/demo/table.html`, 'table-2'));
+  auto = panel.waitForEvent('download', { timeout: 90000 });
+  h = await heads(panel);
+  ok(h[0] === '邮箱' && h.includes('对接人') && !h.includes('编号'), '列名、删列、顺序照上次：' + h.join(' | '));
+  ok(/照上次的改法/.test(await panel.locator('#meta').textContent()), '写明照上次办了啥：' + await panel.locator('#meta').textContent());
+  f = await saveDl(await auto);
+  // 上回最后点的是 CSV，这回自己下的也是 CSV
+  const lines = fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, '').trim().split('\r\n');
+  out = (lines.length - 1) + ' ' + lines[0];
+  ok(f.endsWith('.csv') && out.startsWith('100 邮箱,') && out.includes('对接人') && !out.includes('编号'), '不点开始、不点下载，表到手（格式照上回的 CSV）：' + path.basename(f) + ' ' + out);
+  await panel.screenshot({ path: path.join(SHOTS, 'panel-table-second.png') });
+  await panel.locator('#meta button', { hasText: '还原' }).click();
+  await panel.waitForFunction(() => !/照上次/.test(document.getElementById('meta').textContent));
+  h = await heads(panel);
+  ok(h.includes('编号') && h.includes('联系人') && h[0] !== '邮箱', '点「还原」回到自己猜的样子：' + h.join(' | '));
+  const left = await sw.evaluate(() => chrome.storage.local.get('site:127.0.0.1'));
+  ok(!left['site:127.0.0.1'], '还原后这个网站的记性忘干净');
+  await panel.close(); await page.close();
+
   // ---------- 2. 卡片 + 不刷新翻页 ----------
   console.log('2. 销售线索（卡片，Ajax 翻页）');
+  await fresh();
   ({ page, panel } = await openOn(`${BASE}/demo/cards.html`, 'cards'));
   await panel.waitForSelector('#ctl:not([hidden])');
   ok((await rows(panel)) === 12, '认出卡片，12 张');
@@ -158,8 +185,12 @@ async function main() {
   ok(['电话', '邮箱', '城市'].every((x) => h.includes(x)), '「电话：」这种前缀变成列名：' + h.join(' | '));
   const firstPhone = await panel.evaluate(() => { const i = [...document.querySelectorAll('#grid th[data-key]')].findIndex((t) => t.textContent.includes('电话')); return document.querySelector('#grid tbody tr').children[i + 1].textContent; });
   ok(/^138-0000-\d{4}$/.test(firstPhone), '值里的前缀去掉了：' + firstPhone);
+  auto = panel.waitForEvent('download', { timeout: 90000 });
   await crawl(panel);
   ok((await blk(panel)).startsWith('48'), '翻完 4 页，48 条：' + await status(panel));
+  f = await saveDl(await auto);
+  ok(py("import sys,openpyxl;print(openpyxl.load_workbook(sys.argv[1]).active.max_row-1)", f) === '48', '化完自己下好 48 条');
+  await panel.waitForTimeout(2600); // 等「已进下载」提示条退了再截图
   await panel.screenshot({ path: path.join(SHOTS, 'panel-cards-done.png') });
   await panel.emulateMedia({ colorScheme: 'dark' });
   await panel.screenshot({ path: path.join(SHOTS, 'panel-cards-dark.png') });
@@ -168,6 +199,7 @@ async function main() {
 
   // ---------- 3. 无限滚动 ----------
   console.log('3. 商品列表（无限滚动）');
+  await fresh();
   ({ page, panel } = await openOn(`${BASE}/demo/scroll.html`, 'scroll'));
   ok(await panel.locator('#seg button[data-mode=scroll][aria-pressed=true]').count() === 1, '没有下一页，试滚一下出了新货，自动选「滚动」');
   ok(/第 \d+ 屏/.test(await status(panel)) || /化完了/.test(await status(panel)), '不用点开始，自己接着滚：' + await status(panel));
@@ -188,14 +220,19 @@ async function main() {
   ok(true, '换一块：' + n0 + ' → ' + await blk(panel));
   await panel.close(); await page.close();
   // 慢吞吞的无限滚动：1.5 秒才来货、也不写「加载中」。试滚半秒看不出来，后面盯着的 5 秒要接住
+  // 这一块上面刚下过一回（第二回用），所以滚完也自己下
   ({ page, panel } = await openOn(`${BASE}/demo/scroll.html?slow=1`, 'scroll-slow'));
+  auto = panel.waitForEvent('download', { timeout: 90000 });
   await panel.waitForFunction(() => document.querySelector('#seg [data-mode=scroll][aria-pressed=true]'), null, { timeout: 8000 });
   await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: 90000 });
   ok((await blk(panel)).startsWith('120'), '慢加载的无限滚动：试滚没看出来，随后自己改成滚动收齐 120 件：' + await status(panel));
+  f = await saveDl(await auto);
+  ok(py("import sys,openpyxl;print(openpyxl.load_workbook(sys.argv[1]).active.max_row-1)", f) === '120', '第二回用：滚完自己下好 120 件');
   await panel.close(); await page.close();
 
   // ---------- 4. 手动指定下一页 + 中途停 ----------
   console.log('4. 手动指定下一页、中途停');
+  await fresh();
   ({ page, panel } = await openOn(`${BASE}/demo/table.html`, 'pick'));
   await panel.waitForSelector('#ctl:not([hidden])');
   await panel.click('#pick');
@@ -219,6 +256,11 @@ async function main() {
   ({ page, panel } = await openOn(`${BASE}/demo/table.html`, 'units'));
   const u = await panel.evaluate(() => {
     const s = new QSSheet();
+    const w = new QSSheet();
+    w.add({ keys: ['x|t', 'y|t', 'z|t'], meta: { 'x|t': { type: 't', hint: 'foo' }, 'y|t': { type: 't' }, 'z|t': { type: 't', hint: '公司' } }, rows: [1, 2, 3, 4].map((i) => ({ 'x|t': 'a' + i, 'y|t': 'b' + i, 'z|t': 'c' + i })) });
+    const weak = w.visible().map((c) => c.name + ':' + (c.weak ? 1 : 0)).join(',');
+    w.rename('x|t', '型号');
+    const weak2 = w.visible().filter((c) => c.weak).length;
     const keys = ['a|href', 'img|src', 'h3>a|t', 'p.price|t', 'p.orig|t', 'p.rate|t', 'p.loc|t', 'm|href', 'm|t'];
     const meta = { 'a|href': { type: 'href' }, 'img|src': { type: 'src' }, 'h3>a|t': { type: 't', hint: 'title' }, 'p.price|t': { type: 't', hint: 'price' }, 'p.orig|t': { type: 't', hint: 'orig' }, 'p.rate|t': { type: 't', hint: 'rate' }, 'p.loc|t': { type: 't', hint: 'loc' }, 'm|href': { type: 'href' }, 'm|t': { type: 't', hint: 'mail' } };
     const rows = [];
@@ -227,9 +269,10 @@ async function main() {
     s.add({ keys, meta, rows });
     const aoa = s.toAOA();
     const blob = QSExport.xlsx(aoa, 't');
-    return blob.arrayBuffer().then((b) => ({ head: aoa[0], r1: aoa[1], b64: btoa(String.fromCharCode(...new Uint8Array(b))) }));
+    return blob.arrayBuffer().then((b) => ({ weak, weak2, head: aoa[0], r1: aoa[1], b64: btoa(String.fromCharCode(...new Uint8Array(b))) }));
   });
   ok(JSON.stringify(u.head) === JSON.stringify(['名称', '价格', '原价', '评分', '地区', '邮箱', '链接', '图片']), '列名：' + u.head.join(' | '));
+  ok(u.weak === 'foo:1,字段1:1,公司:0' && u.weak2 === 1, '拿不准的列名标出来（照抄英文、字段N），改了名就不黄：' + u.weak);
   ok(u.r1[3] === '4.0', '「评分 4.0」拆成列名，值留 4.0');
   const xf = path.join(SHOTS, 'units.xlsx'); fs.writeFileSync(xf, Buffer.from(u.b64, 'base64'));
   out = py("import sys,openpyxl;ws=openpyxl.load_workbook(sys.argv[1]).active;c=ws['D2'];print(c.value,c.number_format)", xf);
@@ -240,10 +283,21 @@ async function main() {
   console.log('6. 浏览器自带页面');
   ({ page, panel } = await openOn('chrome://version/', 'chrome'));
   await panel.waitForSelector('#empty:not([hidden])');
-  ok((await panel.locator('#emptyT').textContent()).includes('进不去') && (await rows(panel)) === 8, '说清楚进不去，并摆出示例表');
-  ok(await panel.locator('#xlsx').isDisabled(), '示例不让导出');
+  ok((await panel.locator('#emptyT').textContent()).includes('进不去') && await panel.locator('#tryDemo').isVisible(), '说清楚进不去，给「用示例试试」');
+  ok(await panel.locator('#xlsx').isDisabled(), '还没表，下载是灰的');
   await panel.screenshot({ path: path.join(SHOTS, 'panel-noaccess.png') });
+  await panel.click('#tryDemo');
+  ok((await rows(panel)) === 8 && !(await panel.locator('#xlsx').isDisabled()), '「用示例试试」一点就出示例表，能下来看看');
   await panel.close(); await page.close();
+
+  // ---------- 7. 网页关了：表还在 ----------
+  console.log('7. 化到一半网页关了');
+  await fresh();
+  ({ page, panel } = await openOn(`${BASE}/demo/cards.html`, 'gone'));
+  await page.close();
+  await panel.waitForSelector('#perm:not([hidden])');
+  ok(/网页关了/.test(await panel.locator('#perm').textContent()) && (await rows(panel)) === 12 && !(await panel.locator('#xlsx').isDisabled()), '话放在出事的地方，已收的 12 行照样能下：' + await panel.locator('#perm').textContent());
+  await panel.close();
 
   await ctx.close(); server.close();
   if (errors.length) { console.log('报错：\n' + errors.join('\n')); process.exit(1); }

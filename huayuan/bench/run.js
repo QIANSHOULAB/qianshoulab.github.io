@@ -13,7 +13,7 @@ const TOOL = process.argv[3] || 'ours';
 const EXT = path.resolve(process.argv[4] || path.join(__dirname, '..', 'extension'));
 const ALL = ['a-table300', 'b-cards', 'c-paged', 'd-ajax', 'e-loadmore', 'f-infinite'];
 const ONLY = (process.argv[5] || ALL.join(',')).split(',');
-const PORT = 8790, BASE = `http://127.0.0.1:${PORT}`;
+const PORT = Number(process.env.PORT) || 8790, BASE = `http://127.0.0.1:${PORT}`;
 const START = { 'c-paged': 'c-paged-1.html' };
 // 每个场景的翻法：one 单页 / next 点下一页 / more 点「加载更多」 / scroll 无限滚动。next/more 时真人要点的那个按钮
 const KIND = { 'a-table300': 'one', 'b-cards': 'one', 'c-paged': 'next', 'd-ajax': 'next', 'e-loadmore': 'more', 'f-infinite': 'scroll' };
@@ -83,6 +83,8 @@ async function main() {
     await page.bringToFront();
     const tabId = await sw.evaluate(async (u) => (await chrome.tabs.query({})).find((x) => x.url === u).id, page.url());
     let panel;
+    // 每个场景都当「第一次用」：清掉上一个场景记下的改法（同一个 127.0.0.1，不清会串）
+    if (TOOL === 'ours') await sw.evaluate(() => chrome.storage.local.clear());
     const click = async (where, sel, label) => { r.clicks++; r.steps.push(label); await where.locator(sel).first().click({ timeout: 15000 }); };
     const t0 = Date.now();
     try {
@@ -94,6 +96,8 @@ async function main() {
       else await sw.evaluate(async (id) => { chrome.windows.create({ url: chrome.runtime.getURL('src/dashboard.html') + '#tab=' + id, type: 'normal', width: 1100, height: 800 }); }, tabId);
       panel = await wait;
       panel.on('pageerror', (e) => errs.push('panel: ' + e.message));
+      r.autoDl = null;
+      panel.on('download', (d) => { if (!r.autoDl) r.autoDl = { d, at: Date.now() }; });
       await panel.waitForLoadState('domcontentloaded');
       if (TOOL === 'ours') await panel.setViewportSize({ width: 400, height: 820 }); // 侧边栏宽
       if (TOOL === 'ids') await panel.setViewportSize({ width: 720, height: 690 });
@@ -126,9 +130,16 @@ async function main() {
           await click(panel, '#go', '开始');
           await panel.waitForFunction(() => /化完了|停了/.test(document.getElementById('status').textContent), null, { timeout: LIMIT });
         }
-        await sleep(300);
         r.rowsShown = await panel.evaluate(() => document.getElementById('blkN').textContent);
-        r.file = await dl(panel, '#xlsx', r);
+        // 0.3.0：人点过「开始」、化完没标黄，就自己下好了，不用再点导出
+        // 状态写着「已下载」才等那份自己下的；没写就照旧点导出（不白等）
+        const autoSaid = await panel.evaluate(() => /已下载/.test(document.getElementById('status').textContent));
+        const tw = Date.now();
+        while (autoSaid && !r.autoDl && Date.now() - tw < 5000) await sleep(20);
+        if (r.autoDl) {
+          r.steps.push('（自己下好了）'); r.ms = r.autoDl.at - t0;
+          const f = path.join(OUT, TOOL, r.scene + '.xlsx'); await r.autoDl.d.saveAs(f); r.file = f;
+        } else { await sleep(300); r.file = await dl(panel, '#xlsx', r); }
         }
       } else if (TOOL === 'ids') {
         await panel.waitForSelector('#xlsx', { state: 'visible', timeout: 30000 });
@@ -158,7 +169,8 @@ async function main() {
         r.file = await dl(panel, '#btnXLSX', r);
       }
       r.ms = r.ms || Date.now() - t0;
-    } catch (e) { r.note += '出错：' + e.message.split('\n')[0]; r.ms = Date.now() - t0; }
+      delete r.autoDl;
+    } catch (e) { r.note += '出错：' + e.message.split('\n')[0]; r.ms = Date.now() - t0; delete r.autoDl; }
     r.pageErrors = errs.slice(0, 5);
     if (panel) {
       await panel.screenshot({ path: path.join(OUT, TOOL, sc + '-panel.png') }).catch(() => {});

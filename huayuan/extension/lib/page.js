@@ -75,13 +75,13 @@
     const st = document.createElement('style');
     st.id = STYLE_ID;
     st.textContent = `
-[data-qs-list]{outline:2px solid #0A84FF!important;outline-offset:3px!important;border-radius:2px}
-[data-qs-row]{box-shadow:inset 0 0 0 9999px rgba(10,132,255,.07)!important}
-[data-qs-next]{outline:2px dashed #FF9500!important;outline-offset:2px!important}
-[data-qs-hover]{outline:2px solid #FF9500!important;outline-offset:2px!important;cursor:pointer!important}
+[data-qs-list]{outline:2px solid #D99A0B!important;outline-offset:3px!important;border-radius:2px}
+[data-qs-row]{box-shadow:inset 0 0 0 9999px rgba(217,154,11,.08)!important}
+[data-qs-next]{outline:2px dashed #D99A0B!important;outline-offset:2px!important}
+[data-qs-hover]{outline:2px solid #D99A0B!important;outline-offset:2px!important;cursor:pointer!important}
 #qs-pick-tip{position:fixed!important;left:50%!important;top:14px!important;transform:translateX(-50%)!important;z-index:2147483647!important;
  background:rgba(29,29,31,.92)!important;color:#F5F5F7!important;font:600 14px/1.2 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif!important;
- padding:10px 16px!important;border-radius:999px!important;box-shadow:0 8px 30px rgba(0,0,0,.25)!important;pointer-events:none!important}`;
+ padding:10px 16px!important;border-radius:12px!important;box-shadow:0 8px 30px rgba(0,0,0,.25)!important;pointer-events:none!important}`;
     (document.head || document.documentElement).appendChild(st);
   }
   function mark(attr, els) {

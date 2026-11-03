@@ -112,6 +112,8 @@
       for (const k of keys) {
         const a = info[k], m = this.meta[k] || {};
         let base = a.name || this.guessName(m, a.vals);
+        // 拿不准的名字：只能叫「字段N」，或者只能照抄网页里的英文 class
+        a.weak = !a.name && (!base || (base === (m.hint || '').trim() && !RE.cjk.test(base)));
         if (!base) base = T('colField') + (++field);
         a.name = base;
       }
@@ -165,7 +167,7 @@
         const u = this.user[k] || {};
         const a = info[k];
         const hidden = u.hidden !== undefined ? u.hidden : !!a.hide;
-        return { key: k, name: u.name || a.name, hidden, why: a.hide, strip: a.strip, stripRe: a.stripRe, type: (this.meta[k] || {}).type };
+        return { key: k, name: u.name || a.name, hidden, why: a.hide, weak: !u.name && !!a.weak, strip: a.strip, stripRe: a.stripRe, type: (this.meta[k] || {}).type };
       });
     }
     visible() { return this.columns().filter((c) => !c.hidden); }
@@ -184,6 +186,25 @@
       const i = beforeKey ? o.indexOf(beforeKey) : -1;
       o.splice(i < 0 ? o.length : i, 0, key);
       this.order = o; this._auto = null;
+    }
+
+    // 用户的改法（改名、删列、拖顺序）：存起来，下回同一个网站同一块名单直接照办
+    prefs() {
+      const user = {};
+      for (const [k, u] of Object.entries(this.user)) if (u && (u.name || u.hidden !== undefined)) user[k] = { ...u };
+      return { user, order: this.order ? [...this.order] : null };
+    }
+    applyPrefs(p) {
+      this.user = {}; this.order = null;
+      if (p && p.user) for (const [k, u] of Object.entries(p.user)) this.user[k] = { ...u };
+      if (p && Array.isArray(p.order)) this.order = [...p.order];
+      this._auto = null;
+    }
+    // 改了几处：{ rename, hide, order }
+    edits() {
+      let rename = 0, hide = 0;
+      for (const u of Object.values(this.user)) { if (u.name) rename++; if (u.hidden === true) hide++; }
+      return { rename, hide, order: !!this.order };
     }
 
     // 导出用：二维数组，第一行是列名

@@ -3,165 +3,183 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>化缘僧</title>
-<meta name="description" content="浏览器插件：点一下，把网页上的客户名单、销售线索、商品列表抓成一张表。自动认列表、自动翻页和滚动、去重，导出 Excel / CSV。数据只在本机。">
-<meta name="theme-color" content="#FBFBFD" media="(prefers-color-scheme: light)">
+<title>化缘僧 · 过路留名，见网扒皮</title>
+<meta name="description" content="专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。Chrome / Edge 插件，点一下抓成 Excel，数据只在本机。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="img/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="extension/icons/128.png">
 <style>
 :root{
-  --bg:#FBFBFD; --bg2:#F5F5F7; --card:#FFFFFF; --fg:#1D1D1F; --fg2:#6E6E73; --fg3:#AEAEB2; --sep:rgba(60,60,67,.14);
-  --accent:#0071E3; --accent-tint:rgba(0,113,227,.10); --amber-ink:#A85100; --amber-tint:rgba(255,149,0,.14);
-  --glass:rgba(251,251,253,.8); --shot:0 30px 80px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.08);
-  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
-  --f-disp:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --bg:#ffffff; --bg-group:#f5f5f7; --card:#ffffff; --card-2:#fbfbfd;
+  --fg:#1d1d1f; --fg-2:#6e6e73; --fg-3:#86868b;
+  --line:rgba(0,0,0,.08); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.2);
+  --ok:#34c759; --warn:#ff9f0a; --bad:#ff3b30; --doubt:rgba(255,204,0,.22);
+  --accent:#9A6700; --on-accent:#ffffff; /* 化缘僧金 #D99A0B 加深到白字 4.9:1 */
+  --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  --shot:0 24px 64px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.08);
+  --glass:rgba(255,255,255,.72);
+  --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
   color-scheme:light;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#000; --bg2:#0B0B0C; --card:#1C1C1E; --fg:#F5F5F7; --fg2:#A1A1A6; --fg3:#636366; --sep:rgba(84,84,88,.6);
-    --accent:#2997FF; --accent-tint:rgba(41,151,255,.16); --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
-    --glass:rgba(0,0,0,.72); --shot:0 30px 80px rgba(0,0,0,.6),0 0 0 .5px rgba(255,255,255,.12); color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#000; --bg2:#0B0B0C; --card:#1C1C1E; --fg:#F5F5F7; --fg2:#A1A1A6; --fg3:#636366; --sep:rgba(84,84,88,.6);
-  --accent:#2997FF; --accent-tint:rgba(41,151,255,.16); --amber-ink:#FFB340; --amber-tint:rgba(255,159,10,.18);
-  --glass:rgba(0,0,0,.72); --shot:0 30px 80px rgba(0,0,0,.6),0 0 0 .5px rgba(255,255,255,.12); color-scheme:dark;
-}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
+  --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
+  --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
+  --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --shadow:none;
+  --accent:#F5B931; --on-accent:#1d1d1f;
+  --shot:0 0 0 .5px rgba(255,255,255,.14); --glass:rgba(22,22,23,.72);
+  color-scheme:dark;
+}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.5 var(--f-text);-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 img{max-width:100%;height:auto;display:block}
-.w{max-width:1040px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px))}
+.w{max-width:980px;margin:0 auto;padding:0 16px}
+.num{font-variant-numeric:tabular-nums}
 
-.nav{position:sticky;top:0;z-index:10;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--sep)}
-.nav .w{display:flex;align-items:center;gap:14px;height:52px}
-.nav .home{color:var(--fg2);font-size:14px}
+.nav{position:sticky;top:0;z-index:10;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line)}
+.nav .w{display:flex;align-items:center;gap:16px;height:52px}
+.nav .home{color:var(--fg-2);font-size:13px}
 .nav b{font-size:17px;font-weight:600;flex:1}
-.pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;padding:0 14px;border-radius:999px;background:var(--accent);color:#fff;font-size:14px;font-weight:600}
-.pill:hover{text-decoration:none;filter:brightness(1.06)}
+.nav .btn{height:32px;padding:0 16px;font-size:13px;border-radius:var(--r-btn)}
 
-.hero{text-align:center;padding:72px 0 28px}
-.hero .ico{width:88px;height:88px;margin:0 auto 22px;border-radius:20px;box-shadow:0 10px 30px rgba(0,96,223,.25)}
-.hero h1{margin:0;font:700 clamp(44px,8vw,72px)/1.05 var(--f-disp);letter-spacing:-.01em}
-.hero .tag{margin:14px 0 0;font:600 clamp(21px,3.4vw,28px)/1.3 var(--f-disp);color:var(--fg)}
-.hero .sub{margin:12px auto 0;max-width:560px;color:var(--fg2);font-size:clamp(17px,2.2vw,19px)}
-.cta{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 22px;margin-top:28px;align-items:center}
-.btn{display:inline-flex;align-items:center;justify-content:center;height:46px;padding:0 26px;border-radius:999px;background:var(--accent);color:#fff;font-size:17px;font-weight:600}
-.btn:hover{text-decoration:none;filter:brightness(1.06)}
-.lnk{font-size:17px}
-.ver{margin-top:12px;color:var(--fg3);font-size:13px}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:48px;min-width:44px;padding:0 24px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-size:17px;font-weight:600;transition:filter var(--t) var(--ease)}
+.btn:hover{text-decoration:none;filter:brightness(1.08)}
 
-.stage{margin:44px auto 0;max-width:1040px;padding:0 16px}
-.stage .win{border-radius:14px;box-shadow:var(--shot)}
-.cap{text-align:center;color:var(--fg2);font-size:14px;margin:18px 0 0}
+.hero{text-align:center;padding:72px 16px 32px}
+.hero .ico{width:96px;height:96px;margin:0 auto 24px}
+.hero h1{margin:0;font-size:clamp(40px,6vw,64px);font-weight:700;line-height:1.1;letter-spacing:-.01em}
+.hero .tag{margin:12px 0 0;font-size:clamp(22px,3vw,28px);font-weight:600;line-height:1.2}
+.hero .sub{margin:16px auto 0;max-width:560px;color:var(--fg-2);font-size:17px}
+.cta{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:16px 24px;margin-top:32px}
+.cta .lnk{display:inline-flex;align-items:center;min-height:44px}
+.ver{margin-top:12px;color:var(--fg-3);font-size:13px}
 
-section.w{margin-top:96px}
-h2{margin:0 0 10px;font:700 clamp(30px,5vw,44px)/1.12 var(--f-disp);letter-spacing:-.005em;text-align:center}
-.lead{margin:0 auto;max-width:600px;text-align:center;color:var(--fg2);font-size:clamp(17px,2.2vw,19px)}
+.stage{max-width:1120px;margin:48px auto 0;padding:0 16px}
+.stage img,.shot img{border-radius:var(--r-card);box-shadow:var(--shot)}
+.cap{text-align:center;color:var(--fg-2);font-size:13px;margin:16px 0 0}
 
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
-.f{background:var(--bg2);border-radius:20px;padding:24px 22px 22px}
-.f .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent-tint);color:var(--accent);font-weight:700;font-size:14px;margin-bottom:14px}
-.f h3{margin:0 0 6px;font-size:19px;font-weight:700}
-.f p{margin:0;color:var(--fg2);font-size:15px}
+section,section.w{margin-top:96px} /* .w 的 margin:0 auto 会盖掉 section 的上边距，所以写两遍 */
+h2{margin:0;font-size:clamp(28px,4.4vw,40px);font-weight:700;line-height:1.15;text-align:center;letter-spacing:-.005em}
+.lead{margin:12px auto 0;max-width:600px;text-align:center;color:var(--fg-2);font-size:17px}
 
-.shot{margin:40px auto 0;max-width:1040px;border-radius:14px;overflow:hidden;box-shadow:var(--shot)}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:32px 24px;margin:48px 0 0;padding:0;list-style:none}
+.feats li{display:grid;grid-template-columns:28px 1fr;gap:4px 12px;align-items:start}
+.feats svg{width:28px;height:28px;color:var(--accent);grid-row:span 2}
+.feats b{font-size:17px;font-weight:600;line-height:1.3}
+.feats span{color:var(--fg-2);font-size:15px}
 
-.steps{counter-reset:s;list-style:none;margin:40px auto 0;padding:0;max-width:720px;display:grid;gap:12px}
-.steps li{counter-increment:s;position:relative;background:var(--bg2);border-radius:16px;padding:18px 20px 18px 64px;font-size:16px}
-.steps li::before{content:counter(s);position:absolute;left:20px;top:17px;width:28px;height:28px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:14px}
-.steps code{font:600 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--card);padding:3px 7px;border-radius:6px;user-select:all;-webkit-user-select:all}
-.steps .s{display:block;color:var(--fg2);font-size:14px;margin-top:4px}
-.note{max-width:720px;margin:14px auto 0;color:var(--fg2);font-size:14px;text-align:center}
+.score{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+.score div{background:var(--bg-group);border-radius:var(--r-card);padding:24px}
+@media (prefers-color-scheme:dark){.score div,.steps{background:var(--card)}}
+.score b{display:block;font-size:34px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.score span{display:block;margin-top:8px;color:var(--fg-2);font-size:15px}
+.fine{margin:16px auto 0;text-align:center;color:var(--fg-3);font-size:13px}
 
-.foot{margin-top:100px;border-top:.5px solid var(--sep);padding:22px 0 40px;color:var(--fg2);font-size:13px}
-.foot .w{display:flex;flex-wrap:wrap;gap:6px 18px}
+.shot{margin:48px auto 0;max-width:1120px;padding:0 16px}
+
+.steps{margin:48px auto 0;max-width:640px;padding:0;list-style:none;background:var(--bg-group);border-radius:var(--r-card);counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding:12px 16px 12px 56px;min-height:56px;display:flex;flex-direction:column;justify-content:center}
+.steps li+li::before{content:"";position:absolute;left:56px;right:0;top:0;border-top:.5px solid var(--line)}
+.steps li::after{content:counter(s);position:absolute;left:16px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.steps code{font:600 13px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--fill);padding:4px 8px;border-radius:var(--r-chip);user-select:all;-webkit-user-select:all}
+.steps small{display:block;color:var(--fg-2);font-size:13px;margin-top:2px}
+
+.foot{margin-top:96px;border-top:.5px solid var(--line);padding:24px 0 48px;color:var(--fg-2);font-size:12px}
+.foot .w{display:flex;flex-wrap:wrap;gap:8px 16px}
 .mail{color:var(--fg);user-select:text;-webkit-user-select:text}
 
 @media (max-width:760px){
-  .grid{grid-template-columns:1fr}
-  .stage .win,.shot{border-radius:10px}
-  .hero .sub br{display:none}
   .hero{padding-top:48px}
-  section.w{margin-top:72px}
+  .feats{grid-template-columns:1fr;gap:24px}
+  .score{grid-template-columns:1fr}
+  section,section.w{margin-top:72px}
+  .stage img,.shot img{border-radius:12px}
 }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <nav class="nav"><div class="w">
   <a class="home" href="../">千手院</a>
   <b>化缘僧</b>
-  <a class="pill" href="dist/huayuan-0.2.1.zip" download>下载</a>
+  <a class="btn" href="dist/huayuan-0.3.0.zip" download>下载</a>
 </div></nav>
 
-<header class="hero w">
-  <img class="ico" src="img/icon.svg" alt="">
+<header class="hero">
+  <img class="ico" src="img/icon.svg" alt="" width="96" height="96">
   <h1>化缘僧</h1>
-  <p class="tag">点一下，你去玩，贫僧挨页化缘</p>
-  <p class="sub">网页上的客户名单、销售线索、商品列表，一键抓成 Excel。<br>贴在浏览器右边干活：自己翻页，自己滚到底，自己起列名。</p>
+  <p class="tag">过路留名，见网扒皮</p>
+  <p class="sub">专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。</p>
   <div class="cta">
-    <a class="btn" href="dist/huayuan-0.2.1.zip" download>下载插件</a>
+    <a class="btn" href="dist/huayuan-0.3.0.zip" download>下载插件</a>
     <a class="lnk" href="#install">怎么装 ›</a>
     <a class="lnk" href="demo/">示例页 ›</a>
   </div>
-  <div class="ver">0.2.1 · Edge / Chrome · 免费</div>
+  <div class="ver">0.3.0 · Chrome / Edge · 免费</div>
 </header>
 
 <div class="stage">
   <picture>
     <source srcset="img/side-table-dark.jpg" media="(prefers-color-scheme: dark)">
-    <img class="win" src="img/side-table.jpg" alt="左边网页的客户名单被蓝框圈出、下一页被橙框标出；右边侧栏里化缘僧已经认出 20 行 8 列" width="2562" height="1640" loading="eager">
+    <img src="img/side-table.jpg" alt="左边网页的客户名单被金框圈出，右边侧栏里化缘僧已经认出 20 行 8 列" width="2562" height="1640" loading="eager">
   </picture>
 </div>
-<p class="cap w">蓝框是它认出的名单，橙框是它找到的「下一页」，右边侧栏是已经抓好的表。这些都是它自己干的。</p>
+<p class="cap w">金框是它认出的名单，虚框是它找到的「下一页」。都是它自己干的。</p>
 
 <section class="w">
-  <h2>能自己来的，都自己来。</h2>
-  <p class="lead">你只管点「开始」，然后去倒杯水。</p>
-  <div class="grid">
-    <div class="f"><span class="n">1</span><h3>自己认名单</h3><p>整页扫一遍，哪块最像名单就先抓哪块。不对？点「换一块」。</p></div>
-    <div class="f"><span class="n">2</span><h3>自己翻页</h3><p>「下一页」「加载更多」自己找、自己点。找不到就指给它看，一次就记住。网页整页跳走，侧栏照样在。</p></div>
-    <div class="f"><span class="n">3</span><h3>自己滚到底</h3><p>往下滚才出货的网页，它先替你试滚一下，出了货就一路滚到底，开始都不用点。看到「到底了」立刻收工。</p></div>
-    <div class="f"><span class="n">4</span><h3>自己起列名</h3><p>表头直接用；标题叫「名称」，划线价叫「原价」，「评分 4.5」拆成「评分」一列。没用的、重复的列先收起。</p></div>
-    <div class="f"><span class="n">5</span><h3>自己去重</h3><p>翻页翻回来、同一条出现两次，只留一条。</p></div>
-    <div class="f"><span class="n">6</span><h3>一键成表</h3><p>Excel、CSV 或者直接复制。4.0 还是 4.0，编号还是编号。列能删、能改名、能拖顺序。</p></div>
+  <h2>你只管扫一眼。</h2>
+  <p class="lead">拿不准的标黄。剩下的，贫僧自己来。</p>
+  <ul class="feats">
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></svg><b>自己认名单</b><span>哪块最像名单先抓哪块。不对？点「换一块」。</span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13M6 11l6 6 6-6M5 20h14"/></svg><b>自己翻页、滚到底</b><span>「下一页」「加载更多」自己找，无限滚动替你滚完。</span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg><b>自己起列名</b><span>标题叫「名称」，划线价叫「原价」。猜的名字标黄。</span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>化完自己下</b><span>点了开始就去喝茶，回来 Excel 已经在「下载」里。</span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg><b>第二回照旧</b><span>同一个网站，上回改的列、删的列、排的顺序，自己办好。点「还原」就撤。</span></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><b>数据不出门</b><span>只读你点它的那一页。不上传、不注册，浏览记录不收。</span></li>
+  </ul>
+</section>
+
+<section class="w">
+  <h2>跟 Instant Data Scraper 比了一场。</h2>
+  <p class="lead">同一套 6 个测试页，表格、卡片、翻页、加载更多、无限滚动。</p>
+  <div class="score">
+    <div><b class="num">1,724 行 0 错</b><span>对面漏 50 行、重 153 行，图片 730 格是占位图。</span></div>
+    <div><b class="num">48 / 48</b><span>列名叫对。对面一个没对，表头是一串 CSS。</span></div>
+    <div><b class="num">12 下</b><span>6 个页面从点图标到 Excel 到手，一共点这几下。对面 23 下，外加开户 4 下。</span></div>
   </div>
+  <p class="fine">测试页是我们自己出的题，数字来自比武报告。</p>
 </section>
 
-<section class="w">
-  <h2>卡片、表格、无限滚动，都化得动。</h2>
-  <p class="lead">要登录的后台也行：用的就是你浏览器里已经登录的那个页面。</p>
+<section>
+  <div class="w"><h2>卡片、表格、无限滚动，都化得动。</h2>
+  <p class="lead">要登录的后台也行：用的就是你浏览器里已经登录的那一页。</p></div>
   <div class="shot"><img src="img/side-scroll.jpg" alt="无限滚动的商品列表，化缘僧自己滚到底收了 120 件" width="2562" height="1640" loading="lazy"></div>
-  <p class="cap">商品列表：没点「开始」，自己滚到底，120 件，图片列放最后。</p>
-  <div class="shot"><img src="img/side-cards-dark.jpg" alt="深色模式下，卡片式销售线索翻 4 页收了 48 条" width="2562" height="1640" loading="lazy"></div>
-  <p class="cap">卡片式线索翻 4 页：48 条，「电话：」「邮箱：」自动变成列名。</p>
-</section>
-
-<section class="w">
-  <h2>数据只在你电脑上。</h2>
-  <p class="lead">不上传、不联网、不注册。只读你点它的那个网页，不碰别的。你的浏览记录不收，更不拿去卖。</p>
+  <p class="cap w">商品列表：没点开始，自己滚到底，120 件。</p>
+  <div class="shot"><img src="img/side-cards-dark.jpg" alt="深色模式下，卡片式销售线索翻 4 页收了 48 条，已经自己下载" width="2562" height="1640" loading="lazy"></div>
+  <p class="cap w">卡片线索翻 4 页：48 条，化完自己下好了。</p>
 </section>
 
 <section class="w" id="install">
   <h2>怎么装</h2>
-  <p class="lead">还没上商店，先用「开发者模式」装，三分钟。</p>
+  <p class="lead">还没上商店，先用开发者模式装，三分钟。</p>
   <ol class="steps">
-    <li><a href="dist/huayuan-0.2.1.zip" download>下载 huayuan-0.2.1.zip</a>，解压成一个文件夹。<span class="s">放个不会被误删的地方，删了插件就没了。</span></li>
-    <li>地址栏打开 <code>edge://extensions</code><span class="s">Chrome 用 <code>chrome://extensions</code></span></li>
-    <li>打开「开发人员模式」<span class="s">Edge 在左边栏下面，Chrome 在右上角。</span></li>
-    <li>点「加载解压缩的扩展」，选刚才解压出来的文件夹。<span class="s">Chrome 里叫「加载已解压的扩展程序」。</span></li>
-    <li>点工具栏的拼图图标，把化缘僧钉出来。<span class="s">以后在任何有列表的网页上点它，右边弹出侧栏就开工。快捷键 Alt+Shift+H。</span></li>
+    <li><span><a href="dist/huayuan-0.3.0.zip" download>下载 huayuan-0.3.0.zip</a>，解压成一个文件夹</span><small>放个不会被误删的地方。</small></li>
+    <li><span>地址栏打开 <code>edge://extensions</code></span><small>Chrome 用 <code>chrome://extensions</code></small></li>
+    <li><span>打开「开发人员模式」</span><small>Edge 在左边栏下面，Chrome 在右上角。</small></li>
+    <li><span>点「加载解压缩的扩展」，选刚才的文件夹</span><small>Chrome 里叫「加载已解压的扩展程序」。</small></li>
+    <li><span>把化缘僧钉到工具栏</span><small>以后在有列表的网页上点它，右边出侧栏就开工。快捷键 Alt+Shift+H。</small></li>
   </ol>
-  <p class="note">没有顺手的网页？先去 <a href="demo/">示例页</a> 试：表格、卡片、无限滚动各一页，全是假数据。</p>
 </section>
 
 <footer class="foot"><div class="w">
   <span>千手院 · 化缘僧</span>
-  <span>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></span>
+  <span>要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：<span class="mail">oilsongchengmin@gmail.com</span></span>
   <a href="https://qianshoulab.github.io/">千手院总舵</a>
 </div></footer>
 </body>

@@ -1,0 +1,264 @@
+{
+ "0.2.1": {
+  "a-table300": {
+   "ms": [
+    704,
+    759,
+    778
+   ],
+   "msMedian": 759,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "rows": "300/300",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "7/7",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "b-cards": {
+   "ms": [
+    418,
+    443,
+    388
+   ],
+   "msMedian": 418,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "rows": "80/80",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "9/9",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "c-paged": {
+   "ms": [
+    9517,
+    9266,
+    9353
+   ],
+   "msMedian": 9353,
+   "clicks": 3,
+   "steps": [
+    "点图标",
+    "开始",
+    "导出 Excel"
+   ],
+   "rows": "500/500",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "7/7",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "d-ajax": {
+   "ms": [
+    11117,
+    10757,
+    10470
+   ],
+   "msMedian": 10757,
+   "clicks": 3,
+   "steps": [
+    "点图标",
+    "开始",
+    "导出 Excel"
+   ],
+   "rows": "500/500",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "8/8",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "e-loadmore": {
+   "ms": [
+    5442,
+    5620,
+    5143
+   ],
+   "msMedian": 5442,
+   "clicks": 3,
+   "steps": [
+    "点图标",
+    "开始",
+    "导出 Excel"
+   ],
+   "rows": "144/144",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "9/9",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "f-infinite": {
+   "ms": [
+    7341,
+    7182,
+    6791
+   ],
+   "msMedian": 7182,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "rows": "200/200",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "8/8",
+   "extraCols": 0,
+   "sameEveryRound": true
+  }
+ },
+ "0.3.0": {
+  "a-table300": {
+   "ms": [
+    833,
+    587,
+    635
+   ],
+   "msMedian": 635,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "rows": "300/300",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "7/7",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "b-cards": {
+   "ms": [
+    484,
+    479,
+    317
+   ],
+   "msMedian": 479,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "rows": "80/80",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "9/9",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "c-paged": {
+   "ms": [
+    9018,
+    8992,
+    8804
+   ],
+   "msMedian": 8992,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "开始",
+    "（自己下好了）"
+   ],
+   "rows": "500/500",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "7/7",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "d-ajax": {
+   "ms": [
+    10486,
+    10824,
+    9863
+   ],
+   "msMedian": 10486,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "开始",
+    "（自己下好了）"
+   ],
+   "rows": "500/500",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "8/8",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "e-loadmore": {
+   "ms": [
+    4863,
+    5133,
+    4618
+   ],
+   "msMedian": 4863,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "开始",
+    "（自己下好了）"
+   ],
+   "rows": "144/144",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "9/9",
+   "extraCols": 0,
+   "sameEveryRound": true
+  },
+  "f-infinite": {
+   "ms": [
+    7039,
+    7461,
+    6694
+   ],
+   "msMedian": 7039,
+   "clicks": 2,
+   "steps": [
+    "点图标",
+    "导出 Excel"
+   ],
+   "rows": "200/200",
+   "miss": 0,
+   "dup": 0,
+   "extra": 0,
+   "wrongCols": 0,
+   "named": "8/8",
+   "extraCols": 0,
+   "sameEveryRound": true
+  }
+ }
+}

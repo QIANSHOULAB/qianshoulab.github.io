@@ -16,12 +16,13 @@
       <span id="host"></span>
     </div>
     <div class="top-r">
-      <button type="button" class="icon-btn" id="gear" aria-label="" data-t-aria="settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      <button type="button" class="icon-btn" id="gear" data-t-aria="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
       </button>
       <div class="pop" id="pop" hidden>
-        <label><span data-t="settingDelay"></span><input type="number" id="setDelay" min="0" max="30" step="0.1"></label>
-        <label><span data-t="settingMax"></span><input type="number" id="setMax" min="1" max="1000" step="1"></label>
+        <label class="row"><span data-t="settingAuto"></span><span class="switch"><input type="checkbox" id="setAuto"><i></i></span></label>
+        <label class="row"><span data-t="settingDelay"></span><input class="field num" type="number" id="setDelay" min="0" max="30" step="0.1" inputmode="decimal"></label>
+        <label class="row"><span data-t="settingMax"></span><input class="field num" type="number" id="setMax" min="1" max="1000" step="1" inputmode="numeric"></label>
       </div>
     </div>
   </header>
@@ -29,13 +30,12 @@
   <main id="main">
     <div class="loading" id="loading"><span class="spin"></span><span data-t="looking"></span></div>
 
-    <section class="ctl" id="ctl" hidden>
+    <section class="card ctl" id="ctl" hidden>
+      <div class="bar" id="bar" hidden></div>
       <div class="blk">
-        <div class="blk-l">
-          <span class="blk-n" id="blkN"></span>
-          <span class="blk-s" id="blkS"></span>
-        </div>
-        <button type="button" class="btn tinted sm" id="swap" data-t="switchBlock"></button>
+        <span class="blk-n num" id="blkN"></span>
+        <span class="blk-s" id="blkS"></span>
+        <button type="button" class="btn text" id="swap" data-t="switchBlock"></button>
       </div>
       <div class="seg" id="seg" role="group">
         <button type="button" data-mode="next" data-t="modeNext"></button>
@@ -44,28 +44,26 @@
       </div>
       <div class="mode">
         <span class="hint" id="hint"></span>
-        <button type="button" class="btn ghost sm" id="pick"></button>
+        <button type="button" class="btn text" id="pick"></button>
       </div>
-      <button type="button" class="btn primary big" id="go"></button>
-      <span class="status" id="status"></span>
-      <div class="bar" id="bar" hidden><i></i></div>
+      <div class="status num" id="status"></div>
+      <button type="button" class="btn primary" id="go"></button>
     </section>
 
-    <div class="perm" id="perm" hidden>
+    <div class="alert" id="perm" hidden>
       <span data-t="needPerm"></span>
-      <button type="button" class="btn primary sm" id="grant" data-t="grant"></button>
+      <button type="button" class="btn primary" id="grant" data-t="grant"></button>
     </div>
 
-    <section class="empty" id="empty" hidden>
-      <div class="empty-card">
-        <div class="empty-t" id="emptyT"></div>
-        <p class="empty-s" id="emptyS"></p>
-        <button type="button" class="btn tinted" id="openDemo" data-t="demoOpen"></button>
-      </div>
-      <div class="demo-cap"><span class="badge" data-t="demoBadge"></span><span data-t="demoTitle"></span></div>
+    <section class="card empty" id="empty" hidden>
+      <svg class="empty-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="17.5" cy="16.5" r="3"/><path d="M20 19l2 2"/></svg>
+      <div class="empty-t" id="emptyT"></div>
+      <p class="empty-s" id="emptyS"></p>
+      <button type="button" class="btn primary" id="tryDemo" data-t="demoTry"></button>
+      <a href="#" id="openDemo" data-t="demoOpen"></a>
     </section>
 
-    <section class="grid-wrap" id="gridWrap" hidden>
+    <section class="card grid-wrap" id="gridWrap" hidden>
       <div class="grid-scroll" id="gridScroll"><table class="grid" id="grid"></table></div>
     </section>
 
@@ -73,10 +71,10 @@
   </main>
 
   <footer class="bottom" id="bottom">
-    <div class="exp">
+    <div class="exp" id="exp">
       <button type="button" class="btn plain" id="copy" data-t="copy"></button>
-      <button type="button" class="btn plain" id="csv" data-t="exportCsv"></button>
-      <button type="button" class="btn primary" id="xlsx" data-t="exportXlsx"></button>
+      <button type="button" class="btn plain" id="csv"></button>
+      <button type="button" class="btn plain" id="xlsx"></button>
     </div>
     <div class="qs-foot">
       <span data-t="hyFoot"></span>
@@ -85,7 +83,7 @@
     </div>
   </footer>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status"></div>
 <script src="lib/strings.js"></script>
 <script src="lib/settings.js"></script>
 <script src="lib/sheet.js"></script>
