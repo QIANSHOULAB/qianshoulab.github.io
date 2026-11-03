@@ -1,4 +1,4 @@
-# 扫地僧：在真 Windows 上跑测试 → 打 exe → exe 自检 + 界面冒烟 + 托盘冒烟 → 发到 Release
+# 戒尺僧（原扫地僧，文件夹和 exe 名照旧 saodi / SaodiSeng）：在真 Windows 上跑测试 → 打 exe → exe 自检 + 界面冒烟 + 托盘冒烟 → 发到 Release
 # 只在 saodi/ 变动时触发；其他罗汉的改动不会惊动它。
 name: saodi-build
 
@@ -113,6 +113,6 @@ jobs:
             gh release upload $tag $asset --clobber -R $env:GITHUB_REPOSITORY
           } else {
             gh release create $tag $asset -R $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --latest=false `
-              --title "扫地僧 $env:VERSION" --notes "千手院 · 扫地僧 Windows 版。下载 SaodiSeng-$env:VERSION.exe 双击就跑；开机自己在托盘里盯着「下载」。介绍页 https://qianshoulab.github.io/saodi/"
+              --title "戒尺僧 $env:VERSION" --notes "千手院 · 戒尺僧（原扫地僧）Windows 版。下载 SaodiSeng-$env:VERSION.exe 双击就跑；开机自己在托盘里盯着「下载」。介绍页 https://qianshoulab.github.io/saodi/"
           }
           $global:LASTEXITCODE = 0

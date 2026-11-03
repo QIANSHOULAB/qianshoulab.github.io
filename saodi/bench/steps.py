@@ -318,7 +318,7 @@ def play_030(sb, L, page_of, srv_base):
     got = lambda: sorted(n for n in ("合同-01.pdf", "合同-02.pdf", "合同-03.pdf") if where(sb.dl, n))  # noqa: E731
     L.check("3 个下好、叫「合同-0N」", wait_until(lambda: len(got()) == 3), got())
 
-    # ---- 第二天：关机；昨天关了以后又下了 3 个；开机扫地僧自己起来（开机自启，进托盘，不开窗）
+    # ---- 第二天：关机；昨天关了以后又下了 3 个；开机戒尺僧自己起来（开机自启，进托盘，不开窗）
     page.context.close()
     sb.stop()
     three = ["昨晚的发票.pdf", "昨晚的照片.png", "昨晚的表.xlsx"]

@@ -3,7 +3,7 @@
   "name": "巡山僧 - 降价补货提醒",
   "short_name": "巡山僧",
   "version": "0.3.0",
-  "description": "降价、补货、上新，一变就叫你。打开商品页点一下，价格、库存自己认，到线才弹通知。数据只存在你的浏览器里。",
+  "description": "网页降价、补货、上新，贫僧 24 小时蹲守，风吹草动立刻通报。数据只存在你的浏览器里。",
   "author": "QIANSHOU LAB",
   "homepage_url": "https://qianshoulab.github.io/xunshan/",
   "minimum_chrome_version": "120",

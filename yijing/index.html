@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>译经僧</title>
-<meta name="description" content="把 A 系统导出的表翻成 B 系统的导入格式：丢进来自动对列、改日期、拆姓名、加国家码、换值，没把握的标黄给你看，看完就下载。文件不出浏览器。">
+<title>译经僧 · 凡表皆可转，万物皆可通</title>
+<meta name="description" content="跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。网页打开就用，文件不出浏览器。">
 <meta name="apple-mobile-web-app-title" content="译经僧">
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
@@ -83,6 +83,9 @@ body[data-view="empty"] .nav,body[data-view="pick"] .nav{padding:0 max(16px,calc
 .hero img{width:64px;height:64px;border-radius:15px;margin-bottom:16px}
 .hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.02em}
 .hero p{margin:8px 0 0;font-size:21px;line-height:1.4;color:var(--fg-2);max-width:30em}
+.hero .tag{margin-top:12px;font-size:clamp(22px,3vw,28px);line-height:1.2;font-weight:600;color:var(--fg)}
+.hero .tag+p{margin-top:12px}
+.hero h1,.hero p{word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance} /* 中文只在标点、空格处换行，词不拆开 */
 @media (max-width:759px){.hero{padding:8px 0 24px}.hero p{font-size:17px}}
 .pt{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:8px 0 24px}
 .pt h1{margin:0;font-size:28px;line-height:1.2;font-weight:700}
@@ -336,8 +339,8 @@ tr:last-child td{border-bottom:0}
 'use strict';
 /* ================= 界面文字（全在这里，加英文就再抄一份） ================= */
 const STR = {
-  app: '译经僧', tag: '施主搬家，贫僧译经',
-  heroSub: 'A 系统导出的表丢进来，B 系统认的导入表自己掉出去。',
+  app: '译经僧', tag: '凡表皆可转，万物皆可通',
+  heroSub: '跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。',
   home: '千手院', recipes: '配方',
   src: '来源', tgt: '译成', demo: '示例', recChip: '上回的对法',
   demoName: '旧 CRM 客户表.csv',
@@ -1390,7 +1393,7 @@ function render() {
   app.className = 'wrap' + (v === 'work' ? '' : ' narrow');
   document.body.dataset.view = v;
   let h;
-  if (v === 'empty') h = `<section class="hero"><img src="icon.svg" alt=""><h1>${STR.app}</h1><p>${STR.heroSub}</p></section>${dropCard()}${tgtSection()}<p class="grp-foot" style="text-align:center">${STR.dropMore}</p>`;
+  if (v === 'empty') h = `<section class="hero"><img src="icon.svg" alt=""><h1>${STR.app}</h1><p class="tag">${STR.tag}</p><p>${STR.heroSub}</p></section>${dropCard()}${tgtSection()}<p class="grp-foot" style="text-align:center">${STR.dropMore}</p>`;
   else {
     h = `<div class="pt"><h1>${STR.app}</h1><p>${STR.tag}</p></div>`;
     if (v === 'pick') h += `<section class="ends">${srcCard()}</section>${tgtSection()}`;

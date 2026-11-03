@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>扫地僧</title>
-<meta name="description" content="文件批处理：盯着「下载」自己分好、批量改名、按规则分文件夹、批量下载。Windows 电脑程序，免费，文件不出你电脑。">
+<title>戒尺僧 · 凡尘乱档，统统归位</title>
+<meta name="description" content="专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。Windows 电脑程序，免费，文件不出你电脑。">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-/* 令牌照 _ops/设计规范.md；主色扫地僧橄榄 #6E9A24，按钮上白字加深到 #567A1C（5:1） */
+/* 令牌照 _ops/设计规范.md；主色戒尺僧橄榄 #6E9A24，按钮上白字加深到 #567A1C（5:1） */
 :root{
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
   --bg:#ffffff; --bg-group:#f5f5f7; --card:#ffffff; --card-2:#fbfbfd;
@@ -53,6 +53,8 @@ nav .dl:hover{background:var(--accent-press);text-decoration:none}
 h1{font-size:clamp(40px,6vw,64px);font-weight:700;line-height:1.1;letter-spacing:-.02em;margin:0}
 .tag{font-size:clamp(22px,3vw,28px);font-weight:600;line-height:1.2;margin:12px 0 0}
 .lede{color:var(--fg-2);margin:16px auto 0;max-width:560px}
+/* 中文只在标点、空格处换行，词不拆开 */
+h1,.tag,.lede{word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance}
 .cta{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:32px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-size:17px;font-weight:600;transition:background var(--t) var(--ease)}
 .btn:hover{background:var(--accent-press);text-decoration:none}
@@ -101,16 +103,16 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
 <body>
 <nav><div class="wrap">
   <a class="back" href="https://qianshoulab.github.io/"><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5 1.5 7.5l6 6"/></svg>千手院</a>
-  <span class="me"><img src="icon.svg" alt=""><span>扫地僧</span></span>
+  <span class="me"><img src="icon.svg" alt=""><span>戒尺僧</span></span>
   <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.0/SaodiSeng-0.3.0.exe">下载</a>
 </div></nav>
 
 <main class="wrap">
   <section class="hero">
     <img class="icon" src="icon.svg" alt="">
-    <h1>扫地僧</h1>
-    <p class="tag">文件乱扔，你去玩，贫僧扫</p>
-    <p class="lede">新下的文件自己归位，一千个文件改名眨眼的事。分错了，一下撤回。</p>
+    <h1>戒尺僧</h1>
+    <p class="tag">凡尘乱档，统统归位</p>
+    <p class="lede">专治桌面满天星。批量下载、重命名、丢进该去的文件夹，安排得明明白白。</p>
     <div class="cta">
       <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.3.0/SaodiSeng-0.3.0.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>下载 Windows 版</a>
       <span class="meta" id="meta">0.3.0 · 19 MB · Windows 10 / 11 · 免费 · 不用装，双击就跑</span>
@@ -118,7 +120,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
     <div class="shot">
       <picture>
         <source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)">
-        <img src="img/app-light.webp" width="1180" height="780" alt="扫地僧窗口：改名页，左边规则，右边新旧名字对照">
+        <img src="img/app-light.webp" width="1180" height="780" alt="戒尺僧窗口：改名页，左边规则，右边新旧名字对照">
       </picture>
     </div>
   </section>
@@ -163,7 +165,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
 </main>
 
 <footer><div class="wrap">
-  <span>千手院 · 扫地僧</span>
+  <span>千手院 · 戒尺僧</span>
   <span>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></span>
   <a href="https://qianshoulab.github.io/">千手院总舵</a>
 </div></footer>

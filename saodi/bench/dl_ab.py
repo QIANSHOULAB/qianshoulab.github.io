@@ -1,4 +1,4 @@
-"""下载：扫地僧和 aria2 轮流各跑 N 遍（同机同时段），记用时和对答案。
+"""下载：戒尺僧和 aria2 轮流各跑 N 遍（同机同时段），记用时和对答案。
 用法：python dl_ab.py <输出目录> <遍数> <结果 json>"""
 from __future__ import annotations
 

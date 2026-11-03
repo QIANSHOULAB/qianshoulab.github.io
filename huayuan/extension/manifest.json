@@ -3,7 +3,7 @@
   "name": "化缘僧：过路留名，见网扒皮",
   "short_name": "化缘僧",
   "version": "0.3.0",
-  "description": "专治防复制网页。客户名录、商品列表，点一下抓成 Excel：自己认列表、自己翻页滚动、化完自己下载，同一个网站第二回照上次的改法办。数据只在本机。",
+  "description": "专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。数据只在本机。",
   "homepage_url": "https://qianshoulab.github.io/huayuan/",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -38,7 +38,7 @@
       "suggested_key": {
         "default": "Alt+Shift+H"
       },
-      "description": "专治防复制网页。客户名录、商品列表，点一下抓成 Excel：自己认列表、自己翻页滚动、化完自己下载，同一个网站第二回照上次的改法办。数据只在本机。"
+      "description": "专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。数据只在本机。"
     }
   }
 }

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>巡山僧</title>
-<meta name="description" content="巡山僧 - 降价补货提醒。浏览器插件：打开商品页点一下，价格、库存自己认，降价、补货、上新一变就弹通知。免费，数据只在你自己的浏览器里。">
+<title>巡山僧 · 替你盯梢</title>
+<meta name="description" content="网页降价、补货、上新，贫僧 24 小时蹲守，风吹草动立刻通报。Chrome / Edge 插件，免费，数据只在你自己的浏览器里。">
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="extension/icons/icon.svg" type="image/svg+xml">
@@ -48,6 +48,8 @@ img{display:block;max-width:100%;height:auto}
 .hero h1{margin:0;font-size:clamp(40px,6vw,64px);line-height:1.1;font-weight:700;letter-spacing:-.02em}
 .hero .sl{margin:12px 0 0;font-size:clamp(22px,3vw,28px);line-height:1.2;font-weight:600}
 .hero .tg{margin:12px auto 0;max-width:560px;font-size:17px;color:var(--fg-2)}
+/* 中文只在标点、空格处换行，词不拆开 */
+.hero h1,.hero .sl,.hero .tg{word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance}
 .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border-radius:14px;font-size:17px;font-weight:600;background:var(--fill);color:var(--fg);transition:background var(--t) var(--ease)}
 .btn:hover{background:var(--fill-2)}
@@ -93,9 +95,9 @@ code{font:400 15px ui-monospace,"SF Mono",Menlo,Consolas,monospace;background:va
 <div class="wrap">
   <header class="hero">
     <img class="ic" src="extension/icons/icon.svg" width="96" height="96" alt="">
-    <h1><span style="white-space:nowrap">施主去睡，</span><span style="white-space:nowrap">贫僧盯着。</span></h1>
-    <p class="sl">降价、补货、上新，一变就叫你。</p>
-    <p class="tg">打开商品页点一下贫僧，价格、库存自己认，点那行就盯上。</p>
+    <h1>巡山僧</h1>
+    <p class="sl">替你盯梢</p>
+    <p class="tg">网页降价、补货、上新，贫僧&nbsp;24&nbsp;小时蹲守，风吹草动立刻通报。</p>
     <div class="cta">
       <a class="btn pri" href="dist/xunshan-0.3.0.zip" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>下载插件</a>
       <a class="btn" href="#install">怎么装</a>

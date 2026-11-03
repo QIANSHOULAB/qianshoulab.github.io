@@ -1,4 +1,4 @@
-"""扫地僧核心逻辑跑比武场景（跟界面点「执行」走同一条路：Api.rename_run / organize_run）。
+"""戒尺僧核心逻辑跑比武场景（跟界面点「执行」走同一条路：Api.rename_run / organize_run）。
 用法：python run_ours.py <输出目录> <场景,...>   需要先 gen.py 造好。打印用时和对答案结果。"""
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ def run(out, name):
         r = api.organize_run(root, ORGANIZE[name])
     t2 = time.perf_counter()
     s = score.score(out, name)
-    s.update({"tool": "扫地僧", "preview_s": round(t1 - t0, 3), "run_s": round(t2 - t1, 3),
+    s.update({"tool": "戒尺僧", "preview_s": round(t1 - t0, 3), "run_s": round(t2 - t1, 3),
               "reported_failed": len(r.get("failed", [])), "failed_codes": sorted({f.get("err", "") for f in r.get("failed", [])})})
     return s
 

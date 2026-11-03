@@ -1,4 +1,4 @@
-/* 扫地僧界面。核心逻辑全在 Python（saodi/），这里只管长相和点哪里。字全在 strings.js。 */
+/* 戒尺僧（原扫地僧）界面。核心逻辑全在 Python（saodi/），这里只管长相和点哪里。字全在 strings.js。 */
 "use strict";
 
 /* ---------------- 桥：桌面版走 pywebview，开发版走 HTTP ---------------- */

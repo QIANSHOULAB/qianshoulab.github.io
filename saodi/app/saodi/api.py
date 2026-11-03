@@ -191,7 +191,7 @@ class Api:
         """「用示例试试」：在临时文件夹里造一堆乱文件，一点就有东西可改可分。"""
         import datetime as dt
         import zipfile
-        d = tempfile.mkdtemp(prefix="扫地僧示例-")
+        d = tempfile.mkdtemp(prefix="戒尺僧示例-")
         for i in range(4):
             fs.make_jpeg_with_exif(os.path.join(d, f"IMG_{2041 + i}.JPG"), dt.datetime(2026, 7, 3 + i, 9, 30 + i), "iPhone 15")
         for n in ["发票-滴滴  2026-09.pdf", "Q3 报表 final.xlsx", "合同（终版）.docx", "截图 2026-10-01 10.21.png",

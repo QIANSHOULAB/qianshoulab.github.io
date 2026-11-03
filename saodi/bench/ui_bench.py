@@ -1,4 +1,4 @@
-"""扫地僧界面实点：开发服务器（同一套界面 + 真 Python 核心）+ 无头 Chromium，像人一样点完每个场景，
+"""戒尺僧界面实点：开发服务器（同一套界面 + 真 Python 核心）+ 无头 Chromium，像人一样点完每个场景，
 数点击（click）和打字处（fill），量「点执行 → 弹出完成提示」的用时，截图，最后对答案。
 不含「选文件夹」那一步（每家都一样要选，单独说明）。
 用法：python ui_bench.py <输出目录> <截图目录> [程序目录 app/，默认本仓库的；比旧版就给 git archive 出来的旧 app]
@@ -107,7 +107,7 @@ def main():
             m = page.evaluate("window.__m")
             r = score.score(out, sc)
             r.pop("examples")
-            r.update({"tool": "扫地僧(界面)", "clicks": c.clicks, "typing": c.typing, "run_to_toast_s": round(el, 2),
+            r.update({"tool": "戒尺僧(界面)", "clicks": c.clicks, "typing": c.typing, "run_to_toast_s": round(el, 2),
                       "click_to_toast_ms": round(m["toast"] - m["click"]) if m.get("toast") and m.get("click") else None})
             res.append(r)
             print(json.dumps(r, ensure_ascii=False), flush=True)

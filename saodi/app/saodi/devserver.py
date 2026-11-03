@@ -52,5 +52,5 @@ def serve(ui: str, port: int = 8765) -> None:
             self.wfile.write(body)
 
     s = http.server.ThreadingHTTPServer(("127.0.0.1", port), H)
-    print(f"扫地僧开发模式: http://127.0.0.1:{port}/  (SAODI_HOME={os.environ.get('SAODI_HOME', '默认')})")
+    print(f"戒尺僧开发模式: http://127.0.0.1:{port}/  (SAODI_HOME={os.environ.get('SAODI_HOME', '默认')})")
     s.serve_forever()

@@ -1,4 +1,4 @@
-"""扫地僧入口。
+"""戒尺僧（原扫地僧）入口。exe 文件名照旧叫 SaodiSeng.exe。
 
   SaodiSeng.exe                       正常打开窗口（已经在托盘里跑着：叫它把窗口亮出来，自己退）
   SaodiSeng.exe --tray                开机自启用：只进托盘、不弹窗口，接着盯「下载」
@@ -279,7 +279,7 @@ def _smoke(win, out: str, st) -> None:
 def _smoke_tray(api, st, out: str, quit_all) -> None:
     """托盘冒烟（CI）：--tray 起来不开窗；「下载」默认就盯上；浏览器式下载（.crdownload → 改名）落地就分；
     0 字节占位 + .part、隐藏文件不动；开机自启那一项写对了；第二个实例来了会叫窗口出来。"""
-    from saodi import fsutil as fs, winsys
+    from saodi import fsutil as fs, text, winsys
     res = {"checks": {}}
 
     def check(name, ok, detail=None):
@@ -307,7 +307,7 @@ def _smoke_tray(api, st, out: str, quit_all) -> None:
                 import ctypes
                 ok = w32.Shell_NotifyIcon(w32.NIM_MODIFY, w32.NOTIFYICONDATAW(
                     cbSize=ctypes.sizeof(w32.NOTIFYICONDATAW), hWnd=st["icon"]._hwnd, hID=id(st["icon"]),
-                    uFlags=w32.NIF_TIP, szTip="扫地僧"))
+                    uFlags=w32.NIF_TIP, szTip=text.T("app")))
                 res["shell_tray_accepted"] = bool(ok)
             except Exception as e:  # noqa: BLE001
                 res["shell_tray_accepted"] = "unknown " + repr(e)

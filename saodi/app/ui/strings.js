@@ -1,8 +1,8 @@
 /* 界面上所有给人看的字都在这（托盘菜单、通知也从这读）。加英文：照抄一份 en，改 LANG。 */
 window.STR = {
   zh: {
-    app: "扫地僧",
-    tagline: "文件乱扔，你去玩，贫僧扫",
+    app: "戒尺僧",
+    tagline: "凡尘乱档，统统归位",
     nav_rename: "改名", nav_sort: "分文件夹", nav_dl: "下载", nav_watch: "盯着", nav_hist: "记录",
     side_today: "今天 {n}",
     foot_mail_pre: "找方丈：", foot_home: "千手院",
@@ -110,10 +110,10 @@ window.STR = {
     h_line: "{n} 个文件", h_undone: "撤销了",
 
     /* 托盘、通知（Python 读） */
-    tray_open: "打开扫地僧", tray_watch_dl: "盯着「下载」", tray_quit: "退出",
-    tray_tip_on: "扫地僧 · 盯着「下载」", tray_tip_off: "扫地僧 · 歇着",
+    tray_open: "打开戒尺僧", tray_watch_dl: "盯着「下载」", tray_quit: "退出",
+    tray_tip_on: "戒尺僧 · 盯着「下载」", tray_tip_off: "戒尺僧 · 歇着",
     tray_first: "还在右下角盯着「下载」。要退出，右键这把小扫帚。",
-    n_title: "扫地僧 · 「{folder}」", n_one: "{name} → {to}", n_many: "{name} 等 {n} 个 → {to}",
+    n_title: "戒尺僧 · 「{folder}」", n_one: "{name} → {to}", n_many: "{name} 等 {n} 个 → {to}",
   },
 };
 window.LANG = "zh";
