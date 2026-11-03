@@ -14,6 +14,12 @@
     <h1 data-t="app.name"></h1>
     <p id="status"></p>
   </div>
+  <button class="more" id="btnMore" aria-haspopup="menu" aria-expanded="false" data-t-aria="menu.more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg></button>
+  <div class="menu" id="menu" role="menu" hidden>
+    <p class="menu-h"><span data-t="foot.by"></span> <span id="ver"></span></p>
+    <a class="menu-i" id="homeLink" role="menuitem" target="_blank" rel="noopener" data-t="common.home"></a>
+    <div class="menu-i menu-mail"><span data-t="common.contact"></span><span class="mail" data-t="common.email"></span></div>
+  </div>
 </header>
 
 <main id="main">
@@ -90,10 +96,6 @@
     </div>
   </section>
 
-  <footer class="qs-foot">
-    <span data-t="foot.by"></span> · <a id="homeLink" target="_blank" rel="noopener" data-t="common.home"></a><br>
-    <span data-t="common.contact"></span> <span class="mail" data-t="common.email"></span>
-  </footer>
 </main>
 
 <div class="dock" id="dock">
@@ -102,11 +104,11 @@
     <p id="warnTxt"></p>
     <div class="warn-a"><button class="qs-btn plain sm" id="warnGo" data-t="warn.go"></button><button class="qs-btn gray sm" id="warnPick" data-t="warn.pick"></button></div>
   </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastTxt"></span><button class="qs-btn gray sm" id="toastAct" hidden></button></div>
   <button class="qs-btn big pri" id="btnMain"></button>
   <button class="qs-btn plain retry" id="btnRetry" hidden></button>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastTxt"></span><button id="toastAct" hidden></button></div>
 <div class="dropmask" aria-hidden="true"><span data-t="table.dropHere"></span></div>
 
 <script src="lib/i18n.js"></script>

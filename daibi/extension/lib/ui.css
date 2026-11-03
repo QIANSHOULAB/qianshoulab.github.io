@@ -10,7 +10,7 @@
   --accent:#3A4150; --on-accent:#ffffff; --accent-fg:#3A4150; --accent-tint:rgba(58,65,80,.08);
   --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
-  --glass:rgba(245,245,247,.78);
+  --glass:rgba(245,245,247,.78); --toast-bg:#ffffff;
   --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
   color-scheme:light;
 }
@@ -20,9 +20,9 @@
   --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
   --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --doubt:rgba(255,214,10,.2);
   --ok-fg:#30d158; --bad-fg:#ff6961;
-  /* 墨色在黑底上看不见：提亮一档成淡墨灰，按钮上的字改深色 */
-  --accent:#AEB7C6; --on-accent:#0b0d12; --accent-fg:#C3CAD6; --accent-tint:rgba(174,183,198,.16);
-  --shadow:none; --glass:rgba(22,22,24,.72);
+  /* 墨色在黑底上看不见：提到接近白（墨里的白），按钮上的字改深色；链接用浅一档的墨灰，跟正文分得开 */
+  --accent:#E6E9EF; --on-accent:#0b0d12; --accent-fg:#C3CAD6; --accent-tint:rgba(230,233,239,.12);
+  --shadow:none; --glass:rgba(22,22,24,.72); --toast-bg:#2c2c2e;
   color-scheme:dark;
 }}
 *{box-sizing:border-box}
@@ -60,9 +60,5 @@ button{background:none;border:0;padding:0;cursor:pointer}
 .qs-switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);transition:transform var(--t) var(--ease)}
 .qs-switch:checked{background:var(--accent)}
 .qs-switch:checked::after{transform:translateX(20px)}
-@media (prefers-color-scheme:dark){.qs-switch:checked::after{background:#fff}}
+@media (prefers-color-scheme:dark){.qs-switch:checked::after{background:#0b0d12;box-shadow:none}} /* 深色：开关的底是接近白的主色，钮改深色才看得见 */
 
-.qs-foot{padding:0 16px 24px;color:var(--fg-3);font-size:12px;line-height:1.7;text-align:center}
-.qs-foot a{color:var(--fg-2);text-decoration:none}
-.qs-foot a:hover{text-decoration:underline}
-.qs-foot .mail{user-select:text;-webkit-user-select:text;color:var(--fg-2)}

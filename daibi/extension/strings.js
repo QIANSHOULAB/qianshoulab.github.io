@@ -131,5 +131,6 @@ QSLib.i18n.add('zh', {
   'err.NO_FILE': '「{col}」：附件里没有「{v}」',
   'err.ONE_FILE': '「{col}」只收一个文件',
 
-  'foot.by': '千手院 · 代笔僧'
+  'foot.by': '千手院 · 代笔僧',
+  'menu.more': '更多'
 });

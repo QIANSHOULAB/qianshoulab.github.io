@@ -7,6 +7,12 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   apply();
   $('homeLink').href = t('common.homeUrl');
+  $('ver').textContent = chrome.runtime.getManifest().version;
+  // 顶栏右上角「…」：署名、总舵、找方丈都收在这里，侧栏正文只干一件事
+  const menuOpen = on => { $('menu').hidden = !on; $('btnMore').setAttribute('aria-expanded', String(on)); };
+  $('btnMore').onclick = e => { e.stopPropagation(); menuOpen($('menu').hidden); };
+  document.addEventListener('click', e => { if (!$('menu').hidden && !e.target.closest('#menu')) menuOpen(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('menu').hidden) menuOpen(false); });
 
   const SETTINGS = store.settings('daibi', [
     { key: 'auto', type: 'bool', def: false, label: 'set.auto', hint: 'set.autoHint' }

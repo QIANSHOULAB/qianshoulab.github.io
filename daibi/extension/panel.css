@@ -9,6 +9,19 @@ body{min-height:100vh;padding-bottom:calc(var(--dock-h,96px) + 16px)}
 /* 顶栏：毛玻璃，滚动时浮在上面 */
 .top{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:12px;padding:12px 16px;margin-bottom:12px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
 .logo{width:32px;height:32px;flex:none}
+/* 右上角「…」：署名、总舵、找方丈收在这里 */
+.more{position:relative;flex:none;margin-left:auto;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--fg-2);transition:background-color var(--t) var(--ease)}
+.more::after{content:"";position:absolute;inset:-6px}
+.more:hover,.more[aria-expanded=true]{background:var(--fill)}
+.more svg{width:20px;height:20px;fill:currentColor}
+.menu{position:absolute;top:56px;right:12px;z-index:8;min-width:248px;padding:4px 0;border-radius:14px;background:var(--toast-bg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 0 0 .5px var(--line),var(--shadow);animation:tin var(--t) var(--ease)}
+.menu-h{margin:0;padding:12px 16px 8px;color:var(--fg-2);font-size:13px;font-variant-numeric:tabular-nums}
+.menu-i{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 16px;color:var(--fg);font-size:15px;text-decoration:none}
+.menu-i::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+a.menu-i{color:var(--accent-fg)}
+a.menu-i:hover{background:var(--fill)}
+.menu-mail{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:8px 16px 12px}
+.menu-mail .mail{color:var(--fg-2);font-size:13px;user-select:text;-webkit-user-select:text}
 .top-t{min-width:0}
 .top h1{margin:0;font-size:17px;font-weight:600;line-height:1.2}
 .top p{margin:0;color:var(--fg-2);font-size:13px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
@@ -113,16 +126,16 @@ body.over .dropmask{opacity:1}
 .warn-a{display:flex;justify-content:flex-end;gap:8px}
 
 /* 提示条：顶上，毛玻璃，带「撤」 */
-.toast{position:fixed;left:16px;right:16px;top:60px;z-index:9;display:flex;align-items:center;gap:12px;min-height:48px;padding:8px 8px 8px 16px;border-radius:14px;background:rgba(29,29,31,.94);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);color:#f5f5f7;font-size:13px;line-height:1.4;opacity:0;transform:translateY(-8px);pointer-events:none;transition:opacity var(--t) var(--ease),transform var(--t) var(--ease)}
-.toast.on{opacity:1;transform:none;pointer-events:auto}
-.toast span{flex:1}
-.toast button{flex:none;height:32px;min-width:44px;padding:0 12px;border-radius:var(--r-chip);background:rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:600}
-.toast button:hover{background:rgba(255,255,255,.24)}
-@media (prefers-color-scheme:dark){.toast{background:rgba(58,58,60,.97)}}
+/* 提示条：在底栏里、主按钮上方占自己的位置（不压内容），毛玻璃 + 够不透明的底；一句话 + 一个「撤 / 停 / 从头来」 */
+.toast{display:none;align-items:center;gap:12px;min-height:52px;padding:8px 8px 8px 16px;border-radius:var(--r-card);background:var(--toast-bg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 0 0 .5px var(--line);color:var(--fg);font-size:13px;line-height:1.4}
+.toast.on{display:flex;animation:tin var(--t) var(--ease)}
+@keyframes tin{from{opacity:0;transform:translateY(4px)}}
+.toast span{flex:1;min-width:0}
+.toast .qs-btn{flex:none}
 
 /* 小按钮看着 32 高，点的范围撑到 44 */
-.qs-btn.sm,.fbtn,.fx,.seg button,.sheets button,.toast button,.qs-link{position:relative}
-.qs-btn.sm::after,.fbtn::after,.seg button::after,.sheets button::after,.toast button::after,.qs-link::after{content:"";position:absolute;inset:-6px 0}
+.qs-btn.sm,.fbtn,.fx,.seg button,.sheets button,.qs-link{position:relative}
+.qs-btn.sm::after,.fbtn::after,.seg button::after,.sheets button::after,.qs-link::after{content:"";position:absolute;inset:-6px 0}
 .seg button::after{inset:-8px 0}
 .fx::after{content:"";position:absolute;inset:-6px}
 /* 收工：进度条亮一下 */

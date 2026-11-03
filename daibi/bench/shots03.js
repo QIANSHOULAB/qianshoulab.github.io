@@ -58,6 +58,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   // 1 空状态
   await both('panel-1-empty');
+  // 右上角「…」：署名、总舵、找方丈
+  await panel.click('#btnMore'); await sleep(300);
+  await both('panel-5-menu');
+  await panel.keyboard.press('Escape'); await sleep(200);
   // 2 干活中：用示例试试 → 自己对字段、填第 1 行；人交两行，第 3 行填好等提交
   await panel.click('#btnDemo');
   await waitFor(async () => (await st())[0] === 'filled', 10000);
