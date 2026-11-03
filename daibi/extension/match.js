@@ -35,7 +35,8 @@
     ['类型', '类别', '分类', 'type', 'category', 'kind'],
     ['渠道', '来源', 'source', 'channel'],
     ['付款方式', '支付方式', 'payment', 'paymentmethod', 'paymethod'],
-    ['配送方式', '快递', '物流', 'shipping', 'delivery', 'shippingmethod']
+    ['配送方式', '快递', '物流', 'shipping', 'delivery', 'shippingmethod'],
+    ['附件', '文件', '上传', '材料', '附件上传', '上传文件', 'attachment', 'attachments', 'file', 'files', 'upload', 'document']
   ].map(gp => gp.map(key));
   const groupOf = {};
   GROUPS.forEach((gp, i) => gp.forEach(k => { if (!(k in groupOf)) groupOf[k] = i; }));
@@ -91,6 +92,8 @@
       if (f.type === 'email') s += vals.every(isEmail) ? 0.1 : -0.2;
       if (['date', 'datetime-local', 'month'].includes(f.kind)) s += vals.every(isDate) ? 0.1 : -0.2;
       if (f.kind === 'checkbox') s += vals.every(isBool) ? 0.1 : -0.3;
+      const isFile = v => /\.[a-z0-9]{2,5}$/i.test(v.split(/[;；,，、|\n]/)[0].trim());
+      if (f.kind === 'file') s += vals.every(isFile) ? 0.15 : -0.3;
       if (f.type === 'number') s += vals.every(v => !isNaN(+v.replace(/[,，¥￥$]/g, ''))) ? 0.05 : -0.3;
     }
     return Math.max(0, Math.min(1, s));

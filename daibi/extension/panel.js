@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const { t, apply } = QSLib.i18n;
-  const store = QSLib.store, TB = QSLib.table, M = DaibiMatch;
+  const store = QSLib.store, TB = QSLib.table, FILES = QSLib.files, M = DaibiMatch;
   const $ = id => document.getElementById(id);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   apply();
@@ -18,7 +18,7 @@
   const tab = { id: null, url: '', origin: '', host: '', pat: '', win: null };
   let page = { fields: null, present: [], note: '', noteBad: false };
   const run = { row: -1, seen: new Set(), textSels: new Set(), start: '', phase: 'idle', going: false, nav: false, human: false, timer: 0, tries: 0, busy: false };
-  let filter = 'all', picking = null, lastFile = null, showAll = false;
+  let filter = 'all', picking = null, lastFile = null, showAll = false, attN = 0;
   const FIXED_TAB = new URLSearchParams(location.search).get('tab'); // 测试用：指定要填的标签页
 
   /* ---------- 存 ---------- */
@@ -176,6 +176,23 @@
     addNewMatches();
     const items = [];
     H.forEach((h, ci) => { const b = m.b[h]; if (b && !run.seen.has(b.sel)) items.push({ col: h, sel: b.sel, v: row[ci] }); });
+    // 上传框：按单元格里的文件名去附件袋里取
+    const missing = [];
+    for (const it of items) {
+      if ((m.b[it.col] || {}).kind !== 'file') continue;
+      const names = String(it.v || '').split(/[;；,，、|\n]+/).map(x => x.trim()).filter(Boolean);
+      it.files = [];
+      for (const n of names) {
+        const rec = await FILES.find(n).catch(() => null);
+        if (!rec) { missing.push({ col: it.col, err: 'NO_FILE', v: FILES.base(n) }); break; }
+        it.files.push(await FILES.toPayload(rec));
+      }
+    }
+    if (missing.length) {
+      setSt(i, 'error', missing.map(errText).join('；'));
+      run.phase = 'wait'; render();
+      return autoOn() ? recover() : undefined;
+    }
     let r;
     try { r = await call({ type: 'daibi:fill', items }); } catch (e) { run.phase = 'idle'; run.row = -1; return render(); }
     const present = new Set((await scan()).present);
@@ -315,6 +332,40 @@
       toast(e.message === 'OLD_XLS' ? t('table.oldXls') : e.message === 'EMPTY' ? t('table.empty') : t('table.bad'), 4000);
     }
   }
+  const LINK_ERR = { BAD_LINK: 'table.linkFail', LINK_FAIL: 'table.linkFail', LINK_PRIVATE: 'table.linkPrivate', EMPTY: 'table.empty' };
+  // 必须在点击/粘贴里同步调用：先要权限，再读
+  function loadLink(url, keep) {
+    const info = TB.linkInfo(url);
+    if (!info) { toast(t('table.linkFail')); return false; }
+    chrome.permissions.request({ origins: info.origins }).catch(() => false).then(async ok => {
+      if (!ok) return toast(t('table.denied'), 4000);
+      try {
+        const tb = await TB.readUrl(url, info.kind === 'google' ? t('table.google') : '');
+        if (!tb.rows.length) throw new Error('EMPTY');
+        tb.src = url; lastFile = null;
+        if (keep && S.table) {
+          // 刷新：内容没变的行保留状态，新行待填
+          const old = {};
+          S.table.rows.forEach((r, i) => { const k = JSON.stringify(r); (old[k] = old[k] || []).push(S.st[i]); });
+          let added = 0;
+          const st = tb.rows.map(r => { const a = old[JSON.stringify(r)]; if (a && a.length) return a.shift(); added++; return { s: 'todo' }; });
+          S = { table: tb, st, cur: Math.max(0, st.findIndex(x => x.s === 'todo')) };
+          saveSheet(); render();
+          toast(t('table.reloaded', { n: added }));
+        } else { $('pasteText').value = ''; setTable(tb); }
+      } catch (e) { toast(t(LINK_ERR[e.message] || 'table.linkFail'), 5000); }
+    });
+    return true;
+  }
+  const isLink = s => /^\s*https?:\/\/\S+\s*$/.test(s || '');
+  async function addAtt(files) {
+    const n = await FILES.add(files).catch(() => 0);
+    attN = (await FILES.list().catch(() => [])).length;
+    if (n) toast(t('att.added', { n }));
+    render();
+  }
+  const TABLE_EXT = /\.(xlsx|xlsm|csv|tsv|txt|xls)$/i;
+
   async function setTable(tb) {
     S = { table: tb, st: tb.rows.map(() => ({ s: 'todo' })), cur: 0 };
     clearTimeout(run.timer); Object.assign(run, { row: -1, phase: 'idle', going: false, seen: new Set(), textSels: new Set() });
@@ -362,6 +413,12 @@
       ss.hidden = !(tb.sheets && tb.sheets.length > 1 && lastFile);
       if (!ss.hidden && ss.options.length !== tb.sheets.length) ss.innerHTML = tb.sheets.map(n => `<option>${esc(n)}</option>`).join('');
       if (!ss.hidden) ss.value = tb.sheet;
+      $('btnReload').hidden = !tb.src;
+      const m = tab.origin && maps[tab.origin];
+      const needAtt = attN > 0 || (m && Object.values(m.b).some(b => b && b.kind === 'file')) || (page.fields || []).some(f => f.kind === 'file');
+      $('attRow').hidden = !needAtt;
+      $('attTxt').textContent = attN ? t('att.n', { n: attN }) : t('att.none');
+      $('btnAttClr').hidden = !attN;
       renderFields(); renderRows();
     }
     const [mode, dis] = mainMode();
@@ -395,12 +452,19 @@
     const x = '<svg viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
     const okCls = h => { const bd = m.b[h]; if (!bd) return false; return bd.conf === 'sure' || bd.conf === 'manual'; };
     const nOk = tb.headers.filter(okCls).length;
-    const fold = !showAll && nOk >= 4 && !picking;
+    // 这页的格子都有主了，没对上的列在这页用不上，一起收起来
+    const usedSels = new Set(Object.values(m.b).filter(Boolean).map(x => x.sel));
+    const idle = !!page.fields && page.fields.every(f => usedSels.has(f.sel));
+    const nIdle = idle ? tb.headers.filter(h => !m.b[h]).length : 0;
+    const foldable = nOk >= 4 || nIdle >= 3;
+    const fold = !showAll && foldable && !picking;
+    const hide = h => fold && (okCls(h) || (idle && !m.b[h]));
     let html = '';
-    if (nOk >= 4) html += `<div class="frow fsum"><i class="dot"></i><div class="fmain"><span class="fcol">${esc(t('fields.okN', { n: nOk, total: tb.headers.length }))}</span></div>
+    const sumTxt = t('fields.okN', { n: nOk }) + (nIdle ? ' · ' + t('fields.idleN', { n: nIdle }) : '');
+    if (foldable) html += `<div class="frow fsum"><i class="dot"></i><div class="fmain"><span class="fcol">${esc(sumTxt)}</span></div>
       <div class="fact"><button class="qs-link" data-act="fold">${esc(t(fold ? 'fields.expand' : 'fields.fold'))}</button></div></div>`;
     html += tb.headers.map((h, ci) => {
-      if (fold && okCls(h)) return '';
+      if (hide(h)) return '';
       const bd = m.b[h];
       let cls = 'none', to = `<em>${esc(t('fields.unbound'))}</em>`;
       if (bd) {
@@ -462,6 +526,7 @@
   $('btnPaste').onclick = () => { $('pasteBox').hidden = false; render(); $('pasteText').focus(); };
   $('pasteCancel').onclick = () => { $('pasteBox').hidden = true; render(); };
   $('pasteOk').onclick = () => {
+    if (isLink($('pasteText').value)) return loadLink($('pasteText').value.trim());
     const tb = TB.parseText($('pasteText').value, t('table.paste'));
     if (!tb.rows.length) return toast(t('table.empty'));
     lastFile = null; $('pasteText').value = ''; setTable(tb);
@@ -469,11 +534,23 @@
   document.addEventListener('paste', e => {
     if (S.table || e.target.closest('textarea,input')) return;
     const txt = e.clipboardData.getData('text/plain');
+    if (isLink(txt)) return loadLink(txt.trim());
     if (txt && /\t|\n/.test(txt)) { const tb = TB.parseText(txt, t('table.paste')); if (tb.rows.length) { lastFile = null; setTable(tb); } }
   });
   ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
   ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || !e.relatedTarget) $('drop').classList.remove('over'); }));
-  document.addEventListener('drop', e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
+  document.addEventListener('drop', e => {
+    const fs = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+    if (!fs.length) return;
+    const tbl = !S.table || (fs.length === 1 && TABLE_EXT.test(fs[0].name)) ? fs.find(f => TABLE_EXT.test(f.name)) : null;
+    if (tbl) loadFile(tbl);
+    const rest = fs.filter(f => f !== tbl);
+    if (rest.length) addAtt(rest);
+  });
+  $('btnReload').onclick = () => S.table && S.table.src && loadLink(S.table.src, true);
+  $('btnAtt').onclick = () => $('attFile').click();
+  $('attFile').onchange = e => { if (e.target.files.length) addAtt(e.target.files); e.target.value = ''; };
+  $('btnAttClr').onclick = async () => { await FILES.clear().catch(() => {}); attN = 0; render(); };
 
   $('btnMatch').onclick = startMatch;
   $('btnRematch').onclick = startMatch;
@@ -543,6 +620,7 @@
       render();
     }, t);
     maps = await store.get('daibi:maps', {});
+    attN = (await FILES.list().catch(() => [])).length;
     const saved = await store.get('daibi:sheet', null);
     if (saved && saved.table) S = saved;
     S.st = S.st.map(x => x.s === 'filled' ? { s: 'todo' } : x);

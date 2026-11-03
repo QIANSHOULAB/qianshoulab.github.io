@@ -86,7 +86,20 @@
     if (!P.visible(el) && !(el.type === 'radio' || el.type === 'checkbox')) return { col: it.col, skip: 'absent' };
     const kind = P.describe(el).kind;
     try {
-      if (kind === 'select') {
+      if (kind === 'file') {
+        const files = it.files || [];
+        if (!files.length) return { col: it.col, skip: 'empty' };
+        if (files.length > 1 && !el.multiple) return { col: it.col, err: 'ONE_FILE', v };
+        const dt = new DataTransfer();
+        files.forEach(f => {
+          const bin = atob(f.data), u8 = new Uint8Array(bin.length);
+          for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+          dt.items.add(new File([u8], f.name, { type: f.type || 'application/octet-stream' }));
+        });
+        el.files = dt.files;
+        fire(el, 'input', 'change');
+        if (el.files.length !== files.length) return { col: it.col, err: 'FAILED', v };
+      } else if (kind === 'select') {
         const opts = Array.from(el.options).map(o => ({ value: o.value, text: o.text.trim() }));
         const i = matchOption(opts, v);
         if (i < 0) return { col: it.col, err: 'NO_OPTION', v };
@@ -178,6 +191,7 @@
       const f = P.find(s); if (!f) return null;
       const els = [].concat(f);
       if (els[0].type === 'radio' || els[0].type === 'checkbox') return els.filter(e => e.checked).map(e => e.value).join(',');
+      if (els[0].type === 'file') return Array.from(els[0].files || []).map(f => f.name).join(',');
       return els[0].value ?? els[0].textContent;
     });
   }

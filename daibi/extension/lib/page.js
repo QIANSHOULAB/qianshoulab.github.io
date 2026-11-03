@@ -10,16 +10,18 @@
   'use strict';
   if (g.QSLib && g.QSLib.page) return;
 
-  const SKIP_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image', 'file']);
+  const SKIP_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image']);
   const norm = s => String(s || '').replace(/\s+/g, ' ').trim();
   const cssEsc = s => (g.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/["\\]/g, '\\$&');
 
   function visible(el) {
     if (!el.isConnected) return false;
-    if (el.type === 'radio' || el.type === 'checkbox') {
+    if (el.type === 'radio' || el.type === 'checkbox' || el.type === 'file') {
       // 很多网站把原生单选/复选藏起来，换成好看的样式；看它的 label 可不可见
       const lab = el.labels && el.labels[0];
       if (lab && lab.getClientRects().length) return true;
+      // 上传框常被藏起来，换成一个好看的按钮：外面那层看得见就算
+      if (el.type === 'file' && el.parentElement && el.parentElement.getClientRects().length) return true;
     }
     if (!el.getClientRects().length) return false;
     const cs = getComputedStyle(el);
@@ -64,7 +66,10 @@
       if (norm(t)) return norm(t);
     }
     if (el.labels && el.labels.length && (el.type !== 'radio' && el.type !== 'checkbox')) {
-      const t = textOf(el.labels[0]); if (t) return t;
+      const t = textOf(el.labels[0]);
+      // 上传框的 label 往往就是按钮上的「选择文件」，真名字在旁边
+      if (el.type === 'file' && /^(点击)?(选择|上传|浏览|添加)|^(choose|upload|browse|select|add)/i.test(t)) { const n = nearbyText(el.labels[0]); if (n) return n; }
+      if (t) return t;
     }
     if (el.getAttribute('aria-label')) return norm(el.getAttribute('aria-label'));
     return nearbyText(el);
@@ -136,6 +141,7 @@
     const t = (el.type || 'text').toLowerCase();
     if (t === 'radio') return 'radio';
     if (t === 'checkbox') return 'checkbox';
+    if (t === 'file') return 'file';
     if (['date', 'datetime-local', 'time', 'month', 'week'].includes(t)) return t;
     return 'text';
   }
@@ -146,7 +152,8 @@
     const d = {
       sel: selectorOf(el), kind, type: (el.type || '').toLowerCase(), name: el.name || '', id: el.id || '',
       placeholder: norm(el.getAttribute('placeholder')), title: norm(el.getAttribute('title')),
-      label: '', required: !!el.required, options: null, autocomplete: el.getAttribute('autocomplete') || ''
+      label: '', required: !!el.required, options: null, autocomplete: el.getAttribute('autocomplete') || '',
+      multiple: !!el.multiple, accept: el.getAttribute('accept') || ''
     };
     if (kind === 'radio' || kind === 'checkbox') {
       const group = el.name ? Array.from(document.querySelectorAll(d.sel)) : [el];
@@ -173,7 +180,7 @@
     const out = [], seen = new Set();
     root.querySelectorAll('input,select,textarea,[contenteditable=""],[contenteditable=true]').forEach(el => {
       if (el.matches('input') && SKIP_TYPES.has((el.type || '').toLowerCase())) return;
-      if (el.disabled || el.readOnly && el.type !== 'date') return;
+      if (el.disabled || el.readOnly && el.type !== 'date' && el.type !== 'file') return;
       if (el.closest('[data-qs-ui]')) return;
       if (!visible(el)) return;
       const d = describe(el);

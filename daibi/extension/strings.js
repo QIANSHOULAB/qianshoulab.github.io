@@ -5,12 +5,18 @@ QSLib.i18n.add('zh', {
 
   'table.title': '表格',
   'table.drop': '把 Excel 或 CSV 拖进来',
-  'table.dropSub': '一行一单，贫僧照抄进网页',
+  'table.dropSub': '也能贴 Google 表格链接。一行一单，贫僧照抄',
   'table.choose': '选文件',
   'table.paste': '粘贴',
   'table.change': '换一张',
   'table.meta': '{rows} 行 · {cols} 列',
-  'table.pastePh': '从 Excel 复制几行（带表头），粘在这',
+  'table.pastePh': '从 Excel 复制几行（带表头）粘在这，或者贴 Google 表格链接',
+  'table.reload': '刷新',
+  'table.google': 'Google 表格',
+  'table.linkFail': '这个链接读不下来',
+  'table.linkPrivate': '这张表打不开：设成「知道链接的人可查看」，或先在这个浏览器登录 Google',
+  'table.denied': '没给权限，读不了这个链接',
+  'table.reloaded': '刷新好了，新增 {n} 行待填',
   'table.pasteOk': '用这些',
   'table.cancel': '取消',
   'table.oldXls': '老式 .xls 贫僧不认，另存为 .xlsx 或 .csv 再来',
@@ -26,6 +32,7 @@ QSLib.i18n.add('zh', {
   'fields.count': '{n}/{total} 列对上',
   'fields.unbound': '没对上',
   'fields.okN': '{n} 列稳稳对上',
+  'fields.idleN': '{n} 列这页用不上',
   'fields.expand': '展开',
   'fields.fold': '收起',
   'fields.maybe': '不太确定',
@@ -89,6 +96,14 @@ QSLib.i18n.add('zh', {
   'err.STUCK': '提交了没动静，可能没交上',
   'err.NOFIELD': '这页一个对上的格子都没有',
   'err.CAPTCHA': '卡在验证码',
+
+  'att.none': '附件：还没放（表里写文件名，文件放这）',
+  'att.n': '附件：{n} 个',
+  'att.add': '放附件',
+  'att.clear': '清空',
+  'att.added': '收下 {n} 个附件',
+  'err.NO_FILE': '「{col}」：附件里没有「{v}」',
+  'err.ONE_FILE': '「{col}」只收一个文件',
 
   'foot.by': '千手院 · 代笔僧'
 });

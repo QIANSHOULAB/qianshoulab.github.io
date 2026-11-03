@@ -57,7 +57,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   const st = () => panel.evaluate(() => window.__daibi.S().st.map(x => x.s));
   const stm = () => panel.evaluate(() => window.__daibi.S().st);
-  const binds = () => panel.evaluate(() => { const d = window.__daibi; return d.maps()[d.tab.origin] || null; });
+  const binds = () => panel.evaluate(() => { const d = window.__daibi; const m = d.maps()[d.tab.origin]; return m && Object.keys(m.b).length ? m : null; });
   const mainText = () => panel.textContent('#btnMain');
   const waitFor = async (fn, ms, label) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await fn()) return true; await sleep(100); } check(false, '超时：' + label); return false; };
   const reset = () => fetch(SITE(0) + '/api/reset', { method: 'POST' });
@@ -69,7 +69,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   console.log('\n[1] 订单录入：读 xlsx，对字段，手动模式');
   await put('订单20行.xlsx');
   await waitFor(async () => (await panel.textContent('#tMeta')).includes('20 行'), 5000, '读表');
-  check((await panel.textContent('#tMeta')).trim() === '20 行 · 14 列', '读出 20 行 14 列（跳过「说明」页）');
+  check((await panel.textContent('#tMeta')).trim() === '20 行 · 16 列', '读出 20 行 16 列（跳过「说明」页）');
   await waitFor(async () => !!(await binds()), 4000, '自动对字段');
   let b = (await binds()).b;
   console.log('    自动对上：', Object.entries(b).map(([h, x]) => `${h}→${x.label}(${x.conf} ${x.score})`).join('，'));
@@ -219,11 +219,80 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   check(true, '重试能跑（数据没改仍出错）');
 
   /* ===== 7. 重开侧栏：表格、状态、对应都还在 ===== */
+  /* ===== 8. 上传文件 ===== */
+  console.log('\n[8] 附件上传：单元格写文件名，文件放进附件袋');
+  await reset();
+  await web.goto(SITE(4) + '/');
+  await put('订单20行.xlsx');
+  await waitFor(async () => { const x = await binds(); return x && x.b['合同'] && x.b['材料']; }, 5000, '上传页对字段');
+  b = (await binds()).b;
+  check(b['合同'] && b['合同'].kind === 'file' && /contract/.test(b['合同'].sel), '「合同」对上藏起来的上传框（label 是「选择文件」也认）');
+  check(b['材料'] && b['材料'].kind === 'file' && b['材料'].sel === '#more', '「材料」对上多选上传框');
+  check(await panel.isVisible('#attRow'), '页面有上传框时出现「附件」一栏');
+  const attDir = DATA('附件');
+  const att = fs.readdirSync(attDir).filter(f => f !== '合同20.pdf').map(f => ({ name: f, mimeType: f.endsWith('.pdf') ? 'application/pdf' : 'image/png', buffer: fs.readFileSync(path.join(attDir, f)) }));
+  await panel.setInputFiles('#attFile', att);
+  await waitFor(async () => (await panel.textContent('#attTxt')).includes('21'), 4000, '放进 21 个附件');
+  await setAuto(true);
+  const t3 = Date.now();
+  await panel.click('#btnMain');
+  await waitFor(async () => (await st()).every(s => s === 'done' || s === 'error'), 90000, '上传 20 行跑完');
+  const upSecs = ((Date.now() - t3) / 1000).toFixed(1);
+  let sm8 = await stm();
+  check(sm8.filter(x => x.s === 'done').length === 19 && sm8[19].s === 'error' && /合同20\.pdf/.test(sm8[19].m), '缺文件那行标出错：' + sm8[19].m);
+  await panel.screenshot({ path: path.join(OUT, '08-upload.png') });
+  await panel.setInputFiles('#attFile', [{ name: '合同20.pdf', mimeType: 'application/pdf', buffer: fs.readFileSync(path.join(attDir, '合同20.pdf')) }]);
+  await sleep(300);
+  await panel.click('#btnRetry');
+  await waitFor(async () => (await st())[19] === 'done', 15000, '补上文件重试成功');
+  lg = (await getLog()).filter(x => x.site === 'upload');
+  bad = 0;
+  lg.forEach(e => {
+    const f = e.f, i = expected.findIndex(r => r[0] === f.name), r = expected[i];
+    const size = fs.statSync(path.join(attDir, r[14])).size;
+    const want = r[15] ? r[15].split(/[；]/).map(x => x.split('\\').pop()) : [];
+    const more = [].concat(f.more || []).map(x => x.fn);
+    const ok = f.contract && f.contract.fn === r[14] && f.contract.size === size && JSON.stringify(more) === JSON.stringify(want);
+    if (!ok) { bad++; console.log('    不对：', JSON.stringify(f)); }
+  });
+  check(lg.length === 20 && bad === 0, `上传 20 份，文件名和大小全对（收到 ${lg.length}，错 ${bad}），19 行用时 ${upSecs} 秒`);
+  await setAuto(false);
+
+  /* ===== 9. 表格链接（模拟 Google 表格） ===== */
+  console.log('\n[9] 表格链接');
+  const li = await panel.evaluate(() => [
+    QSLib.table.linkInfo('https://docs.google.com/spreadsheets/d/AbC_123-x/edit#gid=456').url,
+    QSLib.table.linkInfo('https://docs.google.com/spreadsheets/d/e/2PACX-1v/pubhtml').url]);
+  check(li[0] === 'https://docs.google.com/spreadsheets/d/AbC_123-x/export?format=csv&gid=456' && li[1] === 'https://docs.google.com/spreadsheets/d/e/2PACX-1v/pub?output=csv', 'Google 表格链接换成导出地址：' + li.join(' | '));
+  await fetch(SITE(0) + '/api/sheetrows?n=5', { method: 'POST' });
+  await web.goto(SITE(0) + '/order');
+  await panel.evaluate(() => { document.getElementById('pasteBox').hidden = false; });
+  await panel.fill('#pasteText', SITE(0) + '/sheet.csv');
+  await panel.click('#pasteOk');
+  await waitFor(async () => (await panel.textContent('#tMeta')).includes('5 行'), 5000, '读链接');
+  check((await panel.textContent('#tName')) === '线上订单表.csv', '链接读进来，表名取自下载文件名');
+  check(await panel.isVisible('#btnReload'), '链接表有「刷新」按钮');
+  await panel.click('#btnMain'); // 填第 1 行
+  await waitFor(async () => (await st())[0] === 'filled', 5000, '链接表第 1 行填好');
+  await web.click('button:has-text("保存订单")');
+  await waitFor(async () => (await st())[0] === 'done', 5000, '第 1 行完成');
+  await fetch(SITE(0) + '/api/sheetrows?n=8', { method: 'POST' });
+  await panel.click('#btnReload');
+  await waitFor(async () => (await panel.textContent('#tMeta')).includes('8 行'), 5000, '刷新后 8 行');
+  const s9 = await st();
+  check(s9[0] === 'done' && s9.slice(2).every(x => x === 'todo'), '刷新：已完成的行保留状态，新行待填');
+  check((await panel.textContent('#toast')).includes('新增 3 行'), '提示：' + (await panel.textContent('#toast')));
+  await panel.evaluate(() => { document.getElementById('pasteBox').hidden = false; });
+  await panel.fill('#pasteText', SITE(0) + '/private');
+  await panel.click('#pasteOk');
+  await sleep(800);
+  check((await panel.textContent('#toast')).includes('打不开'), '要登录的链接给出提示：' + (await panel.textContent('#toast')));
+
   console.log('\n[7] 重开侧栏');
   await panel.reload();
   await panel.waitForSelector('#tMeta');
   await sleep(500);
-  check((await panel.textContent('#tMeta')).includes('3 行') && (await st())[1] === 'error', '重开后表格和状态都在');
+  check((await panel.textContent('#tMeta')).includes('8 行') && (await st())[0] === 'done' && (await panel.isVisible('#btnReload')), '重开后表格、状态、链接都在');
 
   // 截图：连填进行中 → 暂停（顺便测暂停）
   await web.goto(SITE(0) + '/order');

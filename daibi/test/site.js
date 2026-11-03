@@ -3,6 +3,8 @@
  *   PORT+1 报名登记：两页向导（第 1 页 → 第 2 页 → 成功页，成功页没有表单）
  *   PORT+2 Ajax 表单：不跳页，值只认 input 事件（模拟 React 受控组件），提交后清空
  *   PORT+3 带验证码的表单
+ *   PORT+4 附件上传：一个藏在按钮后面的单文件框，一个多选框（multipart 提交）
+ *   任意端口 /sheet.csv 模拟「表格链接」（行数可用 POST /api/sheetrows?n= 改），/private 模拟要登录的链接
  * GET /api/log 看收到的提交；POST /api/reset 清空。
  */
 const http = require('http');
@@ -94,6 +96,31 @@ const captchaPage = () => page('带验证码', `<h1>意见反馈</h1>
 
 function body(req) { return new Promise(r => { let b = ''; req.on('data', c => b += c); req.on('end', () => r(b)); }); }
 const tokens = {};
+let sheetRows = 5;
+function multipart(buf, ct) {
+  const bd = /boundary=(?:"([^"]+)"|([^;]+))/.exec(ct); if (!bd) return {};
+  const sep = Buffer.from('--' + (bd[1] || bd[2]));
+  const out = {}; let pos = buf.indexOf(sep);
+  while (pos >= 0) {
+    const next = buf.indexOf(sep, pos + sep.length); if (next < 0) break;
+    const part = buf.slice(pos + sep.length + 2, next - 2);
+    const he = part.indexOf('\r\n\r\n');
+    const head = part.slice(0, he).toString('utf8'), body = part.slice(he + 4);
+    const name = /name="([^"]*)"/.exec(head)[1], fn = /filename="([^"]*)"/.exec(head);
+    const v = fn ? { fn: fn[1], size: body.length } : body.toString('utf8');
+    if (fn && !fn[1]) { pos = next; continue; }
+    if (out[name] !== undefined) out[name] = [].concat(out[name], v); else out[name] = v;
+    pos = next;
+  }
+  return out;
+}
+function rawBody(req) { return new Promise(r => { const c = []; req.on('data', d => c.push(d)); req.on('end', () => r(Buffer.concat(c))); }); }
+const uploadPage = () => page('附件上传', `<h1>合同归档</h1><p class="sub">上传框藏在按钮后面，另一个能多选</p>
+  <form method="post" action="/upload" enctype="multipart/form-data">
+    <div class="row"><label for="u1">客户名称</label><input id="u1" name="name" required></div>
+    <div class="row"><span class="lab">合同扫描件</span><label style="background:#eef2ff;color:#2563eb;padding:6px 14px;border-radius:6px;cursor:pointer">选择文件<input type="file" name="contract" accept=".pdf" style="display:none"></label></div>
+    <div class="row"><label for="more">补充材料</label><input type="file" id="more" name="more" multiple></div>
+    <button type="submit">提交归档</button></form>`);
 
 function handler(kind) {
   return async (req, res) => {
@@ -102,6 +129,21 @@ function handler(kind) {
     if (u.pathname === '/api/log') return send(200, JSON.stringify(log), { 'content-type': 'application/json' });
     if (u.pathname === '/api/reset' && req.method === 'POST') { log.length = 0; return send(200, '{}'); }
     if (u.pathname === '/favicon.ico') return send(204, '');
+    if (u.pathname === '/api/sheetrows' && req.method === 'POST') { sheetRows = +u.searchParams.get('n'); return send(200, '{}'); }
+    if (u.pathname === '/sheet.csv') {
+      const H = ['客户名', '手机', '邮箱', '公司', '产品'];
+      const rows = Array.from({ length: sheetRows }, (_, k) => [`链接客户${String(k + 1).padStart(2, '0')}`, `1370000${String(k + 1).padStart(4, '0')}`, `l${k + 1}@example.com`, '链接公司', '标准版']);
+      return send(200, [H, ...rows].map(r => r.join(',')).join('\n'), { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': "attachment; filename*=UTF-8''" + encodeURIComponent('线上订单表.csv') });
+    }
+    if (u.pathname === '/private') return send(302, '', { location: '/login' });
+    if (u.pathname === '/login') return send(200, page('登录', '<h1>请先登录</h1>'));
+    if (kind === 'upload') {
+      if (u.pathname === '/') return send(200, uploadPage());
+      if (u.pathname === '/upload' && req.method === 'POST') {
+        log.push({ site: 'upload', f: multipart(await rawBody(req), req.headers['content-type'] || ''), t: Date.now() });
+        return send(302, '', { location: '/' });
+      }
+    }
     if (kind === 'order') {
       if (u.pathname === '/' || u.pathname === '/order') return send(200, orderForm(u.searchParams.get('ok')));
       if (u.pathname === '/submit' && req.method === 'POST') {
@@ -135,5 +177,5 @@ function handler(kind) {
   };
 }
 
-['order', 'wizard', 'ajax', 'captcha'].forEach((k, i) => http.createServer(handler(k)).listen(BASE + i, '127.0.0.1'));
-console.log('test site on', BASE, '..', BASE + 3);
+['order', 'wizard', 'ajax', 'captcha', 'upload'].forEach((k, i) => http.createServer(handler(k)).listen(BASE + i, '127.0.0.1'));
+console.log('test site on', BASE, '..', BASE + 4);

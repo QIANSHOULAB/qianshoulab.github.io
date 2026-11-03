@@ -1,7 +1,7 @@
 # 生成测试用的 20 行表：一份 xlsx（真日期单元格），一份 GBK 编码 CSV（日期写成各种格式）
 import openpyxl, datetime, csv, os, json
 os.makedirs('data', exist_ok=True)
-H = ['客户名','手机','邮箱','公司','产品','数量','配送方式','开发票','渠道','交付日期','备注','性别','城市','生日']
+H = ['客户名','手机','邮箱','公司','产品','数量','配送方式','开发票','渠道','交付日期','备注','性别','城市','生日','合同','材料']
 prods = ['标准版','专业版','旗舰版']; ships = ['快递','自提','同城']; chans = ['官网','微信','展会、朋友介绍','官网，微信','']
 cities = ['北京','上海','广州','深圳','杭州','成都','新加坡','南京','武汉','西安']
 rows = []
@@ -9,7 +9,8 @@ for i in range(1, 21):
     rows.append([f'样例客户{i:02d}', f'1380000{i:04d}', f'user{i:02d}@example.com', f'示例科技{i:02d}有限公司',
         prods[i % 3], i % 5 + 1, ships[i % 3], '是' if i % 2 else '否', chans[i % 5],
         datetime.date(2026, 11, i), f'第{i}单，备注写长一点，含逗号,和"引号"' if i % 4 == 0 else '',
-        '男' if i % 2 else '女', cities[i % 10], datetime.date(1990 + i % 10, (i % 12) + 1, (i % 27) + 1)])
+        '男' if i % 2 else '女', cities[i % 10], datetime.date(1990 + i % 10, (i % 12) + 1, (i % 27) + 1),
+        f'合同{i:02d}.pdf', ('照片A.png；照片B.png' if i % 3 == 0 else ('D:\\资料\\照片A.png' if i % 3 == 1 else ''))])
 wb = openpyxl.Workbook(); ws = wb.active; ws.title = '订单'
 ws.append(H)
 for r in rows: ws.append(r)
@@ -30,4 +31,10 @@ with open('data/坏一行.csv', 'w', encoding='utf-8-sig', newline='') as f:
     w.writerow(['坏行测试A','13900000001','a@example.com','示例A','标准版',1,'快递'])
     w.writerow(['坏行测试B','13900000002','b@example.com','示例B','企业版',1,'快递'])
     w.writerow(['坏行测试C','13900000003','c@example.com','示例C','旗舰版',2,'同城'])
+# 附件：每行一份合同 + 两张照片
+os.makedirs('data/附件', exist_ok=True)
+for i in range(1, 21):
+    open(f'data/附件/合同{i:02d}.pdf', 'wb').write(b'%PDF-1.4\n% test contract ' + str(i).encode() + b'\n' * i)
+png = bytes.fromhex('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082')
+open('data/附件/照片A.png', 'wb').write(png); open('data/附件/照片B.png', 'wb').write(png + b'B')
 print('ok')

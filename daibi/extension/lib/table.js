@@ -227,11 +227,48 @@
     return parseText(decode(buf), file.name);
   }
 
+  /* ---------- 链接：Google 表格 / 任意 .csv 链接 ---------- */
+  function linkInfo(u) {
+    u = String(u || '').trim();
+    let x; try { x = new URL(u); } catch (e) { return null; }
+    if (!/^https?:$/.test(x.protocol)) return null;
+    const m = /docs\.google\.com\/spreadsheets\/d\/(e\/)?([\w-]+)/.exec(u);
+    if (m) {
+      const gid = /[#&?]gid=(\d+)/.exec(u);
+      const g = gid ? '&gid=' + gid[1] : '';
+      return {
+        kind: 'google',
+        url: m[1] ? `https://docs.google.com/spreadsheets/d/e/${m[2]}/pub?output=csv${g}` : `https://docs.google.com/spreadsheets/d/${m[2]}/export?format=csv${g}`,
+        origins: ['https://docs.google.com/*', 'https://*.googleusercontent.com/*']
+      };
+    }
+    return { kind: 'csv', url: u, origins: [`${x.protocol}//${x.hostname}/*`] };
+  }
+  // 需要先拿到 linkInfo(u).origins 的网站权限；带上浏览器里已登录的身份（私有 Google 表格只要你登录了就能读）
+  async function readUrl(u, fallbackName) {
+    const info = linkInfo(u); if (!info) throw new Error('BAD_LINK');
+    let r;
+    try { r = await fetch(info.url, { credentials: 'include', cache: 'no-store' }); } catch (e) { throw new Error('LINK_FAIL'); }
+    if (!r.ok) throw new Error(r.status === 401 || r.status === 403 || r.status === 404 ? 'LINK_PRIVATE' : 'LINK_FAIL');
+    const ct = r.headers.get('content-type') || '';
+    const buf = await r.arrayBuffer();
+    const u8 = new Uint8Array(buf, 0, Math.min(4, buf.byteLength));
+    let name = fallbackName || '';
+    const cd = r.headers.get('content-disposition') || '';
+    const m = /filename\*=UTF-8''([^;]+)/i.exec(cd) || /filename="([^"]+)"/i.exec(cd);
+    if (m) { try { name = decodeURIComponent(m[1]); } catch (e) { name = m[1]; } }
+    if (!name) name = decodeURIComponent(new URL(info.url).pathname.split('/').pop() || '') || info.url;
+    if (u8[0] === 0x50 && u8[1] === 0x4B) return readXlsx(buf, name);
+    const text = decode(buf);
+    if (/text\/html/i.test(ct) || /^\s*<(!doctype|html)/i.test(text)) throw new Error('LINK_PRIVATE'); // 跳到登录页了
+    return parseText(text, name);
+  }
+
   function toCSV(headers, rows) {
     const esc = v => { v = String(v ?? ''); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     return '﻿' + [headers, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
   }
 
   g.QSLib = g.QSLib || {};
-  g.QSLib.table = { read, parseText, toCSV, _parseDelimited: parseDelimited };
+  g.QSLib.table = { read, readUrl, linkInfo, parseText, toCSV, _parseDelimited: parseDelimited };
 })(globalThis);
