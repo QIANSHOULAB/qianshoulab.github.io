@@ -49,7 +49,7 @@ def steps(c: Counter, sc: str):
     elif sc == "R3":
         c.click(q("date"))
     elif sc == "R4":
-        c.click(q("taken")); c.select("select[data-i='0'][data-k='fmt']", "YYYYMMDD_hhmmss")
+        c.click(q("taken"))  # 0.2.1：YYYYMMDD_hhmmss 已是默认格式
     elif sc == "R5":
         c.click(q("case")); c.click(q("ext"))
     elif sc == "R6":

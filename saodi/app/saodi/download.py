@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import email.message
+import http.client
 import mimetypes
 import os
 import re
@@ -24,7 +25,7 @@ from . import fsutil as fs
 from . import VERSION
 
 UA = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Saodi/{VERSION}"
-CHUNK = 256 * 1024
+CHUNK = 1024 * 1024
 
 
 def parse_urls(text: str) -> list[str]:
@@ -82,6 +83,9 @@ class Item:
         self.got = 0
         self.total = 0
         self.tries = 0
+        self.fresh = 0          # 这一次连接收到的字节
+        self.alive = False      # 这一次服务器回过话（有响应头）
+        self.quick = 0          # 立刻续传用掉的次数
         self.err = ""
         self.path = ""
 
@@ -92,10 +96,12 @@ class Item:
 
 class Downloader:
     def __init__(self, folder: str, naming: dict | None = None, workers: int = 3,
-                 retries: int = 4, backoff: float = 1.5, timeout: float = 20):
+                 retries: int = 4, backoff: tuple = (0.3, 1, 3, 6), timeout: float = 20,
+                 quick: int = 30):
         self.folder = os.path.abspath(folder)
         self.naming = naming or {"mode": "keep"}
         self.workers, self.retries, self.backoff, self.timeout = workers, retries, backoff, timeout
+        self.quick = quick  # 断线前收到过新数据：立刻带 Range 续，不等、不算重试次数（上限防死循环）
         self.items: list[Item] = []
         self._cancel = threading.Event()
         self._lock = threading.Lock()
@@ -139,6 +145,7 @@ class Downloader:
             req.add_header("Range", f"bytes={have}-")
         with urllib.request.urlopen(req, timeout=self.timeout) as resp:
             status = resp.status
+            it.alive = True
             if not it.name:
                 it.name = self._claim(it, self._final_name(it, name_from(it.url, resp.headers)))
                 part = os.path.join(self.folder, it.name + ".part")
@@ -155,16 +162,24 @@ class Downloader:
                 it.total = int(length) if length else 0
                 mode = "wb"
             it.got = have
+            it.fresh = 0
             with open(fs.lp(part), mode) as f:
                 while True:
                     if self._cancel.is_set():
                         it.state = "cancel"
                         return
-                    buf = resp.read(CHUNK)
+                    try:
+                        buf = resp.read(CHUNK)
+                    except http.client.IncompleteRead as e:  # 断线：已到手的半截先落盘，好接着续
+                        f.write(e.partial)
+                        it.got += len(e.partial)
+                        it.fresh += len(e.partial)
+                        raise ConnectionError("cut") from None
                     if not buf:
                         break
                     f.write(buf)
                     it.got += len(buf)
+                    it.fresh += len(buf)
         if it.total and it.got < it.total:
             raise ConnectionError("short")
         final = os.path.join(self.folder, it.name)
@@ -180,6 +195,7 @@ class Downloader:
     def _run_one(self, it: Item) -> None:
         while not self._cancel.is_set():
             it.tries += 1
+            it.fresh, it.alive = 0, False
             it.state = "run"
             try:
                 self._fetch(it)
@@ -201,11 +217,22 @@ class Downloader:
                 it.err = _short(e)
             except Exception as e:  # http.client.IncompleteRead 等
                 it.err = _short(e)
+            if it.fresh and it.quick < self.quick:
+                # 断之前收到过数据：服务器是活的，马上续（.part 在，下一次自动带 Range）
+                it.quick += 1
+                it.tries -= 1
+                it.fresh = 0
+                it.state = "retry"
+                continue
             if it.tries > self.retries:
                 it.state = "failed"
                 return
             it.state = "retry"
-            if self._cancel.wait(self.backoff * (2 ** (it.tries - 1))):
+            if it.alive:  # 服务器回了话才断：多半是线路抖，马上再连（算一次重试）
+                continue
+            b = self.backoff
+            wait = b[min(it.tries - 1, len(b) - 1)] if isinstance(b, (tuple, list)) else b * (2 ** (it.tries - 1))
+            if self._cancel.wait(wait):
                 break
         if it.state != "done":
             it.state = "cancel"
@@ -227,7 +254,7 @@ class Downloader:
         if not self._pool:
             self._pool = ThreadPoolExecutor(max_workers=self.workers)
         for it in bad:
-            it.tries, it.err, it.state = 0, "", "wait"
+            it.tries, it.quick, it.err, it.state = 0, 0, "", "wait"
             self._pool.submit(self._run_one, it)
         return len(bad)
 

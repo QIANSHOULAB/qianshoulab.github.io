@@ -5,7 +5,8 @@
   {"type": "insert",  "text": "旅行-", "where": "start" | "end"}
   {"type": "number",  "start": 1, "step": 1, "digits": 3, "where": "start"|"end"|"name", "sep": "-"}
   {"type": "date",    "source": "modified"|"created"|"taken"|"today", "fmt": "YYYY-MM-DD",
-                      "where": "start"|"end"|"name", "sep": " "}
+                      "where": "start"|"end"|"name", "sep": " ", "fallback": false}
+                      拍摄时间读不到：默认这条规则不动这个文件（截图别被改成下载那天）；fallback=true 才用修改时间顶
   {"type": "case",    "mode": "lower"|"upper"|"title"|"sentence"}
   {"type": "trim"}                         去掉首尾空格、连续空格并一个
   {"type": "remove",  "first": 0, "last": 0}   砍掉开头/结尾 N 个字
@@ -21,11 +22,11 @@ import re
 
 from . import fsutil as fs
 
-DATE_FORMATS = {
+DATE_FORMATS = {  # 顺序 = 界面下拉顺序；手机相机最常见的排第一
+    "YYYYMMDD_hhmmss": "%Y%m%d_%H%M%S",
     "YYYY-MM-DD": "%Y-%m-%d",
     "YYYYMMDD": "%Y%m%d",
     "YYYY-MM-DD hh.mm.ss": "%Y-%m-%d %H.%M.%S",
-    "YYYYMMDD_hhmmss": "%Y%m%d_%H%M%S",
     "YYYY年MM月DD日": "%Y年%m月%d日",
     "YYYY-MM": "%Y-%m",
 }
@@ -193,6 +194,9 @@ def apply_rules(f: dict, idx: int, rules: list[dict], today: _dt.datetime | None
             if src == "taken":
                 when = _taken(f)
                 if when is None:
+                    if not r.get("fallback"):
+                        notes.append("notaken_skip")
+                        continue
                     notes.append("notaken")
             elif src == "created":
                 when = _dt.datetime.fromtimestamp(f["ctime"])
@@ -280,6 +284,7 @@ def plan(folder: str, rules: list[dict], recursive: bool = False, filt: dict | N
         "items": items, "total": len(items), "changed": changed,
         "bumped": sum(1 for it in items if it["status"] == "bumped"),
         "errors": sum(1 for it in items if it["status"] == "error"),
+        "notaken": sum(1 for it in items if "notaken_skip" in it["notes"]),
     }
 
 

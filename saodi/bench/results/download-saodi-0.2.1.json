@@ -1,0 +1,20 @@
+{
+ "total": 52,
+ "ok": 52,
+ "wrong_name": 0,
+ "missing_or_corrupt": 0,
+ "junk_files": 0,
+ "examples": [],
+ "junk": [],
+ "big_requests": [
+  "-",
+  "bytes=24000000-"
+ ],
+ "big_resumed": true,
+ "tool": "saodi",
+ "elapsed_s": 0.25,
+ "reported": {
+  "done": 47,
+  "failed": 5
+ }
+}

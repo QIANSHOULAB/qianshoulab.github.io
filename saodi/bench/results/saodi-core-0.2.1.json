@@ -1,0 +1,118 @@
+[
+ {
+  "scenario": "R1",
+  "total": 1000,
+  "ok": 1000,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "examples": [],
+  "tool": "扫地僧",
+  "preview_s": 0.014,
+  "run_s": 0.051,
+  "reported_failed": 1,
+  "failed_codes": [
+   "busy"
+  ]
+ },
+ {
+  "scenario": "R2",
+  "total": 350,
+  "ok": 350,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "examples": [],
+  "tool": "扫地僧",
+  "preview_s": 0.005,
+  "run_s": 0.015,
+  "reported_failed": 0,
+  "failed_codes": []
+ },
+ {
+  "scenario": "R3",
+  "total": 300,
+  "ok": 300,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "examples": [],
+  "tool": "扫地僧",
+  "preview_s": 0.005,
+  "run_s": 0.015,
+  "reported_failed": 0,
+  "failed_codes": []
+ },
+ {
+  "scenario": "R4",
+  "total": 550,
+  "ok": 550,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "examples": [],
+  "tool": "扫地僧",
+  "preview_s": 0.023,
+  "run_s": 0.035,
+  "reported_failed": 0,
+  "failed_codes": []
+ },
+ {
+  "scenario": "R5",
+  "total": 300,
+  "ok": 300,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "examples": [],
+  "tool": "扫地僧",
+  "preview_s": 0.004,
+  "run_s": 0.014,
+  "reported_failed": 0,
+  "failed_codes": []
+ },
+ {
+  "scenario": "R6",
+  "total": 220,
+  "ok": 220,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "examples": [],
+  "tool": "扫地僧",
+  "preview_s": 0.003,
+  "run_s": 0.009,
+  "reported_failed": 0,
+  "failed_codes": []
+ },
+ {
+  "scenario": "O1",
+  "total": 1512,
+  "ok": 1512,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "examples": [],
+  "tool": "扫地僧",
+  "preview_s": 0.017,
+  "run_s": 0.073,
+  "reported_failed": 1,
+  "failed_codes": [
+   "busy"
+  ]
+ },
+ {
+  "scenario": "O2",
+  "total": 810,
+  "ok": 810,
+  "wrong": 0,
+  "lost": 0,
+  "degraded": 0,
+  "examples": [],
+  "tool": "扫地僧",
+  "preview_s": 0.034,
+  "run_s": 0.058,
+  "reported_failed": 0,
+  "failed_codes": []
+ }
+]

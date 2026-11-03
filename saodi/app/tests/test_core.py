@@ -191,7 +191,13 @@ def test_dates_and_photo_taken(tmp_path):
     mk(d, "no-exif.jpg", content="not a jpeg")
     os.utime(d / "no-exif.jpg", (dt.datetime(2020, 1, 2).timestamp(),) * 2)
     assert fs.photo_taken(str(d / "z.jpg")) == dt.datetime(2023, 12, 31, 23, 59, 59)
-    p, r = run_rename(d, [{"type": "date", "source": "taken", "fmt": "YYYY-MM-DD hh.mm.ss", "where": "name"},
+    # 0.2.1：没拍摄时间的默认不动（截图别被改成下载那天）
+    p, r = run_rename(d, [{"type": "date", "source": "taken", "fmt": "YYYY-MM-DD hh.mm.ss", "where": "name"}], sort_by="taken")
+    assert ls(d) == ["2023-12-31 23.59.59.jpg", "2024-05-01 09.30.00 (2).JPG", "2024-05-01 09.30.00.JPG", "no-exif.jpg"]
+    assert p["notaken"] == 1 and [it for it in p["items"] if "notaken_skip" in it["notes"]][0]["status"] == "same"
+    ops.undo()
+    # 打开「用修改时间顶上」才用修改时间
+    p, r = run_rename(d, [{"type": "date", "source": "taken", "fmt": "YYYY-MM-DD hh.mm.ss", "where": "name", "fallback": True},
                           {"type": "ext", "mode": "lower"}], sort_by="taken")
     assert ls(d) == ["2020-01-02 00.00.00.jpg", "2023-12-31 23.59.59.jpg",
                      "2024-05-01 09.30.00 (2).jpg", "2024-05-01 09.30.00.jpg"]

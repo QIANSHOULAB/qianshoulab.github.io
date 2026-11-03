@@ -77,6 +77,8 @@ def target_of(f: dict, scheme: dict) -> list[str] | None:
             when = None
             if r.get("source") == "taken":
                 when = _taken(f)
+                if when is None and not r.get("fallback"):
+                    continue  # 没拍摄时间：这条不管它（fallback=true 才按修改时间分）
             if when is None:
                 when = _dt.datetime.fromtimestamp(f["ctime"] if r.get("source") == "created" else f["mtime"])
             return [when.strftime(p) for p in DATE_DIRS.get(r.get("fmt", "YYYY/MM"), ("%Y", "%m"))]

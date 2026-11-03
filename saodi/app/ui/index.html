@@ -157,13 +157,20 @@ svg{flex:none}
 .tbl{flex:1;overflow:auto;min-height:0}
 .tr{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);align-items:center;gap:6px;padding:0 20px;height:30px;font-size:13px;border-bottom:.5px solid var(--sep)}
 .tr.th{position:sticky;top:0;background:var(--bg);font-size:11.5px;color:var(--fg2);font-weight:500;z-index:1;height:28px}
-.tr .o,.tr .w{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbl{container-type:inline-size}
+.tr .o,.tr .w .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr .w{display:flex;align-items:center;min-width:0;white-space:nowrap}
+.tr .w .nm{min-width:0;flex:0 1 auto}
 .tr .o{color:var(--fg2)}
 .tr .o i{font-style:normal;color:var(--fg3)}
 .tr .ar{color:var(--fg3);text-align:center}
 .tr.same .w{color:var(--fg3)}
 .tr.ch .w{color:var(--new);font-weight:500}
-.tr .w .tag{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;vertical-align:1px}
+.tr .w .tag{flex:none;margin-left:6px;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px}
+/* 预览窄了：标签缩成小圆点，名字照样省略，悬停看说明 */
+@container (max-width:440px){.tr .w .tag{font-size:0;width:8px;height:8px;padding:0;border-radius:50%;margin-left:6px;line-height:0}
+.tr .w .tag.amber{background:var(--amber)}.tr .w .tag.bad{background:var(--bad)}.tr .w .tag.dim{background:var(--fg3)}}
+.tag.dim{background:var(--fill);color:var(--fg2)}
 .tag.amber{background:var(--amber-tint);color:var(--amber)}
 .tag.bad{background:var(--bad-tint);color:var(--bad)}
 .tag.good{background:var(--good-tint);color:var(--good)}

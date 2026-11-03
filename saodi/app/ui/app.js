@@ -49,7 +49,7 @@ const RULE_DEFAULTS = {
   number: () => ({ type: "number", start: 1, step: 1, digits: 3, where: "start", sep: "-" }),
   replace: () => ({ type: "replace", find: "", to: "", regex: false, case: false }),
   date: () => ({ type: "date", source: "modified", fmt: "YYYY-MM-DD", where: "start", sep: " " }),
-  taken: () => ({ type: "date", source: "taken", fmt: "YYYY-MM-DD hh.mm.ss", where: "name", sep: " " }),
+  taken: () => ({ type: "date", source: "taken", fmt: "YYYYMMDD_hhmmss", where: "name", sep: " ", fallback: false }),
   case: () => ({ type: "case", mode: "lower" }),
   trim: () => ({ type: "trim" }),
   insert: () => ({ type: "insert", text: "", where: "start" }),
@@ -162,7 +162,8 @@ function rulesHtml() {
       ${r.where !== "name" ? `<div class="row"><span class="k">${t("f_sep")}</span>${fin(i, "sep", "", "num")}</div>` : ""}`;
     if (r.type === "date") body = `<div class="row"><span class="k">${t("f_source")}</span>${fsel(i, "source", [["modified", t("s_modified")], ["created", t("s_created")], ["taken", t("s_taken")], ["today", t("s_today")]])}</div>
       <div class="row"><span class="k">${t("f_fmt")}</span>${fsel(i, "fmt", (S.hello?.date_formats || ["YYYY-MM-DD"]).map(f => [f, f]))}</div>
-      <div class="row"><span class="k">${t("f_where")}</span>${seg("where", r.where, [...WHERE(), ["name", t("at_name")]], i)}</div>`;
+      <div class="row"><span class="k">${t("f_where")}</span>${seg("where", r.where, [...WHERE(), ["name", t("at_name")]], i)}</div>
+      ${r.source === "taken" ? `<div class="row" style="margin-top:8px">${fchk(i, "fallback", t("f_fallback"))}</div>` : ""}`;
     if (r.type === "case") body = `<div class="row">${fsel(i, "mode", [["lower", t("c_lower")], ["upper", t("c_upper")], ["title", t("c_title")], ["sentence", t("c_sentence")]])}</div>`;
     if (r.type === "insert") body = `<div class="row"><span class="k">${t("f_text")}</span>${fin(i, "text")}</div><div class="row"><span class="k">${t("f_where")}</span>${seg("where", r.where, WHERE(), i)}</div>`;
     if (r.type === "remove") body = `<div class="row"><span class="k">${t("f_first")}</span>${fin(i, "first", "", "num")}<span class="k">${t("f_chars")}</span></div><div class="row"><span class="k">${t("f_last")}</span>${fin(i, "last", "", "num")}<span class="k">${t("f_chars")}</span></div>`;
@@ -190,20 +191,20 @@ const refreshPreview = debounce(async () => {
 }, 120);
 
 const TPL_VARS = ["原名", "文件夹", "大小", "修改日期", "拍摄日期", "相机", "宽", "高", "歌手", "标题", "专辑", "音轨", "年份", "序号"];
-const NOTE_TAG = { nometa: ["amber", "n_nometa"], fixed: ["amber", "n_fixed"], notaken: ["amber", "n_notaken"], empty: ["bad", "n_empty"], badregex: ["bad", "n_badregex"] };
+const NOTE_TAG = { nometa: ["amber", "n_nometa"], fixed: ["amber", "n_fixed"], notaken: ["amber", "n_notaken"], notaken_skip: ["dim", "n_notaken_skip"], empty: ["bad", "n_empty"], badregex: ["bad", "n_badregex"] };
 function renderPreview() {
   const p = S.preview, st = $("#stat"), tb = $("#tbl"), btn = $("#runBtn");
   if (!st) return;
   if (!p) { st.innerHTML = '<span class="spin"></span>'; tb.innerHTML = ""; return; }
-  st.innerHTML = `<span>${t("stat", { total: `<b>${fmtN(p.total)}</b>`, changed: `<b>${fmtN(p.changed)}</b>` })}${p.bumped ? `<span class="warn">${t("stat_bump", { n: p.bumped })}</span>` : ""}${p.errors ? `<span class="bad">${t("stat_err", { n: p.errors })}</span>` : ""}</span>`;
+  st.innerHTML = `<span>${t("stat", { total: `<b>${fmtN(p.total)}</b>`, changed: `<b>${fmtN(p.changed)}</b>` })}${p.bumped ? `<span class="warn">${t("stat_bump", { n: p.bumped })}</span>` : ""}${p.errors ? `<span class="bad">${t("stat_err", { n: p.errors })}</span>` : ""}${p.notaken ? t("stat_notaken", { n: fmtN(p.notaken) }) : ""}</span>`;
   const LIM = 1500;
   const rows = p.items.slice(0, LIM).map(it => {
     const tags = [];
-    if (it.status === "bumped") tags.push(`<span class="tag amber">${t("n_bumped")}</span>`);
-    for (const n of it.notes || []) if (NOTE_TAG[n]) tags.push(`<span class="tag ${NOTE_TAG[n][0]}">${t(NOTE_TAG[n][1])}</span>`);
+    if (it.status === "bumped") tags.push(`<span class="tag amber" title="${t("n_bumped")}">${t("n_bumped")}</span>`);
+    for (const n of it.notes || []) if (NOTE_TAG[n]) tags.push(`<span class="tag ${NOTE_TAG[n][0]}" title="${t(NOTE_TAG[n][1])}">${t(NOTE_TAG[n][1])}</span>`);
     const ch = it.status === "ok" || it.status === "bumped";
     const rel = it.rel ? `<i>${esc(it.rel)}/</i>` : "";
-    return `<div class="tr ${ch ? "ch" : "same"}"><span class="o sel" title="${esc(it.old)}">${rel}${esc(it.old)}</span><span class="ar">→</span><span class="w sel" title="${esc(it.new)}">${esc(it.new)}${tags.join("")}</span></div>`;
+    return `<div class="tr ${ch ? "ch" : "same"}"><span class="o sel" title="${esc(it.old)}">${rel}${esc(it.old)}</span><span class="ar">→</span><span class="w"><span class="nm sel" title="${esc(it.new)}">${esc(it.new)}</span>${tags.join("")}</span></div>`;
   }).join("");
   tb.innerHTML = `<div class="tr th"><span>${t("col_old")}</span><span></span><span>${t("col_new")}</span></div>${rows}${p.items.length > LIM ? `<div class="more">${t("more_rows", { n: fmtN(p.items.length - LIM) })}</div>` : ""}`;
   btn.disabled = !p.changed || S.busy;
@@ -234,6 +235,7 @@ function viewSort() {
       <div class="lbl">${t("act_lbl")}</div>
       ${seg("action", S.scheme.action === "copy" ? "copy" : "move", [["move", t("act_move")], ["copy", t("act_copy")]])}
       <div style="margin-top:10px"><label class="tog"><input type="checkbox" id="unzip" ${S.scheme.unzip ? "checked" : ""}>${t("act_unzip")}</label></div>
+      ${(S.scheme.rules || []).some(r => r.by === "date" && r.source === "taken") ? `<div style="margin-top:8px"><label class="tog"><input type="checkbox" id="ofallback" ${(S.scheme.rules || []).some(r => r.by === "date" && r.source === "taken" && r.fallback) ? "checked" : ""}>${t("f_fallback")}</label></div>` : ""}
       <div style="height:16px"></div>
       ${S.schemeKey === "custom" || S.schemeKey.startsWith("s:") ? schemeEditor() : ""}
     </div></div>
@@ -527,6 +529,9 @@ document.addEventListener("change", e => {
     if (el.tagName === "SELECT" || el.type === "checkbox") { render(); refreshPreview(); }
   } else if (el.id === "unzip") {
     S.scheme.unzip = el.checked; refreshOPreview();
+  } else if (el.id === "ofallback") {
+    for (const r of S.scheme.rules || []) if (r.by === "date" && r.source === "taken") r.fallback = el.checked;
+    refreshOPreview();
   } else if (el.dataset.opt === "recursive") {
     S.ropts.recursive = el.checked; refreshPreview();
   } else if (el.dataset.sk && el.tagName === "SELECT") {

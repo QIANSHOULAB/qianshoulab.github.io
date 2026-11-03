@@ -122,7 +122,7 @@ footer .mail{color:var(--fg2);user-select:all;-webkit-user-select:all}
 <nav><div class="wrap">
   <a class="back" href="https://qianshoulab.github.io/"><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5 1.5 7.5l6 6"/></svg>千手院</a>
   <b>扫地僧</b>
-  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.2.0/SaodiSeng-0.2.0.exe">下载</a>
+  <a class="dl" id="dlTop" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.2.1/SaodiSeng-0.2.1.exe">下载</a>
 </div></nav>
 
 <main class="wrap">
@@ -132,8 +132,8 @@ footer .mail{color:var(--fg2);user-select:all;-webkit-user-select:all}
     <p class="tag">文件乱扔，你去玩，贫僧扫</p>
     <p class="lede">一千个文件改名，眨眼的事。下载文件夹再乱，新来一个分一个。</p>
     <div class="cta">
-      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.2.0/SaodiSeng-0.2.0.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>下载 Windows 版</a>
-      <span class="meta">0.2.0 · 13 MB · Windows 10 / 11 · 免费 · 不用装，双击就跑</span>
+      <a class="btn" id="dlBtn" href="https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v0.2.1/SaodiSeng-0.2.1.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>下载 Windows 版</a>
+      <span class="meta">0.2.1 · 13 MB · Windows 10 / 11 · 免费 · 不用装，双击就跑</span>
     </div>
 
     <div class="shot" aria-label="扫地僧改名界面示意">
@@ -171,7 +171,7 @@ footer .mail{color:var(--fg2);user-select:all;-webkit-user-select:all}
     <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></div>
       <h3>盯着文件夹</h3><p>下载文件夹交给贫僧。新文件一落地就按方案归位，压缩包自动解开，没下完的不碰。</p></div>
     <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg></div>
-      <h3>批量下载</h3><p>一坨文字整个贴进来，网址贫僧自己抠。断网接着下，失败自动重试，名字按你的规矩起。</p></div>
+      <h3>批量下载</h3><p>一坨文字整个贴进来，网址贫僧自己抠。断线当场接着下，一秒不等，名字按你的规矩起。</p></div>
     <div class="f"><div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
       <h3>文件不出门</h3><p>全在你自己电脑上过手，不传任何服务器。贫僧从不删东西，真要扔也是进回收站。</p></div>
   </section>
@@ -179,7 +179,7 @@ footer .mail{color:var(--fg2);user-select:all;-webkit-user-select:all}
   <section class="how">
     <h2>三步上手</h2>
     <div class="steps">
-      <div class="s"><b>01</b><h4>下载</h4><p>点上面的蓝按钮，拿到 <code>SaodiSeng-0.2.0.exe</code>。</p></div>
+      <div class="s"><b>01</b><h4>下载</h4><p>点上面的蓝按钮，拿到 <code>SaodiSeng-0.2.1.exe</code>。</p></div>
       <div class="s"><b>02</b><h4>双击</h4><p>不用安装。第一次 Windows 可能拦一下，点 <code>更多信息</code> → <code>仍要运行</code>。</p></div>
       <div class="s"><b>03</b><h4>拖个文件夹进去</h4><p>点规则，看预览，按蓝按钮。完事。</p></div>
     </div>
@@ -194,11 +194,11 @@ footer .mail{color:var(--fg2);user-select:all;-webkit-user-select:all}
 <script>
 /* 下载链接跟着 version.json 走：以后出新版只改 version.json 不用改页面 */
 fetch("version.json", { cache: "no-store" }).then(r => r.json()).then(v => {
-  if (!v.version || v.version === "0.2.0") return;
+  if (!v.version || v.version === "0.2.1") return;
   const u = `https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v${v.version}/SaodiSeng-${v.version}.exe`;
   document.getElementById("dlBtn").href = u;
   document.getElementById("dlTop").href = u;
-  document.querySelector(".meta").textContent = document.querySelector(".meta").textContent.replace("0.2.0", v.version);
+  document.querySelector(".meta").textContent = document.querySelector(".meta").textContent.replace("0.2.1", v.version);
 }).catch(() => {});
 </script>
 </body>
