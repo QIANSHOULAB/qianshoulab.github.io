@@ -20,7 +20,7 @@ def main(exe, out, url):
     info = {"version": VERSION, "url": url, "sha256": hashlib.sha256(data).hexdigest(), "size": len(data),
             "notes": {"en": T("up_notes", "en"), "zh": T("up_notes", "zh")}}
     Path(out).write_text(json.dumps(info, ensure_ascii=False), "utf-8")
-    print(json.dumps(info, ensure_ascii=False))
+    print(json.dumps(info))      # 控制台可能是 cp1252：打印用 \u 转义，文件里照常是 UTF-8
 
 
 if __name__ == "__main__":
