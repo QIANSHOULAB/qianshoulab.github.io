@@ -143,7 +143,10 @@ body.dragging .dropzone{background:var(--accent-tint);box-shadow:inset 0 0 0 2px
 .pick::after{content:"";position:absolute;right:12px;top:11px;width:6px;height:6px;border-right:1.5px solid var(--fg-2);border-bottom:1.5px solid var(--fg-2);transform:rotate(45deg);pointer-events:none}
 
 /* 表格 */
-.tbl-wrap{max-height:196px;overflow:auto;border-top:.5px solid var(--line);overscroll-behavior:contain}
+.tbl-wrap{max-height:196px;overflow:auto;border-top:.5px solid var(--line);overscroll-behavior:contain;--fr:0px;--fb:0px;
+  /* 放不下的那边渐隐，不把字硬切成半个：右边还能横着滚、下面还有行时才隐 */
+  -webkit-mask-image:linear-gradient(to right,#000 calc(100% - var(--fr)),transparent),linear-gradient(to bottom,#000 calc(100% - var(--fb)),transparent);
+  -webkit-mask-composite:source-in;mask-image:linear-gradient(to right,#000 calc(100% - var(--fr)),transparent),linear-gradient(to bottom,#000 calc(100% - var(--fb)),transparent);mask-composite:intersect}
 table.data{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px;font-variant-numeric:tabular-nums}
 table.data th,table.data td{padding:8px 12px;text-align:left;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;border-bottom:.5px solid var(--line)}
 table.data th{position:sticky;top:0;background:var(--card);font-weight:600;color:var(--fg-2);z-index:1}
@@ -870,8 +873,9 @@ function renderData(){
   let h=`<table class="data"><thead><tr><th class="n">#</th>${d.headers.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>`;
   for(let i=0;i<n;i++)h+=`<tr data-i="${i}"><td class="n">${i+1}</td>${d.rows[i].map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`;
   h+="</tbody></table>"; if(d.rows.length>MAXSHOW)h+=`<div class="more">${T.moreRows(d.rows.length-MAXSHOW)}</div>`;
-  tw.innerHTML=h; tw.scrollLeft=0; tw.scrollTop=0;
+  tw.innerHTML=h; tw.scrollLeft=0; tw.scrollTop=0; tblFade();
 }
+function tblFade(){const w=$("#tblWrap");if(!w)return;w.style.setProperty("--fr",w.scrollLeft+w.clientWidth<w.scrollWidth-1?"48px":"0px");w.style.setProperty("--fb",w.scrollTop+w.clientHeight<w.scrollHeight-1?"40px":"0px")}
 function renderRestore(){
   const r=$("#restore"), mine=S.tpl&&S.tpl.source!=="example";
   r.hidden=!(S.restored||S.tpl&&S.tpl.source==="editor");
@@ -1752,6 +1756,7 @@ $("#bForget").onclick=async()=>{
 };
 
 /* ============ 交互 ============ */
+$("#tblWrap").addEventListener("scroll",tblFade,{passive:true}); addEventListener("resize",tblFade);
 $("#tblWrap").addEventListener("click",e=>{const tr=e.target.closest("tr[data-i]");if(!tr||!S.tpl)return;const i=+tr.dataset.i;S.row=Math.max(0,S.units.findIndex(u=>u.includes(i)));preview()});
 $("#bPrev").onclick=()=>{if(S.row>0){S.row--;preview()}};
 $("#bNext").onclick=()=>{if(S.row<S.units.length-1){S.row++;preview()}};
