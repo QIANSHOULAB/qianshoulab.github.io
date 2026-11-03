@@ -27,7 +27,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const ext = fs.mkdtempSync(path.join(os.tmpdir(), 'daibi-ext-'));
   fs.cpSync(path.join(ROOT, 'extension'), ext, { recursive: true });
   const mf = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8'));
-  mf.host_permissions = ['http://127.0.0.1/*'];
+  mf.host_permissions = [...(mf.host_permissions || []), 'http://127.0.0.1/*'];
   fs.writeFileSync(path.join(ext, 'manifest.json'), JSON.stringify(mf));
 
   const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'daibi-prof-'));
@@ -59,7 +59,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const stm = () => panel.evaluate(() => window.__daibi.S().st);
   const binds = () => panel.evaluate(() => { const d = window.__daibi; const m = d.maps()[d.tab.origin]; return m && Object.keys(m.b).length ? m : null; });
   const mainText = () => panel.textContent('#btnMain');
-  const waitFor = async (fn, ms, label) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await fn()) return true; await sleep(100); } check(false, '超时：' + label); return false; };
+  const state = () => panel.evaluate(() => { const d = window.__daibi; return { st: d.S().st.map(x => x.s[0]).join(''), row: d.run.row, phase: d.run.phase, going: d.run.going, hold: d.run.hold, url: d.tab.url, main: document.getElementById('btnMain').textContent, warn: document.getElementById('warn').hidden ? '' : document.getElementById('warnTxt').textContent }; }).catch(() => null);
+  const waitFor = async (fn, ms, label) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await fn()) return true; await sleep(100); } check(false, '超时：' + label + ' ' + JSON.stringify(await state())); return false; };
   const reset = () => fetch(SITE(0) + '/api/reset', { method: 'POST' });
   const getLog = async () => (await fetch(SITE(0) + '/api/log')).json();
   const put = f => panel.setInputFiles('#file', { name: f, mimeType: 'application/octet-stream', buffer: fs.readFileSync(DATA(f)) });
@@ -87,8 +88,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   b = (await binds()).b;
   check(b['开发票'] && /name="inv"/.test(b['开发票'].sel) && b['开发票'].kind === 'checkbox', '点选绑上「需要发票」复选框');
 
-  check((await mainText()) === '填第 1 行', '主按钮：填第 1 行');
+  // 0.3.0：字段都有主了、这个网站答应过 → 不用再点「填第 1 行」，自己填好等人看
   await reset();
+  await waitFor(async () => (await st())[0] === 'filled', 6000, '点选完自己填好第 1 行');
+  check((await panel.textContent('#toast')).includes('撤'), '自己填了，提示条带「撤」：' + (await panel.textContent('#toast')));
+  await sleep(1200);
+  // 撤：网页回空表，这行退回待填，不再自己填
+  await panel.click('#toastAct');
+  await sleep(1500);
+  check((await st())[0] === 'todo' && (await web.inputValue('#cust')) === '', '点「撤」：网页回空表，第 1 行退回待填');
+  check((await mainText()) === '填第 1 行', '撤了以后不再自己填，主按钮：填第 1 行');
   await panel.click('#btnMain');
   await waitFor(async () => (await st())[0] === 'filled', 4000, '第 1 行填好');
   const vals = await web.evaluate(() => ({
@@ -111,11 +120,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   /* ===== 2. 自动提交：20 行从头到尾 ===== */
   console.log('\n[2] 订单录入：自动提交，20 行计时');
-  await put('订单20行.xlsx'); // 重新放表：状态清零，对应自动套上
+  await put('订单20行.xlsx'); // 同一张表又放进来：交过的行记着，对应自动套上
   await waitFor(async () => (await panel.textContent('#fieldNote')).includes('上次的对应'), 3000, '套用上次对应');
   check(true, '同一网站再打开：上次的字段对应自动套上');
+  await waitFor(async () => (await panel.textContent('#toast')).includes('上回交过的 1 行'), 4000, '同一张表：交过的行记着');
+  const s2 = await st();
+  check(s2[0] === 'done' && s2[1] !== 'done', '同一张表再放：第 1 行还是完成，从第 2 行接着');
+  await panel.click('#toastAct'); // 从头来
+  await waitFor(async () => (await st())[0] !== 'done', 4000, '从头来');
+  check(true, '「从头来」把状态清零');
   await reset();
-  await web.goto(SITE(0) + '/order');
   await setAuto(true);
   await waitFor(async () => (await mainText()) === '连填 20 行', 2000, '主按钮变「连填 20 行」');
   const t0 = Date.now();
@@ -213,8 +227,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await panel.click('#seg button[data-f=error]');
   check((await panel.$$('.ri')).length === 1, '「出错」筛选只列出 1 行');
   await panel.screenshot({ path: path.join(OUT, '06-error.png') });
-  check((await panel.isVisible('#btnRetry')) && (await panel.textContent('#btnRetry')).includes('1'), '有「重试出错的 1 行」按钮');
-  await panel.click('#btnRetry');
+  check((await mainText()) === '重试出错的 1 行' && !(await panel.isVisible('#btnRetry')), '只剩出错的：主按钮就是「重试出错的 1 行」');
+  await panel.click('#btnMain');
   await waitFor(async () => (await st())[1] === 'error', 15000, '重试后仍标出错');
   check(true, '重试能跑（数据没改仍出错）');
 
@@ -243,7 +257,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await panel.screenshot({ path: path.join(OUT, '08-upload.png') });
   await panel.setInputFiles('#attFile', [{ name: '合同20.pdf', mimeType: 'application/pdf', buffer: fs.readFileSync(path.join(attDir, '合同20.pdf')) }]);
   await sleep(300);
-  await panel.click('#btnRetry');
+  await panel.click((await panel.isVisible('#btnRetry')) ? '#btnRetry' : '#btnMain');
   await waitFor(async () => (await st())[19] === 'done', 15000, '补上文件重试成功');
   lg = (await getLog()).filter(x => x.site === 'upload');
   bad = 0;

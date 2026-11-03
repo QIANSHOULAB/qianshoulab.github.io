@@ -14,7 +14,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 14.2,
+  "secs": 14.3,
   "detail": []
  },
  "dd": {
@@ -32,7 +32,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 8,
+  "secs": 8.1,
   "detail": []
  },
  "wizard": {
@@ -41,7 +41,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 25.4,
+  "secs": 25.7,
   "detail": []
  },
  "ajax": {
@@ -50,7 +50,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 14.6,
+  "secs": 14.9,
   "detail": []
  },
  "valid": {
@@ -59,7 +59,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 7.1,
+  "secs": 7.3,
   "detail": []
  },
  "date": {
@@ -77,7 +77,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 32.9,
+  "secs": 33,
   "detail": []
  },
  "element": {
@@ -86,7 +86,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 37.2,
+  "secs": 38.1,
   "detail": []
  },
  "mui": {
@@ -95,7 +95,7 @@
   "missing_rows": 0,
   "bad_in": 0,
   "extra": 0,
-  "secs": 25.4,
+  "secs": 25.8,
   "detail": []
  },
  "select2": {

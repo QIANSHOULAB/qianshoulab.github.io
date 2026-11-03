@@ -10,58 +10,63 @@
 <body>
 <header class="top">
   <img class="logo" src="icons/icon-128.png" alt="">
-  <div>
+  <div class="top-t">
     <h1 data-t="app.name"></h1>
-    <p data-t="app.tag"></p>
+    <p id="status"></p>
   </div>
 </header>
 
 <main id="main">
-  <!-- 表格 -->
-  <section class="qs-sec">
-    <div class="qs-sec-h"><span data-t="table.title"></span></div>
-    <div class="qs-card" id="tableCard">
-      <div id="drop" class="drop">
-        <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="7" y="5" width="26" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 15h26M7 25h26M17 5v30" stroke="currentColor" stroke-width="2"/></svg>
-        <b data-t="table.drop"></b>
-        <span data-t="table.dropSub"></span>
-        <div class="drop-a">
-          <button class="qs-btn pri" id="btnChoose" data-t="table.choose"></button>
-          <button class="qs-btn gray" id="btnPaste" data-t="table.paste"></button>
-        </div>
+  <!-- 空状态：一句话 + 用示例试试 -->
+  <section class="qs-sec" id="drop">
+    <div class="empty">
+      <svg class="empty-i" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="7" width="30" height="34" rx="6"/><path d="M9 17h30M9 27h30M20 7v34"/></svg>
+      <h2 data-t="table.drop"></h2>
+      <p data-t="table.dropSub"></p>
+      <div class="empty-a">
+        <button class="qs-btn gray" id="btnDemo" data-t="table.demo"></button>
+        <button class="qs-btn plain" id="btnPaste" data-t="table.paste"></button>
       </div>
-      <div id="pasteBox" class="paste" hidden>
-        <textarea id="pasteText" data-t-ph="table.pastePh" spellcheck="false"></textarea>
-        <div class="paste-a">
-          <button class="qs-btn gray" id="pasteCancel" data-t="table.cancel"></button>
-          <button class="qs-btn pri" id="pasteOk" data-t="table.pasteOk"></button>
-        </div>
+    </div>
+  </section>
+  <section class="qs-sec" id="pasteBox" hidden>
+    <div class="qs-card paste">
+      <textarea id="pasteText" data-t-ph="table.pastePh" spellcheck="false"></textarea>
+      <div class="paste-a">
+        <button class="qs-btn plain" id="pasteCancel" data-t="table.cancel"></button>
+        <button class="qs-btn gray" id="pasteOk" data-t="table.pasteOk"></button>
       </div>
-      <div id="tableInfo" class="tinfo" hidden>
-        <div class="tinfo-i"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="2" width="14" height="16" rx="3" fill="currentColor" opacity=".16"/><path d="M3 8h14M3 13h14M8.5 2v16" stroke="currentColor" stroke-width="1.4"/></svg></div>
-        <div class="tinfo-t"><b id="tName"></b><span id="tMeta"></span></div>
-        <select id="sheetSel" class="qs-sel" hidden data-t-aria="table.sheet"></select>
-        <button class="qs-btn gray sm" id="btnReload" data-t="table.reload" hidden></button>
-        <button class="qs-btn gray sm" id="btnChange" data-t="table.change"></button>
-      </div>
-      <div id="attRow" class="att" hidden>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 6.5l-5.8 5.8a1.6 1.6 0 002.3 2.3l6-6a3.2 3.2 0 00-4.5-4.5l-6.2 6.2a4.8 4.8 0 006.8 6.8l5.3-5.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <span id="attTxt"></span>
-        <button class="qs-link" id="btnAttClr" data-t="att.clear" hidden></button>
-        <button class="qs-btn tint sm" id="btnAtt" data-t="att.add"></button>
-      </div>
-      <input type="file" id="attFile" multiple hidden>
-      <input type="file" id="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt,.xls" hidden>
     </div>
   </section>
 
+  <!-- 表格 -->
+  <section class="qs-sec" id="tableInfo" hidden>
+    <div class="qs-card">
+      <div class="tinfo">
+        <svg class="tinfo-i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3.5"/><path d="M4 9h16M4 15h16M10 3v18"/></svg>
+        <div class="tinfo-t"><b id="tName"></b><span id="tMeta"></span></div>
+        <button class="qs-btn plain sm" id="btnReload" data-t="table.reload" hidden></button>
+        <button class="qs-btn plain sm" id="btnChange" data-t="table.change"></button>
+      </div>
+      <div class="sheets" id="sheetSeg" role="tablist" data-t-aria="table.sheet" hidden></div>
+      <div id="attRow" class="att" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 7.5l-6.7 6.7a1.9 1.9 0 002.7 2.7l7-7a3.8 3.8 0 00-5.4-5.4l-7.2 7.2a5.6 5.6 0 007.9 7.9l6.1-6.1"/></svg>
+        <span id="attTxt"></span>
+        <button class="qs-btn plain sm" id="btnAttClr" data-t="att.clear" hidden></button>
+        <button class="qs-btn gray sm" id="btnAtt" data-t="att.add"></button>
+      </div>
+    </div>
+  </section>
+  <input type="file" id="attFile" multiple hidden>
+  <input type="file" id="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt,.xls" hidden>
+
   <!-- 字段 -->
   <section class="qs-sec" id="fieldSec" hidden>
-    <div class="qs-sec-h"><span><span data-t="fields.title"></span> · <span id="host"></span></span><button class="qs-link" id="btnRematch" data-t="fields.rematch" hidden></button></div>
+    <div class="qs-sec-h"><span><span data-t="fields.title"></span><span class="host" id="host"></span></span><button class="qs-link" id="btnRematch" data-t="fields.rematch" hidden></button></div>
     <div class="qs-card">
       <div id="fieldEmpty" class="fempty">
         <p id="fieldEmptyTxt" data-t="fields.none"></p>
-        <button class="qs-btn tint" id="btnMatch" data-t="fields.match"></button>
+        <button class="qs-btn gray" id="btnMatch" data-t="fields.match"></button>
       </div>
       <div id="fieldList" class="flist" hidden></div>
     </div>
@@ -86,9 +91,8 @@
   </section>
 
   <footer class="qs-foot">
-    <span data-t="foot.by"></span><br>
-    <span data-t="common.contact"></span>：<span class="mail" data-t="common.email"></span> ·
-    <a id="homeLink" target="_blank" rel="noopener" data-t="common.home"></a>
+    <span data-t="foot.by"></span> · <a id="homeLink" target="_blank" rel="noopener" data-t="common.home"></a><br>
+    <span data-t="common.contact"></span> <span class="mail" data-t="common.email"></span>
   </footer>
 </main>
 
@@ -96,15 +100,14 @@
   <div class="qs-card" id="setBox"></div>
   <div class="warn" id="warn" hidden>
     <p id="warnTxt"></p>
-    <div class="warn-a"><button class="qs-btn gray sm" id="warnGo" data-t="warn.go"></button><button class="qs-btn tint sm" id="warnPick" data-t="warn.pick"></button></div>
+    <div class="warn-a"><button class="qs-btn plain sm" id="warnGo" data-t="warn.go"></button><button class="qs-btn gray sm" id="warnPick" data-t="warn.pick"></button></div>
   </div>
-  <div class="dock-b">
-    <button class="qs-btn big pri" id="btnMain" disabled></button>
-    <button class="qs-btn gray retry" id="btnRetry" hidden></button>
-  </div>
+  <button class="qs-btn big pri" id="btnMain"></button>
+  <button class="qs-btn plain retry" id="btnRetry" hidden></button>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastTxt"></span><button id="toastAct" hidden></button></div>
+<div class="dropmask" aria-hidden="true"><span data-t="table.dropHere"></span></div>
 
 <script src="lib/i18n.js"></script>
 <script src="lib/store.js"></script>

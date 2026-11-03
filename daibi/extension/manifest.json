@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "代笔僧 · 自动填表",
   "short_name": "代笔僧",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "把 Excel / CSV 一行一行填进网页表单：表头自动对上输入框，下拉、单选、复选、日期、上传文件都会填；也能直接读 Google 表格，填完标状态。数据只存在你的浏览器里。",
   "homepage_url": "https://qianshoulab.github.io/daibi/",
   "minimum_chrome_version": "116",
@@ -11,5 +11,6 @@
   "side_panel": { "default_path": "panel.html" },
   "background": { "service_worker": "background.js" },
   "permissions": ["sidePanel", "storage", "scripting", "activeTab"],
+  "host_permissions": ["https://qianshoulab.github.io/*"],
   "optional_host_permissions": ["http://*/*", "https://*/*"]
 }

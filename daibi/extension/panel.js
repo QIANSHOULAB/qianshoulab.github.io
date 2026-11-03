@@ -17,9 +17,10 @@
   let maps = {};                                 // 每个网站一份：origin → {b:{表头:{sel,label,kind,conf}}, btn, start}
   const tab = { id: null, url: '', origin: '', host: '', pat: '', win: null };
   let page = { fields: null, present: [], note: '', noteBad: false, frames: [] };
-  const run = { row: -1, seen: new Set(), textSels: new Set(), start: '', phase: 'idle', going: false, nav: false, human: false, timer: 0, tries: 0, busy: false };
-  let filter = 'all', picking = null, lastFile = null, showAll = false, attN = 0, warnCols = null;
+  const run = { row: -1, seen: new Set(), textSels: new Set(), start: '', phase: 'idle', going: false, nav: false, human: false, timer: 0, tries: 0, busy: false, hold: false, gen: 0, active: 0 };
+  let keptN = 0, filter = 'all', picking = null, lastFile = null, showAll = false, attN = 0, warnCols = null, demoTable = null;
   const FIXED_TAB = new URLSearchParams(location.search).get('tab'); // 测试用：指定要填的标签页
+  const DEMO_URL = 'https://qianshoulab.github.io/daibi/demo/';
 
   /* ---------- 存 ---------- */
   let saveT = 0;
@@ -119,10 +120,45 @@
   }
 
   async function refreshPage() {
+    if (demoTable && tab.url.startsWith(DEMO_URL)) { const d = demoTable; demoTable = null; lastFile = null; return setTable(d, true); }
     if (!S.table || tab.id == null) return render();
     try { await scan(); if (page.note === t('fields.noPage') || page.note === t('fields.needClick')) note(''); }
     catch (e) { page.fields = null; page.present = []; }
     render();
+    autoFill();
+  }
+
+  /* 手动模式：表放进来、字段对上、这个网站已经答应过 → 直接把这一行填进网页（没提交），人只管看一眼、点提交。
+   * 第一次进某个网站还没答应，就留着主按钮那一下（浏览器要人在侧栏里点一下才肯问「允许吗」）。
+   * 填了马上出提示条「撤」：网页刷新回空表，这一行退回待填，不再自己填，等人点主按钮。 */
+  const hasPerm = () => tab.pat ? chrome.permissions.contains({ origins: [tab.pat] }).catch(() => false) : Promise.resolve(false);
+  // 只在当初对字段的那一页自己填（同一网站别的页碰巧有个同名的框，不往里填）
+  const onStartPage = () => { const m = tab.origin && maps[tab.origin]; if (!m || !m.start) return false; try { return new URL(m.start).pathname === new URL(tab.url).pathname; } catch (e) { return false; } };
+  async function autoFill() {
+    if (run.af) return;
+    run.af = true;
+    try { await autoFill0(); } finally { run.af = false; }
+  }
+  async function autoFill0() {
+    if (cfg.auto || run.hold || picking || !S.table || run.row >= 0 || run.phase !== 'idle' || run.going) return;
+    const st = S.st[S.cur];
+    if (!st || st.s !== 'todo' || !bound() || !onStartPage()) return;
+    if (!page.present.length) { try { await scan(); } catch (e) { return; } if (!page.present.length) return; } // 刚对完字段，present 还是对之前扫的
+    if (!(await hasPerm())) return;
+    if (run.row >= 0 || run.phase !== 'idle') return;
+    const miss = unmatchedFields(); // 有框没主、表里又有没对上的列：先问一句，问完再填
+    if (miss.length) { warnCols = miss; return render(); }
+    if (warnCols) { warnCols = null; render(); }
+    startRow(S.cur);
+  }
+  function undoFill() {
+    clearTimeout(run.timer); run.gen++;
+    const i = run.row >= 0 ? run.row : S.cur;
+    if (S.st[i] && S.st[i].s === 'filled') setSt(i, 'todo');
+    S.cur = i; run.row = -1; run.phase = 'idle'; run.going = false; run.hold = true;
+    run.seen = new Set(); run.textSels = new Set();
+    hideToast(); render();
+    if (tab.id != null) chrome.tabs.reload(tab.id).catch(() => {});
   }
 
   /* ---------- 对字段 ---------- */
@@ -133,6 +169,7 @@
       await learnUrl();
       try { await scan(); } catch (e) { note(t(tab.url ? (ok ? 'fields.cantRun' : 'fields.denied') : 'fields.needClick'), true); return render(); }
       matchNow(false);
+      autoFill();
     });
   }
   function matchNow(quiet) {
@@ -180,6 +217,7 @@
         try { await scan(); } catch (e) {}
       }
       render();
+      autoFill();
     });
   }
 
@@ -196,7 +234,7 @@
     }
     return numCols.c[ci];
   }
-  function setSt(i, s, m) { S.st[i] = m ? { s, m } : { s }; saveSheet(); }
+  function setSt(i, s, m) { S.st[i] = m ? { s, m } : { s }; if (s === 'done' && tab.origin) S.site = tab.origin; saveSheet(); }
   function nextTodo(from) {
     const n = S.st.length;
     for (let k = 0; k < n; k++) { const i = (from + k) % n; if (S.st[i].s === 'todo' || S.st[i].s === 'filled') return i; }
@@ -204,13 +242,20 @@
   }
   const errText = x => t('err.' + x.err, { col: x.col, v: x.v, max: x.max, label: x.invalid && x.invalid.label, msg: x.invalid && x.invalid.msg });
 
+  // 每次开一行记一个号；旧的那条链（被「撤」「从头来」「连填」打断的）醒来发现号变了就收手
   async function startRow(i) {
+    run.active = (run.active || 0) + 1;
+    try { return await startRow0(i); } finally { run.active--; }
+  }
+  async function startRow0(i) {
     if (i < 0) return finish();
     clearTimeout(run.timer);
+    const gen = ++run.gen;
     run.row = i; S.cur = i; run.seen = new Set(); run.textSels = new Set(); run.human = false; run.phase = 'filling';
     render();
     let sc;
-    try { sc = await scan(); } catch (e) { run.phase = 'idle'; run.row = -1; note(t('fields.needClick'), true); return render(); }
+    try { sc = await scan(); } catch (e) { if (gen !== run.gen) return; run.phase = 'idle'; run.row = -1; note(t('fields.needClick'), true); return render(); }
+    if (gen !== run.gen) return;
     const m = map();
     if (!sc.present.length && m && m.start && m.start !== tab.url) { // 不在表单页：先回去
       run.phase = 'back'; run.nav = true;
@@ -221,7 +266,11 @@
   }
 
   async function fillStep(sc) {
-    const i = run.row; if (i < 0) return;
+    run.fillBusy = true;
+    try { return await fillStep0(sc); } finally { run.fillBusy = false; }
+  }
+  async function fillStep0(sc) {
+    const i = run.row, gen = run.gen; if (i < 0) return;
     const m = map(), H = S.table.headers, row = S.table.rows[i];
     if (!sc) sc = await scan();
     addNewMatches();
@@ -244,9 +293,11 @@
       run.phase = 'wait'; render();
       return autoOn() ? recover() : undefined;
     }
+    if (gen !== run.gen) return;
     let r;
-    try { r = await call({ type: 'daibi:fill', items }); } catch (e) { run.phase = 'idle'; run.row = -1; return render(); }
+    try { r = await call({ type: 'daibi:fill', items }); } catch (e) { if (gen !== run.gen) return; run.phase = 'idle'; run.row = -1; return render(); }
     const present = new Set((await scan()).present);
+    if (gen !== run.gen) return;
     r.items.forEach((x, k) => {
       const sel = items[k].sel;
       if (present.has(sel) || x.ok || x.err) run.seen.add(sel);
@@ -268,7 +319,11 @@
     setSt(i, 'filled');
     run.phase = 'wait'; render();
     if (autoOn()) { await sleep(200); if (autoOn() && run.row === i) return submitNow(); }
-    else if (!cfg.auto) toast(t('toast.filled', { n: i + 1 }));
+    else if (!cfg.auto) {
+      if (keptN) toast(t('toast.keptFilled', { n: keptN, k: i + 1 }), 8000, { label: t('toast.fromTop'), fn: fromTop });
+      else toast(t('toast.filled', { n: i + 1 }), 6000, { label: t('toast.undo'), fn: undoFill });
+      keptN = 0;
+    }
   }
 
   async function submitNow() {
@@ -329,6 +384,11 @@
   async function onPage() {
     if (run.phase === 'back') { run.phase = 'idle'; run.nav = false; await sleep(120); return startRow(run.row); }
     if (run.row < 0 || run.phase === 'idle' || run.phase === 'needBack') return refreshPage();
+    if (run.phase === 'filling') { // 填到一半网页换了（人刷新了、点走了）：这一行在新页上从头填，不能算交了
+      const i = run.row;
+      if ((run.navFill = (run.navFill || 0) + 1) > 2) { run.gen++; run.navFill = 0; setSt(i, 'error', t('err.NAVAWAY')); run.row = -1; run.phase = 'idle'; run.going = false; return render(); }
+      await sleep(120); return startRow(i);
+    }
     await sleep(120);
     let sc; try { sc = await scan(); } catch (e) { return render(); }
     addNewMatches();
@@ -350,7 +410,7 @@
   }
 
   function rowDone(sc) {
-    clearTimeout(run.timer);
+    clearTimeout(run.timer); run.navFill = 0;
     const i = run.row; if (i < 0) return;
     setSt(i, 'done');
     const next = nextTodo(i + 1);
@@ -360,8 +420,20 @@
     if (!flowOn()) { render(); return; }
     if (sc && sc.present.length) return startRow(next);           // 回到了空表单：直接填下一行
     const m = map();
-    if (autoOn() && m && m.start) { run.row = next; run.phase = 'back'; run.nav = true; render(); return chrome.tabs.update(tab.id, { url: m.start }); }
-    run.phase = 'needBack'; render();                             // 成功页：等用户点「回表单」
+    // 成功页：人肯定要回表单填下一行，自己回去（0.2.x 手动模式这里要人点「回表单，填第 N 行」）
+    if (m && m.start && !run.hold) {
+      run.row = next; run.phase = 'back'; run.nav = true; render();
+      if (!cfg.auto) toast(t('toast.back', { n: i + 1, m: next + 1 }), 4000, { label: t('toast.stop'), fn: stopHere });
+      return chrome.tabs.update(tab.id, { url: m.start });
+    }
+    run.phase = 'needBack'; render();
+  }
+
+  function stopHere() { // 「停」：回到表单页也不再自己填，等人点主按钮
+    clearTimeout(run.timer); run.gen++;
+    run.row = -1; run.phase = 'idle'; run.going = false; run.hold = true; run.nav = false;
+    run.seen = new Set(); run.textSels = new Set();
+    hideToast(); render();
   }
 
   function recover() { // 自动模式下这一行出错：回表单页，接着下一行
@@ -412,7 +484,7 @@
           S.table.rows.forEach((r, i) => { const k = JSON.stringify(r); (old[k] = old[k] || []).push(S.st[i]); });
           let added = 0;
           const st = tb.rows.map(r => { const a = old[JSON.stringify(r)]; if (a && a.length) return a.shift(); added++; return { s: 'todo' }; });
-          S = { table: tb, st, cur: Math.max(0, st.findIndex(x => x.s === 'todo')) };
+          S = { table: tb, st, cur: Math.max(0, st.findIndex(x => x.s === 'todo')), site: S.site };
           saveSheet(); render();
           toast(t('table.reloaded', { n: added }));
         } else { $('pasteText').value = ''; setTable(tb); }
@@ -429,17 +501,41 @@
   }
   const TABLE_EXT = /\.(xlsx|xlsm|csv|tsv|txt|xls)$/i;
 
-  async function setTable(tb) {
-    S = { table: tb, st: tb.rows.map(() => ({ s: 'todo' })), cur: 0 }; warnCols = null;
-    clearTimeout(run.timer); Object.assign(run, { row: -1, phase: 'idle', going: false, seen: new Set(), textSels: new Set() });
+  // 同一张表又放进来（同名、同表头）：上回交过的行记着，不再填第二遍（0.2.x 一律清零，人得自己找到第 13 行点上，不然重复提交）
+  function carryOver(tb) {
+    const old = S.table;
+    if (!old || old.name !== tb.name || old.headers.join('\u0001') !== tb.headers.join('\u0001') || !S.site || S.site !== tab.origin) return null; // 交过 = 交到这个网站；换了网站不算
+    const pool = {};
+    old.rows.forEach((r, i) => { if (S.st[i] && S.st[i].s === 'done') { const k = JSON.stringify(r); (pool[k] = pool[k] || []).push(S.st[i]); } });
+    let n = 0;
+    const st = tb.rows.map(r => { const a = pool[JSON.stringify(r)]; if (a && a.length) { n++; return a.shift(); } return { s: 'todo' }; });
+    return n ? { st, n } : null;
+  }
+  async function fromTop() {
+    hideToast(); keptN = 0; await settled();
+    S.st = S.st.map(() => ({ s: 'todo' })); S.cur = 0; saveSheet();
+    if (run.row >= 0 && !cfg.auto) { run.row = -1; run.phase = 'idle'; return startRow(0); }
+    render(); autoFill();
+  }
+  async function settled() { const t0 = Date.now(); while ((run.fillBusy || run.active > 0) && Date.now() - t0 < 20000) await sleep(50); }
+  async function setTable(tb, fresh) {
+    const keep = fresh ? null : carryOver(tb);
+    S = { table: tb, st: keep ? keep.st : tb.rows.map(() => ({ s: 'todo' })), cur: 0, site: keep ? S.site : '' }; warnCols = null;
+    if (keep) S.cur = Math.max(0, S.st.findIndex(x => x.s !== 'done'));
+    clearTimeout(run.timer); Object.assign(run, { row: -1, phase: 'idle', going: false, seen: new Set(), textSels: new Set(), hold: false });
     filter = 'all'; saveSheet();
     $('pasteBox').hidden = true;
     note('');
+    run.hold = true; // 先别自己填：对完字段再说
     await refreshPage();
+    run.hold = false;
     const m = tab.origin && maps[tab.origin];
     if (bound()) note(t('fields.restored'));
     else if (page.fields && page.fields.length && (!m || !Object.keys(m.b).length)) matchNow(true);
     render();
+    keptN = keep ? keep.n : 0;
+    if (keep) toast(t('toast.kept', { n: keep.n, k: S.cur + 1 }), 8000, { label: t('toast.fromTop'), fn: fromTop });
+    autoFill();
   }
 
   /* ---------- 界面 ---------- */
@@ -448,13 +544,14 @@
     return { done, err, left: S.st.length - done - err };
   };
   function mainMode() {
-    if (!S.table) return ['needTable', true];
+    if (!S.table) return ['needTable', false];
     if (!tab.id) return ['noPage', true];
     if (!bound()) return ['match', false];
-    if (S.st.every(x => x.s === 'done')) return ['alldone', true];
+    if (S.st.every(x => x.s === 'done')) return ['alldone', false];
     if (cfg.auto && run.going) return ['pause', false];
+    if (run.phase === 'filling' || run.phase === 'back' || run.phase === 'submitted') return ['busy', true]; // 正在填 / 回表单 / 看交上没：别让人再点一下抢着填
     if (run.phase === 'needBack') return ['back', false];
-    if (!S.st.some(x => x.s === 'todo' || x.s === 'filled')) return ['nothing', true];
+    if (!S.st.some(x => x.s === 'todo' || x.s === 'filled')) return S.st.some(x => x.s === 'error') ? ['retry', false] : ['nothing', true]; // 只剩出错的：主按钮就是重试
     if (cfg.auto) return ['go', false];
     if (run.phase === 'wait' && run.row === S.cur) return ['refill', false];
     return ['fill', false];
@@ -472,10 +569,9 @@
       const tb = S.table;
       $('tName').textContent = tb.name;
       $('tMeta').textContent = t('table.meta', { rows: tb.rows.length, cols: tb.headers.length });
-      const ss = $('sheetSel');
+      const ss = $('sheetSeg');
       ss.hidden = !(tb.sheets && tb.sheets.length > 1 && lastFile);
-      if (!ss.hidden && ss.options.length !== tb.sheets.length) ss.innerHTML = tb.sheets.map(n => `<option>${esc(n)}</option>`).join('');
-      if (!ss.hidden) ss.value = tb.sheet;
+      if (!ss.hidden) ss.innerHTML = tb.sheets.map(n => `<button role="tab" aria-selected="${n === tb.sheet}" data-s="${esc(n)}">${esc(n)}</button>`).join('');
       $('btnReload').hidden = !tb.src;
       const m = tab.origin && maps[tab.origin];
       const needAtt = attN > 0 || (m && Object.values(m.b).some(b => b && b.kind === 'file')) || (page.fields || []).some(f => f.kind === 'file');
@@ -487,17 +583,32 @@
     const [mode, dis] = mainMode();
     const remain = S.st.filter(x => x.s === 'todo' || x.s === 'filled').length;
     const label = {
-      needTable: t('run.needTable'), noPage: t('fields.noPage'), match: t('run.match'), alldone: t('run.alldone'),
+      needTable: t('run.choose'), noPage: t('fields.noPage'), match: t('run.match'), alldone: t('run.next'), retry: t('run.retry', { n: S.st.filter(x => x.s === 'error').length }), busy: t('run.busy'),
       pause: t('run.pause'), back: t('run.back', { n: S.cur + 1 }), go: t('run.go', { n: remain }), fill: t('run.fill', { n: S.cur + 1 }), refill: t('run.refill', { n: S.cur + 1 }), nothing: t('run.nothing')
     }[mode];
     const b = $('btnMain');
     b.textContent = label; b.disabled = dis || (run.busy && mode !== 'pause'); b.dataset.mode = mode;
-    b.classList.toggle('gray', mode === 'pause'); b.classList.toggle('pri', mode !== 'pause');
+    $('setBox').hidden = !has;
+    b.classList.toggle('gray', mode === 'pause' || mode === 'refill'); b.classList.toggle('pri', mode !== 'pause' && mode !== 'refill');
+    $('status').textContent = statusText(mode);
+    document.body.dataset.state = mode;
     const ne = S.st.filter(x => x.s === 'error').length;
-    $('btnRetry').hidden = !ne || (cfg.auto && run.going);
+    $('btnRetry').hidden = !ne || (cfg.auto && run.going) || mode === 'retry';
     $('warn').hidden = !warnCols;
     if (warnCols) $('warnTxt').textContent = t('warn.fields', { f: warnCols.slice(0, 3).map(x => '「' + x.label + '」').join('') + (warnCols.length > 3 ? t('warn.more', { n: warnCols.length }) : '') });
     $('btnRetry').textContent = t('run.retry', { n: ne });
+  }
+
+  // 顶栏一句：现在在干嘛
+  function statusText(mode) {
+    if (!S.table) return t('st.noTable');
+    const c = counts();
+    if (mode === 'alldone') return t('st.allDone', { n: c.done });
+    if (mode === 'retry') return t('st.errLeft', { n: c.err });
+    if (run.going) return t('st.going', { n: (run.row >= 0 ? run.row : S.cur) + 1, total: S.st.length });
+    if (run.row >= 0 && S.st[run.row] && S.st[run.row].s === 'filled' && run.phase === 'wait') return t('st.yourTurn', { n: run.row + 1 });
+    if (run.phase === 'filling' || run.phase === 'back') return t('st.filling', { n: (run.row >= 0 ? run.row : S.cur) + 1 });
+    return tab.host || t('fields.noPage');
   }
 
   function renderFields() {
@@ -565,7 +676,7 @@
       const st = S.st[i], r = tb.rows[i];
       const prev = r.filter(Boolean).slice(0, 2).join(' · ');
       return `<li class="ri${i === S.cur ? ' cur' : ''}" data-i="${i}"><span class="rn">${i + 1}</span>
-        <span class="rt"><b>${esc(prev)}</b>${st.m ? `<small${st.s === 'filled' ? ' style="color:var(--warn)"' : ''}>${esc(st.m)}</small>` : ''}</span>
+        <span class="rt"><b>${esc(prev)}</b>${st.m ? `<small${st.s === 'filled' ? ' class="wait"' : ''}>${esc(st.m)}</small>` : ''}</span>
         <span class="pill ${st.s}">${esc(t('st.' + st.s))}</span></li>`;
     }).join('');
     if (idx.length > LIM) html += `<li class="rmore">${esc(t('rows.more', { n: idx.length - LIM }))}</li>`;
@@ -577,17 +688,23 @@
     if (cur && (cur.offsetTop < list.scrollTop || cur.offsetTop + cur.offsetHeight > list.scrollTop + list.clientHeight)) list.scrollTop = cur.offsetTop - list.clientHeight / 2;
   }
 
-  let toastT = 0;
-  function toast(s, ms) {
-    const el = $('toast'); el.textContent = s; el.classList.add('on');
-    clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), ms || 3200);
+  // 提示条：一句话，自动做掉的事旁边带一个「撤 / 停」
+  let toastT = 0, toastFn = null;
+  function toast(s, ms, act) {
+    const el = $('toast');
+    $('toastTxt').textContent = s;
+    toastFn = act ? act.fn : null;
+    $('toastAct').hidden = !act; if (act) $('toastAct').textContent = act.label;
+    el.classList.add('on');
+    clearTimeout(toastT); toastT = setTimeout(hideToast, ms || 3200);
   }
+  function hideToast() { clearTimeout(toastT); $('toast').classList.remove('on'); toastFn = null; }
+  $('toastAct').onclick = () => { const f = toastFn; hideToast(); if (f) f(); };
 
   /* ---------- 事件 ---------- */
-  $('btnChoose').onclick = () => $('file').click();
   $('btnChange').onclick = () => $('file').click();
   $('file').onchange = e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ''; };
-  $('sheetSel').onchange = e => lastFile && loadFile(lastFile, e.target.value);
+  $('sheetSeg').onclick = e => { const b = e.target.closest('button'); if (b && lastFile && b.getAttribute('aria-selected') !== 'true') loadFile(lastFile, b.dataset.s); };
   $('btnPaste').onclick = () => { $('pasteBox').hidden = false; render(); $('pasteText').focus(); };
   $('pasteCancel').onclick = () => { $('pasteBox').hidden = true; render(); };
   $('pasteOk').onclick = () => {
@@ -602,8 +719,9 @@
     if (isLink(txt)) return loadLink(txt.trim());
     if (txt && /\t|\n/.test(txt)) { const tb = TB.parseText(txt, t('table.paste')); if (tb.rows.length) { lastFile = null; setTable(tb); } }
   });
-  ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
-  ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || !e.relatedTarget) $('drop').classList.remove('over'); }));
+  // 整个侧栏都能丢，拖进来整页高亮
+  ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); document.body.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || !e.relatedTarget) document.body.classList.remove('over'); }));
   document.addEventListener('drop', e => {
     const fs = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
     if (!fs.length) return;
@@ -612,6 +730,13 @@
     const rest = fs.filter(f => f !== tbl);
     if (rest.length) addAtt(rest);
   });
+  // 用示例试试：一张 5 行的示例表 + 千手院自己的示例表单，开新标签页，对字段、填第 1 行都自己来
+  $('btnDemo').onclick = async () => {
+    try { demoTable = TB.parseText(await (await fetch('sample.csv')).text(), t('demo.name')); } catch (e) { return toast(t('table.bad')); }
+    if (FIXED_TAB) return chrome.tabs.update(tab.id, { url: DEMO_URL });
+    const nt = await chrome.tabs.create({ url: DEMO_URL, active: true });
+    tab.id = nt.id; setUrl(DEMO_URL); page = { fields: null, present: [], note: '', noteBad: false, frames: [] };
+  };
   $('btnReload').onclick = () => S.table && S.table.src && loadLink(S.table.src, true);
   $('btnAtt').onclick = () => $('attFile').click();
   $('attFile').onchange = e => { if (e.target.files.length) addAtt(e.target.files); e.target.value = ''; };
@@ -663,21 +788,26 @@
     warnCols = null; askAccess(); go(mainMode()[0]);
   };
   $('warnPick').onclick = () => { const w = warnCols && warnCols.find(x => x.col); warnCols = null; showAll = true; if (w) pickFor(w.col); else render(); };
-  function go(mode) {
+  async function go(mode) {
+    run.hold = false;
+    await settled(); // 手动模式自己填的那一行可能还在填：等它填完再开跑，不两头抢一张表
     if (mode === 'go') { run.going = true; render(); return startRow(nextTodo(S.cur)); }
     if (mode === 'fill' || mode === 'refill') { render(); return startRow(S.cur); }
   }
   $('btnMain').onclick = () => {
     const [mode] = mainMode();
+    if (mode === 'needTable' || mode === 'alldone') return $('file').click();
+    if (mode === 'retry') return $('btnRetry').onclick();
     if (mode === 'match') return startMatch();
     if (mode === 'pause') { run.going = false; clearTimeout(run.timer); toast(t('toast.paused', { n: S.cur + 1 })); return render(); }
     askAccess(); // 顺手拿持久授权（已有就不弹）
     if ((mode === 'go' || mode === 'fill') && !warnCols) { const miss = unmatchedFields(); if (miss.length) { warnCols = miss; return render(); } }
     warnCols = null;
-    if (mode === 'back') { const m = map(); run.row = S.cur; run.phase = 'back'; run.nav = true; render(); return chrome.tabs.update(tab.id, { url: m.start }); }
+    if (mode === 'back') { run.hold = false; const m = map(); run.row = S.cur; run.phase = 'back'; run.nav = true; render(); return chrome.tabs.update(tab.id, { url: m.start }); }
     return go(mode);
   };
   $('btnRetry').onclick = () => {
+    run.hold = false;
     S.st.forEach((x, i) => { if (x.s === 'error') S.st[i] = { s: 'todo' }; });
     const first = nextTodo(0); filter = 'all'; saveSheet();
     if (cfg.auto) run.going = true;

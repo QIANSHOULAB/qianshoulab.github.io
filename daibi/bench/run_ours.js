@@ -31,7 +31,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const ext = fs.mkdtempSync(path.join(os.tmpdir(), 'daibi-ext-'));
   fs.cpSync(path.resolve(__dirname, '../extension'), ext, { recursive: true });
   const mf = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8'));
-  mf.host_permissions = ['http://127.0.0.1/*'];
+  mf.host_permissions = [...(mf.host_permissions || []), 'http://127.0.0.1/*'];
   fs.writeFileSync(path.join(ext, 'manifest.json'), JSON.stringify(mf));
   const ctx = await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.tmpdir(), 'daibi-prof-')), {
     headless: false, viewport: { width: 900, height: 820 }, locale: 'zh-CN',
