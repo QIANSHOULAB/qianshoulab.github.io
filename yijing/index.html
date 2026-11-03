@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>译经僧 · 凡表皆可转，万物皆可通</title>
-<meta name="description" content="跨系统搬数据太折磨？交给老衲，什么奇葩阴间格式都能给你对齐。网页打开就用，文件不出浏览器。">
-<meta name="apple-mobile-web-app-title" content="译经僧">
+<title>Yijing · Data Mover — data migration, minus the suffering</title>
+<meta name="description" content="Turn one system’s export into a file the next system will actually import. CSV, Excel or JSON, right in your browser. Your files never leave your computer.">
+<meta name="apple-mobile-web-app-title" content="Yijing">
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -69,13 +69,17 @@ svg{display:block}
 .nav{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:52px;padding:0 max(16px,calc(50% - 544px));transition:background-color var(--t) var(--ease),box-shadow var(--t) var(--ease)}
 body[data-view="empty"] .nav,body[data-view="pick"] .nav{padding:0 max(16px,calc(50% - 474px))}
 .nav.scrolled{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--line)}
-.nav-back{justify-self:start;display:inline-flex;align-items:center;gap:4px;color:var(--accent-ink);font-size:17px;min-height:44px;margin-left:-4px}
+.nav-back{justify-self:start;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;color:var(--accent-ink);font-size:17px;min-height:44px;margin-left:-4px}
 .nav-back svg{width:20px;height:20px}
 .nav-t{display:flex;align-items:center;gap:8px;font-weight:600;font-size:17px;opacity:0;transition:opacity var(--t) var(--ease)}
 .nav-t img{width:22px;height:22px;border-radius:6px}
 .nav.scrolled .nav-t{opacity:1}
-.nav-a{justify-self:end;display:inline-flex;align-items:center;gap:6px;color:var(--accent-ink);font-size:15px;font-weight:600;min-height:44px;padding:0 4px}
+.nav-r{justify-self:end;display:flex;align-items:center;gap:12px}
+.lang-seg button{min-width:44px;padding:0 10px}
+@media (max-width:759px){.nav{grid-template-columns:auto 1fr}.nav-t{display:none}.nav-a .lbl{display:none}} /* 手机上：配方只留图标和个数、不放滚动后的居中标题，给语言切换腾地方 */
+.nav-a{display:inline-flex;align-items:center;gap:6px;color:var(--accent-ink);font-size:15px;font-weight:600;min-height:44px;padding:0 4px}
 .nav-a svg{width:18px;height:18px}
+.nav-a .lbl{white-space:nowrap}
 .nav-a .n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--fill);font-size:12px;line-height:20px;text-align:center;color:var(--fg-2)}
 
 /* 页面 */
@@ -125,7 +129,7 @@ body[data-view="empty"] .nav,body[data-view="pick"] .nav{padding:0 max(16px,calc
 .dropc .ico{width:56px;height:56px;color:var(--accent-ink);margin-bottom:8px}
 .dropc .ico svg{width:56px;height:56px}
 .dropc h2{margin:0;font-size:22px;line-height:1.2;font-weight:700}
-.dropc p{margin:0;font-size:15px;color:var(--fg-2)}
+.dropc p{margin:0;font-size:15px;color:var(--fg-2);text-wrap:balance}
 .dropc .acts{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap;justify-content:center}
 .dropc .err{margin-top:12px;max-width:32em;font-size:15px;color:var(--bad-ink)}
 .dropc .err b{font-weight:600}
@@ -248,9 +252,6 @@ tr:last-child td{border-bottom:0}
 /* 页脚 */
 .foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.8;color:var(--fg-2);text-align:center}
 .mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
-.foot .row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0 4px}
-.foot .lang{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 8px;font-size:12px;color:var(--accent-ink)}
-.foot .lang svg{width:14px;height:14px}
 
 /* 弹层 */
 #sheets{position:fixed;inset:0;z-index:50}
@@ -336,7 +337,7 @@ tr:last-child td{border-bottom:0}
 <header class="nav" id="nav">
   <a class="nav-back" id="navBack" href="https://qianshoulab.github.io/"></a>
   <div class="nav-t" id="navT"></div>
-  <button type="button" class="nav-a" data-act="recipes" id="navRec"></button>
+  <div class="nav-r"><button type="button" class="nav-a" data-act="recipes" id="navRec"></button><span class="seg lang-seg" role="group" id="navLang"></span></div>
 </header>
 <main class="wrap" id="app"></main>
 <div class="dock" id="dock" hidden></div>
@@ -350,13 +351,13 @@ tr:last-child td{border-bottom:0}
 <script>
 'use strict';
 /* ================= 界面文字：全在 strings.js（中文、英文各一套），这里只挑用哪套 ================= */
-// 挑语言：网址带 ?lang=zh|en 先听网址；再看页脚切换记下的；都没有就看浏览器语言（zh 开头用中文，别的一律英文）
+// 挑语言：默认英文，第二语言中文（Song 11-03 22:19）。网址带 ?lang=zh|en 先听网址；再看右上角切换记下的；都没有就英文。不看浏览器语言
 const STRS = window.YJ_STR, LGK = 'yijing.lang.v1';
 function pickLang() {
   let l = null;
   try { l = new URLSearchParams(location.search).get('lang'); } catch (e) { }
   if (!STRS[l]) try { l = localStorage.getItem(LGK); } catch (e) { }
-  if (!STRS[l]) l = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
+  if (!STRS[l]) l = 'en';
   return l;
 }
 let LANG = pickLang(), STR = STRS[LANG];
@@ -379,7 +380,6 @@ const ICON = {
   tray: SV('<path d="M12 3.5v10M7.5 9.5 12 14l4.5-4.5"/><path d="M3.5 14.5v3a3 3 0 0 0 3 3h11a3 3 0 0 0 3-3v-3"/>'),
   book: SV('<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15Z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7.5h6"/>'),
   down: SV('<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>'),
-  globe: SV('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"/>'),
   x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>',
 };
 /* ================= 概念词典（列名同义词，中英都认） ================= */
@@ -1366,6 +1366,7 @@ function renderDock() {
   d.innerHTML = `<div class="dock-in"><span class="dock-f">${f}</span>
     <button type="button" class="btn primary big" data-act="export"${S.busy ? ' disabled' : ''}>${ICON.down}${n ? STR.exportOk : STR.exportBtn(S.rows.length)}</button></div>`;
 }
+function navRec(n) { const b = $('#navRec'); b.setAttribute('aria-label', STR.recipes); b.innerHTML = `${ICON.book}<span class="lbl">${STR.recipes}</span>${n ? `<span class="n">${n}</span>` : ''}`; }
 function render() {
   const v = view();
   app.className = 'wrap' + (v === 'work' ? '' : ' narrow');
@@ -1377,11 +1378,11 @@ function render() {
     if (v === 'pick') h += `<section class="ends">${srcCard()}</section>${tgtSection()}`;
     else h += `${renderEnds()}<section class="grp" id="doubt" hidden></section><section class="grp" id="tidy"${S.prep && (S.prep.g || S.prep.nb) ? '' : ' hidden'}>${renderTidyInner()}</section><section class="grp" id="maps">${renderMapsInner()}</section><section class="grp" id="prev">${renderPreviewInner()}</section>`;
   }
-  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp}</div><div>${STR.footMail}<span class="mail">oilsongchengmin@gmail.com</span></div><div class="row"><a href="https://qianshoulab.github.io/">${STR.footHome}</a><span aria-hidden="true">·</span><button type="button" class="lang" data-act="lang" lang="${STR.langToCode}" aria-label="${STR.langToLabel}">${ICON.globe}${STR.langTo}</button></div></footer>`;
+  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp}</div><div>${STR.footMail}<span class="mail">oilsongchengmin@gmail.com</span></div><div><a href="https://qianshoulab.github.io/">${STR.footHome}</a></div></footer>`;
   if (v === 'work') renderDoubt();
   renderDock();
   const n = recipes().length;
-  $('#navRec').innerHTML = `${ICON.book}${STR.recipes}${n ? `<span class="n">${n}</span>` : ''}`;
+  navRec(n);
 }
 
 /* ================= 弹层 ================= */
@@ -1595,7 +1596,7 @@ async function doExport(auto) {
     S.dl = { name, at: `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}` };
     const fresh = remember(); lastSet();
     exporting = false;
-    renderDock(); $('#navRec').innerHTML = `${ICON.book}${STR.recipes}<span class="n">${recipes().length}</span>`;
+    renderDock(); navRec(recipes().length);
     const tc = $('.end.tgt .end-k'); if (tc && S.recipe && !tc.querySelector('.chip')) tc.insertAdjacentHTML('beforeend', `<span class="chip on">${STR.recChip}</span>`);
     const btn = $('#dock .btn'); if (btn) { btn.classList.add('done'); btn.innerHTML = `${ICON.check}${STR.exportDone}`; setTimeout(() => renderDock(), 1600); }
     const msg = S.recipeHit && auto ? `${STR.recAuto(S.recipeHit)} · ${STR.exported(rows.length, s)}` : auto ? `${STR.dockAuto} · ${STR.secs(s)}` : STR.exported(rows.length, s);
@@ -1712,7 +1713,7 @@ document.addEventListener('click', e => {
   if (a === 'export') { doubts().forEach(i => S.ack.add(i)); renderMaps(); renderDoubt(); return doExport(); }
   if (a === 'tidy') { const k = b.dataset.k; S.tidy[k] = S.tidy[k] === false; return changed(); }
   if (a === 'recipes') return openRecipes();
-  if (a === 'lang') return setLang(LANG === 'zh' ? 'en' : 'zh');
+  if (a === 'lang') return setLang(b.dataset.l);
   if (a === 'rec-apply') { const r = recipes().find(x => x.id === b.dataset.id); if (r && S.src) { applyRecipe(r); S.ack = new Set(); closeSheet(); changed(); toast(STR.recAuto(r.name)); } return; }
   if (a === 'rec-del') { saveRecipes(recipes().filter(x => x.id !== b.dataset.id)); if (S.recipe === b.dataset.id) S.recipe = null; render(); return openRecipes(); }
   if (a === 'rec-export') { download(new Blob([JSON.stringify({ app: 'yijing', v: 1, recipes: recipes() }, null, 1)], { type: 'application/json' }), STR.recFile(new Date().toISOString().slice(0, 10))); return; }
@@ -1803,8 +1804,8 @@ window.addEventListener('drop', e => {
 const nav = $('#nav');
 addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 24), { passive: true });
 
-/* ================= 语言：跟浏览器走，页脚留一个切换（记在本机） ================= */
-// 页面里不归 render() 管的字：<html lang>、<title>、meta description、顶栏、拖放层
+/* ================= 语言：默认英文，右上角 EN / 中文 切换（记在本机，下次打开就是上次选的） ================= */
+// 页面里不归 render() 管的字：<html lang>、<title>、meta description、顶栏（含语言切换）、拖放层
 function applyLang() {
   document.documentElement.lang = STR.htmlLang;
   document.title = STR.title;
@@ -1812,6 +1813,8 @@ function applyLang() {
   const ma = $('meta[name="apple-mobile-web-app-title"]'); if (ma) ma.content = STR.name;
   $('#navBack').innerHTML = `${ICON.chevL}<span>${STR.home}</span>`;
   $('#navT').innerHTML = `<img src="icon.svg" alt="">${STR.name}`;
+  const lg = $('#navLang'); lg.setAttribute('aria-label', STR.langLabel);
+  lg.innerHTML = Object.entries(STR.langNames).map(([k, v]) => `<button type="button" data-act="lang" data-l="${k}" lang="${k === 'zh' ? 'zh-CN' : 'en'}" aria-pressed="${k === LANG}">${v}</button>`).join('');
   drop.querySelector('[data-zone="src"]').innerHTML = `<div>${STR.dropSrc}<small>${STR.dropSrcS}</small></div>`;
   drop.querySelector('[data-zone="tgt"]').innerHTML = `<div>${STR.dropTgt}</div>`;
 }

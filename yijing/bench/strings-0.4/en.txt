@@ -191,9 +191,9 @@ tidyDropS	The target requires “SKU”. These rows would just bounce.
 footApp	Yijing · Data Mover 0.4.0 · Qianshou Lab
 footMail	Want a feature, or is something driving you up the wall? Email the abbot: 
 footHome	Qianshou Lab
-langTo	中文
-langToCode	zh-CN
-langToLabel	切换到中文
+langLabel	Language
+langNames.en	EN
+langNames.zh	中文
 demoData.name	old-crm-contacts.csv
 demoData.H	Customer No. | Full Name | Sex | Mobile | E-mail | Organisation | Position | City | Date Added | Total Spent ($) | Remarks
 demoData.people	Alex M | Priya F | Marcus M | Chloe F | Ryan M | Sarah F | Daniel M | Mei Ling F | Jordan M | Emily F | Wei Jie M | Hannah F

@@ -78,7 +78,7 @@
     tidyFill: g => `同一个「${g}」的空格往下补`, tidyGroup: g => `同一个「${g}」排回一起，空格补齐`, tidyFillS: (cs, k) => `${cs.slice(0, 4).join('、')}${k > 4 ? ` 等 ${k} 列` : ''}`,
     tidyDrop: (h, k) => `跳过「${h}」为空的 ${n(k)} 行`, tidyDropS: t => `目标的「${t}」必填，这些行导过去也是废行`,
     footApp: '千手院 · 译经僧 0.4.0', footMail: '要新花样、嫌哪里反人类，找方丈：', footHome: '千手院总舵',
-    langTo: 'English', langToCode: 'en', langToLabel: 'Switch to English',
+    langLabel: '语言', langNames: { en: 'EN', zh: '中文' },
     // 示例数据（虚构）：用示例试试时丢进来的那份「旧系统导出」
     demoData: {
       name: '旧 CRM 客户表.csv',
@@ -166,7 +166,7 @@
     tidyFill: g => `Fill blanks down within each “${g}”`, tidyGroup: g => `Regroup rows by “${g}” and fill blanks`, tidyFillS: (cs, k) => `${cs.slice(0, 4).join(', ')}${k > 4 ? ` + ${k - 4} more` : ''}`,
     tidyDrop: (h, k) => `Skip ${pl(k, 'row', 'rows')} with no “${h}”`, tidyDropS: t => `The target requires “${t}”. These rows would just bounce.`,
     footApp: 'Yijing · Data Mover 0.4.0 · Qianshou Lab', footMail: 'Want a feature, or is something driving you up the wall? Email the abbot: ', footHome: 'Qianshou Lab',
-    langTo: '中文', langToCode: 'zh-CN', langToLabel: '切换到中文',
+    langLabel: 'Language', langNames: { en: 'EN', zh: '中文' },
     // Sample data (made up): the "old system export" behind Try a sample
     demoData: {
       name: 'old-crm-contacts.csv',

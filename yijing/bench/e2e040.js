@@ -1,12 +1,13 @@
 // 0.4.0 真流程（中英两套）+ 交货截图：node e2e040.js（YJ_URL 指向本地服务；先跑 gen.py）
-// 浏览器语言 zh-CN、en-US 各一遍 × 手机 390、电脑 1280：控制台报错必须 0、不许横向滚动、按钮不许被字撑破或挤成两行、界面字不许被切掉。
+// 中文、英文各一遍 × 手机 390、电脑 1280：控制台报错必须 0、不许横向滚动、按钮不许被字撑破或挤成两行、界面字不许被切掉。
+// 语言规矩（Song 11-03 22:19）：默认英文，右上角 EN / 中文 切换，选过就记住，不看浏览器语言。所以故意反着给浏览器语言：英文那遍用 zh-CN 浏览器、中文那遍用 en-US 浏览器。
 // 截图进 shots-0.4/：<zh|en>_<宽>_<空状态 empty / 结果 result>.png 共 8 张；另加手机上两张弹层 <zh|en>_390_<sheet|rule>.png 给人看英文控件。
 const { chromium } = require('playwright'); const path = require('path'), fs = require('fs');
 const URL = process.env.YJ_URL || 'http://127.0.0.1:8765/yijing/', D = path.join(__dirname, 'data'), SH = path.join(__dirname, 'shots-0.4');
 fs.mkdirSync(SH, { recursive: true });
 const LOC = {
-  zh: { locale: 'zh-CN', lang: 'zh-CN', title: '译经僧 · 凡表皆可转，万物皆可通', err: '读不动', recAuto: '上回', regroup: '排回一起', demo: '旧 CRM 客户表.csv', other: 'en', otherDemo: 'old-crm-contacts.csv', home: '千手院' },
-  en: { locale: 'en-US', lang: 'en', title: 'Yijing · Data Mover — data migration, minus the suffering', err: 'Can’t read', recAuto: 'last time', regroup: 'Regroup', demo: 'old-crm-contacts.csv', other: 'zh-CN', otherDemo: '旧 CRM 客户表.csv', home: 'Qianshou Lab' },
+  zh: { locale: 'en-US', lang: 'zh-CN', title: '译经僧 · 凡表皆可转，万物皆可通', err: '读不动', recAuto: '上回', regroup: '排回一起', demo: '旧 CRM 客户表.csv', other: 'en', otherL: 'en', otherDemo: 'old-crm-contacts.csv', home: '千手院' },
+  en: { locale: 'zh-CN', lang: 'en', title: 'Yijing · Data Mover — data migration, minus the suffering', err: 'Can’t read', recAuto: 'last time', regroup: 'Regroup', demo: 'old-crm-contacts.csv', other: 'zh-CN', otherL: 'zh', otherDemo: '旧 CRM 客户表.csv', home: 'Qianshou Lab' },
 };
 // 页面里量：按钮的字一个文字节点只许占一行、不许溢出按钮；带省略号的界面字不许被切（数据格子、模板列名预览这种故意省略的不算）
 const MEASURE = () => {
@@ -54,9 +55,12 @@ const MEASURE = () => {
     const pickTpl = async k => { await pg.click('[data-act="pick-tgt"]'); await pg.waitForTimeout(400); await look('模板单子'); await pg.click(`.sheet [data-act="tpl"][data-k="${k}"]`); await pg.waitForTimeout(400); };
     const openCol = async name => { const i = await pg.evaluate(n => window.__yj.S.tgt.cols.findIndex(c => c.name === n), name); await pg.click(`#maps .mrow[data-i="${i}"]`); await pg.waitForTimeout(600); return i; };
     await pg.goto(URL); await pg.waitForTimeout(500);
-    // 0 跟着浏览器语言走：<html lang>、<title>、meta description、顶栏
-    const head = await pg.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, desc: document.querySelector('meta[name="description"]').content, home: document.querySelector('#navBack').textContent.trim() }));
-    if (head.lang !== X.lang || head.title !== X.title || head.home !== X.home) bad('没跟浏览器语言走：' + JSON.stringify(head));
+    // 0 第一次打开一律英文（不看浏览器语言）；中文那遍点右上角「中文」，重开还是中文。<html lang>、<title>、meta description、顶栏跟着当前语言
+    const headOf = () => pg.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, desc: document.querySelector('meta[name="description"]').content, home: document.querySelector('#navBack').textContent.trim(), on: (document.querySelector('#navLang [aria-pressed="true"]') || {}).textContent }));
+    let head = await headOf();
+    if (head.lang !== 'en' || head.on !== 'EN') bad('第一次打开不是英文：' + JSON.stringify(head));
+    if (L === 'zh') { await pg.click('#navLang [data-l="zh"]'); await pg.waitForTimeout(300); await pg.reload(); await pg.waitForTimeout(500); head = await headOf(); }
+    if (head.lang !== X.lang || head.title !== X.title || head.home !== X.home) bad('语言不对：' + JSON.stringify(head));
     if (L === 'en' && /[一-鿿]/.test(head.desc)) bad('英文 meta description 里有中文');
     // 1 空状态
     if (!await pg.evaluate(() => !!document.querySelector('[data-act="demo"]'))) bad('空状态没有「用示例试试」');
@@ -141,15 +145,15 @@ const MEASURE = () => {
     await pg.click('[data-act="recipes"]'); await pg.waitForTimeout(500); await look('配方单子');
     const nr = await pg.$$eval('.sheet [data-act="rec-apply"]', x => x.length); if (nr < 2) bad('配方单子里只有 ' + nr + ' 个');
     await pg.keyboard.press('Escape'); await pg.waitForTimeout(400);
-    // 14 页脚切语言：示例跟着换、<html lang> 跟着换；重开还记得；切回来
+    // 14 右上角切语言：示例跟着换、<html lang> 跟着换；重开还记得；切回来
     await pg.goto(URL); await pg.waitForTimeout(400); await pg.click('[data-act="demo"]'); await pg.waitForFunction(() => window.__yj.S.bad != null);
-    await pg.click('[data-act="lang"]'); await pg.waitForFunction(() => window.__yj.S.bad != null); await pg.waitForTimeout(300);
+    await pg.click(`#navLang [data-l="${X.otherL}"]`); await pg.waitForFunction(() => window.__yj.S.bad != null); await pg.waitForTimeout(300);
     let st = await pg.evaluate(() => [document.documentElement.lang, window.__yj.S.src.name]);
     if (st[0] !== X.other || st[1] !== X.otherDemo) bad('切语言没切过去：' + st);
     await look('切过去以后');
     await pg.reload(); await pg.waitForTimeout(400);
     if (await pg.evaluate(() => document.documentElement.lang) !== X.other) bad('重开没记住切过的语言');
-    await pg.click('[data-act="lang"]'); await pg.waitForTimeout(300);
+    await pg.click(`#navLang [data-l="${L}"]`); await pg.waitForTimeout(300);
     st = await pg.evaluate(() => [document.documentElement.lang, document.title]);
     if (st[0] !== X.lang || st[1] !== X.title) bad('切回来不对：' + st);
     log.push(`${tag} 走完，下载 ${dls} 次，配方 ${nr} 个，故意省略的数据格 ${cuts} 处`);
