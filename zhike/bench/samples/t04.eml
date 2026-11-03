@@ -1,0 +1,30 @@
+Content-Type: multipart/mixed; boundary="===============8201768546906396695=="
+MIME-Version: 1.0
+From: =?utf-8?b?6Z2S55+z56eR5oqAIOi0ouWKoemDqA==?=
+ <finance@qingshi-tech.example>
+To: me@ourco.example
+Subject: =?utf-8?b?44CQ6Z2S55+z56eR5oqA44CRMTHmnIjmnI3liqHotLnlj5HnpaggUVMtMjAyNi00?=
+ =?utf-8?b?OTMy?=
+Date: Wed, 28 Oct 2026 00:09:00 +0800
+Message-ID: <bench-4-7234@mail.example>
+
+--===============8201768546906396695==
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+
+6LS15Y+45aW977yaCgrmnKzmnIjmnI3liqHotLnlj5Hnpajlt7LlvIDlhbfvvIzor6bop4HpmYTk
+u7bjgIIKCuWPkeelqOWPt+egge+8mlFTLTIwMjYtNDkzMgrlupTku5jph5Hpop3vvJpSTUIgMzQs
+NDQzLjg5CuS7mOasvuacn+mZkO+8mjIwMjblubQxMeaciDIy5pelCgrpnZLnn7Pnp5HmioAg6LSi
+5Yqh6YOoCg==
+
+--===============8201768546906396695==
+Content-Type: application/pdf
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename*=utf-8''%E5%8F%91%E7%A5%A8_QS-2026-4932.pdf
+
+JVBERi0xLjQgYmVuY2g=
+
+--===============8201768546906396695==--

@@ -1,0 +1,17 @@
+issuer: 发票
+keywords:
+  - "@lotus-supplies.example"
+  - "Invoice No"
+fields:
+  发票号: Invoice No\s+(INV-\d+)
+  金额:
+    parser: regex
+    regex: Amount Due\s+S\$([\d,.]+)
+    type: float
+  到期日:
+    parser: regex
+    regex: Due Date\s+(\d{1,2} [A-Z][a-z]{2} \d{4})
+    type: date
+required_fields: [发票号]
+options:
+  date_formats: ["%d %b %Y"]

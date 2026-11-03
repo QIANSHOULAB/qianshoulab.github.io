@@ -1,0 +1,12 @@
+From: Lotus Supplies Billing <billing@lotus-supp1ies.example>
+To: me@ourco.example
+Subject: Invoice INV-13203 overdue - action required
+Date: Fri, 30 Oct 2026 21:34:00 +0800
+Message-ID: <bench-5-9531@mail.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html><body><p>Your invoice is OVERDUE.</p><table><tr><td>Invoice No</td><td>=
+INV-13203</td></tr><tr><td>Amount Due</td><td>S$9,860.00</td></tr></table><p>=
+<a href=3D'http://pay-now.example/x'>Pay now</a></p></body></html>

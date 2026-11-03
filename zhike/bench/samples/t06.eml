@@ -1,0 +1,30 @@
+From: Ninja Express <tracking@ninjaexp.example>
+To: me@ourco.example
+Subject: Your parcel NV2026SG93420454 is on the way
+Date: Sat, 31 Oct 2026 19:49:00 +0800
+Message-ID: <bench-6-5044@mail.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============7003994266284531883=="
+
+--===============7003994266284531883==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Good news! Your parcel is on the way.
+
+Tracking Number: NV2026SG93420454
+Estimated Delivery: 06 Nov 2026
+
+Track it at https://ninjaexp.example/track
+
+--===============7003994266284531883==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html><body>Good news! Your parcel is on the way.<br><br>Tracking Number: NV2=
+026SG93420454<br>Estimated Delivery: 06 Nov 2026<br><br>Track it at https://n=
+injaexp.example/track<br></body></html>
+
+--===============7003994266284531883==--

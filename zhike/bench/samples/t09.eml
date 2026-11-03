@@ -1,0 +1,24 @@
+From: Ninja Express <news@ninjaexp.example>
+To: me@ourco.example
+Subject: November deals: ship 3, pay 2
+Date: Thu, 29 Oct 2026 14:27:00 +0800
+Message-ID: <bench-9-6786@mail.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============8513897837665535523=="
+
+--===============8513897837665535523==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Ship more, pay less this November. Tracking made easy.
+Unsubscribe: https://ninjaexp.example/u
+
+--===============8513897837665535523==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+<html><body><p>Ship more, pay less this November.</p></body></html>
+
+--===============8513897837665535523==--

@@ -1,0 +1,142 @@
+{
+ "train": {
+  "t01.eml": {
+   "rule": "订单",
+   "fields": {
+    "订单号": "SM20261102-9609",
+    "金额": 1831.38,
+    "下单日期": "2026-11-02"
+   },
+   "forward": null
+  },
+  "t02.eml": {
+   "rule": "订单",
+   "fields": {
+    "订单号": "LM-585500",
+    "金额": 66.75,
+    "下单日期": "2026-10-31"
+   },
+   "forward": null
+  },
+  "t03.eml": {
+   "rule": "发票",
+   "fields": {
+    "发票号": "INV-56383",
+    "金额": 18590.91,
+    "到期日": "2026-12-09",
+    "附件": "INV-56383.pdf"
+   },
+   "forward": "finance@ourco.example"
+  },
+  "t04.eml": {
+   "rule": "发票",
+   "fields": {
+    "发票号": "QS-2026-4932",
+    "金额": 34443.89,
+    "到期日": "2026-11-22",
+    "附件": "发票_QS-2026-4932.pdf"
+   },
+   "forward": "finance@ourco.example"
+  },
+  "t05.eml": {
+   "rule": "物流",
+   "fields": {
+    "运单号": "SF1698829178134",
+    "预计送达": "2026-11-06"
+   },
+   "forward": null
+  },
+  "t06.eml": {
+   "rule": "物流",
+   "fields": {
+    "运单号": "NV2026SG93420454",
+    "预计送达": "2026-11-06"
+   },
+   "forward": null
+  },
+  "t07.eml": {
+   "rule": "询价",
+   "fields": {
+    "产品": "办公椅",
+    "数量": 50,
+    "电话": "+65 8517 4570"
+   },
+   "forward": "sales@ourco.example"
+  },
+  "t08.eml": {
+   "rule": "询价",
+   "fields": {
+    "产品": "Office chairs",
+    "数量": 100,
+    "电话": "+65 8124 7847"
+   },
+   "forward": "sales@ourco.example"
+  },
+  "t09.eml": {
+   "rule": null,
+   "fields": {},
+   "forward": null
+  },
+  "t10.eml": {
+   "rule": null,
+   "fields": {},
+   "forward": null
+  }
+ },
+ "test": {
+  "m005.eml": {
+   "rule": null,
+   "fields": {},
+   "forward": null,
+   "kind": "spam"
+  },
+  "m006.eml": {
+   "rule": null,
+   "fields": {},
+   "forward": null,
+   "kind": "spam"
+  },
+  "m014.eml": {
+   "rule": "询价",
+   "fields": {
+    "产品": null,
+    "数量": 200,
+    "电话": "+65 9956 5862"
+   },
+   "forward": "sales@ourco.example",
+   "kind": "inquiry"
+  },
+  "m018.eml": {
+   "rule": "发票",
+   "fields": {
+    "发票号": "INV-77392",
+    "金额": 5293.76,
+    "到期日": "2026-11-22",
+    "附件": "INV-77392.pdf"
+   },
+   "forward": "finance@ourco.example",
+   "kind": "fwd2"
+  },
+  "m023.eml": {
+   "rule": "订单",
+   "fields": {
+    "订单号": "LM-428135",
+    "金额": 475.98,
+    "下单日期": "2026-10-28"
+   },
+   "forward": null,
+   "kind": "order_lotusmart"
+  },
+  "m055.eml": {
+   "rule": "发票",
+   "fields": {
+    "发票号": "QS-2026-7747",
+    "金额": 25241.08,
+    "到期日": "2026-12-15",
+    "附件": "发票_QS-2026-7747.pdf"
+   },
+   "forward": "finance@ourco.example",
+   "kind": "invoice_qingshi"
+  }
+ }
+}

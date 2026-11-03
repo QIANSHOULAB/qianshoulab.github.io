@@ -1,0 +1,27 @@
+Content-Type: multipart/mixed; boundary="===============2211757185768858129=="
+MIME-Version: 1.0
+From: =?gb18030?b?x+DKr7/GvLwgssbO8bK/?= <finance@qingshi-tech.example>
+To: me@ourco.example
+Subject: =?gb18030?b?ob7H4Mqvv8a8vKG/MTLUwrf+zvG30beixrEgUVMtMjAyNi03NzQ3?=
+Date: Sun, 01 Nov 2026 04:32:00 +0800
+Message-ID: <bench-60-1501@mail.example>
+
+--===============2211757185768858129==
+Content-Type: text/plain; charset="gb18030"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+
+ufPLvrrDo7oKCrG+1MK3/s7xt9G3osax0tG/qr7fo6zP6rz7uL28/qGjCgq3osaxusXC66O6UVMt
+MjAyNi03NzQ3Cr3wtu66z7zGo7qjpDI1LDI0MS4wOCDUqgq4tr/uxtrP3qO6MjAyNi0xMi0xNQoK
+x+DKr7/GvLwgssbO8bK/Cg==
+
+--===============2211757185768858129==
+Content-Type: application/pdf
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="=?gb18030?b?t6LGsV9RUy0yMDI2LTc3NDcucGRm?="
+
+JVBERi0xLjQgYmVuY2g=
+
+--===============2211757185768858129==--

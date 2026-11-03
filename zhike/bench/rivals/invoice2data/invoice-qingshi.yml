@@ -1,0 +1,17 @@
+issuer: 发票
+keywords:
+  - "@qingshi-tech.example"
+  - "发票号码"
+fields:
+  发票号: 发票号码：\s*(\S+)
+  金额:
+    parser: regex
+    regex: 应付金额：RMB ([\d,.]+)
+    type: float
+  到期日:
+    parser: regex
+    regex: 付款期限：(\d{4}年\d{1,2}月\d{1,2}日)
+    type: date
+required_fields: [发票号]
+options:
+  date_formats: ["%Y年%m月%d日"]

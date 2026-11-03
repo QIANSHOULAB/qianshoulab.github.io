@@ -1,0 +1,7 @@
+issuer: 物流
+keywords:
+  - "@shunfeng-express.example"
+fields:
+  运单号: 运单号：\s*(SF\d+)
+  预计送达: 预计送达：(\d{1,2}月\d{1,2}日)
+required_fields: [运单号]

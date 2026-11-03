@@ -1,0 +1,18 @@
+From: Lotus Mart <orders@lotus-mart.example>
+To: me@ourco.example
+Subject: Your Lotus Mart order LM-585500
+Date: Sat, 31 Oct 2026 15:30:00 +0800
+Message-ID: <bench-2-2399@mail.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html><head><style>td{padding:4px}</style></head><body>
+<h2>Thanks for your order!</h2><p>Hi there, we&rsquo;re getting your order re=
+ady.</p>
+<table><tr><td>Order Number</td><td><b>LM-585500</b></td></tr>
+<tr><td>Order Date</td><td>Oct 31, 2026</td></tr>
+<tr><td>Items</td><td>4</td></tr>
+<tr><td>Total</td><td>US$ 66.75</td></tr></table>
+<p>Lotus Mart &middot; <a href=3D"https://lotus-mart.example/help">Help</a></=
+p></body></html>

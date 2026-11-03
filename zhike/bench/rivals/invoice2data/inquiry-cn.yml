@@ -1,0 +1,8 @@
+issuer: 询价
+keywords:
+  - "Subject: 询价"
+fields:
+  产品: 产品：(.+)
+  数量: 数量：(\d+)
+  电话: 联系电话：(.+)
+required_fields: [产品]

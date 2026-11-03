@@ -1,0 +1,13 @@
+issuer: 物流
+keywords:
+  - "@ninjaexp.example"
+  - "Tracking Number"
+fields:
+  运单号: "Tracking Number: (\\S+)"
+  预计送达:
+    parser: regex
+    regex: "Estimated Delivery: (\\d{2} [A-Z][a-z]{2} \\d{4})"
+    type: date
+required_fields: [运单号]
+options:
+  date_formats: ["%d %b %Y"]

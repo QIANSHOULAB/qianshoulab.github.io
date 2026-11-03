@@ -1,0 +1,8 @@
+issuer: 询价
+keywords:
+  - "Subject: Request for Quotation"
+fields:
+  产品: "Product: (.+)"
+  数量: "Quantity: (\\d+)"
+  电话: "Phone: (.+)"
+required_fields: [产品]

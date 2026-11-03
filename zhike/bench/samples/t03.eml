@@ -1,0 +1,29 @@
+Content-Type: multipart/mixed; boundary="===============6420213620262835460=="
+MIME-Version: 1.0
+From: =?utf-8?q?Lotus_Supplies_Billing?= <billing@lotus-supplies.example>
+To: me@ourco.example
+Subject: =?utf-8?q?Invoice_INV-56383_from_Lotus_Supplies?=
+Date: Tue, 27 Oct 2026 21:28:00 +0800
+Message-ID: <bench-3-6790@mail.example>
+
+--===============6420213620262835460==
+Content-Type: text/html; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+
+PGh0bWw+PGJvZHk+PHA+SGkgdGhlcmUsPC9wPjxwPlBsZWFzZSBmaW5kIGF0dGFjaGVkIG91ciBp
+bnZvaWNlLjwvcD48dGFibGU+Cjx0cj48dGQ+SW52b2ljZSBObzwvdGQ+PHRkPklOVi01NjM4Mzwv
+dGQ+PC90cj4KPHRyPjx0ZD5BbW91bnQgRHVlPC90ZD48dGQ+UyQxOCw1OTAuOTE8L3RkPjwvdHI+
+Cjx0cj48dGQ+RHVlIERhdGU8L3RkPjx0ZD45IERlYyAyMDI2PC90ZD48L3RyPjwvdGFibGU+Cjxw
+PlRoYW5rIHlvdSBmb3IgeW91ciBidXNpbmVzcy48YnI+TG90dXMgU3VwcGxpZXMgUHRlIEx0ZDwv
+cD48L2JvZHk+PC9odG1sPg==
+
+--===============6420213620262835460==
+Content-Type: application/pdf
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename*=utf-8''INV-56383.pdf
+
+JVBERi0xLjQgYmVuY2g=
+
+--===============6420213620262835460==--
