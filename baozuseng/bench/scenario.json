@@ -1,0 +1,49 @@
+{
+  "说明": "四个月的二房东账（2026-08 到 2026-11），两套房。刁钻点：一间住两人、月中搬出（9/18、11/10、11/15）、月中搬进（9/20、10/9、11/11）、包电的人、二房东自己也住、中途涨租、欠租结转、仅当月支出。日期两头都算（入住日、住到那天都算住）。",
+  "houses": [
+    { "key": "A", "estate": "碧水湾", "unit": "12栋 08-21", "self": false, "start": "2026-08", "head": 2600, "fixed": [["网费", 45]] },
+    { "key": "B", "estate": "金沙苑", "unit": "3栋 11-05", "self": true, "start": "2026-10", "head": 1500, "fixed": [] }
+  ],
+  "months": {
+    "2026-08": {
+      "A": { "elec": 268.30,
+        "paste": "阿明 主人房 900\n小美 普通房1 650 包电\n阿强 普通房2 400\n阿杰 普通房2 400\nRaj 小房 520",
+        "add": [
+          { "name": "阿明", "room": "主人房", "rent": 900, "share": true },
+          { "name": "小美", "room": "普通房1", "rent": 650, "share": false },
+          { "name": "阿强", "room": "普通房2", "rent": 400, "share": true },
+          { "name": "阿杰", "room": "普通房2", "rent": 400, "share": true },
+          { "name": "Raj", "room": "小房", "rent": 520, "share": true } ],
+        "unpaid": [] }
+    },
+    "2026-09": {
+      "A": { "elec": 301.75,
+        "dates": [ { "name": "Raj", "to": "2026-09-18" } ],
+        "add": [ { "name": "Ken", "room": "小房", "rent": 540, "share": true, "from": "2026-09-20" } ],
+        "exp": [ ["修空调", 120, false] ],
+        "unpaid": [] }
+    },
+    "2026-10": {
+      "A": { "elec": 284.10,
+        "add": [ { "name": "陈姐", "room": "客厅", "rent": 450, "share": false, "from": "2026-10-09" } ],
+        "rent": [ { "name": "小美", "rent": 680 } ],
+        "owe": [ { "name": "阿强", "amt": 200 } ],
+        "unpaid": [] },
+      "B": { "elec": 165.60,
+        "paste": "小李 主人房 1100\nTom 普通房 750",
+        "add": [ { "name": "小李", "room": "主人房", "rent": 1100, "share": true }, { "name": "Tom", "room": "普通房", "rent": 750, "share": true } ],
+        "unpaid": [] }
+    },
+    "2026-11": {
+      "A": { "elec": 250.00,
+        "dates": [ { "name": "阿杰", "to": "2026-11-15" } ],
+        "unpaid": [] },
+      "B": { "elec": 172.50,
+        "dates": [ { "name": "Tom", "to": "2026-11-10" } ],
+        "add": [ { "name": "Amy", "room": "普通房", "rent": 760, "share": true, "from": "2026-11-11" },
+                 { "name": "Sara", "room": "普通房2", "rent": 380, "share": true },
+                 { "name": "Lily", "room": "普通房2", "rent": 380, "share": false } ],
+        "unpaid": [ "Amy" ] }
+    }
+  }
+}

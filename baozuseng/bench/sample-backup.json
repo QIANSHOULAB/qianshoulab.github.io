@@ -1,0 +1,514 @@
+{
+ "app": "baozuseng",
+ "v": 2,
+ "ver": "0.2.0",
+ "at": "2026-11-05T10:00:00.000Z",
+ "order": [
+  "h-lhty5ds0",
+  "h-0vp3bcg0"
+ ],
+ "houses": {
+  "h-lhty5ds0": {
+   "id": "h-lhty5ds0",
+   "estate": "碧水湾",
+   "unit": "12栋 08-21",
+   "self": false,
+   "byRoom": false,
+   "created": "2026-08",
+   "tenants": [
+    {
+     "id": "t7pnvnds0",
+     "name": "阿明",
+     "room": "主人房",
+     "rent": 900,
+     "share": true
+    },
+    {
+     "id": "t7c4s9ds0",
+     "name": "小美",
+     "room": "普通房1",
+     "rent": 680,
+     "share": false
+    },
+    {
+     "id": "tcl7lads0",
+     "name": "阿强",
+     "room": "普通房2",
+     "rent": 400,
+     "share": true
+    },
+    {
+     "id": "tam16pds0",
+     "name": "阿杰",
+     "room": "普通房2",
+     "rent": 400,
+     "share": true,
+     "to": "2026-11-15"
+    },
+    {
+     "id": "ter0g8ds0",
+     "name": "Raj",
+     "room": "小房",
+     "rent": 520,
+     "share": true,
+     "to": "2026-09-18"
+    },
+    {
+     "id": "tygg0lsg0",
+     "name": "Ken",
+     "room": "小房",
+     "rent": 540,
+     "share": true,
+     "from": "2026-09-20"
+    },
+    {
+     "id": "to5280cg0",
+     "name": "陈姐",
+     "room": "客厅",
+     "rent": 450,
+     "share": false,
+     "from": "2026-10-09"
+    }
+   ],
+   "fixed": [
+    {
+     "id": "eozdseds0",
+     "name": "交大房东",
+     "amt": 2600
+    },
+    {
+     "id": "ellopqds0",
+     "name": "网费",
+     "amt": 45
+    }
+   ],
+   "months": {
+    "2026-08": {
+     "elec": 268.3,
+     "self": false,
+     "rows": [
+      {
+       "id": "t7pnvnds0",
+       "name": "阿明",
+       "room": "主人房",
+       "rent": 900,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "t7c4s9ds0",
+       "name": "小美",
+       "room": "普通房1",
+       "rent": 650,
+       "share": false,
+       "paid": true
+      },
+      {
+       "id": "tcl7lads0",
+       "name": "阿强",
+       "room": "普通房2",
+       "rent": 400,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "tam16pds0",
+       "name": "阿杰",
+       "room": "普通房2",
+       "rent": 400,
+       "share": true,
+       "paid": true,
+       "to": "2026-11-15"
+      },
+      {
+       "id": "ter0g8ds0",
+       "name": "Raj",
+       "room": "小房",
+       "rent": 520,
+       "share": true,
+       "paid": true,
+       "to": "2026-09-18"
+      }
+     ],
+     "exp": [
+      {
+       "id": "eozdseds0",
+       "name": "交大房东",
+       "amt": 2600,
+       "fixed": true
+      },
+      {
+       "id": "ellopqds0",
+       "name": "网费",
+       "amt": 45,
+       "fixed": true
+      }
+     ]
+    },
+    "2026-09": {
+     "elec": 301.75,
+     "self": false,
+     "rows": [
+      {
+       "id": "t7pnvnds0",
+       "name": "阿明",
+       "room": "主人房",
+       "rent": 900,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "t7c4s9ds0",
+       "name": "小美",
+       "room": "普通房1",
+       "rent": 650,
+       "share": false,
+       "paid": true
+      },
+      {
+       "id": "tcl7lads0",
+       "name": "阿强",
+       "room": "普通房2",
+       "rent": 400,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "tam16pds0",
+       "name": "阿杰",
+       "room": "普通房2",
+       "rent": 400,
+       "share": true,
+       "paid": true,
+       "to": "2026-11-15"
+      },
+      {
+       "id": "ter0g8ds0",
+       "name": "Raj",
+       "room": "小房",
+       "rent": 520,
+       "share": true,
+       "paid": true,
+       "to": "2026-09-18"
+      },
+      {
+       "id": "tygg0lsg0",
+       "name": "Ken",
+       "room": "小房",
+       "rent": 540,
+       "share": true,
+       "from": "2026-09-20",
+       "paid": true
+      }
+     ],
+     "exp": [
+      {
+       "id": "eozdseds0",
+       "name": "交大房东",
+       "amt": 2600,
+       "fixed": true
+      },
+      {
+       "id": "ellopqds0",
+       "name": "网费",
+       "amt": 45,
+       "fixed": true
+      },
+      {
+       "id": "e13i0msg0",
+       "name": "维修",
+       "amt": 120,
+       "fixed": false
+      }
+     ]
+    },
+    "2026-10": {
+     "elec": 284.1,
+     "self": false,
+     "rows": [
+      {
+       "id": "t7pnvnds0",
+       "name": "阿明",
+       "room": "主人房",
+       "rent": 900,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "t7c4s9ds0",
+       "name": "小美",
+       "room": "普通房1",
+       "rent": 680,
+       "share": false,
+       "paid": true
+      },
+      {
+       "id": "tcl7lads0",
+       "name": "阿强",
+       "room": "普通房2",
+       "rent": 400,
+       "share": true,
+       "paid": false,
+       "owe": 200
+      },
+      {
+       "id": "tam16pds0",
+       "name": "阿杰",
+       "room": "普通房2",
+       "rent": 400,
+       "share": true,
+       "paid": true,
+       "to": "2026-11-15"
+      },
+      {
+       "id": "tygg0lsg0",
+       "name": "Ken",
+       "room": "小房",
+       "rent": 540,
+       "share": true,
+       "from": "2026-09-20",
+       "paid": true
+      },
+      {
+       "id": "to5280cg0",
+       "name": "陈姐",
+       "room": "客厅",
+       "rent": 450,
+       "share": false,
+       "from": "2026-10-09",
+       "paid": true
+      }
+     ],
+     "exp": [
+      {
+       "id": "eozdseds0",
+       "name": "交大房东",
+       "amt": 2600,
+       "fixed": true
+      },
+      {
+       "id": "ellopqds0",
+       "name": "网费",
+       "amt": 45,
+       "fixed": true
+      }
+     ]
+    },
+    "2026-11": {
+     "elec": 250,
+     "self": false,
+     "rows": [
+      {
+       "id": "t7pnvnds0",
+       "name": "阿明",
+       "room": "主人房",
+       "rent": 900,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "t7c4s9ds0",
+       "name": "小美",
+       "room": "普通房1",
+       "rent": 680,
+       "share": false,
+       "paid": true
+      },
+      {
+       "id": "tcl7lads0",
+       "name": "阿强",
+       "room": "普通房2",
+       "rent": 400,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "tam16pds0",
+       "name": "阿杰",
+       "room": "普通房2",
+       "rent": 400,
+       "share": true,
+       "paid": true,
+       "to": "2026-11-15"
+      },
+      {
+       "id": "tygg0lsg0",
+       "name": "Ken",
+       "room": "小房",
+       "rent": 540,
+       "share": true,
+       "from": "2026-09-20",
+       "paid": true
+      },
+      {
+       "id": "to5280cg0",
+       "name": "陈姐",
+       "room": "客厅",
+       "rent": 450,
+       "share": false,
+       "from": "2026-10-09",
+       "paid": true
+      }
+     ],
+     "exp": [
+      {
+       "id": "eozdseds0",
+       "name": "交大房东",
+       "amt": 2600,
+       "fixed": true
+      },
+      {
+       "id": "ellopqds0",
+       "name": "网费",
+       "amt": 45,
+       "fixed": true
+      }
+     ]
+    }
+   }
+  },
+  "h-0vp3bcg0": {
+   "id": "h-0vp3bcg0",
+   "estate": "金沙苑",
+   "unit": "3栋 11-05",
+   "self": true,
+   "byRoom": false,
+   "created": "2026-10",
+   "tenants": [
+    {
+     "id": "t4pzw5cg0",
+     "name": "小李",
+     "room": "主人房",
+     "rent": 1100,
+     "share": true
+    },
+    {
+     "id": "tmkkljcg0",
+     "name": "Tom",
+     "room": "普通房",
+     "rent": 750,
+     "share": true,
+     "to": "2026-11-10"
+    },
+    {
+     "id": "t15btfr40",
+     "name": "Amy",
+     "room": "普通房",
+     "rent": 760,
+     "share": true,
+     "from": "2026-11-11"
+    },
+    {
+     "id": "t2aargr40",
+     "name": "Sara",
+     "room": "普通房2",
+     "rent": 380,
+     "share": true
+    },
+    {
+     "id": "t5tkkbr40",
+     "name": "Lily",
+     "room": "普通房2",
+     "rent": 380,
+     "share": false
+    }
+   ],
+   "fixed": [
+    {
+     "id": "exihv2cg0",
+     "name": "交大房东",
+     "amt": 1500
+    }
+   ],
+   "months": {
+    "2026-10": {
+     "elec": 165.6,
+     "self": true,
+     "rows": [
+      {
+       "id": "t4pzw5cg0",
+       "name": "小李",
+       "room": "主人房",
+       "rent": 1100,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "tmkkljcg0",
+       "name": "Tom",
+       "room": "普通房",
+       "rent": 750,
+       "share": true,
+       "paid": true,
+       "to": "2026-11-10"
+      }
+     ],
+     "exp": [
+      {
+       "id": "exihv2cg0",
+       "name": "交大房东",
+       "amt": 1500,
+       "fixed": true
+      }
+     ]
+    },
+    "2026-11": {
+     "elec": 172.5,
+     "self": true,
+     "rows": [
+      {
+       "id": "t4pzw5cg0",
+       "name": "小李",
+       "room": "主人房",
+       "rent": 1100,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "tmkkljcg0",
+       "name": "Tom",
+       "room": "普通房",
+       "rent": 750,
+       "share": true,
+       "paid": true,
+       "to": "2026-11-10"
+      },
+      {
+       "id": "t15btfr40",
+       "name": "Amy",
+       "room": "普通房",
+       "rent": 760,
+       "share": true,
+       "from": "2026-11-11",
+       "paid": false
+      },
+      {
+       "id": "t2aargr40",
+       "name": "Sara",
+       "room": "普通房2",
+       "rent": 380,
+       "share": true,
+       "paid": true
+      },
+      {
+       "id": "t5tkkbr40",
+       "name": "Lily",
+       "room": "普通房2",
+       "rent": 380,
+       "share": false,
+       "paid": true
+      }
+     ],
+     "exp": [
+      {
+       "id": "exihv2cg0",
+       "name": "交大房东",
+       "amt": 1500,
+       "fixed": true
+      }
+     ]
+    }
+   }
+  }
+ }
+}

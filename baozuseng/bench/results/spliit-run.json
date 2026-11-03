@@ -1,0 +1,8 @@
+{
+ "rent": {
+  "taps": 6,
+  "fields": 2
+ },
+ "balLoad": 2044,
+ "text": "碧水湾 12栋 08-21 bench\nBalances\n\nThis is the amount that each participant paid or was paid for.\n\n房东\n$553.00\n阿明\n-$60.76\n小美\n$0.00\n阿强\n-$60.76\n阿杰\n-$60.75\nRaj\n-$348.45\nKen\n-$22.28\nSuggested reimbursements\n\nHere are suggestions for optimized reimbursements between participants.\n\nKen owes 房东\nMark as paid\n$22.28\n阿杰 owes 房东\nMark as paid\n$60.75\n阿强 owes 房东\nMark as paid\n$60.76\nRaj owes 房东\nMark as paid\n$348.45\n阿明 owes 房东\nMark as paid\n$60.76"
+}

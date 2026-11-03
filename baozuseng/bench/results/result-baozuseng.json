@@ -1,0 +1,64 @@
+{
+ "counts": {
+  "setup": {
+   "taps": 7,
+   "fields": 5,
+   "chars": 78,
+   "ms": 0
+  },
+  "2026-08": {
+   "taps": 6,
+   "fields": 1,
+   "chars": 5,
+   "ms": 68
+  },
+  "2026-09": {
+   "taps": 16,
+   "fields": 6,
+   "chars": 35,
+   "ms": 0
+  },
+  "2026-10": {
+   "taps": 18,
+   "fields": 7,
+   "chars": 31,
+   "ms": 0
+  },
+  "2026-10-newhouse": {
+   "taps": 4,
+   "fields": 4,
+   "chars": 38,
+   "ms": 0
+  },
+  "2026-11": {
+   "taps": 20,
+   "fields": 5,
+   "chars": 76,
+   "ms": 0
+  },
+  "recheck": {
+   "taps": 3,
+   "fields": 0,
+   "chars": 0,
+   "ms": 0
+  }
+ },
+ "loadsMs": [
+  193,
+  80,
+  62,
+  72
+ ],
+ "prompts": {
+  "aug": true,
+  "sep": true,
+  "oct": false
+ },
+ "checks": 151,
+ "diffs": [],
+ "restore": {
+  "ok": true,
+  "taps": 1
+ },
+ "errors": []
+}
