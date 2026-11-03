@@ -1,4 +1,4 @@
-# 扫地僧：在真 Windows 上跑测试 → 打 exe → exe 自检 + 界面冒烟 → 发到 Release
+# 扫地僧：在真 Windows 上跑测试 → 打 exe → exe 自检 + 界面冒烟 + 托盘冒烟 → 发到 Release
 # 只在 saodi/ 变动时触发；其他罗汉的改动不会惊动它。
 name: saodi-build
 
@@ -39,18 +39,19 @@ jobs:
       - name: 装依赖
         run: python -m pip install -r requirements.txt pytest pyinstaller==6.16.0
 
-      - name: 核心测试（真 NTFS、真回收站）
-        run: python -m pytest -q tests/test_core.py tests/test_v02.py tests/test_v021.py
+      - name: 核心测试（真 NTFS、真回收站、隐藏属性、开机自启注册表）
+        run: python -m pytest -q tests/test_core.py tests/test_v02.py tests/test_v021.py tests/test_v03.py
 
       - name: 打包 exe
         run: |
           $v = python -c "from saodi import VERSION; print(VERSION)"
           "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           pyinstaller --noconfirm --onefile --windowed --name SaodiSeng --icon assets/icon.ico `
-            --add-data "ui;ui" --collect-submodules webview main.py
+            --add-data "ui;ui" --add-data "assets;assets" --collect-submodules webview `
+            --hidden-import pystray._win32 main.py
           Get-Item dist/SaodiSeng.exe | Select-Object Name, Length
 
-      - name: exe 自检（1000 个文件计时、占用、超长路径、回收站、续传、标签、复制、解压）
+      - name: exe 自检（1000 个文件计时、占用、超长路径、回收站、续传、标签、复制、解压、盯下载、开机自启）
         run: |
           $out = Join-Path $pwd "selftest.json"
           $p = Start-Process -FilePath dist/SaodiSeng.exe -ArgumentList "--selftest", "`"$out`"" -Wait -PassThru
@@ -59,11 +60,37 @@ jobs:
 
       - name: 界面冒烟（开窗、界面渲染、JS 能调 Python、自动关）
         run: |
+          $env:SAODI_HOME = "$env:RUNNER_TEMP\saodi-ui-home"
+          $env:SAODI_DOWNLOADS = "$env:RUNNER_TEMP\saodi-ui-dl"
+          New-Item -ItemType Directory -Force $env:SAODI_DOWNLOADS | Out-Null
           $out = Join-Path $pwd "smoke.txt"
           $p = Start-Process -FilePath dist/SaodiSeng.exe -ArgumentList "--smoke-ui", "`"$out`"" -PassThru
           if (-not $p.WaitForExit(150000)) { $p.Kill(); throw "smoke timeout" }
           if (-not (Test-Path $out)) { throw "smoke: UI never became ready (exit $($p.ExitCode))" }
           Get-Content $out
+
+      - name: 托盘冒烟（--tray 不开窗、默认盯下载、浏览器式下载落地就分、占位和隐藏不碰、开机自启那项、第二次双击叫出窗口）
+        run: |
+          $env:SAODI_HOME = "$env:RUNNER_TEMP\saodi-tray-home"
+          $env:SAODI_DOWNLOADS = "$env:RUNNER_TEMP\saodi-tray-dl"
+          New-Item -ItemType Directory -Force $env:SAODI_DOWNLOADS | Out-Null
+          $out = Join-Path $pwd "tray.json"
+          $p = Start-Process -FilePath dist/SaodiSeng.exe -ArgumentList "--tray", "--smoke-tray", "`"$out`"" -PassThru
+          for ($i = 0; $i -lt 300 -and -not (Test-Path "$out.ready") -and -not $p.HasExited; $i++) { Start-Sleep -Milliseconds 500 }
+          if (-not (Test-Path "$out.ready")) {
+            if (Test-Path $out) { Get-Content $out -Encoding utf8 }
+            if (-not $p.HasExited) { $p.Kill() }
+            throw "tray smoke never got ready (exited: $($p.HasExited))"
+          }
+          # 第二次双击：已经在托盘里跑着 → 叫它把窗口亮出来，自己马上退
+          $p2 = Start-Process -FilePath dist/SaodiSeng.exe -PassThru
+          if (-not $p2.WaitForExit(30000)) { $p2.Kill(); throw "second instance did not hand over and exit" }
+          "second instance exit code: $($p2.ExitCode)"
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "tray smoke did not finish" }
+          Get-Content $out -Encoding utf8
+          $r = Get-Content $out -Raw -Encoding utf8 | ConvertFrom-Json
+          Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "QianshouSaodi" -ErrorAction SilentlyContinue
+          if (-not $r.ok) { throw "tray smoke failed" }
 
       - uses: actions/upload-artifact@v4
         with:
@@ -71,6 +98,7 @@ jobs:
           path: |
             saodi/app/dist/SaodiSeng.exe
             saodi/app/selftest.json
+            saodi/app/tray.json
 
       - name: 发到 Release（tag saodi-v版本号，不抢 latest）
         if: github.ref == 'refs/heads/main'
@@ -85,6 +113,6 @@ jobs:
             gh release upload $tag $asset --clobber -R $env:GITHUB_REPOSITORY
           } else {
             gh release create $tag $asset -R $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --latest=false `
-              --title "扫地僧 $env:VERSION" --notes "千手院 · 扫地僧 Windows 版。下载 SaodiSeng-$env:VERSION.exe 双击就跑。介绍页 https://qianshoulab.github.io/saodi/"
+              --title "扫地僧 $env:VERSION" --notes "千手院 · 扫地僧 Windows 版。下载 SaodiSeng-$env:VERSION.exe 双击就跑；开机自己在托盘里盯着「下载」。介绍页 https://qianshoulab.github.io/saodi/"
           }
           $global:LASTEXITCODE = 0

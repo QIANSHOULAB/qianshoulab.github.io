@@ -24,7 +24,15 @@ MAX_COMPONENT = 255  # NTFS 与 ext4 单个名字的上限（字符/字节都按
 
 # 不碰的文件
 SKIP_NAMES = {"desktop.ini", "thumbs.db", ".ds_store"}
-TEMP_SUFFIXES = (".part", ".crdownload", ".download", ".tmp", ".partial", ".saodi-tmp")
+# 下载中、临时文件：浏览器（Chrome/Edge .crdownload、Firefox .part、Opera .opdownload、Safari .download）、
+# aria2（.aria2 控制文件）、迅雷（.xltd + .xltd.cfg，老版 .td）、百度网盘（.downloading）、BT（.!ut .!qb .bc!）、快车（.jc!）
+TEMP_SUFFIXES = (".part", ".crdownload", ".download", ".opdownload", ".partial", ".tmp", ".temp",
+                 ".aria2", ".xltd", ".xltd.cfg", ".td", ".td.cfg", ".downloading",
+                 ".!ut", ".!qb", ".!bt", ".bc!", ".jc!", ".saodi-tmp")
+# 这些后缀的文件还在，说明去掉后缀的那个名字还没下完（Firefox 先放个 0 字节的同名占位、aria2 边下边写正名）
+PROGRESS_SUFFIXES = (".part", ".crdownload", ".download", ".opdownload", ".partial", ".aria2", ".xltd", ".td",
+                     ".downloading", ".baiduyun.p.downloading", ".baiduyun.downloading", ".!ut", ".!qb", ".bc!", ".jc!")
+FILE_ATTRIBUTE_HIDDEN, FILE_ATTRIBUTE_SYSTEM = 0x2, 0x4
 
 
 def is_skipped(name: str) -> bool:
@@ -35,6 +43,17 @@ def is_skipped(name: str) -> bool:
         or name.startswith("~$")
         or low.endswith(TEMP_SUFFIXES)
     )
+
+
+def is_hidden_stat(st) -> bool:
+    """Windows 上标了「隐藏」或「系统」属性的文件（资源管理器默认不显示的），一律不碰。"""
+    return bool(getattr(st, "st_file_attributes", 0) & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM))
+
+
+def in_progress(name: str, names_lower: set[str]) -> bool:
+    """同一文件夹里有 name.part / name.crdownload / name.aria2 这类兄弟文件 → name 还没下完。"""
+    low = name.lower()
+    return any(low + suf in names_lower for suf in PROGRESS_SUFFIXES)
 
 
 def sanitize(name: str) -> str:
@@ -114,6 +133,37 @@ def natural_key(s: str):
     return [int(t) if t.isdigit() else t.casefold() for t in re.split(r"(\d+)", s)]
 
 
+# ---------------------------------------------------------------- 下载文件夹
+def downloads_dir() -> str:
+    """「下载」文件夹的真实位置：Windows 上问系统（用户可能把它挪到了 D 盘），问不到用 ~/Downloads。
+    SAODI_DOWNLOADS 环境变量优先（测试、比武用，免得碰真的下载文件夹）。"""
+    env = os.environ.get("SAODI_DOWNLOADS")
+    if env:
+        return os.path.abspath(env)
+    if IS_WIN:
+        try:
+            import ctypes
+            import uuid as _uuid
+            from ctypes import wintypes
+
+            class GUID(ctypes.Structure):
+                _fields_ = [("Data1", wintypes.DWORD), ("Data2", wintypes.WORD), ("Data3", wintypes.WORD),
+                            ("Data4", ctypes.c_ubyte * 8)]
+
+            u = _uuid.UUID("{374DE290-123F-4565-9164-39C4925E467B}")  # FOLDERID_Downloads
+            g = GUID(u.fields[0], u.fields[1], u.fields[2], (ctypes.c_ubyte * 8)(*u.bytes[8:]))
+            out = ctypes.c_wchar_p()
+            sh = ctypes.windll.shell32
+            if sh.SHGetKnownFolderPath(ctypes.byref(g), 0, None, ctypes.byref(out)) == 0:
+                path = out.value
+                ctypes.windll.ole32.CoTaskMemFree(out)
+                if path:
+                    return path
+        except Exception:
+            pass
+    return os.path.join(os.path.expanduser("~"), "Downloads")
+
+
 # ---------------------------------------------------------------- 配置目录
 def home_dir() -> str:
     d = os.environ.get("SAODI_HOME")
@@ -132,11 +182,15 @@ def read_json(path: str, default):
         return default
 
 
-def write_json(path: str, data) -> None:
+def write_json(path: str, data, pretty: bool = False) -> None:
+    """先写临时文件再换上，写一半断电也不会坏。
+    默认紧凑写：json.dumps 不缩进走 C 编码器；json.dump(indent=) 是一块块纯 Python 编，
+    1500 个文件的账本每批要写两遍，紧凑写省下几十毫秒（0.3.0）。配置文件小，缩进好让人看。"""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + ".saodi-tmp"
+    text = json.dumps(data, ensure_ascii=False, indent=1) if pretty else json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=1)
+        f.write(text)
     os.replace(tmp, path)
 
 

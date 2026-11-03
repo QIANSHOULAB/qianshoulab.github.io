@@ -9,7 +9,11 @@ from .api import Api
 
 
 def serve(ui: str, port: int = 8765) -> None:
+    from . import text
+    text.load(ui)
     api = Api()
+    # 开发 / 测试时只在明确给了 SAODI_DOWNLOADS 才去盯「下载」，免得动到开发机上真的下载文件夹
+    api.boot(auto_downloads=bool(os.environ.get("SAODI_DOWNLOADS")))
 
     class H(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *a, **k):

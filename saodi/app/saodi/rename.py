@@ -63,6 +63,8 @@ def list_files(folder: str, recursive: bool = False, filt: dict | None = None) -
                 st = e.stat()
             except OSError:
                 continue
+            if fs.IS_WIN and fs.is_hidden_stat(st):  # 隐藏、系统属性只有 Windows 有
+                continue
             out.append({
                 "path": os.path.join(d, e.name), "dir": d, "name": e.name, "rel": rel,
                 "size": st.st_size, "mtime": st.st_mtime,

@@ -9,6 +9,7 @@ import http.server
 import json
 import os
 import shutil
+import sys
 import tempfile
 import threading
 import time
@@ -193,10 +194,89 @@ def run(out_path: str | None = None) -> int:
         assert u["restored"] == 4 and not u["skipped"], u
         assert _ls(d) == sorted(["t.mp3", "包.zip", "合同.docx"]), _ls(d)
 
+    def t_v03_watch():
+        """0.3.0：下载中 / 占位 / 控制文件 / 隐藏属性不碰；挪回来、撤销回来的不再分；关着时来的补分。"""
+        d = os.path.join(root, "v03dl")
+        os.makedirs(d)
+        st = os.path.join(root, "_home", "w-v03.json")
+        w = watch.Watcher(d, organize.PRESETS[0], state_path=st)
+
+        def put(n, data=b"x" * 200):
+            with open(os.path.join(d, n), "ab") as f:
+                f.write(data)
+
+        put("合同.docx", b"")
+        put("合同.docx.part")
+        put("电影.mp4", b"m" * 500)
+        put("电影.mp4.aria2", b"c")
+        put("安装包.exe.xltd.cfg", b"c")
+        put("~$周报.docx")
+        if os.name == "nt":  # 隐藏属性只有 Windows 有
+            import ctypes
+            put("藏着.pdf")
+            assert ctypes.windll.kernel32.SetFileAttributesW(os.path.join(d, "藏着.pdf"), 0x2)
+        for _ in range(3):
+            assert w.tick() == [], _ls(d)
+        os.replace(os.path.join(d, "合同.docx.part"), os.path.join(d, "合同.docx"))
+        os.remove(os.path.join(d, "电影.mp4.aria2"))
+        done = w.tick() + w.tick() + w.tick()
+        assert sorted(r["old"] for r in done) == ["合同.docx", "电影.mp4"], done
+        assert os.path.exists(os.path.join(d, "安装包.exe.xltd.cfg")) and os.path.exists(os.path.join(d, "~$周报.docx"))
+        if os.name == "nt":
+            assert os.path.exists(os.path.join(d, "藏着.pdf"))
+        os.replace(os.path.join(d, "文档", "合同.docx"), os.path.join(d, "合同.docx"))  # 人挪回来
+        u = ops.undo(next(r["batch"] for r in done if r["old"] == "电影.mp4"))
+        w.forgive(u["paths"])
+        assert w.tick() + w.tick() + w.tick() == [] and os.path.exists(os.path.join(d, "电影.mp4"))
+        w.stop()
+        put("昨晚的.pdf")  # 程序关着时来的
+        w2 = watch.Watcher(d, organize.PRESETS[0], state_path=st)
+        got = [r["old"] for r in w2.tick() + w2.tick() + w2.tick()]
+        assert got == ["昨晚的.pdf"], got
+
+    def t_v03_autostart():
+        """开机自启：HKCU 的 Run 写得进、读得回、删得掉；原来的设置原样放回。"""
+        from . import winsys
+        if os.name != "nt":
+            return
+        before = winsys.autostart_command()
+        try:
+            assert winsys.set_autostart(True) and "--tray" in (winsys.autostart_command() or "")
+            if getattr(sys, "frozen", False):
+                assert winsys.autostart_command().startswith('"' + sys.executable), winsys.autostart_command()
+            assert winsys.set_autostart(False) is False and winsys.autostart_command() is None
+        finally:
+            if before:
+                import winreg
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, winsys.RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
+                    winreg.SetValueEx(k, winsys.NAME, 0, winreg.REG_SZ, before)
+
+    def t_v03_bundle():
+        """打包进去的东西：界面文字 Python 也读得到、托盘图标、pystray、「下载」文件夹认得到。"""
+        from . import text
+        base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        text.load(os.path.join(base, "ui"))
+        assert text.T("tray_quit") == "退出" and "{" not in text.T("n_one", name="a", to="b")
+        assert os.path.exists(os.path.join(base, "ui", "icon.svg"))
+        if os.name == "nt":
+            from PIL import Image
+            import pystray
+            Image.open(os.path.join(base, "assets", "icon-64.png")).load()
+            assert pystray.Icon.HAS_NOTIFICATION
+            old = os.environ.pop("SAODI_DOWNLOADS", None)
+            try:
+                p = fs.downloads_dir()  # 问系统要（SHGetKnownFolderPath）；CI 机器上这个文件夹不一定建了，只看问得到
+                res["downloads_dir"] = p
+                assert os.path.isabs(p) and os.path.basename(p), p
+            finally:
+                if old:
+                    os.environ["SAODI_DOWNLOADS"] = old
+
     for name, fn in [("speed_1000", t_speed), ("case_swap", t_case_and_swap), ("long_path", t_long_path),
                      ("busy_file", t_busy), ("bad_chars", t_bad_chars), ("exif_organize", t_exif_organize),
                      ("recycle_bin", t_trash), ("watch", t_watch), ("download_resume", t_download),
-                     ("tags_copy_unzip_content", t_v02)]:
+                     ("tags_copy_unzip_content", t_v02), ("v03_watch_downloads", t_v03_watch),
+                     ("v03_autostart_registry", t_v03_autostart), ("v03_bundle", t_v03_bundle)]:
         check(name, fn)
     ok = all(v == "ok" for v in res["checks"].values())
     res["ok"] = ok

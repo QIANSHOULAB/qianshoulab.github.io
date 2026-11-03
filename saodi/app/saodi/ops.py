@@ -51,7 +51,7 @@ def _rename(src: str, dst: str) -> None:
     os.rename(fs.lp(src), fs.lp(dst))
 
 
-def execute(ops: list[dict], kind: str, label: str = "", progress=None) -> dict:
+def execute(ops: list[dict], kind: str, label: str = "", progress=None, meta: dict | None = None) -> dict:
     """ops: [{"src": 绝对路径, "dst": 绝对路径, "mode": "move"(默认)|"copy"|"extract"}]。
     copy：复制一份到 dst，原件不动；extract：把压缩包解到 dst 所在文件夹（dst 的名字是想要的文件夹名）。
     返回 {"batch": id, "done": n, "failed": [...]}。"""
@@ -70,6 +70,8 @@ def execute(ops: list[dict], kind: str, label: str = "", progress=None) -> dict:
         "time": _dt.datetime.now().isoformat(timespec="seconds"),
         "ops": recs, "made_dirs": [], "undone": False,
     }
+    if meta:
+        journal.update(meta)
     with _lock:
         fs.write_json(_jpath(batch_id), journal)
         _run(journal, progress)
@@ -166,7 +168,7 @@ def _run(journal: dict, progress=None) -> None:
 def summarize(j: dict) -> dict:
     ops = j["ops"]
     return {
-        "batch": j["id"], "kind": j["kind"], "label": j.get("label", ""), "time": j["time"],
+        "batch": j["id"], "kind": j["kind"], "label": j.get("label", ""), "time": j["time"], "folder": j.get("folder", ""),
         "done": sum(1 for r in ops if r["state"] == "done"),
         "failed": [{"name": os.path.basename(r["src"]), "err": r.get("err", "oserror")}
                    for r in ops if r["state"] in ("failed", "stuck")],
@@ -246,10 +248,12 @@ def undo(batch_id: str | None = None) -> dict:
             rj["ops"].append({"src": b["src"], "dst": b["dst"], "tmp": tmp, "state": "todo"})
         _run(rj)
         n = 0
+        restored = []
         for b, r in zip(back, rj["ops"]):
             if r["state"] == "done":
                 b["rec"]["state"] = "undone"
                 n += 1
+                restored.append(r["dst"])
                 if r.get("bumped"):
                     b["rec"]["undo_bumped_to"] = r["dst"]
             else:
@@ -262,4 +266,4 @@ def undo(batch_id: str | None = None) -> dict:
                 pass
         j["undone"] = True
         fs.write_json(_jpath(batch_id), j)
-    return {"ok": True, "batch": batch_id, "restored": n + trashed, "skipped": skipped}
+    return {"ok": True, "batch": batch_id, "restored": n + trashed, "skipped": skipped, "paths": restored}
