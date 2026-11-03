@@ -51,6 +51,7 @@ class Api:
         self._recs = (None, [])
         self._run_logs = []
         self._told = {"auth": set(), "excel": False}
+        self._un_seen = 0
 
     # ---------- 内部 ----------
     def _changed(self, kind, payload):
@@ -83,6 +84,11 @@ class Api:
             self.notify(APP_NAME, S["n_excel"].format(n=pend))
         elif not pend:
             self._told["excel"] = False
+        # 这一轮来了没规则管的信，才值得重新拟一遍（都有规则管的话，拟稿不会变）
+        seq = getattr(self.engine, "unclaimed_seq", 0)
+        if seq == self._un_seen:
+            return
+        self._un_seen = seq
         told = self.store.state.data.setdefault("rec_told", [])
         fresh = [r for r in self.recs() if r["id"] not in told]
         if fresh:

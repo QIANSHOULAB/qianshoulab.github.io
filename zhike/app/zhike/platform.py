@@ -48,7 +48,8 @@ def set_autostart(on: bool) -> bool:
             p.unlink(missing_ok=True)
         return on
     import winreg
-    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
+    # Run 键在新建的 Windows 用户（和 GitHub 的 Windows 机器）上可能还不存在：OpenKey 会报错、0.2 就悄悄没写上。没有就建。
+    with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
         if on:
             winreg.SetValueEx(k, NAME, 0, winreg.REG_SZ, exe_command())
         else:

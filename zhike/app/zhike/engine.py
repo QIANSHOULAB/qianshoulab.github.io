@@ -40,6 +40,7 @@ class Engine:
         self._demo = None
         self._batch = None
         self.started_at = clock()
+        self.unclaimed_seq = 0     # 来过几封没规则管的信（Api 看它变了才重新拟规则）
 
     # ---------- 示例 ----------
     def demo(self):
@@ -303,6 +304,7 @@ class Engine:
                     # 连上以后来的、没规则管的信记一笔：贫僧拟的规则一收下，这几封也照办（不用等下一封）
                     un = self.store.state.data.setdefault("unclaimed", [])
                     un.append({"key": key, "acct": acct["id"]})
+                    self.unclaimed_seq += 1
                     del un[:-200]
                     return None
             job = {"acct": acct["id"], "rule": rule["id"], "done": [], "tries": 0, "log": None}
