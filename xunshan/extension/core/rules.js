@@ -28,10 +28,10 @@
   function condLabel(c) {
     if (!c || c.type === 'any') return t('condAny');
     if (c.type === 'drop') return t('condDrop');
-    if (c.type === 'below') return t('condBelow') + ' ' + fmtNum(+c.value) + ' ' + t('condCall');
-    if (c.type === 'above') return t('condAbove') + ' ' + fmtNum(+c.value) + ' ' + t('condCall');
-    if (c.type === 'has') return t('condHas') + '「' + c.value + '」' + t('condCall');
-    if (c.type === 'gone') return '「' + c.value + '」' + t('condGone') + t('condCall');
+    if (c.type === 'below') return t('lblBelow', fmtNum(+c.value));
+    if (c.type === 'above') return t('lblAbove', fmtNum(+c.value));
+    if (c.type === 'has') return t('lblHas', c.value);
+    if (c.type === 'gone') return t('lblGone', c.value);
     return '';
   }
   function alertBody(w, next, added, prev) {
@@ -45,7 +45,21 @@
     return clip(next.text);
   }
   const clip = x => { const s = String(x || '').replace(/\s+/g, ' ').trim(); return s.length > 90 ? s.slice(0, 88) + '…' : s; };
-  const ivLabel = m => t('iv' + m) !== 'iv' + m ? t('iv' + m) : m + ' min';
+  // 「每 30 分钟」「Every 30 min」：整句一个键，英文的 Hourly / Daily 不是拼出来的
+  const every = m => t('ev' + m) !== 'ev' + m ? t('ev' + m) : t('ev30').replace(/30/, m);
+
+  // 自动起的名字是「网页标题 · 价格」，存的是当时的语言。换了语言，后半截跟着换；示例整条跟着换。用户自己改过的名字不动
+  const KINDS = ['kindPrice', 'kindStock', 'kindSeats', 'kindKnown'];
+  function kindWord(s) {
+    for (const k of KINDS) for (const L of Object.keys(QS.STR || {})) if (QS.STR[L][k] === s) return t(k);
+    return s;
+  }
+  function labelOf(w) {
+    if (!w) return '';
+    if (w.demo) return t('demoLabel');
+    const s = String(w.label || ''), i = s.lastIndexOf(' · ');
+    return i < 0 ? s : s.slice(0, i) + ' · ' + kindWord(s.slice(i + 3));
+  }
 
   // 认出来的那块，人十有八九想怎么叫：价格降了叫；缺货的等它没了叫；名额是 0 的等它有了叫；别的有变就叫
   const OUT = /暂时缺货|缺货|无货|售罄|已售完|已抢光|已满|到货通知|out of stock|sold out|unavailable/i;
@@ -74,5 +88,5 @@
     return out;
   }
 
-  QS.rules = { IV, DEFAULTS, shouldAlert, condLabel, condTypes, needsValue, alertBody, ivLabel, fmtNum, condFor, knownFor };
+  QS.rules = { IV, DEFAULTS, shouldAlert, condLabel, condTypes, needsValue, alertBody, every, fmtNum, condFor, knownFor, kindWord, labelOf };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

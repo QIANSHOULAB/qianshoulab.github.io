@@ -1,10 +1,16 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>巡山僧 · 替你盯梢</title>
-<meta name="description" content="网页降价、补货、上新，贫僧 24 小时蹲守，风吹草动立刻通报。Chrome / Edge 插件，免费，数据只在你自己的浏览器里。">
+<title>Xunshan · Price Watch</title>
+<meta name="description" content="A Chrome / Edge extension that watches pages for price drops, restocks and new posts, and pings you the moment something moves. Free. Your list never leaves your browser.">
+<script src="extension/lib/strings.js?v=0.4.0"></script>
+<script>
+/* 挑语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage xunshan.lang）> 默认英文。不跟浏览器语言走（Song 11-03 22:19）。
+   字全在 extension/lib/strings.js；这里只在画页面之前把 <html lang>、标题、简介换好 */
+(function(){var t=QS.t;document.documentElement.lang=t("htmlLang");document.title=t("iTitle");document.querySelector('meta[name="description"]').content=t("iDesc")})();
+</script>
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="extension/icons/icon.svg" type="image/svg+xml">
@@ -88,71 +94,91 @@ code{font:400 15px ui-monospace,"SF Mono",Menlo,Consolas,monospace;background:va
 }
 @media (max-width:440px){.grid{grid-template-columns:1fr}.btn{width:100%}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.nav .r{display:flex;align-items:center;gap:16px}
+.nav .bx{color:var(--fg-2);font-weight:400}
+.sec h2{white-space:pre-line}
+.hero h1 .x{display:block;color:var(--fg-3)}
+.hero h1 .x:empty{display:none}
+html[lang="en"] .hero .sl,html[lang="en"] .sec h2{letter-spacing:-.01em}
+.lang{display:inline-flex;gap:2px;padding:2px;border-radius:var(--r-chip);background:var(--fill);flex:none}
+.lang button{position:relative;min-width:36px;height:26px;padding:0 8px;border:0;border-radius:6px;background:none;font:600 12px/1 var(--font);color:var(--fg-2);cursor:pointer;transition:background var(--t) var(--ease),color var(--t) var(--ease)}
+.lang button::after{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
+.lang button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px var(--line)}
+@media (prefers-color-scheme:dark){.lang button[aria-pressed="true"]{background:#636366;box-shadow:none}}
+@media (max-width:440px){.nav .bx,.nav .r a{display:none}}
 </style>
 </head>
 <body>
-<nav class="nav"><div class="wrap"><a href="https://qianshoulab.github.io/">千手院</a><b><img src="extension/icons/icon.svg" alt="">巡山僧</b><a href="#install">怎么装</a></div></nav>
+<nav class="nav"><div class="wrap"><a href="https://qianshoulab.github.io/" data-t="iHome"></a><b><img src="extension/icons/icon.svg" alt=""><span id="bn"></span></b><span class="r"><a href="#install" data-t="iInstall"></a><span class="lang" id="lang" role="group"></span></span></div></nav>
 <div class="wrap">
   <header class="hero">
     <img class="ic" src="extension/icons/icon.svg" width="96" height="96" alt="">
-    <h1>巡山僧</h1>
-    <p class="sl">替你盯梢</p>
-    <p class="tg">网页降价、补货、上新，贫僧&nbsp;24&nbsp;小时蹲守，风吹草动立刻通报。</p>
+    <h1><span data-t="app"></span><span class="x" id="h1x"></span></h1>
+    <p class="sl" data-t="slogan"></p>
+    <p class="tg" data-t="iTagline"></p>
     <div class="cta">
-      <a class="btn pri" href="dist/xunshan-0.3.0.zip" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>下载插件</a>
-      <a class="btn" href="#install">怎么装</a>
+      <a class="btn pri" id="dl" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-t="iDownload"></span></a>
+      <a class="btn" href="#install" data-t="iHowTo"></a>
     </div>
-    <div class="meta">0.3.0 · Chrome / Edge 120 起 · 免费</div>
+    <div class="meta" id="meta"></div>
     <div class="shot">
-      <picture><source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/app.webp" width="1280" height="800" alt="巡山僧总览：价格从 1,099 降到 899，红绿对比显示改了哪"></picture>
+      <picture><source data-img="app" media="(prefers-color-scheme: dark)"><img data-img="app" data-alt="iAltApp" width="1280" height="800" alt=""></picture>
     </div>
   </header>
 
   <section class="sec">
-    <div class="txt"><h2>点一下，就盯上。</h2><p>价格、库存、剩余名额，贫僧自己认，不用你框。盯上默认降价就叫、缺货的等到货再叫；要设线，点「低于」打个数。认不出的，自己框一块也行。</p></div>
-    <div class="pic phone"><picture><source srcset="img/popup-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/popup.webp" width="380" height="640" alt="巡山僧弹窗：认出价格 ¥1,299 和库存「缺货」，点价格那行就盯上了"></picture></div>
+    <div class="txt"><h2 data-t="iS1T"></h2><p data-t="iS1P"></p></div>
+    <div class="pic phone"><picture><source data-img="popup" media="(prefers-color-scheme: dark)"><img data-img="popup" data-alt="iAltPopup" width="380" height="640" alt=""></picture></div>
   </section>
 
   <section class="sec flip">
-    <div class="txt"><h2>一串网址，<br>一次贴。</h2><p>同一家店十个商品，贴进来，填一个「低于多少」，一下全盯上。同一个网站上回框过哪块，这回照着认。</p></div>
-    <div class="pic"><picture><source srcset="img/batch-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/batch.webp" width="1104" height="383" alt="一次贴 8 个网址，低于 100 就叫，点「盯这 8 个」"></picture></div>
+    <div class="txt"><h2 data-t="iS2T"></h2><p data-t="iS2P"></p></div>
+    <div class="pic"><picture><source data-img="batch" media="(prefers-color-scheme: dark)"><img data-img="batch" data-alt="iAltBatch" width="1104" height="383" alt=""></picture></div>
   </section>
 
   <section class="sec">
-    <div class="txt"><h2>变了就叫，<br>还留了照。</h2><p>弹系统通知，点一下直接打开那一页。变的那一刻顺手拍一张，之前、之后并排摆着，赖不掉。</p></div>
-    <div class="pic"><picture><source srcset="img/compare-dark.webp" media="(prefers-color-scheme: dark)"><img src="img/compare.webp" width="732" height="297" alt="变化记录：价格 1,099 降到 899，之前之后两张截图并排"></picture></div>
+    <div class="txt"><h2 data-t="iS3T"></h2><p data-t="iS3P"></p></div>
+    <div class="pic"><picture><source data-img="compare" media="(prefers-color-scheme: dark)"><img data-img="compare" data-alt="iAltCompare" width="732" height="297" alt=""></picture></div>
   </section>
 
-  <section class="grid" aria-label="还能干啥">
-    <div class="g"><b>只叫好消息</b><span>到线叫、再降再叫，涨回去闭嘴</span></div>
-    <div class="g"><b>整页不吵</b><span>只变时钟、人数的不算，有新内容才叫</span></div>
-    <div class="g"><b>改版不丢</b><span>网页大改，自己把那块重新找回来</span></div>
-    <div class="g"><b>脚本页也行</b><span>看不见的小窗里读，不在你窗口里冒标签</span></div>
-    <div class="g"><b>要登录的也行</b><span>用你浏览器里现成的登录</span></div>
-    <div class="g"><b>开浏览器就在岗</b><span>不用打开、不用点开始，有事才叫你</span></div>
-    <div class="g"><b>坏了会说</b><span>连着几回看不成，发一条告诉你</span></div>
-    <div class="g"><b>手滑能撤</b><span>盯错了、删错了，点「撤销」</span></div>
-    <div class="g"><b>哪儿也不去</b><span>清单和记录只存在你自己的浏览器</span></div>
-  </section>
+  <section class="grid" id="grid"></section>
 
   <section class="inst" id="install">
-    <h2>怎么装</h2>
-    <p class="sub">还没上商店，先手动装，两分钟。</p>
-    <ol>
-      <li><span>下载 <a href="dist/xunshan-0.3.0.zip" download>xunshan-0.3.0.zip</a>，解压成一个文件夹。</span></li>
-      <li><span>地址栏打开 <code>chrome://extensions</code>；Edge 用 <code>edge://extensions</code>。</span></li>
-      <li><span>打开「开发者模式」（Chrome 在右上角，Edge 在左下）。</span></li>
-      <li><span>点「加载已解压的扩展程序」（Edge：「加载解压缩的扩展」），选刚才那个文件夹。</span></li>
-      <li><span>点工具栏的拼图图标，把巡山僧钉出来。去想盯的商品页，点它。</span></li>
-    </ol>
-    <p class="later">浏览器开着贫僧就醒着。第一次盯某个网站，浏览器会问一次这个网站的权限。</p>
+    <h2 data-t="iInstT"></h2>
+    <p class="sub" data-t="iInstSub"></p>
+    <ol id="steps"></ol>
+    <p class="later" data-t="iLater"></p>
   </section>
 
   <footer class="foot">
-    <div>千手院 · 巡山僧</div>
-    <div>找方丈：<span class="mail">oilsongchengmin@gmail.com</span></div>
-    <div><a href="https://qianshoulab.github.io/">千手院总舵</a></div>
+    <div data-t="iFootName"></div>
+    <div><span data-t="iFootMail"></span><span class="mail">oilsongchengmin@gmail.com</span></div>
+    <div><a href="https://qianshoulab.github.io/" data-t="hq"></a></div>
   </footer>
 </div>
+<script>
+/* 换语言（右上角 EN / 中文）：字、图、标题一起换，记住选的 */
+(function(){
+  var VER="0.4.0", ZIP="dist/xunshan-"+VER+".zip", t=QS.t, $=function(s){return document.querySelector(s)};
+  var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+  function draw(){
+    var L=QS.lang(), dir=L==="en"?"img/en/":"img/";
+    document.documentElement.lang=t("htmlLang"); document.title=t("iTitle"); document.querySelector('meta[name="description"]').content=t("iDesc");
+    document.querySelectorAll("[data-t]").forEach(function(el){el.textContent=t(el.dataset.t)});
+    var full=t("appFull").split(" · ");
+    $("#bn").innerHTML=esc(full[0])+(full[1]?'<span class="bx"> · '+esc(full[1])+"</span>":""); $("#h1x").textContent=full[1]||"";
+    $("#dl").href=ZIP; $("#meta").textContent=t("iMeta",VER);
+    document.querySelectorAll("source[data-img]").forEach(function(el){el.srcset=dir+el.dataset.img+"-dark.webp"});
+    document.querySelectorAll("img[data-img]").forEach(function(el){el.src=dir+el.dataset.img+".webp";el.alt=t(el.dataset.alt)});
+    $("#grid").setAttribute("aria-label",t("iMore"));
+    $("#grid").innerHTML=t("iG").map(function(g){return '<div class="g"><b>'+esc(g[0])+'</b><span>'+esc(g[1])+'</span></div>'}).join("");
+    $("#steps").innerHTML=t("iSteps").map(function(x){return "<li><span>"+x.replace("{zip}",ZIP).replace("{zipName}","xunshan-"+VER+".zip")+"</span></li>"}).join("");
+    var ls=$("#lang"); ls.setAttribute("aria-label",t("langLabel"));
+    ls.innerHTML=QS.LANGS.map(function(x){return '<button type="button" data-l="'+x.code+'" lang="'+QS.STR[x.code].htmlLang+'" aria-pressed="'+(x.code===L)+'">'+x.label+"</button>"}).join("");
+  }
+  $("#lang").addEventListener("click",function(e){var b=e.target.closest("[data-l]");if(b&&b.dataset.l!==QS.lang())QS.setLang(b.dataset.l)});
+  QS.onLang(draw); draw();
+})();
+</script>
 </body>
 </html>

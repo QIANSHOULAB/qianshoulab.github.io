@@ -102,10 +102,10 @@
         <button class="b" data-a="undo">${t('undo')}</button></div>
       <div class="bar"><div class="seg" role="group" aria-label="${t('condWhen')}">${types.map(x => `<button type="button" data-c="${x}" aria-pressed="${x === type}">${t('seg' + x[0].toUpperCase() + x.slice(1))}</button>`).join('')}</div>
         ${need ? `<input class="in" id="cv" ${numeric ? 'inputmode="decimal"' : ''} placeholder="${ph}" value="${esc(typing != null ? typing : val)}" aria-label="${t('condWhen')}">` : ''}
-        <button class="iv" data-a="iv">${t('every')} ${R.ivLabel(W.interval)}${svg('<path d="m6 9 6 6 6-6"/>')}</button></div>
+        <button class="iv" data-a="iv">${R.every(W.interval)}${svg('<path d="m6 9 6 6 6-6"/>')}</button></div>
       ${W.err ? `<div class="warn">${esc(t({ blocked: 'errBlocked', gone: 'errGone', login: 'errLogin', perm: 'errPerm' }[W.err] || 'error'))}</div>` : ''}
       <div class="ft"><button class="b" data-a="bigger">${t('bigger')}</button><button class="b" data-a="again">${t('reselect')}</button></div>
-      ${menuOpen ? `<div class="menu" role="menu">${R.IV.map(m => `<button type="button" role="menuitemradio" data-iv="${m}" aria-checked="${+W.interval === m}">${t('every')} ${R.ivLabel(m)}</button>`).join('')}</div>` : ''}`;
+      ${menuOpen ? `<div class="menu" role="menu">${R.IV.map(m => `<button type="button" role="menuitemradio" data-iv="${m}" aria-checked="${+W.interval === m}">${R.every(m)}</button>`).join('')}</div>` : ''}`;
     place(el);
     if (typing != null) { const i = panel.querySelector('#cv'); i.focus(); i.setSelectionRange(typing.length, typing.length); }
   }
@@ -162,10 +162,11 @@
   });
 
   let wired = false;
-  QS.picker.start({
-    hint: t('pickHint'), keys: t('pickKeys'), css: CSS,
+  // 等读到右上角选的语言再出提示（框选面板也跟着那个语言）
+  (QS.langReady || Promise.resolve()).then(() => QS.picker.start({
+    hint: t('pickHint'), keys: t('pickKeys'), close: t('close'), css: CSS,
     onPick: (target, ctl) => { if (!wired) { wire(ctl); wired = true; } add(target, ctl); },
     onOutside: () => { const ctl = QS.picker.active; if (ctl && !menuOpen) ctl.stop(); else if (menuOpen) { menuOpen = false; show(ctl); } },
     onCancel: () => {}
-  });
+  }));
 })();

@@ -1,0 +1,199 @@
+manifest.extName	Xunshan · Price Watch – Drop & Restock Alerts
+manifest.extShort	Xunshan
+manifest.extDesc	Watches pages for price drops, restocks and new posts, and pings you the moment something moves. Your list stays in your browser.
+manifest.extTitle	Xunshan · Price Watch
+app	Xunshan
+appFull	Xunshan · Price Watch
+lab	Qianshou Lab
+slogan	Stares at the page so you don’t have to.
+langLabel	Language
+close	Close
+onDuty	Watching {0}
+onDutyIdle	Awaiting orders
+onDutyHit	1 needs a look ⇥ 3 need a look
+openAll	All
+here	This page
+detecting	Looking for price and stock…
+watchIt	Watch
+pickPart	Pick an area
+watchPage	Watch whole page
+nothingFound	No price or stock found
+cantHere	Can’t watch this page
+cantHereSub	Browser pages and extension stores are off-limits. Try a regular site.
+mine	Watching
+emptyTitle	Nothing to watch. Very zen.
+emptySub	Open a product page and click Xunshan. It finds the price and stock on its own.
+tryDemo	Try a demo
+batchLink	Paste URLs
+permDenied	No permission, no entry.
+firstLook	Taking a first look…
+undo	Undo
+undone	Undone
+pickHint	Click the part to watch
+pickKeys	↑ bigger · Esc to exit
+added	Watching
+bigger	Bigger
+reselect	Pick again
+emptyPick	Nothing in there. Try another spot.
+condWhen	Alert me
+condAny	Any change
+condDrop	Any drop
+lblBelow	Below {0}
+lblAbove	Above {0}
+lblHas	“{0}” appears
+lblGone	“{0}” disappears
+segDrop	Drops
+segBelow	Below
+segAbove	Above
+segAny	Changes
+segHas	Appears
+segGone	Gone
+condHasPh	e.g. In stock
+condGonePh	e.g. Sold out
+condNumPh	Amount
+frequency	How often
+ev1	Every minute
+ev5	Every 5 min
+ev15	Every 15 min
+ev30	Every 30 min
+ev60	Hourly
+ev180	Every 3 hours
+ev360	Every 6 hours
+ev1440	Daily
+justNow	just now
+minsAgo	{0} min ago
+hoursAgo	{0} hr ago
+daysAgo	yesterday ⇥ 3 days ago
+inMins	in {0} min
+inHours	in {0} hr
+soon	any second
+paused	Paused
+changed	Changed
+hitPill	Alert
+checking	Checking…
+waitingFirst	Taking a first look…
+error	Stuck
+errFetch	Page won’t load ({0}). Will try again in a bit.
+errBlocked	Captcha wall. Open the page yourself once; we don’t pick locks.
+errGone	Lost the part you picked (redesign?). Pick it again.
+errLogin	Got a login page. Log in with this browser; the next check gets through.
+errPerm	Access to this site was taken back.
+fixOpen	Open page
+fixGrant	Allow
+all	All watches
+count	1 watch ⇥ 3 watches
+addMany	Add a batch
+addManyTitle	Watch a pile of URLs
+addManySub	One per line. It finds the price or stock itself; if it can’t, it watches the whole page.
+addManyPh	https://… ⏎ https://…
+urlsLabel	URLs
+belowAll	Alert below
+belowAllPh	Blank = any drop
+addManyGo	Watch 1 ⇥ Watch all 3
+addManyNone	Watch
+addManyBusy	Checking {0} of {1}…
+addManyDone	Watching {0}. Price: {1} · Stock: {2} · Whole page: {3}
+badUrls	Skipped, not URLs: {0}
+listSep	, 
+exportBtn	Export
+importBtn	Import
+exportName	xunshan-watchlist
+settings	Settings
+checkNow	Check now
+pause	Pause
+remove	Delete
+removed	Deleted “{0}”
+open	Open page
+rename	Rename
+history	History
+current	Now
+wholePage	Whole page
+partPage	Picked area
+autoPart	{0} (found automatically)
+times	1 change ⇥ 3 changes
+kindPrice	Price
+kindStock	Stock
+kindSeats	Spots left
+kindKnown	Same spot as last time
+noHistory	No changes yet. No news is good news.
+before	Before
+after	After
+shotNow	Now
+firstSeen	Started
+hitTag	Alerted
+movedTag	Page redesigned, found it again
+newPrefix	New: 
+lastCheck	Checked {0}
+nextCheck	next {0}
+imported	Imported {0}, skipped {1} already here
+importBad	That’s not a Xunshan watchlist
+importPerm	The imported sites need your OK
+grant	Allow
+exported	Watchlist exported
+defaultIv	New watches check
+defaultIvSub	Whatever you picked last time
+siteGap	Pause between checks on one site
+siteGapSub	Be polite. Sites notice.
+sec	{0} s
+privacy	Your watchlist and history stay in this browser. Nothing leaves.
+selectOne	Pick one on the left
+unreadAll	Mark all read
+demoChip	Demo
+demoLabel	Demo · Headphones price
+demoNote	Just a demo. Nothing gets checked. Delete it and it’s gone.
+mailLine	Want a feature, or something annoying you? Email the abbot: 
+hq	Qianshou Lab
+notifTitle	Change spotted: {0}
+notifTitleNew	New on {0}
+notifNew	New: {0}
+brokenTitle	Lost sight of {0}
+brokenOpen	Click for the fix
+broken_gone	The part you picked has been missing for a few checks. Big redesign, probably. Pick it again.
+broken_blocked	The site keeps asking for a captcha. We don’t pick locks; open the page yourself.
+broken_login	It keeps landing on a login page. Log in with your browser and it’s fixed.
+broken_perm	Access to this site was taken back. Allow it again.
+broken_fetch	The page wouldn’t load a few times in a row.
+notifBelow	Down to {0}
+notifAbove	Up to {0}
+notifDrop	{0} → {1}
+notifHas	“{0}” just showed up
+notifGone	“{0}” is gone
+notifOpen	Click to open
+iTitle	Xunshan · Price Watch
+iDesc	A Chrome / Edge extension that watches pages for price drops, restocks and new posts, and pings you the moment something moves. Free. Your list never leaves your browser.
+iHome	Qianshou Lab
+iInstall	Install
+iTagline	Price drops, restocks, new posts. It keeps an eye on the page and pings you the second something moves.
+iDownload	Download
+iHowTo	How to install
+iMeta	{0} · Chrome / Edge 120+ · Free
+iAltApp	Xunshan overview: a price went from 1,099 to 899, with the change highlighted
+iS1T	One click. Watching.
+iS1P	Price, stock, spots left: it finds them on its own. Prices alert on any drop, sold-out items when they’re back. Want a threshold? Click Below and type a number. Can’t find it? Pick it yourself.
+iAltPopup	Xunshan popup: found the price and the stock, one click on the price row and it’s watching
+iS2T	A whole list, ⏎ one paste.
+iS2P	Ten products from the same store? Paste the links, set one “below” price, done. Picked a spot on that site before? It looks there again.
+iAltBatch	Eight URLs pasted at once, alert below 100
+iS3T	It calls. ⏎ With receipts.
+iS3P	You get a system notification; click it and you’re on the page. It snaps a picture the moment things change, before and after side by side. Hard to argue with.
+iAltCompare	History: price 1,099 down to 899, before and after snapshots side by side
+iMore	What else
+iG.1	Good news only ｜ Alerts when it crosses your line or drops further. Price goes back up? Silence.
+iG.2	Quiet on busy pages ｜ Ticking clocks and viewer counts don’t count. Only new content does.
+iG.3	Survives redesigns ｜ Page got a makeover? It finds your spot again.
+iG.4	Script-heavy pages too ｜ Reads them in an invisible frame. No surprise tabs.
+iG.5	Behind a login too ｜ Uses the login already in your browser.
+iG.6	On duty with your browser ｜ Nothing to start, nothing to click. It speaks up when it matters.
+iG.7	Says when it’s stuck ｜ Can’t check a page a few times in a row? You get a heads-up.
+iG.8	Undo for slips ｜ Watched the wrong thing, deleted the right one? Undo.
+iG.9	Stays put ｜ Your list and history live in your browser and nowhere else.
+iInstT	Install
+iInstSub	Not in the store yet. Manual install, two minutes.
+iSteps.1	Download <a href="{zip}" download>{zipName}</a> and unzip it into a folder.
+iSteps.2	Go to <code>chrome://extensions</code> (Edge: <code>edge://extensions</code>).
+iSteps.3	Turn on Developer mode (top right in Chrome, bottom left in Edge).
+iSteps.4	Click Load unpacked and pick that folder.
+iSteps.5	Click the puzzle icon in the toolbar and pin Xunshan. Open a product page and click it.
+iLater	It’s on duty whenever your browser is open. The first time you watch a site, the browser asks once for permission.
+iFootName	Qianshou Lab · Xunshan
+iFootMail	Email the abbot: 

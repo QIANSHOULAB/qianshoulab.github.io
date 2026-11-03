@@ -86,5 +86,19 @@
     alert: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>'),
     mountain: svg('<path d="m3 19 6.5-10 4 6 2.5-3.5L21 19z"/><circle cx="17" cy="6" r="2"/>')
   };
-  QS.ui = { esc, ago, until, stamp, toast, host, avatar, menu, ICON };
+  // 右上角 EN / 中文：点了马上换、记住（chrome.storage.local），后台通知和别的窗口跟着换
+  function langSwitch(el) {
+    const draw = () => {
+      el.setAttribute('aria-label', QS.t('langLabel'));
+      el.innerHTML = QS.LANGS.map(x => `<button type="button" data-l="${x.code}" lang="${QS.STR[x.code].htmlLang}" aria-pressed="${x.code === QS.lang()}">${x.label}</button>`).join('');
+    };
+    el.addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (b && b.dataset.l !== QS.lang()) QS.setLang(b.dataset.l); });
+    QS.onLang(draw); draw();
+  }
+  // 页面跟着语言：<html lang>、标题
+  function docLang(title) {
+    document.documentElement.lang = QS.t('htmlLang');
+    if (title) document.title = title();
+  }
+  QS.ui = { esc, ago, until, stamp, toast, host, avatar, menu, ICON, langSwitch, docLang };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

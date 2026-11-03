@@ -1,0 +1,15 @@
+{
+  "extName": {
+    "message": "Xunshan · Price Watch – Drop & Restock Alerts",
+    "description": "Store name. Keeps the words people search for: price drop, restock."
+  },
+  "extShort": {
+    "message": "Xunshan"
+  },
+  "extDesc": {
+    "message": "Watches pages for price drops, restocks and new posts, and pings you the moment something moves. Your list stays in your browser."
+  },
+  "extTitle": {
+    "message": "Xunshan · Price Watch"
+  }
+}

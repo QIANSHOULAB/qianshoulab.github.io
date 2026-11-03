@@ -2,7 +2,6 @@
    盯上的那条就地改条件、改频率、撤销。认不出的再自己框，或者盯整页。 */
 const { t, ui, store, rules } = QS;
 const $ = s => document.querySelector(s);
-QS.applyT();
 
 const qp = new URLSearchParams(location.search);
 const S = { tab: null, ok: false, cands: null, ws: {}, open: null, draft: {}, busy: new Set() };
@@ -10,7 +9,7 @@ const okUrl = u => /^https?:\/\//.test(u || '') && !/^https:\/\/(chrome\.google\
 const originPat = u => { const x = new URL(u); return x.protocol + '//' + x.hostname + '/*'; };
 const send = msg => chrome.runtime.sendMessage(msg);
 const KIND = { price: ['kindPrice', 'tag'], stock: ['kindStock', 'box'], seats: ['kindSeats', 'seat'], known: ['kindKnown', 'pin'], pick: ['partPage', 'crop'], page: ['wholePage', 'page'] };
-const kindName = c => c.kind === 'known' && c.label ? c.label : t((KIND[c.kind] || KIND.pick)[0]);
+const kindName = c => c.kind === 'known' && c.label ? rules.kindWord(c.label) : t((KIND[c.kind] || KIND.pick)[0]);
 const kindIcon = k => ui.ICON[(KIND[k] || KIND.pick)[1]];
 const oneLine = s => String(s || '').replace(/\s+/g, ' ').trim();
 
@@ -73,7 +72,7 @@ function sub(w) {
   const fix = w.err ? `<div class="fix">${ui.esc(errText(w))}${w.err === 'perm' ? `<button class="btn txt" data-a="grant" data-id="${w.id}">${t('fixGrant')}</button>` : ''}</div>` : '';
   const anim = S.anim === w.id; S.anim = null;
   return `<div class="sub${anim ? ' anim' : ''}" data-id="${w.id}">${fix}${seg}${need ? `<input class="inp" id="cv" value="${ui.esc(val)}" placeholder="${ph}" ${numeric ? 'inputmode="decimal"' : ''} aria-label="${t('condWhen')}">` : ''}
-    <button class="pick" data-a="iv" data-id="${w.id}">${t('every')} ${rules.ivLabel(w.interval)}${ui.ICON.down}</button></div>`;
+    <button class="pick" data-a="iv" data-id="${w.id}">${rules.every(w.interval)}${ui.ICON.down}</button></div>`;
 }
 function onRow(w, title, icon) {
   const first = w.lastText == null && !w.err;
@@ -102,7 +101,7 @@ function renderHere() {
       <span class="end">${S.busy.has(i) ? '<span class="spin"></span>' : `<span class="go">${t('watchIt')}</span>`}</span></button>`;
   });
   // 这页上盯着、但这回没认出来的那几块（自己框的、网页正出验证码的），也列在这儿
-  for (const w of Object.values(S.ws)) if (w.url === S.tab.url && w.selector && !S.cands.some(c => c.selector === w.selector)) html += onRow(w, String(w.label || '').split(' · ').pop() || t('partPage'), 'crop');
+  for (const w of Object.values(S.ws)) if (w.url === S.tab.url && w.selector && !S.cands.some(c => c.selector === w.selector)) html += onRow(w, rules.kindWord(String(w.label || '').split(' · ').pop()) || t('partPage'), 'crop');
   html += `<button class="row" data-a="pick"><span class="ic">${ui.ICON.crop}</span><div class="grow"><div class="t">${t('pickPart')}</div>${S.cands.length ? '' : `<div class="s">${t('nothingFound')}</div>`}</div>${ui.ICON.chev.replace('<svg', '<svg class="chev"')}</button>`;
   const whole = wholeOf();
   html += whole ? onRow(whole, t('watchPage'), 'page')
@@ -135,7 +134,7 @@ function renderList() {
   // 只列前几条；全部在顶上「全部 N」里，底下不再重复一行
   $('#list').innerHTML = shown.map(w => `
     <button class="row it" data-open="${w.id}">${ui.avatar(w.url)}
-      <div class="grow"><div class="t">${ui.esc(w.label || w.title || ui.host(w.url))}</div><div class="s${w.err && !w.paused ? ' err2' : ''}">${valueOf(w)}</div></div>
+      <div class="grow"><div class="t">${ui.esc(rules.labelOf(w) || w.title || ui.host(w.url))}</div><div class="s${w.err && !w.paused ? ' err2' : ''}">${valueOf(w)}</div></div>
       <span class="end">${status(w)}<span class="tn">${ui.ago(w.lastChange || w.lastCheck)}</span></span></button>`).join('');
   $('#mine').hidden = !shown.length;
   $('#empty').hidden = all.length > 0;
@@ -228,7 +227,7 @@ document.addEventListener('click', async e => {
     if (a.dataset.a === 'toggle') { const shown = S.open === id || (w && w.err && S.open !== '-' + id); S.open = shown ? '-' + id : id; if (!shown) S.anim = id; render(); return; }
     if (a.dataset.a === 'undo' && w) { await send({ type: 'remove', id }); delete S.ws[id]; if (S.open === id) S.open = null; mark(null); render(); ui.toast(t('undone')); return; }
     if (a.dataset.a === 'iv' && w) {
-      ui.menu(a, rules.IV.map(m => ({ v: m, label: t('every') + ' ' + rules.ivLabel(m) })), w.interval, v => send({ type: 'patch', id, patch: { interval: +v } }));
+      ui.menu(a, rules.IV.map(m => ({ v: m, label: rules.every(m) })), w.interval, v => send({ type: 'patch', id, patch: { interval: +v } }));
       return;
     }
     if (a.dataset.a === 'grant' && w) {
@@ -251,6 +250,11 @@ document.addEventListener('mouseover', e => {
 $('#demo').addEventListener('click', async () => { const w = await send({ type: 'demo' }); if (w) S.ws[w.id] = w; render(); });
 
 (async () => {
+  // 先拿到上回选的语言再画，免得先闪一下英文
+  await QS.langReady;
+  const words = () => { QS.applyT(); ui.docLang(() => t('app')); };
+  words(); ui.langSwitch($('#lang'));
+  QS.onLang(() => { words(); render(); });
   S.tab = await getTab().catch(() => null);
   S.ok = !!(S.tab && okUrl(S.tab.url));
   S.ws = await store.get('watches', {});

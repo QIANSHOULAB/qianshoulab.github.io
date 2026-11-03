@@ -1,0 +1,190 @@
+{
+ "tool": "巡山僧 0.4.0",
+ "clicks": {
+  "W1": 3,
+  "W2": 2,
+  "W3": 2,
+  "W4": 2,
+  "W5": 3,
+  "W6": 3,
+  "W7": 3,
+  "W8": 3,
+  "W9": 4
+ },
+ "typed": {
+  "W1": 1,
+  "W2": 0,
+  "W3": 0,
+  "W4": 0,
+  "W5": 0,
+  "W6": 1,
+  "W7": 0,
+  "W8": 1,
+  "W9": 2
+ },
+ "how": {
+  "W1": "认出Price",
+  "W2": "认出Stock",
+  "W3": "认出Spots left",
+  "W4": "盯整页",
+  "W5": "认出Price",
+  "W6": "认出Price",
+  "W7": "自己框",
+  "W8": "认出Price",
+  "W9-1": "加一串",
+  "W9-2": "加一串",
+  "W9-3": "加一串",
+  "W9-4": "加一串",
+  "W9-5": "加一串",
+  "W9-6": "加一串",
+  "W9-7": "加一串",
+  "W9-8": "加一串"
+ },
+ "condMismatch": [],
+ "steps": {
+  "W1": [
+   "same",
+   "change",
+   "alert",
+   "same",
+   "alert",
+   "change",
+   "alert"
+  ],
+  "W2": [
+   "same",
+   "alert",
+   "change",
+   "change",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W3": [
+   "same",
+   "same",
+   "alert",
+   "change",
+   "change",
+   "same",
+   "alert"
+  ],
+  "W4": [
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W5": [
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W6": [
+   "same",
+   "same",
+   "change",
+   "same",
+   "alert",
+   "same",
+   "alert"
+  ],
+  "W7": [
+   "same",
+   "alert",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same"
+  ],
+  "W8": [
+   "same",
+   "same",
+   "err:blocked",
+   "err:blocked",
+   "alert",
+   "err:blocked",
+   "same"
+  ],
+  "W9-1": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-2": [
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "alert",
+   "same"
+  ],
+  "W9-3": [
+   "same",
+   "change",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-4": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-5": [
+   "same",
+   "same",
+   "same",
+   "alert",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-6": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-7": [
+   "same",
+   "same",
+   "change",
+   "alert",
+   "same",
+   "same",
+   "same"
+  ],
+  "W9-8": [
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same",
+   "same"
+  ]
+ }
+}

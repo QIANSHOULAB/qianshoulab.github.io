@@ -1,17 +1,21 @@
 /* 巡山僧总览：全部盯梢、一次加一串网址、变化记录、前后对比、导入导出、设置。 */
 const { t, ui, store, rules } = QS;
 const $ = s => document.querySelector(s);
-QS.applyT();
-$('#addBtn').innerHTML = ui.ICON.plus + '<span>' + t('addMany') + '</span>';
-$('#imp').textContent = t('importBtn');
-$('#exp').textContent = t('exportBtn');
-$('#gear').innerHTML = ui.ICON.gear;
+// 不跟数据走的字：开头画一次，换语言再画一次
+function words() {
+  QS.applyT();
+  ui.docLang(() => t('app'));
+  $('#addBtn').innerHTML = ui.ICON.plus + '<span>' + t('addMany') + '</span>';
+  $('#imp').textContent = t('importBtn');
+  $('#exp').textContent = t('exportBtn');
+  $('#gear').innerHTML = ui.ICON.gear;
+}
 $('#ver').textContent = chrome.runtime.getManifest().version;
 
 const hash0 = location.hash.slice(1);
 const S = { ws: {}, sel: hash0 && hash0 !== 'add' ? hash0 : null, hist: [], shots: {}, open: null, pendingOrigins: [], draft: null };
 const send = msg => chrome.runtime.sendMessage(msg);
-const name = w => w.label || w.title || ui.host(w.url);
+const name = w => rules.labelOf(w) || w.title || ui.host(w.url);
 const oneLine = s => String(s || '').replace(/\s+/g, ' ').trim();
 const isNum = w => w.selector && w.lastNum != null && oneLine(w.lastText).length < 40;
 const parseNum = s => { const m = String(s).replace(/[,，\s]/g, '').match(/-?\d+(\.\d+)?/); return m ? +m[0] : null; };
@@ -128,7 +132,7 @@ function renderDet() {
     </section>
     <section class="group ctl">
       <div class="row"><div class="grow">${t('condWhen')}</div><div class="r">${condCtl(w)}</div></div>
-      <div class="row"><div class="grow">${t('frequency')}</div><div class="r"><button class="pick" id="civ" data-a="iv">${t('every')} ${rules.ivLabel(w.interval)}${ui.ICON.down}</button></div></div>
+      <div class="row"><div class="grow">${t('frequency')}</div><div class="r"><button class="pick" id="civ" data-a="iv">${rules.every(w.interval)}${ui.ICON.down}</button></div></div>
       <div class="row"><div class="grow">${t('pause')}</div><div class="r"><button class="toggle" role="switch" id="cpause" aria-checked="${!!w.paused}" aria-label="${t('pause')}"></button></div></div>
       <div class="row acts"><button class="btn" data-a="now" ${checking || w.demo ? 'disabled' : ''}>${ui.ICON.refresh}<span>${t('checkNow')}</span></button>
         <button class="btn" data-a="open">${ui.ICON.ext}<span>${t('open')}</span></button><span class="sp"></span>
@@ -196,7 +200,7 @@ $('#det').addEventListener('click', async e => {
   const a = e.target.closest('[data-a]'); if (!a) return;
   e.preventDefault();
   if (a.dataset.a === 'open') send({ type: 'open', id: w.id });
-  if (a.dataset.a === 'iv') ui.menu(a, rules.IV.map(m => ({ v: m, label: t('every') + ' ' + rules.ivLabel(m) })), w.interval, v => send({ type: 'patch', id: w.id, patch: { interval: +v } }));
+  if (a.dataset.a === 'iv') ui.menu(a, rules.IV.map(m => ({ v: m, label: rules.every(m) })), w.interval, v => send({ type: 'patch', id: w.id, patch: { interval: +v } }));
   if (a.dataset.a === 'now') { a.disabled = true; await send({ type: 'checkNow', id: w.id }); refresh(); }
   // 删：不问「确定吗」，删完给撤销
   if (a.dataset.a === 'del') {
@@ -226,7 +230,7 @@ $('#exp').addEventListener('click', async () => {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   const d = new Date(), p = n => String(n).padStart(2, '0');
-  a.href = URL.createObjectURL(blob); a.download = `巡山僧清单-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.json`;
+  a.href = URL.createObjectURL(blob); a.download = `${t('exportName')}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.json`;
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   ui.toast(t('exported'));
 });
@@ -272,12 +276,13 @@ function showAdd(on) {
 }
 $('#addBtn').addEventListener('click', () => showAdd($('#add').hidden));
 $('#heroAdd').addEventListener('click', () => showAdd(true));
-$('#urls').addEventListener('input', () => {
+function refreshAddGo() {
   const { good } = urlsOf($('#urls').value);
   $('#addGo').disabled = !good.length;
   $('#addGo').textContent = good.length ? t('addManyGo', good.length) : t('addManyNone');
-});
-$('#addGo').textContent = t('addManyNone');
+}
+$('#urls').addEventListener('input', refreshAddGo);
+refreshAddGo();
 $('#addGo').addEventListener('click', async () => {
   const { good, bad } = urlsOf($('#urls').value);
   if (!good.length) return;
@@ -298,7 +303,7 @@ $('#addGo').addEventListener('click', async () => {
   const cnt = k => added.filter(x => x.kind === k).length;
   const page = cnt('page');
   msg.innerHTML = ui.esc(t('addManyDone', added.length, cnt('price'), cnt('stock') + cnt('seats') + cnt('known'), '')) + (page ? `<span class="doubt">${page}</span>` : '0')
-    + (bad.length ? '<br>' + ui.esc(t('badUrls', bad.slice(0, 3).join('、'))) : '');
+    + (bad.length ? '<br>' + ui.esc(t('badUrls', bad.slice(0, 3).join(t('listSep')))) : '');
   $('#urls').value = ''; go.textContent = t('addManyNone');
   if (added[0]) select(added[0].id);
 });
@@ -307,15 +312,14 @@ $('#addGo').addEventListener('click', async () => {
 $('#gear').addEventListener('click', () => { $('#settings').hidden = !$('#settings').hidden; if (!$('#settings').hidden) $('#add').hidden = true; });
 async function renderSettings() {
   const s = await QS.settings.all();
-  $('#sIv').innerHTML = `${t('every')} ${rules.ivLabel(s.defaultInterval)}${ui.ICON.down}`;
+  $('#sIv').innerHTML = `${rules.every(s.defaultInterval)}${ui.ICON.down}`;
   $('#sGap').innerHTML = [1, 3, 10, 30, 60].map(x => `<button type="button" data-g="${x}" aria-pressed="${s.hostGapSec === x}">${t('sec', x)}</button>`).join('');
 }
 $('#sIv').addEventListener('click', async e => {
   const s = await QS.settings.all();
-  ui.menu(e.currentTarget, rules.IV.map(m => ({ v: m, label: t('every') + ' ' + rules.ivLabel(m) })), s.defaultInterval, v => QS.settings.set({ defaultInterval: +v }).then(renderSettings));
+  ui.menu(e.currentTarget, rules.IV.map(m => ({ v: m, label: rules.every(m) })), s.defaultInterval, v => QS.settings.set({ defaultInterval: +v }).then(renderSettings));
 });
 $('#sGap').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) QS.settings.set({ hostGapSec: +b.dataset.g }).then(renderSettings); });
-renderSettings();
 
 $('#demo').addEventListener('click', async () => { const w = await send({ type: 'demo' }); if (w) select(w.id); });
 
@@ -333,4 +337,10 @@ store.onChange(ch => {
 addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id === 'add') showAdd(true); else if (id && id !== S.sel) select(id); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
 setInterval(() => { if (document.visibilityState === 'visible' && !$('#det').contains(document.activeElement)) renderDet(); }, 30000);
-refresh().then(() => { checkPerms(); if (hash0 === 'add') showAdd(true); });
+// 先拿到上回选的语言再画
+QS.langReady.then(() => {
+  words(); ui.langSwitch($('#lang'));
+  QS.onLang(() => { words(); renderSettings(); refreshAddGo(); renderList(); renderDet(); });
+  renderSettings();
+  return refresh();
+}).then(() => { checkPerms(); if (hash0 === 'add') showAdd(true); });

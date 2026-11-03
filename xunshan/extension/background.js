@@ -18,6 +18,9 @@ async function ensureAlarm() {
   if (!a || a.periodInMinutes !== 0.5) chrome.alarms.create('tick', { periodInMinutes: 0.5, delayInMinutes: 0.5 });
 }
 chrome.runtime.onInstalled.addListener(() => { ensureAlarm(); badge(); syncFrameRules(); ensureFrameScript(); });
+// 工具栏图标的提示字跟右上角选的语言走（manifest 里那个跟浏览器语言走，这里盖掉）
+const actionTitle = () => chrome.action.setTitle({ title: t('appFull') }).catch(() => {});
+QS.langReady.then(actionTitle); QS.onLang(actionTitle);
 chrome.runtime.onStartup.addListener(() => { ensureAlarm(); badge(); syncFrameRules(); ensureFrameScript(); });
 chrome.alarms.onAlarm.addListener(a => { if (a.name === 'tick') runDue(); });
 
@@ -307,19 +310,22 @@ async function pushHist(id, e) {
   await store.update(HKEY(id), h => { h.push(e); if (h.length > HMAX) h.splice(1, h.length - HMAX); return h; }, []);
 }
 
-/* ---------- 叫人 ---------- */
-function notify(w, next, added, prev) {
+/* ---------- 叫人 ----------
+   通知用右上角选的语言（默认英文）；后台刚醒时先等读到语言再发 */
+async function notify(w, next, added, prev) {
+  await QS.langReady;
   chrome.notifications.create('w:' + w.id + ':' + Date.now(), {
     type: 'basic', iconUrl: 'icons/128.png', priority: 2,
-    title: t(w.selector ? 'notifTitle' : 'notifTitleNew', w.label || w.title || hostOf(w.url)),
+    title: t(w.selector ? 'notifTitle' : 'notifTitleNew', rules.labelOf(w) || w.title || hostOf(w.url)),
     message: rules.alertBody(w, next, added, prev),
     contextMessage: hostOf(w.url) + ' · ' + t('notifOpen')
   });
 }
-function notifyBroken(w) {
+async function notifyBroken(w) {
+  await QS.langReady;
   chrome.notifications.create('e:' + w.id + ':' + Date.now(), {
     type: 'basic', iconUrl: 'icons/128.png', priority: 1,
-    title: t('brokenTitle', w.label || w.title || hostOf(w.url)),
+    title: t('brokenTitle', rules.labelOf(w) || w.title || hostOf(w.url)),
     message: t('broken_' + w.err) !== 'broken_' + w.err ? t('broken_' + w.err) : t('broken_fetch'),
     contextMessage: hostOf(w.url) + ' · ' + t('brokenOpen')
   });

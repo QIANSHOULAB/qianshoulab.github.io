@@ -1,0 +1,15 @@
+{
+  "extName": {
+    "message": "巡山僧 - 降价补货提醒",
+    "description": "商店名字（拍板 3B：带上大家搜的「降价」「补货」）"
+  },
+  "extShort": {
+    "message": "巡山僧"
+  },
+  "extDesc": {
+    "message": "网页降价、补货、上新，贫僧 24 小时蹲守，风吹草动立刻通报。数据只存在你的浏览器里。"
+  },
+  "extTitle": {
+    "message": "巡山僧"
+  }
+}

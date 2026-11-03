@@ -1,12 +1,14 @@
 /* 巡山僧弹窗：顶部名字 + 在岗状态；中间「这页认出了啥」，点一下就盯上；下面是在盯的。 */
 body{width:380px;min-height:220px;padding:16px 16px 16px;background:var(--bg-group)}
 .hd{display:flex;align-items:center;gap:12px;margin:0 4px 16px}
+.hd .lang{margin-left:-4px}
 .logo{width:32px;height:32px}
 .hd-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}
 .hd-t b{font-size:17px;font-weight:600}
-.duty{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-2)}
+.duty{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-2);white-space:nowrap;min-width:0}
+.duty>span{overflow:hidden;text-overflow:ellipsis}
 .duty .dot{width:6px;height:6px}
-.all{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 12px;border-radius:var(--r-chip);color:var(--link);font-size:15px}
+.all{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 8px;border-radius:var(--r-chip);color:var(--link);font-size:15px;white-space:nowrap;flex:none}
 .all:hover{background:var(--accent-tint)}
 .all .n{color:var(--fg-3)}
 .blk{margin-bottom:24px}

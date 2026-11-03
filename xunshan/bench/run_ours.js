@@ -15,7 +15,12 @@ const PORT = 8790, BASE = `http://localhost:${PORT}`;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 // 剧本要的条件（跟 0.2.1 那场一样）
 const COND = { W1: ['below', 1000], W2: ['gone', '缺货'], W3: ['above', 0], W4: ['any'], W5: ['any'], W6: ['below', 420], W7: ['any'], W8: ['below', 500], W9: ['below', 100] };
-const KIND = { W1: '价格', W2: '库存', W3: '名额', W5: '价格', W6: '价格', W8: '价格' };
+// 0.4.0 起界面默认英文：认出来的那行叫什么照 strings.js 那门语言（LANG_UI=zh 跑中文界面）
+const LANG = process.env.LANG_UI || 'en';
+require(path.join(__dirname, '../extension/lib/strings.js'));
+globalThis.QS.setLang(LANG);
+const T = k => globalThis.QS.t(k);
+const KIND = Object.fromEntries(Object.entries({ W1: 'kindPrice', W2: 'kindStock', W3: 'kindSeats', W5: 'kindPrice', W6: 'kindPrice', W8: 'kindPrice' }).map(([k, v]) => [k, T(v)]));
 const PICK = { W7: '#status' };
 
 (async () => {
@@ -40,6 +45,8 @@ const PICK = { W7: '#status' };
   const H = id => sw.evaluate(id => chrome.storage.local.get('h:' + id).then(o => o['h:' + id] || []), id);
   const until = async (fn, ms = 40000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await sleep(300); } return null; };
   const tabIdOf = url => sw.evaluate(u => chrome.tabs.query({}).then(ts => (ts.find(t => (t.url || '') === u) || {}).id), url);
+  await sw.evaluate(l => chrome.storage.local.set({ lang: l }), LANG);
+  const V = mf.version.split('.').slice(0, 2).join('.');
 
   // 用户本来就登录着这家店
   const lg = await ctx.newPage(); await lg.goto(BASE + '/login?go=1'); await lg.close();
@@ -62,7 +69,7 @@ const PICK = { W7: '#status' };
     const tab = await tabIdOf(BASE + w.path);
     await pop.goto(X('popup.html?tab=' + tab)); n++; // 点工具栏图标
     await pop.waitForSelector('[data-a="pick"]');
-    if (w.id === 'W1') await pop.screenshot({ path: path.join(SHOT, 'ours-0.3-1-popup.png') });
+    if (w.id === 'W1') await pop.screenshot({ path: path.join(SHOT, 'ours-' + V + '-1-popup.png') });
     const rows = await pop.$$eval('.row.cand[data-k]', els => els.map(e => e.querySelector('.t').textContent));
     const before = new Set(Object.keys(await WS()));
     let got;
@@ -74,7 +81,7 @@ const PICK = { W7: '#status' };
       n += await setCond(pop.locator('.sub'), key, got);
       ty += typed[key + '_'] ? 1 : 0;
       how[key] = '认出' + KIND[key];
-      if (w.id === 'W1') { await sleep(300); await pop.screenshot({ path: path.join(SHOT, 'ours-0.3-2-added.png') }); }
+      if (w.id === 'W1') { await sleep(300); await pop.screenshot({ path: path.join(SHOT, 'ours-' + V + '-2-added.png') }); }
     } else if (PICK[key]) {
       await pop.click('[data-a="pick"]'); n++;
       await pg.bringToFront(); await pg.waitForSelector('qianshou-picker');
@@ -105,10 +112,10 @@ const PICK = { W7: '#status' };
     const urls = W.filter(x => x.id.startsWith('W9')).map(x => BASE + x.path);
     await app.fill('#urls', urls.join('\n')); ty++;
     await app.fill('#lim', '100'); ty++;
-    await app.screenshot({ path: path.join(SHOT, 'ours-0.3-3-batch.png') });
+    await app.screenshot({ path: path.join(SHOT, 'ours-' + V + '-3-batch.png') });
     const before = new Set(Object.keys(await WS()));
     await app.click('#addGo'); n++;
-    await app.waitForFunction(() => /盯上 8 个/.test(document.querySelector('#addMsg').textContent), null, { timeout: 60000 });
+    await app.waitForFunction(s => document.querySelector('#addMsg').textContent.startsWith(s), globalThis.QS.t('addManyDone', 8, '', '', '').split(/[:：.]/)[0], { timeout: 60000 });
     await until(async () => Object.values(await WS()).filter(x => !before.has(x.id) && x.lastText != null).length === 8);
     for (const w of W.filter(x => x.id.startsWith('W9'))) {
       const x = Object.values(await WS()).find(y => y.url === BASE + w.path);
@@ -141,7 +148,7 @@ const PICK = { W7: '#status' };
   }
 
   const app = await ctx.newPage(); await app.goto(X('app.html')); await sleep(800);
-  await app.screenshot({ path: path.join(SHOT, 'ours-0.3-4-list.png') });
+  await app.screenshot({ path: path.join(SHOT, 'ours-' + V + '-4-list.png') });
   fs.writeFileSync(path.join(RES, 'ours-' + mf.version + '.json'), JSON.stringify({ tool: '巡山僧 ' + mf.version, clicks, typed, how, condMismatch: bad.map(b => b[0]), steps: out }, null, 1));
   await ctx.close(); if (site) site.kill();
   process.exit(0);

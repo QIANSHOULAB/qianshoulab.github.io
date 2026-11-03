@@ -104,7 +104,9 @@ textarea.inp{height:auto;padding:8px 12px;line-height:1.5;resize:vertical}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* 提示条（带撤销） */
-.toast{position:fixed;left:50%;bottom:16px;transform:translate(-50%,8px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:12px;min-height:44px;padding:0 8px 0 16px;border-radius:var(--r-btn);background:rgba(29,29,31,.92);color:#f5f5f7;font-size:15px;transition:opacity var(--t) var(--ease),transform var(--t) var(--ease);z-index:99;white-space:nowrap;max-width:calc(100vw - 32px)}
+.toast{position:fixed;left:50%;bottom:16px;transform:translate(-50%,8px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:12px;min-height:44px;padding:0 8px 0 16px;border-radius:var(--r-btn);background:rgba(29,29,31,.92);color:#f5f5f7;font-size:15px;transition:opacity var(--t) var(--ease),transform var(--t) var(--ease);z-index:99;width:max-content;max-width:calc(100vw - 32px)}
+.toast span{padding:10px 0;line-height:1.4}
+.toast button{white-space:nowrap;flex:none}
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .toast:not(:has(button)){padding-right:16px}
 .toast button{height:36px;padding:0 12px;border-radius:var(--r-chip);color:#a5b0ff;font-weight:600}
@@ -118,3 +120,10 @@ textarea.inp{height:auto;padding:8px 12px;line-height:1.5;resize:vertical}
 .ic.on{color:var(--on-accent);background:var(--accent)}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:1ms!important;transition-duration:1ms!important}}
+
+/* 右上角 EN / 中文（八尊一样：小号分段，选中的抬起来）；点击区往上下扩到 44 */
+.lang{display:inline-flex;gap:2px;padding:2px;border-radius:var(--r-chip);background:var(--fill);flex:none}
+.lang button{position:relative;min-width:36px;height:26px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:600;color:var(--fg-2);white-space:nowrap;transition:background var(--t) var(--ease),color var(--t) var(--ease)}
+.lang button::after{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
+.lang button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px var(--line)}
+@media (prefers-color-scheme:dark){.lang button[aria-pressed="true"]{background:#636366;box-shadow:none}}

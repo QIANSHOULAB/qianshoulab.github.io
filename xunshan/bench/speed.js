@@ -7,8 +7,9 @@ const { spawn } = require('child_process');
 const fs = require('fs'), path = require('path'), os = require('os');
 const ROOT = path.resolve(__dirname, '..');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const SITE = 'http://localhost:8790';
-const url = i => (i === 0 ? 'http://127.0.0.1:8790' : SITE) + '/fast/' + i;
+const PORT = process.env.PORT || 8790; // 0.4.0：端口可换（PORT=…），免得跟同时在跑的比准撞
+const SITE = 'http://localhost:' + PORT;
+const url = i => (i === 0 ? 'http://127.0.0.1:' + PORT : SITE) + '/fast/' + i;
 const CD = 'http://127.0.0.1:5056';
 const MIN = 60000;
 const F = u => fetch(u).then(r => r.text());
@@ -27,7 +28,7 @@ const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
   const key = JSON.parse(fs.readFileSync(path.join(cdData, 'changedetection.json'))).settings.application.api_access_token;
   api = (m, p, b) => fetch(CD + '/api/v1' + p, { method: m, headers: { 'x-api-key': key, 'content-type': 'application/json' }, body: b ? JSON.stringify(b) : undefined }).then(r => r.text());
   for (const u of Object.keys(JSON.parse(await api('GET', '/watch')))) await api('DELETE', '/watch/' + u);
-  for (let i = 0; i <= 8; i++) await api('POST', '/watch', { url: url(i), title: 'fast' + i, include_filters: ['.price'], time_between_check: { minutes: 5 }, time_between_check_use_default: false, notification_urls: [`json://localhost:8790/hook/cd-fast-${i}`] });
+  for (let i = 0; i <= 8; i++) await api('POST', '/watch', { url: url(i), title: 'fast' + i, include_filters: ['.price'], time_between_check: { minutes: 5 }, time_between_check_use_default: false, notification_urls: [`json://localhost:${PORT}/hook/cd-fast-${i}`] });
   }
 
   // ---- 巡山僧 ----

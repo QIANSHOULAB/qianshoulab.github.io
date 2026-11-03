@@ -20,9 +20,10 @@
     const host = document.createElement('qianshou-picker');
     host.style.cssText = 'all:initial;position:fixed;inset:0;z-index:2147483647;pointer-events:none';
     const root = host.attachShadow({ mode: 'open' });
-    root.innerHTML = `<style>${CSS_TXT}${opt.css || ''}</style><div class="box"></div><div class="hint" style="pointer-events:auto"><span class="ht"></span><small class="hk"></small><button class="x" aria-label="close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+    root.innerHTML = `<style>${CSS_TXT}${opt.css || ''}</style><div class="box"></div><div class="hint" style="pointer-events:auto"><span class="ht"></span><small class="hk"></small><button class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
     root.querySelector('.ht').textContent = opt.hint || '';
     root.querySelector('.hk').textContent = opt.keys || '';
+    root.querySelector('.x').setAttribute('aria-label', opt.close || 'Close');
     // 面板里的点击、按键到此为止，别让网页自己的脚本收到
     ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'dblclick', 'keydown', 'keyup', 'keypress', 'input', 'change', 'wheel'].forEach(tp => host.addEventListener(tp, e => e.stopPropagation()));
     document.documentElement.appendChild(host);

@@ -1,5 +1,6 @@
 // 巡山僧端到端测试：真把插件装进 Chromium，在本地测试网站上把整条链路跑一遍。
-// 用法：node xunshan/test/e2e.js  （截图写到 xunshan/test/out/）
+// 用法：node xunshan/test/e2e.js [--fast] [--lang=en|zh]  （截图写到 xunshan/test/out/）
+// 0.4.0 起界面默认英文、右上角切中文；--lang 先把语言存好再跑（默认 en），界面字的断言照 strings.js 那门语言的文案对
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
 const fs = require('fs'), path = require('path'), os = require('os');
@@ -8,6 +9,10 @@ const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(__dirname, 'out');
 const PORT = 8787, BASE = `http://localhost:${PORT}`;
 const SLOW = !process.argv.includes('--fast'); // --fast 跳过等真闹钟那一步
+const LANG = ((process.argv.find(a => a.startsWith('--lang=')) || '').split('=')[1]) || 'en';
+require(path.join(ROOT, 'extension/lib/strings.js'));
+globalThis.QS.setLang(LANG);
+const L = (...a) => globalThis.QS.t(...a); // 界面字：照 strings.js 那门语言
 fs.mkdirSync(OUT, { recursive: true });
 
 const results = [];
@@ -47,6 +52,7 @@ const get = p => fetch(BASE + p).then(r => r.json());
   const badge = () => sw.evaluate(() => chrome.action.getBadgeText({}));
   const until = async (fn, ms = 20000, step = 300) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await sleep(step); } return null; };
   const tabIdOf = url => sw.evaluate(u => chrome.tabs.query({}).then(ts => (ts.find(t => (t.url || '').startsWith(u)) || {}).id), url);
+  await sw.evaluate(l => chrome.storage.local.set({ lang: l }), LANG);
 
   // 记一下后台有没有偷偷开标签（巡山时不该开）
   let tabsOpened = 0;
@@ -67,13 +73,13 @@ const get = p => fetch(BASE + p).then(r => r.json());
 
   // ---- 2. 一打开就认出价格、库存；点价格那行就盯上（不用框、不用点开盯）----
   const kinds = await pop.$$eval('.row.cand .t', els => els.map(e => e.textContent));
-  ok('弹窗自己认出价格和库存（不认划掉的原价）', kinds.join() === '价格,库存' && /1,299/.test(await pop.locator('.row.cand .v').first().textContent()), kinds.join() + ' ' + (await pop.locator('.row.cand .v').allTextContents()).join(' / '));
+  ok('弹窗自己认出价格和库存（不认划掉的原价）', kinds.join() === [L('kindPrice'), L('kindStock')].join() && /1,299/.test(await pop.locator('.row.cand .v').first().textContent()), kinds.join() + ' ' + (await pop.locator('.row.cand .v').allTextContents()).join(' / '));
   await shop.evaluate(() => { window.__clicks = 0; document.addEventListener('click', () => window.__clicks++); });
   await pop.locator('.row.cand[data-k="0"]').click();
   await pop.waitForSelector('.row.cand.on .sub, .sub');
   let priceW = await until(async () => Object.values(await W()).find(w => w.url.endsWith('/shop') && w.lastText != null));
   ok('点一下就盯上，默认「降了就叫」', priceW && priceW.kind === 'price' && priceW.cond.type === 'drop' && /1,299/.test(priceW.lastText), priceW && JSON.stringify({ sel: priceW.selector, text: priceW.lastText, cond: priceW.cond }));
-  ok('自动起名带「价格」', priceW && /价格$/.test(priceW.label), priceW && priceW.label);
+  ok('自动起名带「价格」', priceW && priceW.label.endsWith(' · ' + L('kindPrice')), priceW && priceW.label);
   ok('认出来的那块也记了备用找法（改版不丢）', priceW && priceW.alts.length > 0 && priceW.anchor && priceW.anchor.shape === '¥#', priceW && JSON.stringify({ alts: priceW.alts, anchor: priceW.anchor }));
   ok('网页上闪一下「盯上了」指给人看', !!(await shop.$('qianshou-mark')));
   // 要「低于 1000」：点低于、打 1000、回车
@@ -103,7 +109,7 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await pop.reload(); await pop.waitForSelector('[data-a="whole"]');
   await pop.click('[data-a="whole"]');
   await until(async () => Object.keys(await W()).length === nBefore + 1, 4000);
-  await pop.locator('.row.on:has-text("盯整页") [data-a="undo"]').click();
+  await pop.locator(`.row.on:has-text("${L('watchPage')}") [data-a="undo"]`).click();
   await until(async () => Object.keys(await W()).length === nBefore, 4000);
   ok('刚盯上的能一下撤销', Object.keys(await W()).length === nBefore);
 
@@ -112,7 +118,7 @@ const get = p => fetch(BASE + p).then(r => r.json());
   const spaTab = await tabIdOf(BASE + '/spa');
   await pop.goto(X('popup.html?tab=' + spaTab));
   await pop.waitForSelector('.row.cand[data-k]');
-  ok('脚本页也认出名额', (await pop.locator('.row.cand[data-k] .t').first().textContent()) === '名额');
+  ok('脚本页也认出名额', (await pop.locator('.row.cand[data-k] .t').first().textContent()) === L('kindSeats'));
   await pop.locator('.row.cand[data-k]').first().click();
   const spaW = await until(async () => Object.values(await W()).find(w => w.url.endsWith('/spa') && w.lastText != null), 40000);
   ok('名额是 0 的默认「高于 0 就叫」', spaW && spaW.cond.type === 'above' && spaW.cond.value === 0, spaW && JSON.stringify(spaW.cond));
@@ -396,17 +402,17 @@ const get = p => fetch(BASE + p).then(r => r.json());
   // ---- 16. 一次贴一串网址 ----
   await app.goto(X('app.html#add')); await app.waitForSelector('#urls');
   await app.fill('#urls', [BASE + '/lamp', BASE + '/news?x=1', 'not a url'].join('\n'));
-  ok('按钮写清要盯几个', (await app.textContent('#addGo')) === '盯这 2 个');
+  ok('按钮写清要盯几个', (await app.textContent('#addGo')) === L('addManyGo', 2));
   await app.fill('#lim', '420');
   await app.screenshot({ path: path.join(OUT, '11-app-add.png') });
   const nA = Object.keys(await W()).length;
   await app.click('#addGo');
-  await app.waitForFunction(() => /盯上 2 个/.test(document.querySelector('#addMsg').textContent), null, { timeout: 30000 });
+  await app.waitForFunction(s => document.querySelector('#addMsg').textContent.startsWith(s), L('addManyDone', 2, '', '', '').split(/[:：.]/)[0], { timeout: 30000 });
   const many = Object.values(await W()).filter(w => /\/lamp$|\/news\?x=1$/.test(w.url) && w.created > Date.now() - 60000);
   const mLamp = many.find(w => w.url.endsWith('/lamp')), mNews = many.find(w => w.url.includes('/news'));
   ok('一串网址一次盯上：认出价格的设了「低于 420」，认不出的盯整页', Object.keys(await W()).length === nA + 2 && mLamp && mLamp.kind === 'price' && mLamp.cond.type === 'below' && mLamp.cond.value === 420 && mNews && !mNews.selector,
     JSON.stringify(many.map(w => ({ u: w.url, k: w.kind, c: w.cond, sel: w.selector }))));
-  ok('不像网址的那行跳过并说一声', /不像网址/.test(await app.textContent('#addMsg')));
+  ok('不像网址的那行跳过并说一声', (await app.textContent('#addMsg')).includes(L('badUrls', '').replace(/[:：]\s*$/, '')));
   await app.screenshot({ path: path.join(OUT, '12-app-added.png') });
 
   // ---- 17. 删除不问「确定吗」，给撤销 ----

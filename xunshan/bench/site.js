@@ -4,6 +4,28 @@ const http = require('http');
 const { S, NEWS } = require('./scenario');
 let K = 0;
 let SLOW = 0; // /slow 这一页故意慢（截「看第一眼…」那一刻用）：/_slow?ms=
+// /_lang?l=en 把这家店换成英文店（只给英文版截图用：商品名、货币、库存字样换成英文网站的样子；比武剧本不用）
+let EN = false;
+const EN_WORDS = [
+  ['山货铺是比武用的假网站，所有商品和数字都是编的。', 'Hill Store is a fake shop for testing. Every product and number is made up.'],
+  ['测试商店 · 不卖真东西', 'Test shop · nothing is for sale'],
+  ['山货铺', 'Hill Store'], ['降噪耳机 Pro', 'Noise-Cancelling Headphones Pro'], ['降噪耳机', 'Headphones'],
+  ['加入购物车', 'Add to cart'], ['轻量登山包 28L', 'Ultralight Daypack 28L'], ['登山包', 'Daypack'],
+  ['限量款手表', 'Limited Edition Watch'], ['限量款', 'Limited Edition'], ['剩余名额：', 'Spots left: '], ['加载中…', 'Loading…'],
+  ['店铺公告', 'Store News'], ['公告', 'News'], ['人在看', 'viewing now'], ['现在 ', 'Now '],
+  ['10/20 会员积分翻倍', '10/20 Double points for members'], ['10/28 双十一预售规则公布', '10/28 Singles’ Day pre-sale rules are out'],
+  ['11/01 新增顺丰包邮', '11/01 Free express shipping'], ['11/02 退换货政策更新', '11/02 Returns policy updated'],
+  ['护眼台灯（新版）', 'Desk Lamp (new page)'], ['护眼台灯', 'Eye-Care Desk Lamp'], ['台灯', 'Desk Lamp'],
+  ['新版商品页上线 · 双 11 满 300 减 40', 'New product pages are live · $40 off $300'], ['限时直降', 'Limited-time price cut'],
+  ['请完成安全验证', 'Please verify you are human'], ['访问太频繁，请拖动滑块完成验证。', 'Too many requests. Drag the slider to continue.'], ['安全验证', 'Security check'],
+  ['电热水壶 1.7L', 'Electric Kettle 1.7L'], ['电热水壶', 'Electric Kettle'], ['收纳小物', 'Storage Box No.'], ['小物', 'Box'], [' 号', ''],
+  ['机械键盘 87 键', 'Mechanical Keyboard TKL'], ['机械键盘', 'Mechanical Keyboard'],
+  ['我的订单', 'My Orders'], ['订单 A-0001 · 保温杯', 'Order A-0001 · Travel Mug'], ['待发货', 'Preparing'], ['已发货', 'Shipped'], ['派送中', 'Out for delivery'],
+  ['一键登录（测试）', 'Sign in (test)'], ['请登录', 'Please sign in'], ['登录', 'Sign in'],
+  ['仅剩 3 件', 'Only 3 left'], ['缺货', 'Out of stock'], ['有货', 'In stock'], ['现货', 'In stock'],
+  ['lang="zh"', 'lang="en"'], ['¥', '$']
+];
+const enOf = html => EN_WORDS.reduce((h, [a, b]) => h.split(a).join(b), html);
 const FAST = { 0: 300, 1: 300, 2: 300, 3: 300, 4: 300, 5: 300, 6: 300, 7: 300, 8: 300 };
 const hooks = [];   // 对手发来的通知 [{t, name, body}]
 const changes = []; // 测速页每次改价的时间
@@ -17,7 +39,8 @@ h1{font-size:24px;margin:0 0 10px}.price,.amount{font-size:32px;color:#e4393c;fo
 .ad{background:#fff3cd;padding:10px 16px;border-radius:8px;margin:0 0 16px}.promo{background:#e7f1ff;padding:8px 14px;border-radius:8px;margin-bottom:12px}
 .meta{color:#888;font-size:13px;margin-top:24px}ul.news{list-style:none;padding:0}ul.news li{padding:10px 0;border-bottom:1px solid #eee}
 footer{max-width:980px;margin:40px auto;padding:0 24px;color:#aaa;font-size:12px}`;
-const page = (title, body, extra = '') => `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>${title}</title><style>${css}</style>${extra}</head><body><header>山货铺<small>测试商店 · 不卖真东西</small></header>${body}<footer>山货铺是比武用的假网站，所有商品和数字都是编的。</footer></body></html>`;
+const page0 = (title, body, extra = '') => `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>${title}</title><style>${css}</style>${extra}</head><body><header>山货铺<small>测试商店 · 不卖真东西</small></header>${body}<footer>山货铺是比武用的假网站，所有商品和数字都是编的。</footer></body></html>`;
+const page = (...a) => EN ? enOf(page0(...a)) : page0(...a);
 const yuan = v => '¥' + Number(v).toLocaleString('en-US') + '.00';
 const nowStr = () => new Date().toLocaleTimeString('zh-CN', { hour12: false });
 const viewers = () => Math.floor(Math.random() * 900 + 100);
@@ -59,6 +82,7 @@ http.createServer((req, res) => {
   }
   if (p === '/_step') { K = +u.searchParams.get('k'); return send(200, JSON.stringify({ k: K }), 'application/json'); }
   if (p === '/_fast') { const i = +u.searchParams.get('i'); FAST[i] = +u.searchParams.get('v'); changes.push({ t: Date.now(), i, v: FAST[i] }); return send(200, '{}', 'application/json'); }
+  if (p === '/_lang') { EN = u.searchParams.get('l') === 'en'; return send(200, '{}', 'application/json'); }
   if (p === '/_slow') { SLOW = +u.searchParams.get('ms') || 0; return send(200, '{}', 'application/json'); }
   if (p === '/slow') return setTimeout(() => send(200, page('山货铺 · 机械键盘', `<main><div class="pic">⌨️</div><div><h1>机械键盘 87 键</h1><div class="price">${yuan(699)}</div><div class="tag" id="stock">有货</div></div></main>`)), SLOW);
   if (p === '/_hooks') return send(200, JSON.stringify(hooks), 'application/json');
