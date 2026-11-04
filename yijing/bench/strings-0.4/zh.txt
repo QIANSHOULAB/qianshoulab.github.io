@@ -188,9 +188,12 @@ tidyGroup	同一个「Handle」排回一起，空格补齐
 tidyFillS	Title、Vendor、Type、Tags 等 5 列
 tidyDrop	跳过「SKU」为空的 12 行
 tidyDropS	目标的「SKU」必填，这些行导过去也是废行
-footApp	千手院 · 译经僧 0.4.1
-footMail	要新花样、嫌哪里反人类，找方丈：
+footApp	千手院 · 译经僧 0.4.2
 footHome	千手院总舵
+fbLead	要新花样、嫌哪里反人类？
+fb	提意见
+fbSubject	[千手院反馈] 译经僧 0.4.2
+fbBody	哪里不好用： |  | 想要什么： |  | 别的： |  |  | ——
 langLabel	语言
 langNames.en	EN
 langNames.zh	中文

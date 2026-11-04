@@ -254,6 +254,8 @@ tr:last-child td{border-bottom:0}
 /* 页脚 */
 .foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.8;color:var(--fg-2);text-align:center}
 .mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
+.foot .fb{position:relative;font-weight:600;white-space:nowrap}
+.foot .fb::after{content:"";position:absolute;inset:-12px -8px}   /* 字小，点的地方撑到 44 高 */
 
 /* 弹层 */
 #sheets{position:fixed;inset:0;z-index:50}
@@ -349,7 +351,7 @@ tr:last-child td{border-bottom:0}
 <input type="file" id="fSrc" hidden multiple accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fTgt" hidden accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fRec" hidden accept=".json,application/json">
-<script src="strings.js?v=0.4.1"></script>
+<script src="strings.js?v=0.4.2"></script>
 <script>
 'use strict';
 /* ================= 界面文字：全在 strings.js（中文、英文各一套），这里只挑用哪套 ================= */
@@ -363,6 +365,31 @@ function pickLang() {
   return l;
 }
 let LANG = pickLang(), STR = STRS[LANG];
+const VER = '0.4.2';   // 换版本改这里和上面 strings.js?v=
+
+/* ================= 提意见：一个 mailto 链接，收件人、标题、正文都填好；正文最后一行带上版本和设备，人不用自己打。不接第三方表单，不收任何数据 ================= */
+const FB_TO = 'oilsongchengmin@gmail.com';
+let fbHi = null;   // Chromium 的 UA-CH 能分出 Windows 10 / 11、macOS 和安卓的真版本号；拿不到就只看 UA
+function fbDevice() {
+  const u = navigator.userAgent, pv = fbHi && fbHi.platformVersion ? parseInt(fbHi.platformVersion, 10) : NaN;
+  let os = 'Other', m;
+  if (/Windows/.test(u)) os = /Windows NT 10/.test(u) ? (pv >= 13 ? 'Windows 11' : pv > 0 ? 'Windows 10' : 'Windows') : (m = /Windows NT (\d+\.\d+)/.exec(u)) ? 'Windows ' + ({ '6.1': '7', '6.2': '8', '6.3': '8.1' }[m[1]] || m[1]) : 'Windows';
+  else if ((m = /(iPhone|iPad|iPod).*? OS (\d+)(?:_(\d+))?/.exec(u))) os = (m[1] === 'iPad' ? 'iPadOS ' : 'iOS ') + m[2] + (m[3] && m[3] !== '0' ? '.' + m[3] : '');
+  else if (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) os = 'iPadOS';
+  else if ((m = /Android (\d+(?:\.\d+)?)/.exec(u))) os = 'Android ' + (pv > 0 ? pv : m[1]);
+  else if (/CrOS/.test(u)) os = 'ChromeOS';
+  else if (/Mac OS X/.test(u)) os = 'macOS' + (pv > 0 ? ' ' + pv : '');
+  else if (/Linux/.test(u)) os = 'Linux';
+  const B = [[/MicroMessenger\/(\d+(?:\.\d+)?)/, 'WeChat'], [/Edg(?:A|iOS)?\/(\d+)/, 'Edge'], [/OPR\/(\d+)/, 'Opera'], [/SamsungBrowser\/(\d+)/, 'Samsung Internet'], [/(?:Firefox|FxiOS)\/(\d+)/, 'Firefox'], [/(?:CriOS|Chrome)\/(\d+)/, 'Chrome'], [/Version\/(\d+(?:\.\d+)?).*Safari\//, 'Safari']];
+  let br = 'Other';
+  for (const [re, name] of B) { const x = re.exec(u); if (x) { br = name + ' ' + x[1]; break; } }
+  return os + ' · ' + br;
+}
+function fbHref() {
+  const body = [...STR.fbBody, `${VER} · ${fbDevice()}`].join('\r\n');
+  return `mailto:${FB_TO}?subject=${encodeURIComponent(STR.fbSubject(VER))}&body=${encodeURIComponent(body)}`;
+}
+try { navigator.userAgentData.getHighEntropyValues(['platformVersion']).then(v => { fbHi = v; document.querySelectorAll('a.fb').forEach(a => { a.href = fbHref(); }); }, () => { }); } catch (e) { }
 
 /* ================= 小工具 ================= */
 const $ = (s, r = document) => r.querySelector(s);
@@ -1380,7 +1407,7 @@ function render() {
     if (v === 'pick') h += `<section class="ends">${srcCard()}</section>${tgtSection()}`;
     else h += `${renderEnds()}<section class="grp" id="doubt" hidden></section><section class="grp" id="tidy"${S.prep && (S.prep.g || S.prep.nb) ? '' : ' hidden'}>${renderTidyInner()}</section><section class="grp" id="maps">${renderMapsInner()}</section><section class="grp" id="prev">${renderPreviewInner()}</section>`;
   }
-  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp}</div><div>${STR.footMail}<span class="mail">oilsongchengmin@gmail.com</span></div><div><a href="https://qianshoulab.github.io/">${STR.footHome}</a></div></footer>`;
+  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp(VER)}</div><div>${STR.fbLead}<a class="fb" href="${esc(fbHref())}">${STR.fb}</a></div><div><span class="mail">${FB_TO}</span> · <a href="https://qianshoulab.github.io/">${STR.footHome}</a></div></footer>`;
   if (v === 'work') renderDoubt();
   renderDock();
   const n = recipes().length;

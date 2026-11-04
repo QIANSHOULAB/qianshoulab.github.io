@@ -188,9 +188,12 @@ tidyGroup	Regroup rows by “Handle” and fill blanks
 tidyFillS	Title, Vendor, Type, Tags + 1 more
 tidyDrop	Skip 12 rows with no “SKU”
 tidyDropS	The target requires “SKU”. These rows would just bounce.
-footApp	Yijing · Data Mover 0.4.1 · Qianshou Lab
-footMail	Want a feature, or is something driving you up the wall? Email the abbot: 
+footApp	Yijing · Data Mover 0.4.2 · Qianshou Lab
 footHome	Qianshou Lab
+fbLead	Want a feature, or is something driving you up the wall? 
+fb	Feedback
+fbSubject	[QIANSHOU feedback] Yijing · Data Mover 0.4.2
+fbBody	What’s not working: |  | What you want: |  | Anything else: |  |  | —
 langLabel	Language
 langNames.en	EN
 langNames.zh	中文

@@ -12,6 +12,7 @@ const SAMPLE = {
   listPhr: () => [['back to school', 'free shipping', 'gift ideas', 'new in']], fillS: () => ['Handle'], recSub: () => [13, '2026-11-03'], recFile: () => ['2026-11-03'],
   savedMsg: L => [L.exported(1234, '0.4')], recAuto: () => ['contacts → CRM'], recImported: () => [3], reading: () => ['contacts.csv'], readErr: L => ['scan.pdf', L.notTable],
   exported: () => [1234, '0.4'], secs: () => ['0.4'], sheetNote: () => [3], prof: () => ['Shopify'], colN: () => [3],
+  footApp: () => ['0.4.2'], fbSubject: () => ['0.4.2'],
   tidyFill: () => ['Handle'], tidyGroup: () => ['Handle'], tidyFillS: () => [['Title', 'Vendor', 'Type', 'Tags', 'Body'], 5], tidyDrop: () => ['SKU', 12], tidyDropS: () => ['SKU'],
 };
 const out = { zh: [], en: [] }; let bad = 0;
