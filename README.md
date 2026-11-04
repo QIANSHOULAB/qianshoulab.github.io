@@ -22,7 +22,6 @@ Monks on duty:
 - [Jingtan · Clean Sheet](https://qianshoulab.github.io/xibiao/): Brings inner peace to messy data. (Spreadsheet cleanup, no uploads)
 - [Yijing · Data Mover](https://qianshoulab.github.io/yijing/): Data migration, minus the suffering. (System A export to system B import, web)
 - [Chaojing · Doc Batcher](https://qianshoulab.github.io/chaojing/): Leave the copying to the monk. (Word template + spreadsheet: certificates, invoices, contracts in bulk, web)
-- [Baozu · Rent Splitter](https://qianshoulab.github.io/baozuseng/): Power bill, split to the cent. Drama not included. (Sublet bookkeeping, phone web app, data stays on the phone)
 - [Huayuan · List Grabber](https://qianshoulab.github.io/huayuan/): Any web list, straight into Excel. (Chrome / Edge extension)
 - [Xunshan · Price Watch](https://qianshoulab.github.io/xunshan/): Stares at the page so you don’t have to. (Price drop and restock alerts, Chrome / Edge extension)
 - [Daibi · Form Filler](https://qianshoulab.github.io/daibi/): You sip tea. The monk types. (Spreadsheet rows into web forms, Chrome / Edge extension)
@@ -33,6 +32,7 @@ Odd jobs:
 
 - [Gongshi · Net Hours](https://qianshoulab.github.io/gongshi/): Squeeze out the breaks. Keep the real hours. (Changeover time minus breaks and meals)
 - [Yiye · Pretty Notes](https://qianshoulab.github.io/qianye/): Messy notes in. Pretty picture out. (Handwriting photo or pasted text into a shareable image)
+- [Rent Splitter](https://qianshoulab.github.io/baozuseng/): Power bill, split to the cent. Drama not included. (Sublet bookkeeping, phone web app, data stays on the phone)
 
 ---
 
@@ -56,7 +56,6 @@ Odd jobs:
 - [净坛僧](https://qianshoulab.github.io/xibiao/)：烂表千行，一扫而光（表格清洗，文件不上传）
 - [译经僧](https://qianshoulab.github.io/yijing/)：凡表皆可转，万物皆可通（A 系统导出翻成 B 系统导入格式，网页）
 - [抄经僧](https://qianshoulab.github.io/chaojing/)：名单丢来，贫僧一行抄一份（Word 模板 + Excel 批量出证书、发票、合同，网页）
-- [包租僧](https://qianshoulab.github.io/baozuseng/)：施主收租，贫僧掰账（二房东记账，手机网页，账只存手机）
 - [化缘僧](https://qianshoulab.github.io/huayuan/)：过路留名，见网扒皮（网页名单抓成 Excel，Chrome / Edge 插件）
 - [巡山僧](https://qianshoulab.github.io/xunshan/)：替你盯梢（降价补货提醒，Chrome / Edge 插件）
 - [代笔僧](https://qianshoulab.github.io/daibi/)：施主喝茶，贫僧代笔（Excel 一行行填进网页表单，Chrome / Edge 插件）
@@ -67,3 +66,4 @@ Odd jobs:
 
 - [工时榨汁机](https://qianshoulab.github.io/gongshi/)：水分榨干，只剩真工时（换型实际用时，自动扣茶歇饭点）
 - [一叶笺](https://qianshoulab.github.io/qianye/)：随手成画（手写拍照、打字粘贴，一键排成好看的图分享）
+- [二房东算账](https://qianshoulab.github.io/baozuseng/)：电费掰到分，狮子吼都省了（二房东记账，手机网页，账只存手机）

@@ -1,6 +1,6 @@
 {
-  "name": "包租僧",
-  "short_name": "包租僧",
+  "name": "二房东算账",
+  "short_name": "二房东算账",
   "description": "二房东记账：房租、电费按人头按天自动分，全屋账单一键复制。账只存在你自己手机里。",
   "lang": "zh-CN",
   "start_url": "./",

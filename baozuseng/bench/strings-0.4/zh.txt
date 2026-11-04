@@ -1,15 +1,15 @@
-# 包租僧 0.4.0 中文界面文字（strings.js 导出）。一行一条：键<Tab>文字；#2 是同一句的另一种情形（单复数、正负）。
+# 二房东算账 0.4.2 中文界面文字（strings.js 导出；0.4.2 前叫包租僧）。一行一条：键<Tab>文字；#2 是同一句的另一种情形（单复数、正负）。
 lang	zh-CN
 langAria	语言
 langEN	EN
 langZH	中文
 manifest	manifest.webmanifest
-app	包租僧
-appFull	包租僧
+app	二房东算账
+appFull	二房东算账
 appSub	
 desc	二房东记账：房租、电费按人头按天自动分，全屋账单一键复制。账只存在你自己手机里。
 tagline	电费掰到分，狮子吼都省了
-loading	贫僧翻账本中…
+loading	翻账本中…
 shareWord	分享
 fm.m	8月
 fm.mL	2026年8月
@@ -23,7 +23,7 @@ end	。
 houses	房子
 ledger	总账
 houseMenu	这套房的设置
-emptyS	名单一贴，电费一填，谁该交多少、账单怎么写，贫僧包了。
+emptyS	名单一贴，电费一填，谁该交多少、账单怎么写，都替你弄好。
 firstHouse	建第一套房
 seeDemo	用示例试试
 restore	导回备份
@@ -84,7 +84,7 @@ allPaidT	都收了
 allPaidS	剩下 3 位一键记已收
 allPaidDone	5 位都收了
 elecHintPrev	上个月 $268.30。
-elecHint	账单总数填进来，剩下的贫僧来掰。
+elecHint	账单总数填进来，剩下的不用你掰。
 elecErr	只认数字，比如 268.30
 elecNoTen	还没房客，填了也全归你扛。
 elecAllMine	没房客，这 $268.30 全归你扛。
@@ -153,19 +153,23 @@ staleBk	45 天没存
 restoreS	换手机就点这个
 bkSaved	存好了
 bkNothing	还没自己的账，没什么可存
-bkBad	这不是包租僧的备份，换一个文件试试
+bkBad	这不是二房东算账的备份，换一个文件试试
 bkDone	导回 2 套房
 bkSwapped	换成了备份里的 1 套房
 dropT	松手就导回备份
 settledT	8月的账结清了
 settledM	存一份备份进手机「文件」，换手机一键导回。
 later	下次
-bkFile	包租僧备份-2026-11-05.json
+bkFile	二房东算账备份-2026-11-05.json
 storeLocked	账只存在这台设备里，已上锁，浏览器不会清。
 storeLoose	账只存在这台设备里，记得存备份。
-foot	千手院 · 包租僧 0.4.0
-footMail	要新花样、嫌哪里反人类，找方丈：
-mail	oilsongchengmin@gmail.com
+foot	千手院 · 二房东算账 0.4.2
+fbLead	要新花样、嫌哪里反人类？
+fb	提意见
+fbSubject	[千手院反馈] 二房东算账 0.4.2
+fbBody.0	哪里不好用：
+fbBody.1	想要什么：
+fbBody.2	别的：
 a2hsT	放到主屏幕，账就不会被清
 a2hsIOS	点[⬆]，再点「添加到主屏幕」。
 a2hsAnd	像 App 一样打开。
@@ -223,7 +227,7 @@ delOnly	只删10月这一条。
 deletedN	Raj 删了
 saveMore	再加一位
 savedNext	存好了，下一位
-errName	名字空着，贫僧找谁收钱？
+errName	名字空着，找谁收钱去？
 errRent	月租多少？
 errRentNum	月租只认数字
 errOwe	欠多少？

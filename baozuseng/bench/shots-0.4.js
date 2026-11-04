@@ -3,6 +3,7 @@
 //    0.4.1 起默认英文，中文那遍先把「选过中文」写进 localStorage；另查中文浏览器第一次打开是英文。
 // 2) 排版检查：中英 × 390 / 1280，把每一屏、每个浮层都打开一遍（空状态、示例、首页、房子页、填电费、出错、按房间、总账、
 //    新房子 / 加房客 / 改房客 / 加支出 / 这套房 / 贴名单 / 结清提示、提示条，右上角 EN / 中文 来回切一遍），查：按钮折成两行、字被截断或撑出去、输入框被挤扁、整页横向滚动。
+// 0.4.2：改名二房东算账 / Rent Splitter，页脚「提意见」也查（不许折行、不许出屏）。
 // 用法：node shots-0.4.js <网址> <中文备份.json> <英文备份.json>（备份用 run-baozuseng.js 跑出来的 backup-final.json）
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -22,7 +23,7 @@ function audit() {
   const vis = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && !el.closest('[hidden]'); };
   const lines = el => { const rg = document.createRange(); rg.selectNodeContents(el); const tops = new Set(); for (const r of rg.getClientRects()) if (r.width > 1) tops.add(Math.round(r.top + r.height / 2)); const ys = [...tops].sort((a, b) => a - b); let n = 0, last = -99; for (const y of ys) { if (y - last > 6) n++; last = y; } return n; };
   const label = el => (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40);
-  const SEL = '.btn, .nav-a:not(.round), .nav-back, .chip, .seg button, .sh-x, .sh-ok, .sh-t, .bk-sh, .pick button, #toast button, .ms-t, .txt-btn, .ro-go, .hero-f .go, .row.add > span:not(.plus):not(.row-main), .row.add .row-t, .grp-h h2, .hero-l, .elec-h, .f-k small, .f-k:not(:has(small)), .f-label, .sub-h span, .bk-h span, .demo-bar b, .lt h1:not(.big), .cf-t, .ms-now, .ms-back, .row-t, .row-v, .tag2, .ro-m, .ro-v, .lbl';
+  const SEL = '.btn, .nav-a:not(.round), .nav-back, .chip, .seg button, .sh-x, .sh-ok, .sh-t, .bk-sh, .pick button, #toast button, .ms-t, .txt-btn, .ro-go, .hero-f .go, .row.add > span:not(.plus):not(.row-main), .row.add .row-t, .grp-h h2, .hero-l, .elec-h, .f-k small, .f-k:not(:has(small)), .f-label, .sub-h span, .bk-h span, .demo-bar b, .lt h1:not(.big), .cf-t, .ms-now, .ms-back, .row-t, .row-v, .tag2, .ro-m, .ro-v, .lbl, .foot a.fb';
   for (const el of document.querySelectorAll(SEL)) {
     if (!vis(el)) continue;
     const r = el.getBoundingClientRect(), t = label(el);

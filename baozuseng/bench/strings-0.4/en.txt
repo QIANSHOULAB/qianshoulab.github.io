@@ -1,12 +1,12 @@
-# Baozu 0.4.0 English UI copy (exported from strings.js). One per line: key<Tab>text; #2 = same string, other case (plural, sign).
+# Rent Splitter 0.4.2 English UI copy (exported from strings.js; called Baozu before 0.4.2). One per line: key<Tab>text; #2 = same string, other case (plural, sign).
 lang	en
 langAria	Language
 langEN	EN
 langZH	中文
 manifest	manifest.en.webmanifest
-app	Baozu
-appFull	Baozu · Rent Splitter
-appSub	Rent Splitter
+app	Rent Splitter
+appFull	Rent Splitter
+appSub	
 desc	For landlords who rent out rooms: rent and the power bill, split per person and by the day, in one message for the whole house. Your books stay on your phone.
 tagline	Power bill, split to the cent. Drama not included.
 loading	Consulting the ledger…
@@ -153,19 +153,23 @@ staleBk	45 days old
 restoreS	New phone? Start here.
 bkSaved	Saved
 bkNothing	Nothing of yours to save yet.
-bkBad	That’s not a Baozu backup. Try another file.
+bkBad	That’s not a Rent Splitter backup. Try another file.
 bkDone	Restored 2 places
 bkSwapped	Swapped in 1 place from the backup
 dropT	Drop to restore
 settledT	August: all settled
 settledM	Save a backup to Files. New phone? Restore it in one tap.
 later	Later
-bkFile	baozu-backup-2026-11-05.json
+bkFile	rent-splitter-backup-2026-11-05.json
 storeLocked	Your books live on this device only. Locked in, so the browser won’t clear them.
 storeLoose	Your books live on this device only. Save a backup now and then.
-foot	QIANSHOU LAB · Baozu 0.4.0
-footMail	Feature idea or a gripe? Email the abbot: 
-mail	oilsongchengmin@gmail.com
+foot	QIANSHOU LAB · Rent Splitter 0.4.2
+fbLead	Feature idea or a gripe? 
+fb	Feedback
+fbSubject	[QIANSHOU feedback] Rent Splitter 0.4.2
+fbBody.0	What’s not working:
+fbBody.1	What you’d like:
+fbBody.2	Anything else:
 a2hsT	Keep it on your Home Screen so your books stick around
 a2hsIOS	Tap [⬆], then “Add to Home Screen”.
 a2hsAnd	Opens like an app.

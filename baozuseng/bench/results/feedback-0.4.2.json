@@ -1,0 +1,60 @@
+{
+ "ver": "0.4.2",
+ "clicks": 14,
+ "fails": [],
+ "restore": {
+  "zh": {
+   "file": "包租僧备份-2026-11-03.json",
+   "ok": true,
+   "houses": 2,
+   "newFile": "二房东算账备份-2026-11-04.json"
+  },
+  "en": {
+   "file": "baozu-backup-2026-11-03.json",
+   "ok": true,
+   "houses": 2,
+   "newFile": "rent-splitter-backup-2026-11-04.json"
+  }
+ },
+ "samples": [
+  {
+   "lang": "zh",
+   "where": "介绍页（手机）",
+   "subject": "[千手院反馈] 二房东算账 0.4.2",
+   "lastLine": "0.4.2 · iOS 17 · Safari 17"
+  },
+  {
+   "lang": "en",
+   "where": "介绍页（手机）",
+   "subject": "[QIANSHOU feedback] Rent Splitter 0.4.2",
+   "lastLine": "0.4.2 · iOS 17 · Safari 17"
+  },
+  {
+   "lang": "en",
+   "where": "切到 EN 后",
+   "subject": "[QIANSHOU feedback] Rent Splitter 0.4.2",
+   "lastLine": "0.4.2 · Android 14 · Chrome 130"
+  }
+ ],
+ "devices": [
+  "0.4.2 · iOS 17 · Safari 17",
+  "0.4.2 · Windows 10 · Chrome 130",
+  "0.4.2 · Android 14 · Chrome 130",
+  "0.4.2 · Windows 10 · Edge 130",
+  "0.4.2 · iOS 17 · WeChat 8",
+  "0.4.2 · macOS 10.15 · Safari 17",
+  "0.4.2 · Windows 11 · Chrome 130"
+ ],
+ "mail": [
+  {
+   "lang": "zh",
+   "href": "mailto:oilsongchengmin@gmail.com?subject=%5B%E5%8D%83%E6%89%8B%E9%99%A2%E5%8F%8D%E9%A6%88%5D%20%E4%BA%8C%E6%88%BF%E4%B8%9C%E7%AE%97%E8%B4%A6%200.4.2&body=%E5%93%AA%E9%87%8C%E4%B8%8D%E5%A5%BD%E7%94%A8%EF%BC%9A%0A%0A%E6%83%B3%E8%A6%81%E4%BB%80%E4%B9%88%EF%BC%9A%0A%0A%E5%88%AB%E7%9A%84%EF%BC%9A%0A%0A%0A%E2%80%94%E2%80%94%0A0.4.2%20%C2%B7%20iOS%2017%20%C2%B7%20Safari%2017",
+   "body": "哪里不好用：\n\n想要什么：\n\n别的：\n\n\n——\n0.4.2 · iOS 17 · Safari 17"
+  },
+  {
+   "lang": "en",
+   "href": "mailto:oilsongchengmin@gmail.com?subject=%5BQIANSHOU%20feedback%5D%20Rent%20Splitter%200.4.2&body=What%E2%80%99s%20not%20working%3A%0A%0AWhat%20you%E2%80%99d%20like%3A%0A%0AAnything%20else%3A%0A%0A%0A%E2%80%94%E2%80%94%0A0.4.2%20%C2%B7%20iOS%2017%20%C2%B7%20Safari%2017",
+   "body": "What’s not working:\n\nWhat you’d like:\n\nAnything else:\n\n\n——\n0.4.2 · iOS 17 · Safari 17"
+  }
+ ]
+}

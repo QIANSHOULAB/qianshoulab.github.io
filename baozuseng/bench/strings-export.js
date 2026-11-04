@@ -1,6 +1,6 @@
 // 把 strings.js 的中英两套文字导成 strings-0.4/zh.txt、en.txt（一行一条：键 + Tab + 文字，两份键的顺序一样，方便对着看）。
 // 动态的字用示例值跑一遍；单复数、正负不同说法的都跑两种。再从 strings.js 生成两份 manifest，检查 index.html 里写死的默认英文 <html lang> / <title> / description / manifest 跟 strings.js 一致。
-// 有 e2e 结果（results/result-baozuseng-0.4.0-<lang>.json）就把真流程复制出来的全屋账单也附在末尾。
+// 有 e2e 结果（results/result-baozuseng-0.4.2-<lang>.json，没有就用 0.4.0 的）就把真流程复制出来的全屋账单也附在末尾。
 // 用法：node strings-export.js
 const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
@@ -24,7 +24,7 @@ const S = {
   goneOwe: L => [['$200.00', L.demo.t.t5[0]]], roomSum: L => [[1, '$400.00'], [2, '$800.00']], roomN: L => [[L.rooms[1], 2]],
   nMonths: L => [[1], [4]], chartAria: L => [[2026]], noBook: L => [[L.fm.m('2026-12')]],
   lastBk: L => [[L.fm.mdL('2026-11-05')]], staleBk: L => [[45]], bkDone: L => [[2]], bkSwapped: L => [[1]], settledT: L => [[L.fm.m('2026-08')]], bkFile: L => [['2026-11-05']],
-  foot: L => [['0.4.0']], a2hsIOS: L => [['[⬆]']],
+  foot: L => [['0.4.2']], fbSubject: L => [['0.4.2']], a2hsIOS: L => [['[⬆]']],
   billsHead: L => [[L.fm.m('2026-08'), L.demo.e1, L.demo.u1]],
   billsElec: L => [['$268.30', 5, false, '$53.66', false], ['$165.60', 3, true, '$55.20', true]],
   billsLine: L => [[L.demo.t.t1[0], '$953.66', L.bpRent('$900.00') + ' + ' + L.bpElec('$53.66')]],
@@ -54,14 +54,14 @@ function lines(L, lang) {
   walk(L, '');
   if (missing.length) throw new Error(lang + ' 缺示例参数: ' + missing.join(', '));
   // 真流程里复制出来的全屋账单（整条消息，一行一条）
-  const r = path.join(__dirname, 'results', `result-baozuseng-0.4.0-${lang}.json`);
+  const r = ['0.4.2', '0.4.0'].map(v => path.join(__dirname, 'results', `result-baozuseng-${v}-${lang}.json`)).find(f => fs.existsSync(f)) || '';
   if (fs.existsSync(r)) {
     const bt = JSON.parse(fs.readFileSync(r, 'utf8')).billTexts || {};
     for (const k of ['2026-09A', '2026-10A', '2026-11B']) if (bt[k]) bt[k].split('\n').forEach((l, i) => out.push([`sample.bills.${k}.${i + 1}`, l]));
   }
   return out;
 }
-const head = { zh: '# 包租僧 0.4.0 中文界面文字（strings.js 导出）。一行一条：键<Tab>文字；#2 是同一句的另一种情形（单复数、正负）。', en: '# Baozu 0.4.0 English UI copy (exported from strings.js). One per line: key<Tab>text; #2 = same string, other case (plural, sign).' };
+const head = { zh: '# 二房东算账 0.4.2 中文界面文字（strings.js 导出；0.4.2 前叫包租僧）。一行一条：键<Tab>文字；#2 是同一句的另一种情形（单复数、正负）。', en: '# Rent Splitter 0.4.2 English UI copy (exported from strings.js; called Baozu before 0.4.2). One per line: key<Tab>text; #2 = same string, other case (plural, sign).' };
 const counts = {};
 for (const lang of ['zh', 'en']) {
   const ls = lines(STR[lang], lang);

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Baozu · Rent Splitter</title>
+<title>Rent Splitter</title>
 <meta name="description" content="For landlords who rent out rooms: rent and the power bill, split per person and by the day, in one message for the whole house. Your books stay on your phone.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Baozu">
+<meta name="apple-mobile-web-app-title" content="Rent Splitter">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
@@ -16,7 +16,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <style>
-/* 千手院设计规范 2026-11-03：系统字、一个主色（包租僧粉）、其余全灰；iOS 分组列表；跟随系统深浅色 */
+/* 千手院设计规范 2026-11-03：系统字、一个主色（二房东算账粉，原包租僧那张卡的粉）、其余全灰；iOS 分组列表；跟随系统深浅色 */
 :root{
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
   --bg:#ffffff; --bg-group:#f5f5f7; --card:#ffffff; --card-2:#fbfbfd;
@@ -224,7 +224,10 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 .spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--fill-2);border-top-color:var(--fg-2);animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .foot{margin-top:48px;padding:0 4px;font-size:12px;line-height:1.7;color:var(--fg-2);text-align:center}
-.mail{-webkit-user-select:all;user-select:all;color:var(--fg)}
+/* 提意见：页脚一行里的链接，点的地方撑到 44 高，不把行撑高 */
+.foot a.fb{display:inline-block;padding:12px 8px;margin:-12px -4px;color:var(--accent);font-weight:600;text-decoration:none;-webkit-tap-highlight-color:transparent}
+@media (hover:hover){.foot a.fb:hover{text-decoration:underline}}
+.foot a.fb:focus-visible{outline:2px solid var(--accent);outline-offset:-8px;border-radius:var(--r-chip)}
 
 /* 总账图 */
 .chart{background:var(--card);border-radius:var(--r-card);padding:16px;margin-top:24px;box-shadow:var(--shadow)}
@@ -361,11 +364,11 @@ a.row:active,button.row:active,.row-btn:active{background:var(--fill)}
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="drop" aria-hidden="true"><div id="dropT"></div></div>
 
-<script src="strings.js?v=0.4.1"></script>
+<script src="strings.js?v=0.4.2"></script>
 <script>
 (function () {
 'use strict';
-const VERSION = '0.4.1';
+const VERSION = '0.4.2';
 
 /* =====================================================================
    界面文字全在 strings.js（中文、英文各一套，键一一对应），这里只挑语言：
@@ -628,6 +631,44 @@ const UA = navigator.userAgent || '';
 const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
 const ANDROID = /Android/.test(UA);
 const STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+/* ---------- 提意见：mailto 打开用户自己的邮件程序，标题、正文填好；不接表单，不收数据 ---------- */
+// 设备简写「系统 · 浏览器 大版本」，比如 iOS 17 · Safari 17、Windows 11 · Chrome 130
+function deviceTag() {
+  let os = 'other', br = 'other', m;
+  if ((m = /Windows NT (\d+\.\d+)/.exec(UA))) os = m[1] === '10.0' ? 'Windows' : 'Windows ' + ({ '6.3': '8.1', '6.2': '8', '6.1': '7' }[m[1]] || m[1]);
+  else if ((m = /(?:iPhone|CPU) OS (\d+)_/.exec(UA))) os = (/iPad/.test(UA) ? 'iPadOS ' : 'iOS ') + m[1];
+  else if (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1) os = 'iPadOS';
+  else if ((m = /Android (\d+)/.exec(UA))) os = 'Android ' + m[1];
+  else if (/Mac OS X/.test(UA)) os = 'macOS';
+  else if (/CrOS/.test(UA)) os = 'ChromeOS';
+  else if (/Linux/.test(UA)) os = 'Linux';
+  if ((m = /MicroMessenger\/(\d+)/.exec(UA))) br = 'WeChat ' + m[1];
+  else if ((m = /Edg(?:A|iOS)?\/(\d+)/.exec(UA))) br = 'Edge ' + m[1];
+  else if ((m = /OPR\/(\d+)/.exec(UA))) br = 'Opera ' + m[1];
+  else if ((m = /SamsungBrowser\/(\d+)/.exec(UA))) br = 'Samsung Internet ' + m[1];
+  else if ((m = /(?:Firefox|FxiOS)\/(\d+)/.exec(UA))) br = 'Firefox ' + m[1];
+  else if ((m = /(?:Chrome|CriOS)\/(\d+)/.exec(UA))) br = 'Chrome ' + m[1];
+  else if ((m = /Version\/(\d+).*Safari/.exec(UA))) br = 'Safari ' + m[1];
+  else if (/Safari/.test(UA)) br = 'Safari';
+  return os + ' · ' + br;
+}
+let DEVICE = deviceTag();
+// Chromium 的 UA 里 Windows 10 / 11、macOS、Android 的版本是冻住的，能问到真版本就换上（问不到就用上面的简写）
+try {
+  const ud = navigator.userAgentData;
+  if (ud && /^(Windows|macOS|Android)$/.test(ud.platform) && ud.getHighEntropyValues) ud.getHighEntropyValues(['platformVersion']).then(v => {
+    const pv = String(v.platformVersion || '').split(/[._]/), maj = parseInt(pv[0], 10);
+    if (!(maj > 0) || DEVICE.indexOf(ud.platform) !== 0) return;
+    // Windows：platformVersion 13 起是 11，1–10 是 10；macOS 10.x 带上小版本（10.15），11 起只写大版本
+    const os = ud.platform === 'Windows' ? (maj >= 13 ? 'Windows 11' : 'Windows 10') : ud.platform + ' ' + (ud.platform === 'macOS' && maj === 10 && pv[1] ? '10.' + pv[1] : maj);
+    DEVICE = DEVICE.replace(/^(Windows|macOS|Android)( \d+)?/, os);
+    document.querySelectorAll('a.fb').forEach(a => { a.href = fbHref(); });
+  }).catch(() => {});
+} catch (e) {}
+const FB_TO = ['oilsongchengmin', 'gmail.com'].join('@');   // 拼起来写，少招点垃圾邮件
+// 正文：三行空着的提示，最后一行「版本 · 系统 · 浏览器」，人不用自己打
+const fbHref = () => 'mailto:' + FB_TO + '?subject=' + encodeURIComponent(T.fbSubject(VERSION))
+  + '&body=' + encodeURIComponent(T.fbBody.join('\n\n') + '\n\n\n——\n' + VERSION + ' · ' + DEVICE);
 const ICON = {
   chevR: '<svg class="chev" viewBox="0 0 7 12" aria-hidden="true"><path d="M1 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   chevL: '<svg viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2L2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -748,6 +789,7 @@ const Ops = {
 function backupBody() {
   const hs = realHouses(), houses = {};
   for (const h of hs) houses[h.id] = h;
+  // app 名沿用 'baozuseng'（0.4.2 改名二房东算账也不换）：旧备份（包租僧备份-*.json、baozu-backup-*.json）和新备份互相认，导回只看文件内容，不看文件名
   return { app: 'baozuseng', v: 2, ver: VERSION, at: new Date().toISOString(), order: hs.map(h => h.id), houses };
 }
 function saveBackup() {
@@ -832,7 +874,8 @@ function setNav(o) {
   $('#nav').classList.toggle('wide', !!o.wide);
 }
 const loadingBlock = () => `<div class="loading"><span class="spin"></span>${T.loading}</div>`;
-const footer = () => `<footer class="foot"><div>${T.foot(VERSION)}</div><div id="syncLine">${syncText()}</div><div>${T.footMail}<span class="mail">${T.mail}</span></div></footer>`;
+// 页脚：版本、账存哪、提意见（空账本那屏就是介绍页，跟首页、房子页同一个页脚）
+const footer = () => `<footer class="foot"><div>${T.foot(VERSION)}</div><div id="syncLine">${syncText()}</div><div>${T.fbLead}<a class="fb" href="${esc(fbHref())}">${T.fb}</a></div></footer>`;
 const addRow = (act, label, icon) => `<button type="button" class="row add" data-act="${act}"><span class="plus">${icon || ICON.plus}</span><span>${label}</span></button>`;
 function monthSwitch(min) {
   const m = S.month;
@@ -1414,6 +1457,8 @@ function act(name, el) {
   }
 }
 document.addEventListener('click', e => {
+  const fb = e.target.closest('a.fb');
+  if (fb) { fb.href = fbHref(); return; }   // 提意见：照当前语言、设备重填一遍，然后让浏览器自己打开邮件
   const a = e.target.closest('a[href^="#"]');
   if (a) { e.preventDefault(); go(a.getAttribute('href').slice(1)); return; }
   const b = e.target.closest('[data-act]');

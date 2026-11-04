@@ -1,4 +1,5 @@
-/* 包租僧 · 界面文字：全部在这一个文件里，中文一套、英文一套，键一一对应。
+/* 二房东算账（Rent Splitter，0.4.2 前叫包租僧）· 界面文字：全部在这一个文件里，中文一套、英文一套，键一一对应。
+   0.4.2 起挪进小工具，不扮和尚：寺院腔（贫僧、施主、方丈）一个不留，照小工具的口气，直白、可以逗。
    改字只改这里。默认英文，第二语言中文（Song 11-03 22:19）；页面右上角 EN / 中文 切换，选过就记住，不跟浏览器走。
    英文不是翻译，是照英文用户的习惯重写的。manifest 两份由 bench/strings-export.js 从这里生成。
    动态的字是函数；两套的函数参数一样。 */
@@ -15,10 +16,10 @@ const enMonth = enDate({ month: 'long' }), enMonthYear = enDate({ month: 'long',
 const STR = {
 zh: {
   lang: 'zh-CN', langAria: '语言', langEN: 'EN', langZH: '中文', manifest: 'manifest.webmanifest',
-  app: '包租僧', appFull: '包租僧', appSub: '',
+  app: '二房东算账', appFull: '二房东算账', appSub: '',
   desc: '二房东记账：房租、电费按人头按天自动分，全屋账单一键复制。账只存在你自己手机里。',
   tagline: '电费掰到分，狮子吼都省了',
-  loading: '贫僧翻账本中…',
+  loading: '翻账本中…',
   shareWord: '分享',
   fm: {
     m: ym => +ym.slice(5, 7) + '月',
@@ -30,7 +31,7 @@ zh: {
   },
   sep: '、', c: '，', end: '。',
   houses: '房子', ledger: '总账', houseMenu: '这套房的设置',
-  emptyS: '名单一贴，电费一填，谁该交多少、账单怎么写，贫僧包了。',
+  emptyS: '名单一贴，电费一填，谁该交多少、账单怎么写，都替你弄好。',
   firstHouse: '建第一套房', seeDemo: '用示例试试', restore: '导回备份',
   demoT: '这是示例账本', demoS: '随便点，点坏了不心疼。', demoClear: '清空示例', demoCleared: '示例清掉了',
   undo: '撤销', undone: '撤回来了',
@@ -59,7 +60,7 @@ zh: {
   tenFoot: '点圆圈记已收；搬进搬出、欠租、改房租，点名字。',
   allPaidT: '都收了', allPaidS: n => `剩下 ${n} 位一键记已收`, allPaidDone: n => `${n} 位都收了`,
   elecHintPrev: v => `上个月 ${v}。`,
-  elecHint: '账单总数填进来，剩下的贫僧来掰。',
+  elecHint: '账单总数填进来，剩下的不用你掰。',
   elecErr: '只认数字，比如 268.30',
   elecNoTen: '还没房客，填了也全归你扛。',
   elecAllMine: v => `没房客，这 ${v} 全归你扛。`,
@@ -92,14 +93,17 @@ zh: {
   // 备份与存储
   book: '账本', saveBk: '存备份', lastBk: d => `上次 ${d}`, neverBk: '还没存过', staleBk: n => `${n} 天没存`,
   restoreS: '换手机就点这个', bkSaved: '存好了', bkNothing: '还没自己的账，没什么可存',
-  bkBad: '这不是包租僧的备份，换一个文件试试',
+  bkBad: '这不是二房东算账的备份，换一个文件试试',
   bkDone: n => `导回 ${n} 套房`, bkSwapped: n => `换成了备份里的 ${n} 套房`, dropT: '松手就导回备份',
   settledT: m => `${m}的账结清了`, settledM: '存一份备份进手机「文件」，换手机一键导回。', later: '下次',
-  bkFile: d => `包租僧备份-${d}.json`,
+  bkFile: d => `二房东算账备份-${d}.json`,
   storeLocked: '账只存在这台设备里，已上锁，浏览器不会清。',
   storeLoose: '账只存在这台设备里，记得存备份。',
-  foot: v => `千手院 · 包租僧 ${v}`,
-  footMail: '要新花样、嫌哪里反人类，找方丈：', mail: 'oilsongchengmin@gmail.com',
+  foot: v => `千手院 · 二房东算账 ${v}`,
+  // 提意见：页脚一行，点了打开邮件（mailto），标题、正文都填好；正文最后一行页面自己补「版本 · 系统 · 浏览器」
+  fbLead: '要新花样、嫌哪里反人类？', fb: '提意见',
+  fbSubject: v => `[千手院反馈] 二房东算账 ${v}`,
+  fbBody: ['哪里不好用：', '想要什么：', '别的：'],
   // 放到主屏幕
   a2hsT: '放到主屏幕，账就不会被清',
   a2hsIOS: share => `点${share}，再点「添加到主屏幕」。`,
@@ -130,7 +134,7 @@ zh: {
   copyBill: '复制账单', copiedBill: '复制好了，发给他就行',
   del: '删掉这条', delNote: cur => (cur ? '从这个月起删掉他。要搬走的，填「住到」就行。' : null), delOnly: m => `只删${m}这一条。`,
   deletedN: n => `${n} 删了`, saveMore: '再加一位', savedNext: '存好了，下一位',
-  errName: '名字空着，贫僧找谁收钱？', errRent: '月租多少？', errRentNum: '月租只认数字', errOwe: '欠多少？',
+  errName: '名字空着，找谁收钱去？', errRent: '月租多少？', errRentNum: '月租只认数字', errOwe: '欠多少？',
   errDates: '住到比入住还早？',
   startsOn: d => `${d}起算`,
   rooms: ['主人房', '普通房', '小房', '客厅', '储物间'],
@@ -158,7 +162,7 @@ zh: {
 
 en: {
   lang: 'en', langAria: 'Language', langEN: 'EN', langZH: '中文', manifest: 'manifest.en.webmanifest',
-  app: 'Baozu', appFull: 'Baozu · Rent Splitter', appSub: 'Rent Splitter',
+  app: 'Rent Splitter', appFull: 'Rent Splitter', appSub: '',
   desc: 'For landlords who rent out rooms: rent and the power bill, split per person and by the day, in one message for the whole house. Your books stay on your phone.',
   tagline: 'Power bill, split to\u00a0the\u00a0cent. Drama not\u00a0included.', // 不换行空格：手机上在句号处断行
   loading: 'Consulting the ledger…',
@@ -235,14 +239,17 @@ en: {
   // backup & storage
   book: 'Backup', saveBk: 'Save backup', lastBk: d => `Last saved ${d}`, neverBk: 'Never saved', staleBk: n => `${n} days old`,
   restoreS: 'New phone? Start here.', bkSaved: 'Saved', bkNothing: 'Nothing of yours to save yet.',
-  bkBad: 'That’s not a Baozu backup. Try another file.',
+  bkBad: 'That’s not a Rent Splitter backup. Try another file.',
   bkDone: n => `Restored ${n} ${pl(n, 'place', 'places')}`, bkSwapped: n => `Swapped in ${n} ${pl(n, 'place', 'places')} from the backup`, dropT: 'Drop to restore',
   settledT: m => `${m}: all settled`, settledM: 'Save a backup to Files. New phone? Restore it in one tap.', later: 'Later',
-  bkFile: d => `baozu-backup-${d}.json`,
+  bkFile: d => `rent-splitter-backup-${d}.json`,
   storeLocked: 'Your books live on this device only. Locked in, so the browser won’t clear them.',
   storeLoose: 'Your books live on this device only. Save a backup now and then.',
-  foot: v => `QIANSHOU LAB · Baozu ${v}`,
-  footMail: 'Feature idea or a gripe? Email the abbot: ', mail: 'oilsongchengmin@gmail.com',
+  foot: v => `QIANSHOU LAB · Rent Splitter ${v}`,
+  // feedback: one line in the footer, opens a pre-filled email (mailto); the page adds “version · OS · browser” as the last line
+  fbLead: 'Feature idea or a gripe? ', fb: 'Feedback',
+  fbSubject: v => `[QIANSHOU feedback] Rent Splitter ${v}`,
+  fbBody: ['What’s not working:', 'What you’d like:', 'Anything else:'],
   // add to home screen
   a2hsT: 'Keep it on your Home Screen so your books stick around',
   a2hsIOS: share => `Tap ${share}, then “Add to Home Screen”.`,

@@ -1,6 +1,6 @@
-// 包租僧离线外壳：先上网拿新版，没网就用上次存的。只缓存本站页面文件，不碰账（账在 localStorage）。
-const C = 'baozuseng-0.4.1';
-const SHELL = ['./', './strings.js?v=0.4.1', './manifest.webmanifest', './manifest.en.webmanifest', './icon.svg', './icon-192.png', './apple-touch-icon.png'];
+// 二房东算账（原包租僧）离线外壳：先上网拿新版，没网就用上次存的。只缓存本站页面文件，不碰账（账在 localStorage）。
+const C = 'baozuseng-0.4.2';
+const SHELL = ['./', './strings.js?v=0.4.2', './manifest.webmanifest', './manifest.en.webmanifest', './icon.svg', './icon-192.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

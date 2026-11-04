@@ -1,0 +1,75 @@
+{
+ "lang": "en",
+ "ver": "0.4.2",
+ "counts": {
+  "setup": {
+   "taps": 5,
+   "fields": 5,
+   "chars": 149,
+   "ms": 0
+  },
+  "2026-08": {
+   "taps": 3,
+   "fields": 1,
+   "chars": 5,
+   "ms": 69
+  },
+  "2026-09": {
+   "taps": 11,
+   "fields": 6,
+   "chars": 35,
+   "ms": 0
+  },
+  "2026-10": {
+   "taps": 14,
+   "fields": 7,
+   "chars": 34,
+   "ms": 0
+  },
+  "2026-10-newhouse": {
+   "taps": 3,
+   "fields": 4,
+   "chars": 71,
+   "ms": 0
+  },
+  "2026-11": {
+   "taps": 17,
+   "fields": 5,
+   "chars": 117,
+   "ms": 0
+  },
+  "recheck": {
+   "taps": 3,
+   "fields": 0,
+   "chars": 0,
+   "ms": 0
+  }
+ },
+ "loadsMs": [
+  132,
+  334,
+  72,
+  68
+ ],
+ "billChecks": 30,
+ "billTexts": {
+  "2026-08A": "August bills · Bayview Blk 12 #08-21\nPower $268.30, split 5 ways: $53.66 each for a full month.\nMing $953.66 (rent $900.00 + power $53.66)\nMei $650.00 (rent $650.00, power incl.)\nKeong $453.66 (rent $400.00 + power $53.66)\nJay $453.66 (rent $400.00 + power $53.66)\nRaj $573.66 (rent $520.00 + power $53.66)",
+  "2026-09A": "September bills · Bayview Blk 12 #08-21\nPower $301.75, split 6 ways: $60.76 each for a full month. Move-ins and move-outs pay by the day.\nMing $960.76 (rent $900.00 + power $60.76)\nMei $650.00 (rent $650.00, power incl.)\nKeong $460.76 (rent $400.00 + power $60.76)\nJay $460.76 (rent $400.00 + power $60.76)\nRaj $348.45 (18 days, rent $312.00 + power $36.45)\nKen $220.28 (11 days, rent $198.00 + power $22.28)",
+  "2026-10A": "October bills · Bayview Blk 12 #08-21\nPower $284.10, split 6 ways: $49.48 each for a full month.\nMing $949.48 (rent $900.00 + power $49.48)\nMei $680.00 (rent $680.00, power incl.)\nKeong $449.48 (rent $400.00 + power $49.48)\nJay $449.48 (rent $400.00 + power $49.48)\nKen $589.48 (rent $540.00 + power $49.48)\nLinda $333.87 (23 days, rent $333.87, power incl.)",
+  "2026-10B": "October bills · Sandy Court Blk 3 #11-05\nPower $165.60, split 3 ways (me included): $55.20 each for a full month.\nLee $1,155.20 (rent $1,100.00 + power $55.20)\nTom $805.20 (rent $750.00 + power $55.20)",
+  "2026-11A": "November bills · Bayview Blk 12 #08-21\nPower $250.00, split 6 ways: $45.45 each for a full month. Move-ins and move-outs pay by the day.\nMing $945.45 (rent $900.00 + power $45.45)\nMei $680.00 (rent $680.00, power incl.)\nKeong $645.45 (rent $400.00 + power $45.45 + back rent $200.00)\nJay $222.73 (15 days, rent $200.00 + power $22.73)\nKen $585.45 (rent $540.00 + power $45.45)\nLinda $450.00 (rent $450.00, power incl.)",
+  "2026-11B": "November bills · Sandy Court Blk 3 #11-05\nPower $172.50, split 6 ways (me included): $34.50 each for a full month. Move-ins and move-outs pay by the day.\nLee $1,134.50 (rent $1,100.00 + power $34.50)\nTom $261.50 (10 days, rent $250.00 + power $11.50)\nAmy $529.67 (20 days, rent $506.67 + power $23.00)\nSara $414.50 (rent $380.00 + power $34.50)\nLily $380.00 (rent $380.00, power incl.)"
+ },
+ "prompts": {
+  "aug": true,
+  "sep": true,
+  "oct": false
+ },
+ "checks": 181,
+ "diffs": [],
+ "restore": {
+  "ok": true,
+  "taps": 1
+ },
+ "errors": []
+}

@@ -1,6 +1,6 @@
 {
-  "name": "Baozu · Rent Splitter",
-  "short_name": "Baozu",
+  "name": "Rent Splitter",
+  "short_name": "Rent Splitter",
   "description": "For landlords who rent out rooms: rent and the power bill, split per person and by the day, in one message for the whole house. Your books stay on your phone.",
   "lang": "en",
   "start_url": "./",

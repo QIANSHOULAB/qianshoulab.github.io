@@ -62,9 +62,6 @@ window.QS_STRINGS = {
       chaojing: { name: 'Chaojing · Doc Batcher', sub: 'Leave the copying to the monk.',
         what: 'One Word template plus one spreadsheet: a certificate, invoice or contract for every row. 500 PDFs in about four seconds. Made for month-end paperwork.',
         note: '(Runs in your\u00a0browser. No\u00a0uploads.)', go: 'Batch docs ›' },
-      baozuseng: { name: 'Baozu · Rent Splitter', sub: 'Power bill, split to the cent. Drama not included.',
-        what: 'Paste the tenant list, enter the power bill. Rent and power split by head and by day, and who owes what is obvious at a glance. Made for month-end sublet math.',
-        note: '(Runs on your\u00a0phone. The books stay\u00a0there.)', go: 'Split rent ›' },
       huayuan: { name: 'Huayuan · List Grabber', sub: 'Any web list, straight into Excel.',
         what: 'Made for pages that won’t let you copy. Customer directories, product listings: one scoop and it’s all in a spreadsheet.',
         note: '(Chrome\u00a0/ Edge\u00a0extension)', go: 'Grab lists ›' },
@@ -85,7 +82,10 @@ window.QS_STRINGS = {
         note: '(Runs on your\u00a0phone)', go: 'Squeeze ›' },
       qianye: { name: 'Yiye · Pretty Notes', sub: 'Messy notes in. Pretty picture out.',
         what: 'Snap your handwriting or paste some text. It comes back mounted as a handsome image, ready to share and show off.',
-        note: '(Runs on your\u00a0phone)', go: 'Frame it ›' }
+        note: '(Runs on your\u00a0phone)', go: 'Frame it ›' },
+      baozuseng: { name: 'Rent Splitter', sub: 'Power bill, split to the cent. Drama not included.',
+        what: 'Paste the tenant list, enter the power bill. Rent and power split by head and by day, and who owes what is obvious at a glance. Made for month-end sublet math.',
+        note: '(Runs on your\u00a0phone. The books stay\u00a0there.)', go: 'Split rent ›' }
     },
     abbot: {
       h: '🧘 The Abbot: Master Hands-Off',
@@ -148,9 +148,6 @@ window.QS_STRINGS = {
       chaojing: { name: '抄经僧', sub: '名单丢来，贫僧一行抄一份',
         what: 'Word 模板配一张 Excel，一行抄一份证书、发票、合同，500 份 PDF 四秒抄完。专治月底批量出单。',
         note: '（打开就能用，文件不上传）', go: '请他抄经 ›' },
-      baozuseng: { name: '包租僧', sub: '施主收租，贫僧掰账',
-        what: '租客名单一贴，电费总数一填，房租电费按人头按天自己摊，谁欠钱一眼看穿。专治二房东月底那顿算盘。',
-        note: '（手机打开就能用，账只存你手机）', go: '请他掰账 ›' },
       huayuan: { name: '化缘僧', sub: '过路留名，见网扒皮',
         what: '专治防复制网页。客户名录、商品列表，老衲一铲子全给你铲进表里。',
         note: '（Chrome / Edge 插件）', go: '请他化缘 ›' },
@@ -171,7 +168,10 @@ window.QS_STRINGS = {
         note: '（手机打开就能用）', go: '请他算账 ›' },
       qianye: { name: '一叶笺', sub: '随手成画',
         what: '手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。',
-        note: '（手机打开就能用）', go: '请他装裱 ›' }
+        note: '（手机打开就能用）', go: '请他装裱 ›' },
+      baozuseng: { name: '二房东算账', sub: '电费掰到分，狮子吼都省了',
+        what: '租客名单一贴，电费总数一填，房租电费按人头按天自己摊，谁欠钱一眼看穿。专治二房东月底那顿算盘。',
+        note: '（手机打开就能用，账只存你手机）', go: '去算账 ›' }
     },
     abbot: {
       h: '🧘 方丈法号：释手',
@@ -660,22 +660,6 @@ window.QS_TIP_URL = '';
       </div>
       <span class="go" data-i18n="cards.chaojing.go"></span>
     </a>
-    <a class="card monk" href="/baozuseng/">
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <defs><linearGradient id="g7" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#FF8FC7"/><stop offset="1" stop-color="#E2418C"/></linearGradient></defs>
-        <rect width="64" height="64" rx="15" fill="url(#g7)"/>
-        <path d="M14 31L32 15l18 16v19a2 2 0 0 1-2 2H16a2 2 0 0 1-2-2z" fill="#fff"/>
-        <circle cx="32" cy="38" r="6.5" fill="#E2418C"/>
-        <path d="M32 34.5v7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
-      </svg>
-      <div>
-        <div class="name" data-i18n="cards.baozuseng.name"></div>
-        <div class="sub" data-i18n="cards.baozuseng.sub"></div>
-        <div class="what"><span data-i18n="cards.baozuseng.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.baozuseng.note"></span></div>
-      </div>
-      <span class="go" data-i18n="cards.baozuseng.go"></span>
-    </a>
     <a class="card monk" href="/huayuan/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
         <defs><linearGradient id="g8" x1="0" y1="0" x2="0" y2="1">
@@ -787,6 +771,22 @@ window.QS_TIP_URL = '';
         <div class="what"><span data-i18n="cards.qianye.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.qianye.note"></span></div>
       </div>
       <span class="go" data-i18n="cards.qianye.go"></span>
+    </a>
+    <a class="card monk" href="/baozuseng/">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs><linearGradient id="g7" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#FF8FC7"/><stop offset="1" stop-color="#E2418C"/></linearGradient></defs>
+        <rect width="64" height="64" rx="15" fill="url(#g7)"/>
+        <path d="M14 31L32 15l18 16v19a2 2 0 0 1-2 2H16a2 2 0 0 1-2-2z" fill="#fff"/>
+        <circle cx="32" cy="38" r="6.5" fill="#E2418C"/>
+        <path d="M32 34.5v7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="name" data-i18n="cards.baozuseng.name"></div>
+        <div class="sub" data-i18n="cards.baozuseng.sub"></div>
+        <div class="what"><span data-i18n="cards.baozuseng.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.baozuseng.note"></span></div>
+      </div>
+      <span class="go" data-i18n="cards.baozuseng.go"></span>
     </a>
   </section>
 
