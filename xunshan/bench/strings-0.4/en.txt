@@ -143,6 +143,9 @@ demoLabel	Demo · Headphones price
 demoNote	Just a demo. Nothing gets checked. Delete it and it’s gone.
 mailLine	Want a feature, or something annoying you? Email the abbot: 
 hq	Qianshou Lab
+fb	Feedback
+fbSubject	[QIANSHOU feedback] Xunshan · Price Watch {0}
+fbBody	What’s not working: ⏎  ⏎ What you wish it did: ⏎  ⏎ Anything else:
 notifTitle	Change spotted: {0}
 notifTitleNew	New on {0}
 notifNew	New: {0}

@@ -6,8 +6,8 @@ const { spawn } = require('child_process');
 const fs = require('fs'), path = require('path'), os = require('os');
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.join(__dirname, 'out');
-const PORT = 8787, BASE = `http://localhost:${PORT}`;
+const OUT = process.env.OUT ? path.resolve(process.env.OUT) : path.join(__dirname, 'out');
+const PORT = Number(process.env.PORT) || 8787, BASE = `http://localhost:${PORT}`;
 const SLOW = !process.argv.includes('--fast'); // --fast 跳过等真闹钟那一步
 const LANG = ((process.argv.find(a => a.startsWith('--lang=')) || '').split('=')[1]) || 'en';
 require(path.join(ROOT, 'extension/lib/strings.js'));
@@ -53,6 +53,25 @@ const get = p => fetch(BASE + p).then(r => r.json());
   const until = async (fn, ms = 20000, step = 300) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await sleep(step); } return null; };
   const tabIdOf = url => sw.evaluate(u => chrome.tabs.query({}).then(ts => (ts.find(t => (t.url || '').startsWith(u)) || {}).id), url);
   await sw.evaluate(l => chrome.storage.local.set({ lang: l }), LANG);
+
+  // 提意见：点一下，拦下浏览器要交给邮件程序的 mailto 导航（context 的 request 事件），拆出收件人、标题、正文，逐项核对
+  const VER = mf.version;
+  async function feedback(pg, sel, lang) {
+    const S = globalThis.QS.STR[lang], want = S.fbSubject.replace('{0}', VER), first = S.fbBody.split('\n');
+    const req = ctx.waitForEvent('request', { predicate: r => r.url().startsWith('mailto:'), timeout: 15000 });
+    await pg.click(sel);
+    const u = (await req).url();
+    const to = u.slice(7, u.indexOf('?'));
+    const q = Object.fromEntries(u.slice(u.indexOf('?') + 1).split('&').map(kv => [kv.slice(0, kv.indexOf('=')), decodeURIComponent(kv.slice(kv.indexOf('=') + 1))]));
+    const lines = q.body.split(/\r?\n/), last = lines[lines.length - 1];
+    ok(`提意见（${lang}）：mailto 整串都编过码`, /^[\x21-\x7e]+$/.test(u));
+    ok(`提意见（${lang}）：收件人`, to === 'oilsongchengmin@gmail.com', to);
+    ok(`提意见（${lang}）：标题`, q.subject === want, q.subject);
+    ok(`提意见（${lang}）：正文先三行空着的提示`, first.every((x, i) => lines[i] === x), JSON.stringify(lines.slice(0, first.length)));
+    ok(`提意见（${lang}）：正文最后一行带版本和设备`, new RegExp('^' + VER.replace(/\./g, '\\.') + ' · Linux · Chromium \\d+$').test(last) && lines[lines.length - 2] === '——', last);
+    return { to, subject: q.subject, last };
+  }
+  const FB = [];
 
   // 记一下后台有没有偷偷开标签（巡山时不该开）
   let tabsOpened = 0;
@@ -214,12 +233,12 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await lg.close();
 
   // ---- 9. 验证码页：识别出来，不硬闯 ----
-  const cap = await sw.evaluate(() => handlers.add({ watch: { url: 'http://localhost:8787/captcha', title: '验证', selector: null } }));
+  const cap = await sw.evaluate(b => handlers.add({ watch: { url: b + '/captcha', title: '验证', selector: null } }), BASE);
   ok('验证码页标成「被拦」并退避', cap && cap.err === 'blocked' && cap.nextCheck - Date.now() > cap.interval * 4 * 60000 - 5000, cap && cap.err);
   await sw.evaluate(id => handlers.remove({ id }), cap.id);
 
   // ---- 9b. 盯不了要叫人：连着 3 回被拦，发一条「盯不了了」----
-  const cap2 = await sw.evaluate(() => handlers.add({ watch: { url: 'http://localhost:8787/captcha', title: '验证', selector: null } }));
+  const cap2 = await sw.evaluate(b => handlers.add({ watch: { url: b + '/captcha', title: '验证', selector: null } }), BASE);
   await sw.evaluate(id => handlers.checkNow({ id }), cap2.id);
   await sw.evaluate(id => handlers.checkNow({ id }), cap2.id);
   const brokenN = await until(async () => { const k = Object.keys(await notifs()).filter(k => k.startsWith('e:' + cap2.id)); return k.length ? k : null; }, 3000) || [];
@@ -231,7 +250,7 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await sw.evaluate(() => new Promise(r => chrome.notifications.getAll(n => { Object.keys(n).filter(k => k.startsWith('e:')).forEach(k => chrome.notifications.clear(k)); r(); })));
 
   // ---- 9c. 整页去噪：只变时间、人数，不记不叫 ----
-  const noisy = await sw.evaluate(() => handlers.add({ watch: { url: 'http://localhost:8787/shop', title: '整页', selector: null } }));
+  const noisy = await sw.evaluate(b => handlers.add({ watch: { url: b + '/shop', title: '整页', selector: null } }), BASE);
   await sleep(1100);
   await sw.evaluate(id => handlers.checkNow({ id }), noisy.id);
   await sw.evaluate(id => handlers.checkNow({ id }), noisy.id);
@@ -272,7 +291,7 @@ const get = p => fetch(BASE + p).then(r => r.json());
 
   // ---- 10. 同站排队：一轮里同一网站挨个查完，同一网址只抓一次 ----
   await sw.evaluate(() => snapChain);
-  const spa2 = await sw.evaluate(() => handlers.add({ watch: { url: 'http://localhost:8787/spa', title: '名额 2', selector: '#seats', pickedText: '3' } }));
+  const spa2 = await sw.evaluate(b => handlers.add({ watch: { url: b + '/spa', title: '名额 2', selector: '#seats', pickedText: '3' } }), BASE);
   ok('同一网址第二条也走小窗', spa2 && spa2.mode === 'frame' && spa2.lastText === '3', spa2 && JSON.stringify({ mode: spa2.mode, text: spa2.lastText }));
   await sw.evaluate(() => snapChain);
   await sw.evaluate(async () => { const ws = (await chrome.storage.local.get('watches')).watches; for (const w of Object.values(ws)) w.nextCheck = 0; await chrome.storage.local.set({ watches: ws }); });
@@ -333,6 +352,23 @@ const get = p => fetch(BASE + p).then(r => r.json());
   await app.screenshot({ path: path.join(OUT, '07-app-dark.png') });
   await app.screenshot({ path: path.join(OUT, '07b-app-shots-dark.png'), fullPage: true, clip: await clipHist() });
   await app.emulateMedia({ colorScheme: 'light' });
+  // 提意见：总览页页脚一个链接（关于那块：名字、版本、找方丈），点了拉起邮件，什么都填好
+  await app.locator('.foot #fb').scrollIntoViewIfNeeded();
+  ok('总览页页脚有「提意见」，新标签页打开', (await app.locator('.foot #fb').textContent()) === L('fb') && (await app.locator('#fb').getAttribute('target')) === '_blank', await app.locator('.foot').innerText());
+  await app.screenshot({ path: path.join(OUT, 'fb-app.png') });
+  FB.push(await feedback(app, '#fb', LANG));
+  // 介绍页页脚（file:// 打开，字和插件同一个 strings.js）；页面上换语言，标题和提示跟着换
+  const intro = await ctx.newPage();
+  await intro.goto('file://' + path.join(ROOT, 'index.html') + '?lang=' + LANG);
+  ok('介绍页页脚有「提意见」', (await intro.locator('.foot #fb').textContent()) === L('fb'));
+  await intro.locator('.foot').scrollIntoViewIfNeeded();
+  await intro.screenshot({ path: path.join(OUT, 'fb-intro.png') });
+  FB.push(await feedback(intro, '#fb', LANG));
+  const oth = LANG === 'zh' ? 'en' : 'zh';
+  await intro.click(`#lang [data-l=${oth}]`);
+  await feedback(intro, '#fb', oth);
+  await intro.close();
+  fs.writeFileSync(path.join(OUT, 'feedback-' + LANG + '.json'), JSON.stringify(FB, null, 2));
 
   // 改频率、改条件、暂停（走界面）
   await app.goto(X('app.html#' + priceW.id)); await app.waitForSelector('#civ');

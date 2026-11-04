@@ -157,6 +157,9 @@
       demoNote: 'Just a demo. Nothing gets checked. Delete it and it’s gone.',
       mailLine: 'Want a feature, or something annoying you? Email the abbot: ',
       hq: 'Qianshou Lab',
+      fb: 'Feedback',
+      fbSubject: '[QIANSHOU feedback] Xunshan · Price Watch {0}',
+      fbBody: 'What’s not working:\n\nWhat you wish it did:\n\nAnything else:',
 
       // 通知
       notifTitle: 'Change spotted: {0}',
@@ -370,6 +373,9 @@
       demoNote: '这是示例，贫僧不会真去看。删了就没。',
       mailLine: '要新花样、嫌哪里反人类，找方丈：',
       hq: '千手院总舵',
+      fb: '提意见',
+      fbSubject: '[千手院反馈] 巡山僧 {0}',
+      fbBody: '哪里不好用：\n\n想要什么：\n\n别的：',
 
       // 通知
       notifTitle: '{0} 变了',

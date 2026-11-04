@@ -10,7 +10,10 @@ function words() {
   $('#exp').textContent = t('exportBtn');
   $('#gear').innerHTML = ui.ICON.gear;
 }
-$('#ver').textContent = chrome.runtime.getManifest().version;
+const VER = chrome.runtime.getManifest().version;
+$('#ver').textContent = VER;
+// 提意见：页脚一个链接，mailto 全填好（标题带版本，正文最后一行版本 · 系统 · 浏览器）；新标签页交给默认邮件程序，不要新权限
+const fbSet = QSFeedback.wire($('#fb'), () => ({ subject: t('fbSubject', VER), body: t('fbBody'), version: VER }));
 
 const hash0 = location.hash.slice(1);
 const S = { ws: {}, sel: hash0 && hash0 !== 'add' ? hash0 : null, hist: [], shots: {}, open: null, pendingOrigins: [], draft: null };
@@ -339,8 +342,8 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setInterval(() => { if (document.visibilityState === 'visible' && !$('#det').contains(document.activeElement)) renderDet(); }, 30000);
 // 先拿到上回选的语言再画
 QS.langReady.then(() => {
-  words(); ui.langSwitch($('#lang'));
-  QS.onLang(() => { words(); renderSettings(); refreshAddGo(); renderList(); renderDet(); });
+  words(); fbSet(); ui.langSwitch($('#lang'));
+  QS.onLang(() => { words(); fbSet(); renderSettings(); refreshAddGo(); renderList(); renderDet(); });
   renderSettings();
   return refresh();
 }).then(() => { checkPerms(); if (hash0 === 'add') showAdd(true); });

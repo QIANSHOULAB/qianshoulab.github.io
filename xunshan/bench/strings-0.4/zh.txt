@@ -143,6 +143,9 @@ demoLabel	示例 · 降噪耳机价格
 demoNote	这是示例，贫僧不会真去看。删了就没。
 mailLine	要新花样、嫌哪里反人类，找方丈：
 hq	千手院总舵
+fb	提意见
+fbSubject	[千手院反馈] 巡山僧 {0}
+fbBody	哪里不好用： ⏎  ⏎ 想要什么： ⏎  ⏎ 别的：
 notifTitle	{0} 变了
 notifTitleNew	{0} 有新内容
 notifNew	新增：{0}

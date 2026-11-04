@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Xunshan · Price Watch</title>
 <meta name="description" content="A Chrome / Edge extension that watches pages for price drops, restocks and new posts, and pings you the moment something moves. Free. Your list never leaves your browser.">
-<script src="extension/lib/strings.js?v=0.4.0"></script>
+<script src="extension/lib/strings.js?v=0.4.1"></script>
+<script src="extension/lib/feedback.js?v=0.4.1"></script>
 <script>
 /* 挑语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage xunshan.lang）> 默认英文。不跟浏览器语言走（Song 11-03 22:19）。
    字全在 extension/lib/strings.js；这里只在画页面之前把 <html lang>、标题、简介换好 */
@@ -153,13 +154,13 @@ html[lang="en"] .hero .sl,html[lang="en"] .sec h2{letter-spacing:-.01em}
   <footer class="foot">
     <div data-t="iFootName"></div>
     <div><span data-t="iFootMail"></span><span class="mail">oilsongchengmin@gmail.com</span></div>
-    <div><a href="https://qianshoulab.github.io/" data-t="hq"></a></div>
+    <div><a href="https://qianshoulab.github.io/" data-t="hq"></a> · <a class="fb" id="fb" href="#" data-t="fb"></a></div>
   </footer>
 </div>
 <script>
 /* 换语言（右上角 EN / 中文）：字、图、标题一起换，记住选的 */
 (function(){
-  var VER="0.4.0", ZIP="dist/xunshan-"+VER+".zip", t=QS.t, $=function(s){return document.querySelector(s)};
+  var VER="0.4.1", ZIP="dist/xunshan-"+VER+".zip", t=QS.t, $=function(s){return document.querySelector(s)};
   var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
   function draw(){
     var L=QS.lang(), dir=L==="en"?"img/en/":"img/";
@@ -176,6 +177,9 @@ html[lang="en"] .hero .sl,html[lang="en"] .sec h2{letter-spacing:-.01em}
     var ls=$("#lang"); ls.setAttribute("aria-label",t("langLabel"));
     ls.innerHTML=QS.LANGS.map(function(x){return '<button type="button" data-l="'+x.code+'" lang="'+QS.STR[x.code].htmlLang+'" aria-pressed="'+(x.code===L)+'">'+x.label+"</button>"}).join("");
   }
+  /* 提意见：mailto 全填好，标题和正文照当前语言，最后一行版本 · 系统 · 浏览器 */
+  var fbSet=QSFeedback.wire($("#fb"),function(){return{subject:t("fbSubject",VER),body:t("fbBody"),version:VER}});
+  QS.onLang(fbSet);
   $("#lang").addEventListener("click",function(e){var b=e.target.closest("[data-l]");if(b&&b.dataset.l!==QS.lang())QS.setLang(b.dataset.l)});
   QS.onLang(draw); draw();
 })();
