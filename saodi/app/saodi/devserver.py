@@ -9,8 +9,16 @@ from .api import Api
 
 
 def serve(ui: str, port: int = 8765) -> None:
-    from . import text
+    from . import feedback, text
     text.load(ui)
+    # 开发 / 测试时「提意见」不真开邮件程序：记下拼好的 mailto，GET /dev/opened 拿得到（端到端测试核对用）
+    opened = []
+
+    def record(url):
+        opened.append(url)
+        print("feedback:", url, flush=True)   # 网址本身全是 ASCII，Windows 控制台不会炸
+        return True
+    feedback.launch = record
     api = Api()
     # 开发 / 测试时只在明确给了 SAODI_DOWNLOADS 才去盯「下载」，免得动到开发机上真的下载文件夹
     api.boot(auto_downloads=bool(os.environ.get("SAODI_DOWNLOADS")))
@@ -23,6 +31,14 @@ def serve(ui: str, port: int = 8765) -> None:
             pass
 
         def do_GET(self):
+            if self.path.split("?")[0] == "/dev/opened":
+                body = json.dumps(opened).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if self.path.split("?")[0] == "/dev.js":
                 body = b"window.SAODI_DEV = true;"
                 self.send_response(200)

@@ -275,11 +275,30 @@ def run(out_path: str | None = None) -> int:
                 if old:
                     os.environ["SAODI_DOWNLOADS"] = old
 
+    def t_v041_feedback():
+        """0.4.1 提意见：在这台 Windows 上拼出来的 mailto（只拼不开：CI 机器上没有邮件程序）。"""
+        from urllib.parse import unquote
+        from . import feedback, text
+        base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        text.load(os.path.join(base, "ui"))
+        fb = {}
+        for lg in ("en", "zh"):
+            u = feedback.mailto(lg, VERSION)
+            q = dict(kv.split("=", 1) for kv in u.split("?", 1)[1].split("&"))
+            subj, body = unquote(q["subject"]), unquote(q["body"])
+            assert u.startswith("mailto:" + feedback.TO + "?") and u.isascii() and " " not in u, u
+            assert subj == text.Tl(lg, "fb_subject", v=VERSION) and VERSION in subj and "{" not in subj, subj
+            assert body.split("\r\n")[0] == text.Tl(lg, "fb_q1"), body
+            fb[lg] = {"subject": subj, "last_line": body.split("\r\n")[-1]}
+        assert os.name != "nt" or fb["en"]["last_line"].startswith(VERSION + " · Windows"), fb
+        res["feedback"] = fb
+
     for name, fn in [("speed_1000", t_speed), ("case_swap", t_case_and_swap), ("long_path", t_long_path),
                      ("busy_file", t_busy), ("bad_chars", t_bad_chars), ("exif_organize", t_exif_organize),
                      ("recycle_bin", t_trash), ("watch", t_watch), ("download_resume", t_download),
                      ("tags_copy_unzip_content", t_v02), ("v03_watch_downloads", t_v03_watch),
-                     ("v03_autostart_registry", t_v03_autostart), ("v03_bundle_v04_lang", t_v03_bundle)]:
+                     ("v03_autostart_registry", t_v03_autostart), ("v03_bundle_v04_lang", t_v03_bundle),
+                     ("v041_feedback_mailto", t_v041_feedback)]:
         check(name, fn)
     ok = all(v == "ok" for v in res["checks"].values())
     res["ok"] = ok

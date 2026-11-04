@@ -16,6 +16,16 @@ lang_label	语言
 upd_t	v{v} 搞出来了
 upd_go	去下载
 
+## 提意见
+fb_line	嫌贫僧哪里不顺手？
+fb_btn	提意见
+fb_subject	[千手院反馈] 戒尺僧 {v}
+fb_q1	哪里不好用：
+fb_q2	想要什么：
+fb_q3	别的：
+fb_nomail	没找到邮件程序，地址复制好了：{to}
+up_notes	左下角多了「提意见」，点一下信就开好头了，版本都替你填上。
+
 ## 第一次开头那句话
 intro_t	「下载」交给贫僧了
 intro_s	新下的文件按类型自动分好，开机就在岗。

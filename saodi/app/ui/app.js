@@ -151,7 +151,9 @@ function renderSide() {
   const upd = u && u.newer ? `<button type="button" class="upd" data-act="update" title="${esc(t("upd_go"))}"><b>${esc(t("upd_t", { v: u.version }))}</b>${note ? `<span>${esc(note)}</span>` : ""}</button>` : "";
   const lang = `<div class="lang" role="group" aria-label="${esc(t("lang_label"))}">${[["en", "EN", "en"], ["zh", "中文", "zh-CN"]].map(([v, l, hl]) =>
     `<button type="button" data-act="lang" data-v="${v}" lang="${hl}" aria-pressed="${LANG === v}">${l}</button>`).join("")}</div>`;
-  $("#foot").innerHTML = `${upd}${lang}<div>${t("app")} ${S.hello ? S.hello.version : ""} · <a href="https://qianshoulab.github.io/" data-act="ext" data-v="https://qianshoulab.github.io/">${t("foot_home")}</a></div>
+  // 提意见：一句话 + 「Feedback / 提意见」，点了 Python 拼好 mailto 交给系统默认的邮件程序
+  const fb = `<div class="fbl">${esc(t("fb_line"))} <button type="button" class="fb" data-act="feedback">${esc(t("fb_btn"))}</button></div>`;
+  $("#foot").innerHTML = `${upd}${lang}${fb}<div>${t("app")} ${S.hello ? S.hello.version : ""} · <a href="https://qianshoulab.github.io/" data-act="ext" data-v="https://qianshoulab.github.io/">${t("foot_home")}</a></div>
     <div>${t("foot_mail_pre")}<span class="sel">oilsongchengmin@gmail.com</span></div>`;
 }
 
@@ -523,6 +525,10 @@ function viewHist() {
 }
 
 /* ---------------- 提示条 ---------------- */
+async function copyText(s) {
+  try { await navigator.clipboard.writeText(s); }
+  catch (e) { const ta = document.createElement("textarea"); ta.value = s; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+}
 let toastH;
 function toast(msg, action) {
   const el = $("#toast");
@@ -609,6 +615,10 @@ const ACT = {
   openpath: v => api.open_path(v),
   ext: v => api.open_path(v),
   update: () => api.open_path(S.update.url),
+  feedback: async () => {  // 打不开（没装邮件程序）：地址复制给人，提示条说一声
+    const r = await api.feedback();
+    if (r && !r.ok) { await copyText(r.to); toast(t("fb_nomail", { to: r.to })); }
+  },
   lang: async v => {  // 左下角 EN / 中文：记进设置文件；现成分法、示例、托盘、窗口标题一起换
     if (v === LANG) return;
     setLang(v);

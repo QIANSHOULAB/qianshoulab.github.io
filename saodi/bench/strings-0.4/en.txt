@@ -16,6 +16,16 @@ lang_label	Language
 upd_t	v{v} is out
 upd_go	Get it
 
+## 提意见（左下角一行，介绍页页脚也用；点了用系统默认的邮件程序开一封写好开头的信，不接表单、不收数据）；up_notes = 这一版干了啥（Release 说明、version.json 用同一句）
+fb_line	Jiechi out of line?
+fb_btn	Feedback
+fb_subject	[QIANSHOU feedback] Jiechi · File Sweeper {v}
+fb_q1	What’s not working:
+fb_q2	What you’d like:
+fb_q3	Anything else:
+fb_nomail	No email app found. Address copied: {to}
+up_notes	A Feedback link, bottom-left. One click opens an email that’s half written, version included.
+
 ## 第一次开头那句话
 intro_t	Downloads: handled.
 intro_s	New files get sorted by type as they land. Starts with Windows.

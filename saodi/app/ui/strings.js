@@ -1,4 +1,4 @@
-/* 戒尺僧 0.4.0：给人看的字全在这一个文件里，英文一套、中文一套。
+/* 戒尺僧 0.4.1：给人看的字全在这一个文件里，英文一套、中文一套。
    用的地方：程序界面（app.js）、Python 那边（托盘、冒泡、分出来的文件夹名、示例文件，saodi/text.py 读这个文件）、介绍页 saodi/index.html（i_ 开头那些）。
    默认英文，第二语言中文（Song 11-03 22:19）：程序左下角 EN / 中文 切换，选了记进设置文件（config.json 的 lang），下次打开照旧；
    0.3.x 用过的老用户没选过就接着中文（只有中文那会儿装的，换了语言「下载」里会多出一套英文文件夹）。不跟系统语言自动切。
@@ -17,6 +17,12 @@ window.STR = {
     lang_label: "Language",
     upd_t: "v{v} is out",
     upd_go: "Get it",
+    /* 提意见（左下角一行，介绍页页脚也用；点了用系统默认的邮件程序开一封写好开头的信，不接表单、不收数据）；up_notes = 这一版干了啥（Release 说明、version.json 用同一句） */
+    fb_line: "Jiechi out of line?", fb_btn: "Feedback",
+    fb_subject: "[QIANSHOU feedback] Jiechi · File Sweeper {v}",
+    fb_q1: "What’s not working:", fb_q2: "What you’d like:", fb_q3: "Anything else:",
+    fb_nomail: "No email app found. Address copied: {to}",
+    up_notes: "A Feedback link, bottom-left. One click opens an email that’s half written, version included.",
 
     /* 第一次开头那句话 */
     intro_t: "Downloads: handled.",
@@ -177,6 +183,12 @@ window.STR = {
     lang_label: "语言",
     upd_t: "v{v} 搞出来了",
     upd_go: "去下载",
+    /* 提意见 */
+    fb_line: "嫌贫僧哪里不顺手？", fb_btn: "提意见",
+    fb_subject: "[千手院反馈] 戒尺僧 {v}",
+    fb_q1: "哪里不好用：", fb_q2: "想要什么：", fb_q3: "别的：",
+    fb_nomail: "没找到邮件程序，地址复制好了：{to}",
+    up_notes: "左下角多了「提意见」，点一下信就开好头了，版本都替你填上。",
 
     /* 第一次开头那句话 */
     intro_t: "「下载」交给贫僧了",

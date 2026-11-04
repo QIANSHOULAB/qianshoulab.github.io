@@ -16,7 +16,7 @@ import urllib.request
 
 from . import VERSION
 from . import fsutil as fs
-from . import ops, rename, organize, watch, download, winsys, text
+from . import ops, rename, organize, watch, download, winsys, text, feedback
 from .text import T
 
 UPDATE_URL = "https://qianshoulab.github.io/saodi/version.json"
@@ -212,6 +212,12 @@ class Api:
 
     def open_page(self):
         return self.open_path(PAGE_URL)
+
+    def feedback(self):
+        """左下角「提意见」：拼好 mailto（标题、三行提示、版本 · 系统 · 程序），用系统默认的邮件程序打开。
+        打不开（没装邮件程序）就回 ok: False，界面把地址复制给人。"""
+        url = feedback.mailto(text.lang(), VERSION)
+        return {"ok": feedback.launch(url), "url": url, "to": feedback.TO}
 
     def check_update(self):
         """读总舵上的 version.json；只 GET，不传任何东西。失败就当没新版。"""

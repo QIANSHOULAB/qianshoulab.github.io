@@ -39,8 +39,8 @@ jobs:
       - name: 装依赖
         run: python -m pip install -r requirements.txt pytest pyinstaller==6.16.0
 
-      - name: 核心测试（真 NTFS、真回收站、隐藏属性、开机自启注册表；0.4.0 中英两套）
-        run: python -m pytest -q tests/test_core.py tests/test_v02.py tests/test_v021.py tests/test_v03.py tests/test_v04.py
+      - name: 核心测试（真 NTFS、真回收站、隐藏属性、开机自启注册表；0.4.0 中英两套；0.4.1 提意见：拼出的 mailto 对、调了 os.startfile，不真开邮件程序）
+        run: python -m pytest -q tests/test_core.py tests/test_v02.py tests/test_v021.py tests/test_v03.py tests/test_v04.py tests/test_v041.py
 
       - name: 打包 exe
         run: |
@@ -51,7 +51,7 @@ jobs:
             --hidden-import pystray._win32 main.py
           Get-Item dist/SaodiSeng.exe | Select-Object Name, Length
 
-      - name: exe 自检（1000 个文件计时、占用、超长路径、回收站、续传、标签、复制、解压、盯下载、开机自启）
+      - name: exe 自检（1000 个文件计时、占用、超长路径、回收站、续传、标签、复制、解压、盯下载、开机自启、提意见 mailto）
         run: |
           $out = Join-Path $pwd "selftest.json"
           $p = Start-Process -FilePath dist/SaodiSeng.exe -ArgumentList "--selftest", "`"$out`"" -Wait -PassThru
@@ -112,15 +112,10 @@ jobs:
           if ($LASTEXITCODE -eq 0) {
             gh release upload $tag $asset --clobber -R $env:GITHUB_REPOSITORY
           } else {
-            # Release 说明中英两套：英文在前（默认英文），中文跟着
-            $notes = @"
-          Jiechi · File Sweeper for Windows, from QIANSHOU LAB. Grab SaodiSeng-$env:VERSION.exe and run it, no installer. It starts with Windows and quietly sorts your Downloads folder from the tray. English by default; switch to 中文 bottom-left.
-
-          千手院 · 戒尺僧（原扫地僧）Windows 版。下载 SaodiSeng-$env:VERSION.exe 双击就跑，不用装；开机自己在托盘里盯着「下载」。左下角 EN / 中文 一点就换。
-
-          https://qianshoulab.github.io/saodi/
-          "@
+            # Release 说明中英两套：英文在前（默认英文），中文跟着，各带一句这版干了啥（ui/strings.js 的 up_notes）；写成文件，中文不走控制台
+            python release_notes.py dist/notes.md
+            if ($LASTEXITCODE -ne 0) { throw "release notes failed" }
             gh release create $tag $asset -R $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --latest=false `
-              --title "Jiechi · 戒尺僧 $env:VERSION" --notes $notes
+              --title "Jiechi · 戒尺僧 $env:VERSION" --notes-file dist/notes.md
           }
           $global:LASTEXITCODE = 0

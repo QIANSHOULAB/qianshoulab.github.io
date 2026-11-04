@@ -6,7 +6,7 @@
 <!-- 字全在 app/ui/strings.js（i_ 开头），跟程序共用一份。这里的标题和简介只是给不跑脚本的（搜索引擎、链接预览）看的英文底子 -->
 <title>Jiechi · File Sweeper</title>
 <meta name="description" content="The cure for desktop clutter. Batch-download, rename, and send every file to the folder it belongs in. Free for Windows. Your files never leave your PC.">
-<script src="app/ui/strings.js"></script>
+<script src="app/ui/strings.js?v=0.4.1"></script>
 <script>
 /* 挑语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage saodi.lang）> 默认英文。不跟浏览器语言走（Song 11-03 22:19）。
    画页面之前就把 <html lang>、标题、简介换好，免得先闪一下英文 */
@@ -109,6 +109,10 @@ h1,.tag,.lede{word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance}
 footer{border-top:1px solid var(--line);margin-top:96px;padding:24px 0 calc(32px + env(safe-area-inset-bottom,0px));font-size:13px;color:var(--fg-3)}
 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px}
 footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
+/* 提意见：点的地方够 44 高，排版上不撑开这一行 */
+footer a.fb{display:inline-block;padding:13px 8px;margin:-13px -4px;color:var(--link);font-weight:600;text-decoration:none;-webkit-tap-highlight-color:transparent}
+@media (hover:hover){footer a.fb:hover{text-decoration:underline}}
+footer a.fb:focus-visible{outline:2px solid var(--link);outline-offset:-8px;border-radius:var(--r-chip)}
 
 @media (max-width:760px){
   body{font-size:17px}
@@ -192,6 +196,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
 <footer><div class="wrap">
   <span data-t="i_foot"></span>
   <span><span data-t="foot_mail_pre"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
+  <span><span data-t="fb_line"></span> <a class="fb" href="mailto:oilsongchengmin@gmail.com" data-t="fb_btn">Feedback</a></span>
   <a href="https://qianshoulab.github.io/" data-t="i_foot_home"></a>
 </div></footer>
 <script>
@@ -202,6 +207,45 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
   var $ = function (s) { return document.querySelector(s); };
   var exe = function () { return "SaodiSeng-" + V + ".exe"; };
   var url = function () { return "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/saodi-v" + V + "/" + exe(); };
+  /* 提意见：mailto 打开用户自己的邮件程序，标题、正文填好（字跟程序里同一套 fb_*）；不接表单，不收数据。
+     正文最后一行「版本 · 系统 · 浏览器」简写，比如 0.4.1 · Windows 11 · Edge 130 */
+  var UA = navigator.userAgent || "";
+  function deviceTag() {
+    var os = "other", br = "other", m;
+    if ((m = /Windows NT (\d+\.\d+)/.exec(UA))) os = m[1] === "10.0" ? "Windows" : "Windows " + ({ "6.3": "8.1", "6.2": "8", "6.1": "7" }[m[1]] || m[1]);
+    else if ((m = /(?:iPhone|CPU) OS (\d+)_/.exec(UA))) os = (/iPad/.test(UA) ? "iPadOS " : "iOS ") + m[1];
+    else if (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1) os = "iPadOS";
+    else if ((m = /Android (\d+)/.exec(UA))) os = "Android " + m[1];
+    else if (/Mac OS X/.test(UA)) os = "macOS";
+    else if (/CrOS/.test(UA)) os = "ChromeOS";
+    else if (/Linux/.test(UA)) os = "Linux";
+    if ((m = /MicroMessenger\/(\d+)/.exec(UA))) br = "WeChat " + m[1];
+    else if ((m = /Edg(?:A|iOS)?\/(\d+)/.exec(UA))) br = "Edge " + m[1];
+    else if ((m = /OPR\/(\d+)/.exec(UA))) br = "Opera " + m[1];
+    else if ((m = /(?:Firefox|FxiOS)\/(\d+)/.exec(UA))) br = "Firefox " + m[1];
+    else if ((m = /(?:Chrome|CriOS)\/(\d+)/.exec(UA))) br = "Chrome " + m[1];
+    else if ((m = /Version\/(\d+).*Safari/.exec(UA))) br = "Safari " + m[1];
+    else if (/Safari/.test(UA)) br = "Safari";
+    return os + " · " + br;
+  }
+  var DEVICE = deviceTag(), FB_TO = ["oilsongchengmin", "gmail.com"].join("@");
+  var fbHref = function () {
+    return "mailto:" + FB_TO + "?subject=" + encodeURIComponent(t("fb_subject", { v: V }))
+      + "&body=" + encodeURIComponent([t("fb_q1"), t("fb_q2"), t("fb_q3")].join("\n\n") + "\n\n\n——\n" + V + " · " + DEVICE);
+  };
+  var fbFill = function () { document.querySelectorAll("a.fb").forEach(function (a) { a.href = fbHref(); }); };
+  // Chromium 的 UA 里 Windows 10 / 11、macOS、Android 的版本是冻住的，问得到真版本就换上（问不到就用上面的简写）
+  try {
+    var ud = navigator.userAgentData;
+    if (ud && /^(Windows|macOS|Android)$/.test(ud.platform) && ud.getHighEntropyValues) ud.getHighEntropyValues(["platformVersion"]).then(function (v) {
+      var pv = String(v.platformVersion || "").split(/[._]/), maj = parseInt(pv[0], 10);
+      if (!(maj > 0) || DEVICE.indexOf(ud.platform) !== 0) return;
+      // Windows：platformVersion 13 起是 11，1–10 是 10；macOS 10.x 带上小版本，11 起只写大版本
+      var os = ud.platform === "Windows" ? (maj >= 13 ? "Windows 11" : "Windows 10") : ud.platform + " " + (ud.platform === "macOS" && maj === 10 && pv[1] ? "10." + pv[1] : maj);
+      DEVICE = DEVICE.replace(/^(Windows|macOS|Android)( \d+)?/, os);
+      fbFill();
+    }).catch(function () {});
+  } catch (e) {}
   function draw() {
     document.documentElement.lang = t("html_lang");
     document.title = t("i_title");
@@ -212,6 +256,7 @@ footer .mail{color:var(--fg-2);user-select:all;-webkit-user-select:all}
     $("#exeName").textContent = exe();
     $("#meta").textContent = t("i_meta", { v: V });
     $("#dlBtn").href = $("#dlTop").href = url();
+    fbFill();
     var dir = LANG === "en" ? "img/en/" : "img/";
     $("#shot").src = dir + "app-light.webp"; $("#shotDark").srcset = dir + "app-dark.webp"; $("#shot").alt = t("i_alt");
     var ls = $("#lang");
