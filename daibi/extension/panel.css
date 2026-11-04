@@ -23,6 +23,7 @@ body{min-height:100vh;padding-bottom:calc(var(--dock-h,96px) + 16px)}
 .menu-i::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
 a.menu-i{color:var(--accent-fg)}
 a.menu-i:hover{background:var(--fill)}
+.menu-i svg{width:18px;height:18px;flex:none;fill:none;stroke:var(--fg-3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .menu-mail{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:8px 16px 12px}
 .menu-mail .mail{color:var(--fg-2);font-size:13px;user-select:text;-webkit-user-select:text}
 .top-t{display:contents}

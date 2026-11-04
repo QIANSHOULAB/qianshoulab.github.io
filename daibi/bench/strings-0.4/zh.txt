@@ -132,6 +132,9 @@ fmt.sep	；
 fmt.colon	：
 foot.by	千手院 · 代笔僧
 menu.more	更多
+fb.label	提意见
+fb.subject	[千手院反馈] 代笔僧 {v}
+fb.body	哪里不好用： / 想要什么： / 别的：
 site.title	代笔僧 · 自动填表
 site.desc	浏览器插件：把 Excel / CSV 一行一行填进网页表单。表头自动对上输入框，下拉、日历、iframe 里的表单都会填；你看一眼、点提交，下一行它自己填好。数据只在你的浏览器里。
 site.home	千手院总舵

@@ -12,7 +12,7 @@ const fs = require('fs'), path = require('path'), os = require('os');
 const ROOT = path.resolve(__dirname, '..');
 const LANG = process.env.DAIBI_LANG === 'en' ? 'en' : 'zh';
 const OUT = process.env.SHOTS || path.join(os.tmpdir(), 'daibi-shots-' + LANG);
-const PORT = 18700;
+const PORT = Number(process.env.PORT) || 18700;
 const SITE = n => `http://127.0.0.1:${PORT + n}`;
 const DATA = f => path.join(__dirname, 'data', f);
 fs.mkdirSync(OUT, { recursive: true });
@@ -358,6 +358,48 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   check((await panel.evaluate(() => window.__daibi.lang())) === other, '重开侧栏记得刚选的 ' + other);
   await panel.click(`#langSeg button[data-l=${LANG}]`); await sleep(300);
   check((await panel.evaluate(() => window.__daibi.lang())) === LANG, '切回 ' + LANG);
+
+  /* ===== 11. 提意见：「…」菜单里一个，介绍页页脚一个 ===== */
+  console.log('\n[11] 提意见');
+  const VER = mf.version;
+  // 点一下，拦下浏览器要交给邮件程序的 mailto 导航（context 的 request 事件），拆出收件人、标题、正文，逐项核对
+  async function feedback(pg, sel, lang) {
+    const want = await panel.evaluate(([l, v]) => { const I = QSLib.i18n, l0 = I.lang; I.setLang(l); const r = { subject: I.t('fb.subject', { v }), body: I.t('fb.body') }; I.setLang(l0); return r; }, [lang, VER]);
+    const first = want.body.split('\n');
+    const req = ctx.waitForEvent('request', { predicate: r => r.url().startsWith('mailto:'), timeout: 15000 });
+    await pg.click(sel);
+    const u = (await req).url();
+    const to = u.slice(7, u.indexOf('?'));
+    const q = Object.fromEntries(u.slice(u.indexOf('?') + 1).split('&').map(kv => [kv.slice(0, kv.indexOf('=')), decodeURIComponent(kv.slice(kv.indexOf('=') + 1))]));
+    const lines = q.body.split(/\r?\n/), last = lines[lines.length - 1];
+    check(/^[\x21-\x7e]+$/.test(u), `提意见（${lang}）：mailto 整串都编过码`);
+    check(to === 'oilsongchengmin@gmail.com', `提意见（${lang}）：收件人 ` + to);
+    check(q.subject === want.subject, `提意见（${lang}）：标题 ` + q.subject);
+    check(first.every((x, i) => lines[i] === x), `提意见（${lang}）：正文先三行空着的提示 ` + JSON.stringify(lines.slice(0, first.length)));
+    check(new RegExp('^' + VER.replace(/\./g, '\\.') + ' · Linux · Chromium \\d+$').test(last) && lines[lines.length - 2] === '——', `提意见（${lang}）：正文最后一行带版本和设备 ` + last);
+    return { to, subject: q.subject, last };
+  }
+  const FB = [];
+  await panel.click('#btnMore');
+  check(await panel.isVisible('#fbLink') && (await panel.textContent('#fbLink')) === await T('fb.label') && (await panel.getAttribute('#fbLink', 'target')) === '_blank', '「…」菜单里有「' + await T('fb.label') + '」，新标签页打开');
+  await panel.screenshot({ path: path.join(OUT, '11-menu-feedback.png') });
+  await panel.emulateMedia({ colorScheme: 'dark' });
+  await panel.screenshot({ path: path.join(OUT, '11-menu-feedback-dark.png') });
+  await panel.emulateMedia({ colorScheme: 'light' });
+  FB.push(await feedback(panel, '#fbLink', LANG));
+  await panel.keyboard.press('Escape');
+  check(await panel.isHidden('#menu'), 'Esc 收起菜单');
+  const intro = await ctx.newPage(); watch(intro, 'intro');
+  await intro.setViewportSize({ width: 1280, height: 900 });
+  await intro.goto('file://' + path.join(ROOT, 'index.html') + '?lang=' + LANG);
+  check((await intro.textContent('footer #fb')) === await T('fb.label'), '介绍页页脚有「' + await T('fb.label') + '」');
+  await intro.locator('footer').scrollIntoViewIfNeeded();
+  await intro.screenshot({ path: path.join(OUT, '11-intro-feedback.png') });
+  FB.push(await feedback(intro, '#fb', LANG));
+  await intro.click(`#langSeg button[data-l=${other}]`);
+  await feedback(intro, '#fb', other);
+  await intro.close();
+  fs.writeFileSync(path.join(OUT, 'feedback.json'), JSON.stringify(FB, null, 2));
 
   console.log('\n报错：', errors.length ? errors : '无');
   check(errors.length === 0, '全程控制台零报错');

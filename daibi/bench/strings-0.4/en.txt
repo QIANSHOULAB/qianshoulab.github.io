@@ -132,6 +132,9 @@ fmt.sep	;
 fmt.colon	: 
 foot.by	Qianshou Lab · Daibi
 menu.more	More
+fb.label	Feedback
+fb.subject	[QIANSHOU feedback] Daibi · Form Filler {v}
+fb.body	What’s not working: / What you wish it did: / Anything else:
 site.title	Daibi · Form Filler
 site.desc	Browser extension that fills web forms from Excel or CSV, one row at a time. Columns find their fields on their own; dropdowns, date pickers and iframes included. Your data stays in your browser.
 site.home	Qianshou Lab

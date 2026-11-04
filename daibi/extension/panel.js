@@ -12,13 +12,17 @@
     document.title = t('app.name');
     $('homeLink').href = t('common.homeUrl');
     I18N.toggle($('langSeg'), pickLang);
+    fbSet();   // applyLang 只在 init 里和换语言时调，那时 fbSet 早就有了
   }
   async function pickLang(l) {
     I18N.setLang(l);
     await store.set(LANG_KEY, I18N.lang);
     hideToast(); applyLang(); drawSettings(); render();
   }
-  $('ver').textContent = chrome.runtime.getManifest().version;
+  const VER = chrome.runtime.getManifest().version;
+  $('ver').textContent = VER;
+  // 「…」菜单里的「提意见」：mailto 全填好（标题带版本，正文最后一行版本 · 系统 · 浏览器），新标签页交给默认邮件程序，不要新权限
+  const fbSet = QSFeedback.wire($('fbLink'), () => ({ subject: t('fb.subject', { v: VER }), body: t('fb.body'), version: VER }));
   // 顶栏右上角「…」：署名、总舵、找方丈都收在这里，侧栏正文只干一件事
   const menuOpen = on => { $('menu').hidden = !on; $('btnMore').setAttribute('aria-expanded', String(on)); };
   $('btnMore').onclick = e => { e.stopPropagation(); menuOpen($('menu').hidden); };

@@ -142,6 +142,9 @@ QSLib.i18n.add('en', {
 
   'foot.by': 'Qianshou Lab · Daibi',
   'menu.more': 'More',
+  'fb.label': 'Feedback',
+  'fb.subject': '[QIANSHOU feedback] Daibi · Form Filler {v}',
+  'fb.body': 'What’s not working:\n\nWhat you wish it did:\n\nAnything else:',
 
   /* ---------- 介绍页 daibi/index.html ---------- */
   'site.title': 'Daibi · Form Filler',
@@ -349,6 +352,9 @@ QSLib.i18n.add('zh', {
 
   'foot.by': '千手院 · 代笔僧',
   'menu.more': '更多',
+  'fb.label': '提意见',
+  'fb.subject': '[千手院反馈] 代笔僧 {v}',
+  'fb.body': '哪里不好用：\n\n想要什么：\n\n别的：',
 
   /* ---------- 介绍页 daibi/index.html ---------- */
   'site.title': '代笔僧 · 自动填表',
