@@ -21,11 +21,13 @@ const X = {
   zh: { locale: 'zh-CN', q: '?lang=zh', table: ['编号', '公司', '联系人', '电话', '邮箱', '城市'], id: '编号', contact: '联系人', renamed: '对接人', email: '邮箱',
     cardHeads: ['电话', '邮箱', '城市'], phone: /^138-0000-\d{4}$/, image: '图片', price: '价格', file: /^化缘_127\.0\.0\.1_\d{8}-\d{4}\.(xlsx|csv)$/,
     pagerNext: '.pager a:has-text("下一页")', hintNext: '下一页', page2: /第 2 页/, units: ['名称', '价格', '原价', '评分', '地区', '邮箱', '链接', '图片'], weak: 'foo:1,字段1:1,公司:0',
-    noAccess: '进不去', remembered: /照上次的改法/, undo: '还原', gone: /网页关了/, dlWord: /已下载/, extName: '化缘僧 · 过路留名，见网扒皮', demoFile: /^化缘_示例_/ },
+    noAccess: '进不去', remembered: /照上次的改法/, undo: '还原', gone: /网页关了/, dlWord: /已下载/, extName: '化缘僧 · 过路留名，见网扒皮', demoFile: /^化缘_示例_/,
+    fb: '提意见', fbSubject: '[千手院反馈] 化缘僧 0.4.1', fbFirst: ['哪里不好用：', '', '想要什么：', '', '别的：'] },
   en: { locale: 'en-US', q: '?lang=en', table: ['ID', 'Company', 'Contact', 'Phone', 'Email', 'City'], id: 'ID', contact: 'Contact', renamed: 'Point of contact', email: 'Email',
     cardHeads: ['Phone', 'Email', 'City'], phone: /^\+1 555-01\d{2}$/, image: 'Image', price: 'Price', file: /^Huayuan_127\.0\.0\.1_\d{8}-\d{4}\.(xlsx|csv)$/,
     pagerNext: '.pager a:has-text("Next")', hintNext: 'Next', page2: /Page 2 /, units: ['Name', 'Price', 'Original price', '评分', 'Location', 'Email', 'Link', 'Image'], weak: 'foo:1,Field 1:1,公司:0',
-    noAccess: 'off-limits', remembered: /Same as last time/, undo: 'Undo', gone: /page closed/, dlWord: /downloaded/, extName: 'Huayuan · List Grabber', demoFile: /^Huayuan_Sample_/ },
+    noAccess: 'off-limits', remembered: /Same as last time/, undo: 'Undo', gone: /page closed/, dlWord: /downloaded/, extName: 'Huayuan · List Grabber', demoFile: /^Huayuan_Sample_/,
+    fb: 'Feedback', fbSubject: '[QIANSHOU feedback] Huayuan · List Grabber 0.4.1', fbFirst: ['What’s not working:', '', 'What you wish it did:', '', 'Anything else:'] },
 }[LANG];
 const DONE = () => ['end', 'stop', 'max'].includes(document.body.dataset.state);
 
@@ -116,6 +118,25 @@ async function main() {
     await comp.close();
     await page.emulateMedia({ colorScheme: 'light' }); await panel.emulateMedia({ colorScheme: 'light' });
   }
+  // 提意见：点一下，拦下浏览器要交给邮件程序的 mailto 导航（context 的 request 事件），拆出收件人、标题、正文，逐项核对
+  const VER = JSON.parse(fs.readFileSync(path.join(ROOT, 'extension/manifest.json'), 'utf8')).version;
+  async function feedback(pg, sel, want) {
+    const req = ctx.waitForEvent('request', { predicate: (r) => r.url().startsWith('mailto:'), timeout: 15000 });
+    await pg.click(sel);
+    const u = (await req).url();
+    const [to, qs] = [u.slice(7, u.indexOf('?')), u.slice(u.indexOf('?') + 1)];
+    const q = Object.fromEntries(qs.split('&').map((kv) => [kv.slice(0, kv.indexOf('=')), decodeURIComponent(kv.slice(kv.indexOf('=') + 1))]));
+    const lines = q.body.split(/\r?\n/);
+    ok(/^[\x21-\x7e]+$/.test(u), 'mailto 整串都编过码（没有裸中文、空格、换行）');
+    ok(to === 'oilsongchengmin@gmail.com', '收件人：' + to);
+    ok(q.subject === want.subject, '标题：' + q.subject);
+    ok(want.first.every((x, i) => lines[i] === x), '正文先三行空着的提示：' + JSON.stringify(lines.slice(0, want.first.length)));
+    const last = lines[lines.length - 1];
+    ok(new RegExp('^' + VER.replace(/\./g, '\\.') + ' · Linux · Chromium \\d+$').test(last) && lines[lines.length - 2] === '——', '正文最后一行带版本和设备：' + last);
+    return { to, subject: q.subject, last };
+  }
+  const FB = [];
+
   // 当「第一次用」：记性全清，只留语言（语言是人选过的，换个场景不该忘）
   const fresh = () => sw.evaluate(async () => { const { lang } = await chrome.storage.local.get('lang'); await chrome.storage.local.clear(); if (lang) await chrome.storage.local.set({ lang }); });
   const saveDl = async (d) => { const f = path.join(SHOTS, d.suggestedFilename()); await d.saveAs(f); return f; };
@@ -149,6 +170,17 @@ async function main() {
   ok(true, '滚到最右，渐隐自己去掉');
   await panel.evaluate(() => { document.getElementById('gridScroll').scrollLeft = 0; });
   ok(await panel.locator('.bottom .qs-foot').count() === 0 && await panel.locator('#pop .qs-foot').count() === 1, '侧栏底部只留下载那一排，页脚收进设置浮层');
+  // 提意见：设置浮层里一行，点了拉起邮件，什么都填好
+  await panel.click('#gear');
+  ok(await panel.locator('#pop #fb').isVisible() && (await panel.locator('#fb').textContent()) === X.fb, '设置浮层里有「' + X.fb + '」');
+  ok((await panel.locator('#fb').getAttribute('target')) === '_blank', '「' + X.fb + '」新标签页打开（交给默认邮件程序，侧栏不跳走）');
+  await panel.screenshot({ path: path.join(SHOTS, 'panel-feedback.png') });
+  await panel.emulateMedia({ colorScheme: 'dark' });
+  await panel.screenshot({ path: path.join(SHOTS, 'panel-feedback-dark.png') });
+  await panel.emulateMedia({ colorScheme: 'light' });
+  FB.push(await feedback(panel, '#fb', { subject: X.fbSubject, first: X.fbFirst }));
+  await panel.click('#gear');
+  ok(await panel.locator('#pop').isHidden(), '再点一下设置，浮层收起');
   await page.screenshot({ path: path.join(SHOTS, 'page-table-highlight.png') });
   await panel.screenshot({ path: path.join(SHOTS, 'panel-table-start.png') });
   await panel.emulateMedia({ colorScheme: 'dark' }); await page.emulateMedia({ colorScheme: 'dark' });
@@ -345,6 +377,23 @@ async function main() {
   await panel.waitForSelector('#perm:not([hidden])');
   ok(X.gone.test(await panel.locator('#perm').textContent()) && (await rows(panel)) === 12 && !(await panel.locator('#xlsx').isDisabled()), '话放在出事的地方，已收的 12 行照样能下：' + await panel.locator('#perm').textContent());
   await panel.close();
+
+  // ---------- 8. 介绍页页脚：提意见 ----------
+  console.log('8. 介绍页页脚「提意见」');
+  const intro = await ctx.newPage(); watch(intro, 'intro');
+  await intro.setViewportSize({ width: 1280, height: 860 });
+  await intro.goto(`${BASE}/index.html${X.q}`); await intro.waitForLoadState('networkidle');
+  ok((await intro.locator('.foot #fb').textContent()) === X.fb, '介绍页页脚有「' + X.fb + '」');
+  await intro.locator('.foot').scrollIntoViewIfNeeded();
+  await intro.screenshot({ path: path.join(SHOTS, 'intro-feedback.png') });
+  FB.push(await feedback(intro, '#fb', { subject: X.fbSubject, first: X.fbFirst }));
+  // 介绍页上换语言：标题和提示跟着换
+  const oth = LANG === 'zh' ? 'en' : 'zh';
+  await intro.click(`.lang [data-lang=${oth}]`);
+  const OX = oth === 'en' ? { subject: '[QIANSHOU feedback] Huayuan · List Grabber ' + VER, first: ['What’s not working:'] } : { subject: '[千手院反馈] 化缘僧 ' + VER, first: ['哪里不好用：'] };
+  await feedback(intro, '#fb', OX);
+  await intro.close();
+  fs.writeFileSync(path.join(SHOTS, 'feedback.json'), JSON.stringify(FB, null, 2));
 
   await ctx.close(); server.close();
   if (errors.length) { console.log('报错：\n' + errors.join('\n')); process.exit(1); }

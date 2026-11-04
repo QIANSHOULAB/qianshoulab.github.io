@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Huayuan · List Grabber — any web list, straight into Excel</title>
 <meta name="description" content="A Chrome / Edge extension that turns any list or table on a web page into Excel or CSV. Pages through, scrolls to the end, names the columns. Data never leaves your browser.">
-<script src="extension/lib/strings.js?v=0.4.0"></script>
+<script src="extension/lib/strings.js?v=0.4.1"></script>
+<script src="extension/lib/feedback.js?v=0.4.1"></script>
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="img/icon.svg" type="image/svg+xml">
@@ -127,7 +128,7 @@ h2{margin:0;font-size:clamp(28px,4.4vw,40px);font-weight:700;line-height:1.15;te
 <nav class="nav"><div class="w">
   <a class="home" href="../" data-s="home"></a>
   <b data-s="navName"></b>
-  <a class="btn" href="dist/huayuan-0.4.0.zip" download data-s="navDl"></a>
+  <a class="btn" href="dist/huayuan-0.4.1.zip" download data-s="navDl"></a>
   <div class="lang" role="group"><button type="button" data-lang="en" lang="en">EN</button><button type="button" data-lang="zh" lang="zh-CN">中文</button></div>
 </div></nav>
 
@@ -137,7 +138,7 @@ h2{margin:0;font-size:clamp(28px,4.4vw,40px);font-weight:700;line-height:1.15;te
   <p class="tag" data-s="tag"></p>
   <p class="sub" data-s="sub"></p>
   <div class="cta">
-    <a class="btn" href="dist/huayuan-0.4.0.zip" download data-s="ctaDl"></a>
+    <a class="btn" href="dist/huayuan-0.4.1.zip" download data-s="ctaDl"></a>
     <a class="lnk" href="#install" data-s="ctaHow"></a>
     <a class="lnk" href="demo/" data-s="ctaDemo"></a>
   </div>
@@ -201,11 +202,12 @@ h2{margin:0;font-size:clamp(28px,4.4vw,40px);font-weight:700;line-height:1.15;te
   <span data-s="footName"></span>
   <span><span data-s="footMail"></span><span class="mail">oilsongchengmin@gmail.com</span></span>
   <a href="https://qianshoulab.github.io/" data-s="footHome"></a>
+  <a class="fb" id="fb" href="#" data-s="fb"></a>
 </div></footer>
 <script>
 // 字全在 extension/lib/strings.js 的 site 里。默认英文；右上角 EN / 中文，选过就记住；网址带 ?lang=zh|en 先听网址
 (() => {
-  const SITE = QSStrings.site, LK = 'huayuan.lang';
+  const SITE = QSStrings.site, LK = 'huayuan.lang', VER = '0.4.1';
   const save = (l) => { try { localStorage.setItem(LK, l); } catch (e) {} };
   let lang = null;
   try { lang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
@@ -224,7 +226,11 @@ h2{margin:0;font-size:clamp(28px,4.4vw,40px);font-weight:700;line-height:1.15;te
     const g = document.querySelector('.lang');
     g.setAttribute('aria-label', s.langLabel);
     for (const b of g.children) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+    fbSet();
   }
+  // 提意见：mailto 全填好，标题和正文照页面当前语言（字在侧栏那套 fbSubject / fbBody），最后一行版本 · 系统 · 浏览器
+  const P = () => QSStrings.packs[lang];
+  const fbSet = QSFeedback.wire(document.getElementById('fb'), () => ({ subject: QSStrings.fill(P().fbSubject, { v: VER }), body: P().fbBody, version: VER }));
   document.querySelector('.lang').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-lang]');
     if (!b || b.dataset.lang === lang) return;

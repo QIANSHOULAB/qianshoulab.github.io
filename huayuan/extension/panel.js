@@ -593,6 +593,9 @@
   };
   $('openDemo').onclick = (e) => { e.preventDefault(); chrome.tabs.create({ url: T('demoUrl') }); };
 
+  // 提意见：设置浮层里那一行。mailto 全填好（标题带版本，正文最后一行版本 · 系统 · 浏览器），点的那一下照当时的语言
+  const VER = chrome.runtime.getManifest().version;
+  QSFeedback.wire($('fb'), () => ({ subject: T('fbSubject', { v: VER }), body: T('fbBody'), version: VER }));
   $('gear').onclick = (e) => { e.stopPropagation(); const p = $('pop'); p.hidden = !p.hidden; $('gear').setAttribute('aria-expanded', String(!p.hidden)); };
   document.addEventListener('click', (e) => { if (!e.target.closest('.top-r')) { $('pop').hidden = true; $('gear').setAttribute('aria-expanded', 'false'); } });
   for (const id of ['setDelay', 'setMax', 'setAuto']) $(id).addEventListener('change', () => {

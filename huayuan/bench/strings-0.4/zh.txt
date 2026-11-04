@@ -4,6 +4,9 @@
 langLabel	语言
 footMail	找方丈：
 footHome	千手院总舵
+fb	提意见
+fbSubject	[千手院反馈] 化缘僧 {v}
+fbBody	哪里不好用：  想要什么：  别的：
 dlXlsx	下载 Excel
 dlCsv	下载 CSV
 fmtXlsx	Excel
@@ -141,7 +144,7 @@ sub	专治防复制网页。客户名录、商品列表，老衲一铲子全给�
 ctaDl	下载插件
 ctaHow	怎么装 ›
 ctaDemo	示例页 ›
-ver	0.4.0 · Chrome / Edge · 免费
+ver	0.4.1 · Chrome / Edge · 免费
 alt1	左边网页的客户名单被金框圈出，右边侧栏里化缘僧已经认出 20 行 8 列
 cap1	金框是它认出的名单，虚框是它找到的「下一页」。没人教过它。
 h2a	你只管扫一眼。
@@ -175,7 +178,7 @@ alt3	深色模式下，卡片式销售线索翻 4 页收了 48 条，已经自�
 cap3	卡片线索翻 4 页：48 条，化完自己下好了。
 h2d	怎么装
 leadD	还没上商店，先用开发者模式装，三分钟。
-st1	<a href="dist/huayuan-0.4.0.zip" download>下载 huayuan-0.4.0.zip</a>，解压成一个文件夹
+st1	<a href="dist/huayuan-0.4.1.zip" download>下载 huayuan-0.4.1.zip</a>，解压成一个文件夹
 st1s	文件夹删了插件就没了，放个稳当的地方。
 st2	地址栏打开 <code>edge://extensions</code>
 st2s	Chrome 用 <code>chrome://extensions</code>
@@ -188,6 +191,7 @@ st5s	以后在有列表的网页上点它，右边出侧栏就开工。快捷键
 footName	千手院 · 化缘僧
 footMail	要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：
 footHome	千手院总舵
+fb	提意见
 
 ## 侧栏示例表的假数据
 co	青禾 / 远山 / 白鹭 / 银杏 / 北辰 / 南风 / 松石 / 云杉

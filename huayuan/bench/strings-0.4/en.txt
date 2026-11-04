@@ -4,6 +4,9 @@
 langLabel	Language
 footMail	Write to the abbot: 
 footHome	QIANSHOU LAB home
+fb	Feedback
+fbSubject	[QIANSHOU feedback] Huayuan · List Grabber {v}
+fbBody	What’s not working:  What you wish it did:  Anything else:
 dlXlsx	Download Excel
 dlCsv	Download CSV
 fmtXlsx	Excel
@@ -141,7 +144,7 @@ sub	Copy-protected page? Cute. Client lists, product listings, every page of the
 ctaDl	Download
 ctaHow	How to install ›
 ctaDemo	Sample pages ›
-ver	0.4.0 · Chrome / Edge · Free
+ver	0.4.1 · Chrome / Edge · Free
 alt1	A client list on the left, outlined in gold; the Huayuan side panel on the right has already found 20 rows and 8 columns
 cap1	The gold box is the list it found. The dashed one is the “Next” button. Nobody told it.
 h2a	All you do is glance.
@@ -175,7 +178,7 @@ alt3	Dark mode: lead cards across 4 pages, 48 leads collected and already downlo
 cap3	Lead cards, 4 pages: 48 leads, downloaded without being asked.
 h2d	Install
 leadD	Not in the stores yet. Developer mode takes three minutes.
-st1	<a href="dist/huayuan-0.4.0.zip" download>Download huayuan-0.4.0.zip</a> and unzip it
+st1	<a href="dist/huayuan-0.4.1.zip" download>Download huayuan-0.4.1.zip</a> and unzip it
 st1s	Keep the folder somewhere safe. Delete it and the extension goes too.
 st2	Open <code>chrome://extensions</code>
 st2s	In Edge: <code>edge://extensions</code>
@@ -188,6 +191,7 @@ st5s	Click it on any page with a list and the side panel takes over. Shortcut: A
 footName	QIANSHOU LAB · Huayuan
 footMail	Feature ideas, feedback or business: write to the abbot at 
 footHome	QIANSHOU LAB home
+fb	Feedback
 
 ## 侧栏示例表的假数据
 co	Bluegrass / Copperleaf / Harbor / Pinecrest / Juniper / Stonebridge / Saltmarsh / Redwood
