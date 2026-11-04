@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Privacy · QIANSHOU LAB</title>
+<meta name="description" content="Privacy policy for every QIANSHOU LAB extension and web tool. We collect nothing, upload nothing and use no tracking cookies. Your data stays in your browser.">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFB547'/%3E%3Cstop offset='1' stop-color='%23EF6A1A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23s)'/%3E%3Cpath d='M37.5 17A16 16 0 1 0 47.5 27.9' fill='none' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* 长相照 _ops/设计规范.md；主色取总舵图标的橙（#EF6A1A 加深到白底 5:1），深色模式用图标的金 */
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --bg:#ffffff; --bg-group:#f5f5f7; --card:#ffffff; --card-2:#fbfbfd;
+  --fg:#1d1d1f; --fg-2:#6e6e73; --fg-3:#86868b;
+  --line:rgba(0,0,0,.08); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.2);
+  --accent:#C2410C; --on-accent:#ffffff;
+  --r-card:18px; --r-btn:12px; --r-field:10px; --r-chip:8px;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  --glass:rgba(245,245,247,.72);
+  --ease:cubic-bezier(.2,.8,.2,1); --t:240ms;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000000; --bg-group:#000000; --card:#1c1c1e; --card-2:#2c2c2e;
+  --fg:#f5f5f7; --fg-2:#a1a1a6; --fg-3:#8e8e93;
+  --line:rgba(255,255,255,.12); --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
+  --accent:#FFB547; --on-accent:#1d1d1f; --shadow:none;
+  --glass:rgba(0,0,0,.72);
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg-group)}
+body{margin:0;background:var(--bg-group);color:var(--fg);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.w{max-width:720px;margin:0 auto;padding:0 16px}
+
+.nav{position:sticky;top:0;z-index:10;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line)}
+.nav .w{display:flex;align-items:center;gap:16px;height:52px}
+.nav .home{flex:1;display:inline-flex;align-items:center;min-height:44px;color:var(--fg);font-size:15px;font-weight:600}
+.nav .home:hover{text-decoration:none;color:var(--fg-2)}
+
+.lang{display:flex;flex:none;background:var(--fill);border-radius:var(--r-field);padding:2px;gap:2px}
+.lang button{position:relative;height:28px;padding:0 10px;border:0;border-radius:var(--r-chip);background:none;color:var(--fg);font:400 13px/1 var(--font);cursor:pointer;transition:background-color var(--t) var(--ease)}
+.lang button::after{content:"";position:absolute;inset:-8px -1px}  /* 点得到的地方够 44 高 */
+.lang button[aria-pressed="true"]{background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1),0 0 0 .5px rgba(0,0,0,.04)}
+.lang button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-color-scheme:dark){.lang button[aria-pressed="true"]{background:#636366}}
+
+.hero{padding:64px 0 32px}
+.hero .ico{display:block;width:64px;height:64px;margin:0 0 24px}
+h1{margin:0;font-size:clamp(40px,6vw,56px);font-weight:700;line-height:1.1}
+.lead{margin:12px 0 0;color:var(--fg-2);font-size:21px;line-height:1.4}
+h1,.lead,h2{word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance}
+:lang(en) h1,:lang(en) h2{letter-spacing:-.02em}
+
+/* iOS 设置那种分组列表：行高够、细线从字左边起 */
+.list{margin:0;padding:0;list-style:none;background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow)}
+.list li{position:relative;display:grid;grid-template-columns:28px 1fr;gap:2px 16px;padding:16px 20px}
+.list li+li::before{content:"";position:absolute;left:64px;right:0;top:0;border-top:.5px solid var(--line)}
+.list svg{grid-row:span 2;width:28px;height:28px;margin-top:1px;color:var(--fg-2)}
+.list b{font-size:17px;font-weight:600;line-height:1.35}
+.list span{color:var(--fg-2);font-size:15px}
+.mail{white-space:nowrap}
+
+section{margin-top:48px}
+h2{margin:0 0 12px;padding:0 4px;font-size:22px;font-weight:700;line-height:1.2}
+.cover{margin:0 0 16px;padding:0 4px;color:var(--fg-2);font-size:15px}
+.apps{margin:0;padding:0;list-style:none;background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow)}
+.apps li{position:relative}
+.apps li+li::before{content:"";position:absolute;left:20px;right:0;top:0;border-top:.5px solid var(--line)}
+.apps a{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 20px;color:var(--fg)}
+.apps a:hover{text-decoration:none;background:var(--card-2)}
+.apps li:first-child a{border-radius:var(--r-card) var(--r-card) 0 0}
+.apps li:last-child a{border-radius:0 0 var(--r-card) var(--r-card)}
+.apps .n{flex:1;font-size:17px}
+.apps .k{color:var(--fg-3);font-size:13px;white-space:nowrap}
+.apps .chev{width:8px;height:14px;color:var(--fg-3);flex:none}
+.date{margin:16px 0 0;padding:0 4px;color:var(--fg-3);font-size:13px;font-variant-numeric:tabular-nums}
+
+/* 页脚跟总舵首页一样的三样：名号、找方丈、提意见 */
+.foot{margin-top:72px;border-top:.5px solid var(--line);padding:24px 0 48px;color:var(--fg-2);font-size:13px}
+.foot .w{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+.foot a{color:var(--fg-2);white-space:nowrap}
+.foot a:hover{color:var(--fg)}
+
+@media (max-width:560px){
+  .hero{padding-top:40px}
+  .lead{font-size:19px}
+  .list li{padding:14px 16px}
+  .list li+li::before{left:60px}
+  .apps a{padding:8px 16px}
+  .apps li+li::before{left:16px}
+  .apps .k{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="w">
+  <a class="home" href="../" data-s="home">QIANSHOU LAB</a>
+  <div class="lang" role="group" aria-label="Language"><button type="button" data-lang="en" lang="en" aria-pressed="true">EN</button><button type="button" data-lang="zh" lang="zh-CN" aria-pressed="false">中文</button></div>
+</div></nav>
+
+<main class="w">
+  <header class="hero">
+    <svg class="ico" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB547"/><stop offset="1" stop-color="#EF6A1A"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#g)"/><path d="M37.5 17A16 16 0 1 0 47.5 27.9" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg>
+    <h1 data-s="h1">Privacy</h1>
+    <p class="lead" data-s="lead">Short version: what you do here never reaches us.</p>
+  </header>
+
+  <ul class="list">
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12s3.5-6.5 9-6.5c1.6 0 3 .5 4.2 1.2M21 12s-3.5 6.5-9 6.5c-1.6 0-3-.5-4.2-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M4 20 20 4"/></svg>
+      <b data-s="t1">We collect nothing.</b>
+      <span data-s="d1">No accounts, no analytics, no ad trackers. We don’t even know you were here.</span>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M3 3l18 18"/></svg>
+      <b data-s="t2">Nothing gets uploaded.</b>
+      <span data-s="d2">Your files, spreadsheets and grabbed lists are processed on your own device. The extensions only talk to the sites you point them at.</span>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 12.6A9 9 0 1 1 11.4 3a3 3 0 0 0 3.6 3.6 3 3 0 0 0 3.4 3.4 3 3 0 0 0 2.5 2.6z"/><path d="M8.5 9.5h.01M15.5 15h.01M10 15.5h.01"/></svg>
+      <b data-s="t3">No tracking cookies.</b>
+      <span data-s="d3">Not one. Not even the tasty kind.</span>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><path d="M7 6.5h.01M10 6.5h.01"/><path d="M10 14.5l1.5 1.5 3-3"/></svg>
+      <b data-s="t4">Your data lives in your browser.</b>
+      <span data-s="d4">Settings and saved lists sit in your browser’s own storage. Remove the extension or clear site data and they’re gone.</span>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>
+      <b data-s="t5">Questions?</b>
+      <span><span data-s="d5">Email the abbot: </span><a class="mail" id="mail" href="mailto:oilsongchengmin@gmail.com">oilsongchengmin@gmail.com</a></span>
+    </li>
+  </ul>
+
+  <section>
+    <h2 data-s="h2">Covers</h2>
+    <p class="cover" data-s="cover">Every QIANSHOU LAB extension and web tool, including:</p>
+    <ul class="apps">
+      <li><a href="../huayuan/"><span class="n" data-s="a1">Huayuan · List Grabber</span><span class="k" data-s="ext">Chrome / Edge extension</span><svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1 1 6 6-6 6"/></svg></a></li>
+      <li><a href="../xunshan/"><span class="n" data-s="a2">Xunshan · Price Watch</span><span class="k" data-s="ext">Chrome / Edge extension</span><svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1 1 6 6-6 6"/></svg></a></li>
+      <li><a href="../daibi/"><span class="n" data-s="a3">Daibi · Form Filler</span><span class="k" data-s="ext">Chrome / Edge extension</span><svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1 1 6 6-6 6"/></svg></a></li>
+      <li><a href="../"><span class="n" data-s="a4">Every tool on qianshoulab.github.io</span><svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1 1 6 6-6 6"/></svg></a></li>
+    </ul>
+    <p class="date" data-s="date">Updated November 4, 2026</p>
+  </section>
+</main>
+
+<footer class="foot"><div class="w">
+  <span data-s="brand">QIANSHOU LAB</span>
+  <span><span data-s="mailLead">Got a nasty job? </span><a id="pigeon" href="mailto:oilsongchengmin@gmail.com" data-s="pigeon">Send the abbot a pigeon (email)</a></span>
+  <a class="fb" id="fb" href="mailto:oilsongchengmin@gmail.com" data-s="fb">Feedback</a>
+</div></footer>
+
+<script>
+// 字全在这一处：en 默认，zh 第二。挑语言：网址 ?lang=zh|en > 右上角选过的（localStorage「qianshou.lang」，跟总舵首页同一个） > 英文
+(function () {
+  var S = {
+    en: {
+      htmlLang: 'en',
+      title: 'Privacy · QIANSHOU LAB',
+      desc: 'Privacy policy for every QIANSHOU LAB extension and web tool. We collect nothing, upload nothing and use no tracking cookies. Your data stays in your browser.',
+      langLabel: 'Language',
+      home: 'QIANSHOU LAB',
+      h1: 'Privacy',
+      lead: 'Short version: what you do here never reaches us.',
+      t1: 'We collect nothing.',
+      d1: 'No accounts, no analytics, no ad trackers. We don’t even know you were here.',
+      t2: 'Nothing gets uploaded.',
+      d2: 'Your files, spreadsheets and grabbed lists are processed on your own device. The extensions only talk to the sites you point them at.',
+      t3: 'No tracking cookies.',
+      d3: 'Not one. Not even the tasty kind.',
+      t4: 'Your data lives in your browser.',
+      d4: 'Settings and saved lists sit in your browser’s own storage. Remove the extension or clear site data and they’re gone.',
+      t5: 'Questions?',
+      d5: 'Email the abbot: ',
+      h2: 'Covers',
+      cover: 'Every QIANSHOU LAB extension and web tool, including:',
+      a1: 'Huayuan · List Grabber',
+      a2: 'Xunshan · Price Watch',
+      a3: 'Daibi · Form Filler',
+      a4: 'Every tool on qianshoulab.github.io',
+      ext: 'Chrome / Edge extension',
+      date: 'Updated November 4, 2026',
+      brand: 'QIANSHOU LAB',
+      mailLead: 'Got a nasty job? ',
+      pigeon: 'Send the abbot a pigeon (email)',
+      fb: 'Feedback',
+      mailSubject: 'QIANSHOU LAB privacy',
+      fbSubject: '[QIANSHOU feedback] Privacy page',
+      fbBody: ['What’s not working:', '', 'What you want:', '', 'Anything else:'],
+      fbTag: 'QIANSHOU LAB privacy page'
+    },
+    zh: {
+      htmlLang: 'zh-CN',
+      title: '隐私 · 千手院',
+      desc: '千手院所有插件和网页工具的隐私政策：不收集、不上传、不用 cookie 跟踪，数据只存在你浏览器里。',
+      langLabel: '语言',
+      home: '千手院',
+      h1: '隐私',
+      lead: '长话短说：你在这儿干的事，贫僧一概不知。',
+      t1: '什么都不收集',
+      d1: '不用注册，不装统计，不埋广告追踪。你来没来过，我们都不知道。',
+      t2: '什么都不上传',
+      d2: '文件、表格、抓下来的列表，都在你自己的电脑上处理。插件只跟你指定的网站打交道。',
+      t3: '不用 cookie 跟踪',
+      d3: '一块都没有，饼干也没有。',
+      t4: '数据只存在你浏览器里',
+      d4: '设置和存下的名单放在浏览器自己的存储里。删掉插件或清掉网站数据，就一干二净。',
+      t5: '有问题',
+      d5: '发邮件找方丈：',
+      h2: '适用范围',
+      cover: '千手院所有插件和网页工具，包括：',
+      a1: '化缘僧',
+      a2: '巡山僧',
+      a3: '代笔僧',
+      a4: 'qianshoulab.github.io 上的所有工具',
+      ext: 'Chrome / Edge 插件',
+      date: '更新于 2026 年 11 月 4 日',
+      brand: '千手院 · QIANSHOU LAB',
+      mailLead: '有烂活找方丈：',
+      pigeon: '飞鸽传书（发邮件）',
+      fb: '提意见',
+      mailSubject: '千手院 隐私',
+      fbSubject: '[千手院反馈] 隐私页',
+      fbBody: ['哪里不好用：', '', '想要什么：', '', '别的：'],
+      fbTag: '隐私页'
+    }
+  };
+  var KEY = 'qianshou.lang', addr = ['oilsongchengmin', 'gmail.com'].join('@'), lang = null;
+  var q = /[?&]lang=(zh|en)(?:&|$)/.exec(location.search);
+  if (q) lang = q[1];
+  else { try { lang = localStorage.getItem(KEY); } catch (e) {} if (!S[lang]) lang = 'en'; }
+
+  function device() {
+    var u = navigator.userAgent;
+    var os = /Windows/.test(u) ? 'Windows' : /iPhone|iPad|iPod/.test(u) ? 'iOS' : /Android/.test(u) ? 'Android'
+      : /Mac OS X/.test(u) ? 'macOS' : /CrOS/.test(u) ? 'ChromeOS' : /Linux/.test(u) ? 'Linux' : 'other';
+    var br = /Edg\//.test(u) ? 'Edge' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : 'other';
+    return os + ' · ' + br;
+  }
+  function apply() {
+    var T = S[lang];
+    document.documentElement.lang = T.htmlLang;
+    document.title = T.title;
+    document.querySelector('meta[name="description"]').content = T.desc;
+    document.querySelectorAll('[data-s]').forEach(function (el) { el.textContent = T[el.getAttribute('data-s')]; });
+    var g = document.querySelector('.lang');
+    g.setAttribute('aria-label', T.langLabel);
+    g.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === lang)); });
+    document.getElementById('mail').href = 'mailto:' + addr + '?subject=' + encodeURIComponent(T.mailSubject);
+    document.getElementById('pigeon').href = 'mailto:' + addr + '?subject=' + encodeURIComponent(T.mailSubject);
+    document.getElementById('fb').href = 'mailto:' + addr + '?subject=' + encodeURIComponent(T.fbSubject)
+      + '&body=' + encodeURIComponent(T.fbBody.join('\n') + '\n\n\n——\n' + T.fbTag + ' · ' + device());
+  }
+  document.querySelector('.lang').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-lang]');
+    if (!b || b.getAttribute('data-lang') === lang) return;
+    lang = b.getAttribute('data-lang');
+    try { localStorage.setItem(KEY, lang); } catch (e) {}
+    if (location.search) try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+    apply();
+  });
+  apply();
+})();
+</script>
+</body>
+</html>
