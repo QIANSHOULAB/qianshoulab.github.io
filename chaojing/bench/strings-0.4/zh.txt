@@ -42,7 +42,10 @@ onePdf	只下这份 PDF
 prev	上一份
 next	下一份
 home	千手院
-findAbbot	找方丈飞鸽传书：
+fbLead	抄歪了、缺功能？
+fb	提意见
+fbSubject	[千手院反馈] 抄经僧 0.4.2
+fbBody	哪里不好用：  想要什么：  别的：   ——
 samples.cert	结业证书
 samples.invoice	发票
 samples.offer	录用通知
@@ -118,7 +121,7 @@ grouped	「发票号」相同的行并成一份：8 行 → 4 份
 groupOff	同一个「发票号」的几行，可以并成一份
 split	拆开
 merge	并起来
-ver	v0.4.0
+ver	v0.4.2
 examples.cert.file	结业证书.docx
 examples.cert.data	结业证书名单.xlsx
 examples.cert.rule	{{姓名}}-结业证书

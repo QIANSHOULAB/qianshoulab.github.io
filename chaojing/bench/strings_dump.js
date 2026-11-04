@@ -9,13 +9,13 @@ const ARGS = {
     go: [[8, 'docx'], [8, 'pdf'], [8, 'both'], [1, 'pdf']], tplSubTags: [[5]], dataSub: [[8, 6]], moreRows: [[200]],
     mapAllOk: [[5]], mapBad: [[2]], blankTag: [['手机']], unused: [['手机、备注']], rowOf: [[1, 8]], progress: [[120, 500, '3.1']],
     doneMsg: [[500, '7.2']], stopped: [[120]], date: [[Date.UTC(2026, 10, 3, 4)]], errTplSyntax: [['{{姓名']], errWhat: [['报价单.pdf']],
-    errGen: [['字体没搬过来，网断了？']], noHeaderCol: [[3]], fileN: [[7]], zipName: [['结业证书', 8]], grouped: [['发票号', 8, 4]], groupOff: [['发票号']], ver: [['0.4.0']],
+    errGen: [['字体没搬过来，网断了？']], noHeaderCol: [[3]], fileN: [[7]], zipName: [['结业证书', 8]], grouped: [['发票号', 8, 4]], groupOff: [['发票号']], ver: [['0.4.2']], fbSubject: [['0.4.2']],
   },
   en: {
     go: [[8, 'docx'], [8, 'pdf'], [8, 'both'], [1, 'pdf'], [1, 'docx']], tplSubTags: [[5], [1]], dataSub: [[8, 6], [1, 1]], moreRows: [[200]],
     mapAllOk: [[5], [1]], mapBad: [[2]], blankTag: [['Phone']], unused: [['Phone, Notes']], rowOf: [[1, 8]], progress: [[120, 500, '3.1']],
     doneMsg: [[500, '7.2'], [1, '0.4']], stopped: [[120]], date: [[Date.UTC(2026, 10, 3, 4)]], errTplSyntax: [['{{Name']], errWhat: [['quote.pdf']],
-    errGen: [["Couldn't fetch the fonts. Offline?"]], noHeaderCol: [[3]], fileN: [[7]], zipName: [['Certificate', 8], ['Certificate', 1]], grouped: [['Invoice No', 8, 4]], groupOff: [['Invoice No']], ver: [['0.4.0']],
+    errGen: [["Couldn't fetch the fonts. Offline?"]], noHeaderCol: [[3]], fileN: [[7]], zipName: [['Certificate', 8], ['Certificate', 1]], grouped: [['Invoice No', 8, 4]], groupOff: [['Invoice No']], ver: [['0.4.2']], fbSubject: [['0.4.2']],
   },
 };
 const one = s => String(s).replace(/\t/g, ' ⇥ ').replace(/\n/g, ' ⏎ ');

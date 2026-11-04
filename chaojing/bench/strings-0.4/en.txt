@@ -43,7 +43,10 @@ onePdf	This one as PDF
 prev	Previous
 next	Next
 home	Qianshou Lab
-findAbbot	Write to the abbot: 
+fbLead	Botched copy? Missing feature? 
+fb	Feedback
+fbSubject	[QIANSHOU feedback] Chaojing · Doc Batcher 0.4.2
+fbBody	What’s not working:  What you want:  Anything else:   —
 samples.cert	Certificate
 samples.invoice	Invoice
 samples.offer	Offer letter
@@ -124,7 +127,7 @@ grouped	Rows with the same “Invoice No” are merged: 8 rows → 4 docs
 groupOff	Rows with the same “Invoice No” can be merged into one
 split	Split
 merge	Merge
-ver	v0.4.0
+ver	v0.4.2
 examples.cert.file	Certificate.docx
 examples.cert.data	Graduates.xlsx
 examples.cert.rule	{{Name}} - Certificate
