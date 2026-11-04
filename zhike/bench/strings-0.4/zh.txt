@@ -250,10 +250,17 @@ side_update	新版 {v} 到了
 up_card_t	知客僧 {v} 搞出来了。（你那 {c} 该淘汰了）
 up_notes_h	这次弄了点啥：
 up_keep	放心，换版本不动你的设置、规则和 Excel。哪会儿方便哪会儿重启。
-up_notes	会说英文了，设置里一下切中文 / English；新拟的规则名、Excel 表头跟着换。
+up_notes	设置「关于」里多了「提意见」，点一下信就开好头了，版本都替你填上。
 foot_name	千手院 · 知客僧
 foot_mail	要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：
 foot_home	千手院总舵
+btn_feedback	提意见
+fb_line	嫌贫僧哪里笨，写信来骂。
+fb_subject	[千手院反馈] 知客僧 {v}
+fb_q1	哪里不好用：
+fb_q2	想要什么：
+fb_q3	别的：
+fb_nomail	没找到邮件程序，地址复制好了：{to}
 st_demo	示例
 st_ok_n	盯着 {n} 个邮箱
 st_checked	{t}看过
@@ -318,7 +325,7 @@ site.sl	<span>订单、发票、快递单，</span><span>自己落进 Excel。</
 site.tg	连上邮箱，贫僧把最近的信过一遍、规则拟好，你只管点「收下」。该转的转，回信只起草。
 site.dl	下载 Windows 版
 site.how	怎么上岗
-site.meta	0.4.0 · Windows 10 / 11 · 免费 · 双击就跑，自己更新
+site.meta	0.4.1 · Windows 10 / 11 · 免费 · 双击就跑，自己更新
 site.alt1	知客僧主界面：左边邮件列表，右边一封发票信，上方卡片列出抽出来的发票号、金额、到期日，标着「进表」「转给 finance」
 site.s1h	规则？<br>贫僧拟好了。
 site.s1p1	连上邮箱那一下，贫僧把最近的信过一遍：订单、发票、快递单、询价各归一类，几家写的「订单号」「Order Number」归成同一列。推销信、冒充熟人的不算数。
@@ -374,6 +381,6 @@ site.pw4	Outlook / Hotmail / Microsoft 365：即将支持。微软不让用密�
 site.pw5	公司邮箱：问管理员要 IMAP / SMTP 地址，程序里填上。
 site.privH	贫僧嘴严
 site.priv	密码进 Windows 凭据管理器。邮件直接从你电脑连你的邮箱；AI 起草时，拿你自己的 Google 钥匙直接问 Gemini，中间没有千手院。查新版只是读一个版本号。
-site.footName	千手院 · 知客僧 0.4.0
+site.footName	千手院 · 知客僧 0.4.1
 site.footMail	要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：
 site.footHome	千手院总舵 https://qianshoulab.github.io/

@@ -260,10 +260,17 @@ side_update	Version {v} is here
 up_card_t	Zhike {v} is out. ({c} had a good run.)
 up_notes_h	What's new:
 up_keep	Switching versions leaves your settings, rules and Excel file alone. Restart when it suits you.
-up_notes	Zhike speaks English now, and still speaks Chinese. Switch in Settings; new rule names and Excel headers follow along.
+up_notes	A Feedback button in Settings › About. One click opens an email that's half written, version included.
 foot_name	QIANSHOU LAB · Zhike
 foot_mail	Ideas, bugs, business: write to the abbot at 
 foot_home	QIANSHOU LAB home
+btn_feedback	Feedback
+fb_line	Zhike being dense? Tell us.
+fb_subject	[QIANSHOU feedback] Zhike · Inbox Sorter {v}
+fb_q1	What's not working:
+fb_q2	What you'd like:
+fb_q3	Anything else:
+fb_nomail	No email app found. Address copied: {to}
 st_demo	Demo
 st_ok_n	Watching {n} mailboxes
 st_checked	Checked {t}
@@ -332,7 +339,7 @@ site.sl	Orders, invoices and tracking numbers file themselves into Excel.
 site.tg	Connect your inbox. Zhike reads your recent mail, drafts the rules, and you hit Accept. It forwards what needs forwarding and drafts replies. Sending is your call.
 site.dl	Download for Windows
 site.how	How it works
-site.meta	0.4.0 · Windows 10 / 11 · Free · Double-click to run, updates itself
+site.meta	0.4.1 · Windows 10 / 11 · Free · Double-click to run, updates itself
 site.alt1	Zhike main window: mail list on the left, an invoice email on the right, with a card showing the extracted invoice number, amount and due date, tagged To Excel and Forward to finance
 site.s1h	Rules?<br>Already drafted.
 site.s1p1	The moment you connect, Zhike reads your recent mail and sorts it into orders, invoices, shipping and quote requests. “Order Number” from one shop and “Order #” from another land in the same column. Spam and lookalike senders don't count.
@@ -388,6 +395,6 @@ site.pw4	Outlook / Hotmail / Microsoft 365: coming soon. Microsoft stopped takin
 site.pw5	Work email: ask IT for the IMAP / SMTP addresses and enter them in the app.
 site.privH	Tight-lipped.
 site.priv	Your password goes into Windows Credential Manager. Zhike talks to your mailbox straight from your PC. AI drafts go to Gemini on your own Google key, with QIANSHOU LAB nowhere in between. Checking for updates just reads a version number.
-site.footName	QIANSHOU LAB · Zhike 0.4.0
+site.footName	QIANSHOU LAB · Zhike 0.4.1
 site.footMail	Ideas, bugs, business: write to the abbot at 
 site.footHome	QIANSHOU LAB home https://qianshoulab.github.io/

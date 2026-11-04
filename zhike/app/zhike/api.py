@@ -12,7 +12,7 @@ import threading
 import uuid
 from pathlib import Path
 
-from . import VERSION, ai, learn, oauth, platform as P, recommend as RC, rules as R
+from . import VERSION, ai, feedback as FB, learn, oauth, platform as P, recommend as RC, rules as R
 from .engine import Engine
 from .mailbox import PROVIDERS, AuthError, MailError, NetError, account_from, test_account
 from .secrets import Secrets
@@ -637,6 +637,12 @@ class Api:
             webbrowser.open(url)
             return True
         return False
+
+    def feedback(self):
+        """设置「关于」里的「提意见」：拼好 mailto（标题、三行提示、版本 · 系统 · 程序），用系统默认的邮件程序打开。
+        打不开（没装邮件程序）就回 ok: False，界面把地址复制给人。"""
+        url = FB.mailto(self.lang, VERSION)
+        return {"ok": FB.launch(url), "url": url, "to": FB.TO}
 
     def quit(self):
         if self.on_quit:

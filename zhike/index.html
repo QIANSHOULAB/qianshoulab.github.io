@@ -10,7 +10,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="icon-180.png">
-<script src="app/ui/strings.js?v=0.4.0"></script>
+<script src="app/ui/strings.js?v=0.4.1"></script>
 <style>
 /* 照 _ops/设计规范.md：系统字、一个主色（知客僧赭）、其余全灰；居中单栏最宽 980；首屏一句大标题、一句副标题、主操作 */
 :root{
@@ -110,6 +110,10 @@ details li{margin:8px 0;overflow-wrap:anywhere}
 .privacy p{color:var(--fg-2)}
 .foot{margin:64px 0 0;padding:32px 0 calc(48px + env(safe-area-inset-bottom));border-top:1px solid var(--line);text-align:center;font-size:13px;line-height:1.9;color:var(--fg-2)}
 .foot .mail{user-select:all;-webkit-user-select:all;color:var(--fg)}
+/* 提意见：点的地方够 44 高，排版上不撑开这一行 */
+.foot a.fb{display:inline-block;padding:12px 8px;margin:-12px -4px;color:var(--accent);font-weight:600;text-decoration:none;-webkit-tap-highlight-color:transparent}
+@media (hover:hover){.foot a.fb:hover{text-decoration:underline}}
+.foot a.fb:focus-visible{outline:2px solid var(--accent);outline-offset:-8px;border-radius:var(--r-chip)}
 @media (max-width:760px){
   .hero{padding-top:48px}
   .sec,.sec.flip{grid-template-columns:1fr;gap:24px;padding:48px 0}
@@ -199,13 +203,55 @@ details li{margin:8px 0;overflow-wrap:anywhere}
   <footer class="foot">
     <div data-s="footName"></div>
     <div><span data-s="footMail"></span><span class="mail">oilsongchengmin@gmail.com</span></div>
+    <div><span data-str="fb_line"></span> <a class="fb" href="mailto:oilsongchengmin@gmail.com" data-str="btn_feedback">Feedback</a></div>
     <div><a href="https://qianshoulab.github.io/" data-s="footHome"></a></div>
   </footer>
 </div>
 <script>
 // 默认英文；右上角 EN / 中文，选过就记住（localStorage 的 zhike.lang）；网址带 ?lang=zh|en 先听网址。不跟浏览器语言走。
 (() => {
-  const SITE = window.SITE, LK = 'zhike.lang';
+  const SITE = window.SITE, STR = window.STR, LK = 'zhike.lang', V = '0.4.1';
+  /* 提意见：mailto 打开用户自己的邮件程序，标题、正文填好（字在 strings.js 的 fb_*，跟程序里同一套）；不接表单，不收数据。
+     正文最后一行「版本 · 系统 · 浏览器」简写，比如 0.4.1 · Windows 11 · Edge 130 */
+  const UA = navigator.userAgent || '';
+  function deviceTag() {
+    let os = 'other', br = 'other', m;
+    if ((m = /Windows NT (\d+\.\d+)/.exec(UA))) os = m[1] === '10.0' ? 'Windows' : 'Windows ' + ({ '6.3': '8.1', '6.2': '8', '6.1': '7' }[m[1]] || m[1]);
+    else if ((m = /(?:iPhone|CPU) OS (\d+)_/.exec(UA))) os = (/iPad/.test(UA) ? 'iPadOS ' : 'iOS ') + m[1];
+    else if (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1) os = 'iPadOS';
+    else if ((m = /Android (\d+)/.exec(UA))) os = 'Android ' + m[1];
+    else if (/Mac OS X/.test(UA)) os = 'macOS';
+    else if (/CrOS/.test(UA)) os = 'ChromeOS';
+    else if (/Linux/.test(UA)) os = 'Linux';
+    if ((m = /MicroMessenger\/(\d+)/.exec(UA))) br = 'WeChat ' + m[1];
+    else if ((m = /Edg(?:A|iOS)?\/(\d+)/.exec(UA))) br = 'Edge ' + m[1];
+    else if ((m = /OPR\/(\d+)/.exec(UA))) br = 'Opera ' + m[1];
+    else if ((m = /(?:Firefox|FxiOS)\/(\d+)/.exec(UA))) br = 'Firefox ' + m[1];
+    else if ((m = /(?:Chrome|CriOS)\/(\d+)/.exec(UA))) br = 'Chrome ' + m[1];
+    else if ((m = /Version\/(\d+).*Safari/.exec(UA))) br = 'Safari ' + m[1];
+    else if (/Safari/.test(UA)) br = 'Safari';
+    return os + ' · ' + br;
+  }
+  let DEVICE = deviceTag();
+  const FB_TO = ['oilsongchengmin', 'gmail.com'].join('@');
+  const fbHref = () => {
+    const L = STR[lang] || STR.en;
+    return 'mailto:' + FB_TO + '?subject=' + encodeURIComponent(L.fb_subject.split('{v}').join(V))
+      + '&body=' + encodeURIComponent([L.fb_q1, L.fb_q2, L.fb_q3].join('\n\n') + '\n\n\n——\n' + V + ' · ' + DEVICE);
+  };
+  const fbFill = () => { for (const a of document.querySelectorAll('a.fb')) a.href = fbHref(); };
+  // Chromium 的 UA 里 Windows 10 / 11、macOS、Android 的版本是冻住的，问得到真版本就换上（问不到就用上面的简写）
+  try {
+    const ud = navigator.userAgentData;
+    if (ud && /^(Windows|macOS|Android)$/.test(ud.platform) && ud.getHighEntropyValues) ud.getHighEntropyValues(['platformVersion']).then((v) => {
+      const pv = String(v.platformVersion || '').split(/[._]/), maj = parseInt(pv[0], 10);
+      if (!(maj > 0) || DEVICE.indexOf(ud.platform) !== 0) return;
+      // Windows：platformVersion 13 起是 11，1–10 是 10；macOS 10.x 带上小版本，11 起只写大版本
+      const os = ud.platform === 'Windows' ? (maj >= 13 ? 'Windows 11' : 'Windows 10') : ud.platform + ' ' + (ud.platform === 'macOS' && maj === 10 && pv[1] ? '10.' + pv[1] : maj);
+      DEVICE = DEVICE.replace(/^(Windows|macOS|Android)( \d+)?/, os);
+      fbFill();
+    }).catch(() => {});
+  } catch (e) {}
   const save = (l) => { try { localStorage.setItem(LK, l); } catch (e) {} };
   let lang = null;
   try { lang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
@@ -218,6 +264,8 @@ details li{margin:8px 0;overflow-wrap:anywhere}
     document.querySelector('meta[name=description]').content = s.desc;
     for (const el of document.querySelectorAll('[data-s]')) el.textContent = s[el.dataset.s];
     for (const el of document.querySelectorAll('[data-sh]')) el.innerHTML = s[el.dataset.sh];
+    for (const el of document.querySelectorAll('[data-str]')) el.textContent = (STR[lang] || STR.en)[el.dataset.str];
+    fbFill();
     for (const el of document.querySelectorAll('[data-alt]')) el.alt = s[el.dataset.alt];
     for (const el of document.querySelectorAll('[data-aria]')) el.setAttribute('aria-label', s[el.dataset.aria]);
     for (const el of document.querySelectorAll('[data-img]')) el[el.tagName === 'IMG' ? 'src' : 'srcset'] = 'img/' + el.dataset.img + suf + '.webp';

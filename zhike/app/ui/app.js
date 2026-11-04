@@ -61,6 +61,9 @@ function toast(msg, action) {
   document.body.appendChild(el);
   toastTimer = setTimeout(() => el.remove(), action ? 8000 : 2200);
 }
+async function copyText(s) {
+  try { await navigator.clipboard.writeText(s); } catch { const ta = document.createElement("textarea"); ta.value = s; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+}
 function undoToast(msg, token) {
   toast(msg, { label: t("btn_undo"), run: async () => { await call("undo", token); await reloadAll(); render(); } });
 }
@@ -632,7 +635,8 @@ function viewSettings() {
     <div class="grp"><div class="grp-h"><h2>${t("lang_label")}</h2></div>
       <div class="box"><div class="row"><div class="l"><b>${t("lang_row")}</b><span>${t("lang_hint")}</span></div>${langSeg()}</div></div></div>
     <div class="grp"><div class="grp-h"><h2>${t("set_about")}</h2></div>
-      <div class="box"><div class="row"><div class="l"><b>${t("version", { v: b.version })}</b><span id="upmsg">${upMsg(S.tick.update)}</span></div>${S.tick.update && S.tick.update.ready ? `<button class="btn pri sm" data-act="restart">${t("btn_restart")}</button>` : `<button class="btn sm" data-act="update">${t("btn_update")}</button>`}</div>${upCard(S.tick.update)}</div>
+      <div class="box"><div class="row"><div class="l"><b>${t("version", { v: b.version })}</b><span id="upmsg">${upMsg(S.tick.update)}</span></div>${S.tick.update && S.tick.update.ready ? `<button class="btn pri sm" data-act="restart">${t("btn_restart")}</button>` : `<button class="btn sm" data-act="update">${t("btn_update")}</button>`}</div>${upCard(S.tick.update)}
+        <div class="row"><div class="l"><b>${t("fb_line")}</b></div><button class="btn sm" data-act="feedback">${t("btn_feedback")}</button></div></div>
       <div class="foot">${t("foot_name")} ${b.version}<br>${t("foot_mail")}<span class="mail">oilsongchengmin@gmail.com</span><br><a class="link" data-url="https://qianshoulab.github.io/">${t("foot_home")} https://qianshoulab.github.io/</a></div></div>
   </div></div>`;
   const f = $("#sform");
@@ -687,7 +691,7 @@ document.addEventListener("click", async (ev) => {
   if (d.rule) { S.ruleSel = d.rule; viewRules(); return; }
   if (d.gotoRule) { S.ruleSel = d.gotoRule; S.view = "rules"; render(); return; }
   if (d.tab) { S.tableRule = d.tab; viewTable(); return; }
-  if (d.copy != null) { const x = S._drafts[+d.copy]; try { await navigator.clipboard.writeText(x.body); } catch { const ta = document.createElement("textarea"); ta.value = x.body; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } toast(t("copied")); return; }
+  if (d.copy != null) { await copyText(S._drafts[+d.copy].body); toast(t("copied")); return; }
   if (d.untag && d.untag.startsWith("rec:")) { const st = S.rec[d.untag.slice(4)]; st.forward.splice(+d.i, 1); viewRecs(); return; }
   const r = curRule();
   if (d.untag) { const arr = getPath(r, d.untag); arr.splice(+d.i, 1); if (d.untag === "forward.to") syncForward(r); await safe(call("save_rule", r)); S.hits[r.id] = null; await loadMails(); renderRule(); return; }
@@ -749,6 +753,8 @@ document.addEventListener("click", async (ev) => {
     case "pop-close": closePop(); break;
     case "want-cancel": S.want = null; renderReader(); break;
     case "restart": el.disabled = true; call("restart_update"); break;
+    // 提意见：Python 拼好 mailto（标题、三行提示、版本 · 系统 · 程序）交给系统默认的邮件程序；没有邮件程序就把地址复制给人
+    case "feedback": { const res = await safe(call("feedback")); if (!res.ok) { await copyText(res.to); toast(t("fb_nomail", { to: res.to })); } break; }
     case "ms-login": {
       const f = el.closest("form"); const email = $("[name=email]", f).value.trim(); if (!email) return;
       el.disabled = true; el.innerHTML = `<i class="spin"></i>${t("ms_wait")}`;

@@ -73,6 +73,20 @@ def run(out_path=None) -> int:
         en = {r["name"]: [f["name"] for f in r["fields"]] for r in recommend(samples.mails("en"), [], lang="en")}
         assert "Orders" in en and "Order #" in en["Orders"], en
         res["steps"]["recommend_en"] = sorted(en)
+        # 0.4.1 提意见：在这台 Windows 上拼出来的 mailto（只拼不开：CI 机器上没有邮件程序）
+        from urllib.parse import unquote
+        from . import feedback as FB
+        fb = {}
+        for lg in ("en", "zh"):
+            u = FB.mailto(lg, VERSION)
+            q = dict(kv.split("=", 1) for kv in u.split("?", 1)[1].split("&"))
+            subj, body = unquote(q["subject"]), unquote(q["body"])
+            assert u.startswith("mailto:" + FB.TO + "?") and u.isascii() and " " not in u, u
+            assert subj == T("fb_subject", lg, v=VERSION) and VERSION in subj, subj
+            assert body.split("\r\n")[0] == T("fb_q1", lg), body
+            fb[lg] = {"subject": subj, "last_line": body.split("\r\n")[-1]}
+        assert fb["en"]["last_line"].startswith(VERSION + " · Windows") or sys.platform != "win32", fb
+        res["steps"]["feedback"] = fb
         res["steps"]["forwards"] = len(smtp.sent)
         res["steps"]["drafts"] = len(imap.drafts)
         if sys.platform == "win32":
