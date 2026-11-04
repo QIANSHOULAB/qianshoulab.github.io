@@ -140,7 +140,7 @@ QSLib.i18n.add('en', {
   'fmt.sep': '; ',
   'fmt.colon': ': ',
 
-  'foot.by': 'Qianshou Lab · Daibi',
+  'foot.by': 'QIANSHOU LAB · Daibi',
   'menu.more': 'More',
   'fb.label': 'Feedback',
   'fb.subject': '[QIANSHOU feedback] Daibi · Form Filler {v}',
@@ -149,7 +149,7 @@ QSLib.i18n.add('en', {
   /* ---------- 介绍页 daibi/index.html ---------- */
   'site.title': 'Daibi · Form Filler',
   'site.desc': 'Browser extension that fills web forms from Excel or CSV, one row at a time. Columns find their fields on their own; dropdowns, date pickers and iframes included. Your data stays in your browser.',
-  'site.home': 'Qianshou Lab',
+  'site.home': 'QIANSHOU LAB',
   'site.lede1': 'Drop in a spreadsheet and row 1 is already on the form.',
   'site.lede2': 'Check it, hit Submit, and the next row fills itself.',
   'site.download': 'Download',
@@ -212,7 +212,7 @@ QSLib.i18n.add('en', {
   'form.none': 'Nothing yet. Install Daibi and hit Try a sample.',
   'form.item': 'Qty {q} · {d}',
   'form.noDate': 'no date',
-  'form.foot': 'Qianshou Lab'
+  'form.foot': 'QIANSHOU LAB'
 });
 
 QSLib.i18n.add('zh', {

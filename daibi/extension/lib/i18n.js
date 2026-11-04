@@ -9,10 +9,10 @@
   'use strict';
   const S = {
     en: {
-      'common.lab': 'Qianshou Lab',
+      'common.lab': 'QIANSHOU LAB',
       'common.contact': 'Email the abbot',
       'common.email': 'oilsongchengmin@gmail.com',
-      'common.home': 'More tools at Qianshou Lab',
+      'common.home': 'More tools at QIANSHOU LAB',
       'common.homeUrl': 'https://qianshoulab.github.io/',
       'common.lang': 'Language',
       'common.colN': 'Column {n}',

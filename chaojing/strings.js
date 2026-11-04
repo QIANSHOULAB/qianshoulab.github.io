@@ -157,7 +157,7 @@
     stop: "Stop", again: "Download again",
     oneDocx: "This one as Word", onePdf: "This one as PDF",
     prev: "Previous", next: "Next",
-    home: "Qianshou Lab",
+    home: "QIANSHOU LAB",
     fbLead: "Botched copy? Missing feature? ", fb: "Feedback",
     fbSubject: v => `[QIANSHOU feedback] Chaojing · Doc Batcher ${v}`, fbBody: ["What’s not working:", "", "What you want:", "", "Anything else:", "", "", "—"],
     samples: { cert: "Certificate", invoice: "Invoice", offer: "Offer letter" },

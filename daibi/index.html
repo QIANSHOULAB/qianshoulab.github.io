@@ -11,9 +11,9 @@
 <link rel="apple-touch-icon" href="img/icon.png">
 <!-- 字全在 extension/strings.js（site.*，跟侧栏同一个文件）。语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage daibi.lang）> 默认英文。
      不跟浏览器语言走（Song 11-03 22:19）。<html lang>、<title>、简介在画页面之前就换好 -->
-<script src="extension/lib/i18n.js?v=0.4.1"></script>
-<script src="extension/strings.js?v=0.4.1"></script>
-<script src="extension/lib/feedback.js?v=0.4.1"></script>
+<script src="extension/lib/i18n.js?v=0.4.2"></script>
+<script src="extension/strings.js?v=0.4.2"></script>
+<script src="extension/lib/feedback.js?v=0.4.2"></script>
 <script>
 (function(){
   var q=(location.search.match(/[?&]lang=(zh|en)\b/)||[])[1], s=null;
@@ -135,7 +135,7 @@ footer a{color:var(--fg-2)}
     <p class="tag" data-t="app.tag"></p>
     <p class="lede"><span data-t="site.lede1"></span> <span data-t="site.lede2"></span></p>
     <div class="cta">
-      <a class="btn pri" id="dl" href="dist/daibi-0.4.1.zip" download data-t="site.download"></a>
+      <a class="btn pri" id="dl" href="dist/daibi-0.4.2.zip" download data-t="site.download"></a>
       <a class="more" href="#install" data-t="site.how"></a>
     </div>
     <p class="meta" data-t="site.meta"></p>
@@ -207,7 +207,7 @@ footer a{color:var(--fg-2)}
 <script>
 /* 画字、换语言。截图按语言各一套：英文在 img/en/，中文在 img/ */
 (function () {
-  const I = QSLib.i18n, VER = '0.4.1';
+  const I = QSLib.i18n, VER = '0.4.2';
   // 提意见：mailto 全填好，标题和正文照当前语言，最后一行版本 · 系统 · 浏览器
   const fbSet = QSFeedback.wire(document.getElementById('fb'), () => ({ subject: I.t('fb.subject', { v: VER }), body: I.t('fb.body'), version: VER }));
   function draw() {

@@ -12,7 +12,7 @@
       htmlLang: 'en',
       app: 'Xunshan',
       appFull: 'Xunshan · Price Watch',
-      lab: 'Qianshou Lab',
+      lab: 'QIANSHOU LAB',
       slogan: 'Stares at the page so you don’t have to.',
       langLabel: 'Language',
       close: 'Close',
@@ -156,7 +156,7 @@
       demoLabel: 'Demo · Headphones price',
       demoNote: 'Just a demo. Nothing gets checked. Delete it and it’s gone.',
       mailLine: 'Want a feature, or something annoying you? Email the abbot: ',
-      hq: 'Qianshou Lab',
+      hq: 'QIANSHOU LAB',
       fb: 'Feedback',
       fbSubject: '[QIANSHOU feedback] Xunshan · Price Watch {0}',
       fbBody: 'What’s not working:\n\nWhat you wish it did:\n\nAnything else:',
@@ -182,7 +182,7 @@
       // 介绍页 xunshan/index.html
       iTitle: 'Xunshan · Price Watch',
       iDesc: 'A Chrome / Edge extension that watches pages for price drops, restocks and new posts, and pings you the moment something moves. Free. Your list never leaves your browser.',
-      iHome: 'Qianshou Lab',
+      iHome: 'QIANSHOU LAB',
       iInstall: 'Install',
       iTagline: 'Price drops, restocks, new posts. It keeps an eye on the page and pings you the second something moves.',
       iDownload: 'Download',
@@ -220,7 +220,7 @@
         'Click the puzzle icon in the toolbar and pin Xunshan. Open a product page and click it.'
       ],
       iLater: 'It’s on duty whenever your browser is open. The first time you watch a site, the browser asks once for permission.',
-      iFootName: 'Qianshou Lab · Xunshan',
+      iFootName: 'QIANSHOU LAB · Xunshan',
       iFootMail: 'Email the abbot: '
     },
 

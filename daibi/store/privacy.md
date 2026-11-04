@@ -1,7 +1,7 @@
 # 代笔僧 · 隐私权（Privacy 页）
 
 后台左边 **Privacy**（隐私权）页，从上到下照填。框里一律贴英文（审核员读英文）；每段下面一行是中文意思，给自己看。
-对的是 0.4.1 的 `extension/manifest.json`：4 个权限 + 自家示例表单一个网站权限 + 按网站现要的网站权限。装的时候浏览器只提示一条「读取和更改你在 qianshoulab.github.io 上的数据」（Chromium 实测）。
+对的是 0.4.2 的 `extension/manifest.json`：4 个权限 + 自家示例表单一个网站权限 + 按网站现要的网站权限。装的时候浏览器只提示一条「读取和更改你在 qianshoulab.github.io 上的数据」（Chromium 实测）。
 
 ## Single purpose description（单一用途）
 

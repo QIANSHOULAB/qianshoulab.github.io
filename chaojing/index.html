@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Chaojing">
-<script src="strings.js?v=0.4.2"></script>
+<script src="strings.js?v=0.4.3"></script>
 <script>
 /* 挑语言：?lang=zh|en（只管这一次）> 右上角选过的（localStorage）> 默认英文。不跟浏览器语言走（Song 11-03 22:19）。标题、简介、<html lang> 在画页面之前就换好 */
 (function(){
@@ -419,7 +419,7 @@ const LANG_KEY="chaojing.lang";
 let LANG=window.CJ_LANG||"zh", T=CJ_STRINGS[LANG], EXAMPLES=T.examples;
 const GOLD="#8B6A2F", INK="#1D1D1F";
 
-const VER="0.4.2";   // 换版本改这里和 <head> 里的 strings.js?v=
+const VER="0.4.3";   // 换版本改这里和 <head> 里的 strings.js?v=
 /* ============ 提意见：一个 mailto 链接，收件人、标题、正文都填好；正文最后一行带上版本和设备，人不用自己打。不接第三方表单，不收任何数据 ============ */
 const FB_TO="oilsongchengmin@gmail.com";
 let fbHi=null;   // Chromium 的 UA-CH 能分出 Windows 10 / 11、macOS 和安卓的真版本号；拿不到就只看 UA

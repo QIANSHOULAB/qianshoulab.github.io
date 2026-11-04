@@ -351,7 +351,7 @@ tr:last-child td{border-bottom:0}
 <input type="file" id="fSrc" hidden multiple accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fTgt" hidden accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json">
 <input type="file" id="fRec" hidden accept=".json,application/json">
-<script src="strings.js?v=0.4.2"></script>
+<script src="strings.js?v=0.4.3"></script>
 <script>
 'use strict';
 /* ================= 界面文字：全在 strings.js（中文、英文各一套），这里只挑用哪套 ================= */
@@ -365,7 +365,7 @@ function pickLang() {
   return l;
 }
 let LANG = pickLang(), STR = STRS[LANG];
-const VER = '0.4.2';   // 换版本改这里和上面 strings.js?v=
+const VER = '0.4.3';   // 换版本改这里和上面 strings.js?v=
 
 /* ================= 提意见：一个 mailto 链接，收件人、标题、正文都填好；正文最后一行带上版本和设备，人不用自己打。不接第三方表单，不收任何数据 ================= */
 const FB_TO = 'oilsongchengmin@gmail.com';
