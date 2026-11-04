@@ -19,7 +19,7 @@ Monks on duty:
 
 - [Luru · Photo Typist](https://qianshoulab.github.io/luruseng/): Go play. The monk keys it in. (Photos of paper sheets into Excel, Windows app)
 - [Dubiao · PDF to Excel](https://qianshoulab.github.io/pabiao/): Liberates tables trapped in PDFs. (Scans too, runs in your browser, no uploads)
-- [Jingtan · Clean Sheet](https://qianshoulab.github.io/xibiao/): Messy data in. Inner peace out. (Spreadsheet cleanup, no uploads)
+- [Jingtan · Clean Sheet](https://qianshoulab.github.io/xibiao/): Brings inner peace to messy data. (Spreadsheet cleanup, no uploads)
 - [Yijing · Data Mover](https://qianshoulab.github.io/yijing/): Data migration, minus the suffering. (System A export to system B import, web)
 - [Chaojing · Doc Batcher](https://qianshoulab.github.io/chaojing/): Leave the copying to the monk. (Word template + spreadsheet: certificates, invoices, contracts in bulk, web)
 - [Baozu · Rent Splitter](https://qianshoulab.github.io/baozuseng/): Power bill, split to the cent. Drama not included. (Sublet bookkeeping, phone web app, data stays on the phone)
@@ -32,7 +32,7 @@ Monks on duty:
 Odd jobs:
 
 - [Gongshi · Net Hours](https://qianshoulab.github.io/gongshi/): Squeeze out the breaks. Keep the real hours. (Changeover time minus breaks and meals)
-- [Yiye · Note Framer](https://qianshoulab.github.io/qianye/): Any scribble, frame-worthy. (Handwriting photo or pasted text into a shareable image)
+- [Yiye · Pretty Notes](https://qianshoulab.github.io/qianye/): Messy notes in. Pretty picture out. (Handwriting photo or pasted text into a shareable image)
 
 ---
 

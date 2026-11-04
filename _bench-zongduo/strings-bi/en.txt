@@ -32,7 +32,7 @@ cards.pabiao.what	Drop in a PDF and an Excel file drops out. Scans too. Made for
 cards.pabiao.note	(Runs in your browser. No uploads.)
 cards.pabiao.go	Free the tables ›
 cards.xibiao.name	Jingtan · Clean Sheet
-cards.xibiao.sub	Messy data in. Inner peace out.
+cards.xibiao.sub	Brings inner peace to messy data.
 cards.xibiao.what	Someone else wrecked the data; the monk takes it from here. Mess comes out spotless, and anything truly cursed gets a yellow flag.
 cards.xibiao.note	(Runs in your browser. No uploads.)
 cards.xibiao.go	Clean up ›
@@ -81,8 +81,8 @@ cards.gongshi.sub	Squeeze out the breaks. Keep the real hours.
 cards.gongshi.what	Enter a start and an end time. Tea breaks and meals get squeezed out, and the real hours come out fresh-pressed. Made for the changeover time box on your CO sheet.
 cards.gongshi.note	(Runs on your phone)
 cards.gongshi.go	Squeeze ›
-cards.qianye.name	Yiye · Note Framer
-cards.qianye.sub	Any scribble, frame-worthy.
+cards.qianye.name	Yiye · Pretty Notes
+cards.qianye.sub	Messy notes in. Pretty picture out.
 cards.qianye.what	Snap your handwriting or paste some text. It comes back mounted as a handsome image, ready to share and show off.
 cards.qianye.note	(Runs on your phone)
 cards.qianye.go	Frame it ›
