@@ -41,8 +41,7 @@ window.QS_STRINGS = {
       r1: 'No sign-up. Open it and go.',
       r2: 'Your files never leave your device.',
       r3: 'Everything is free.',
-      r4: 'Like it? <span class="tip">Tips</span> welcome. No tip, no guilt.',
-      r5: 'Something off? Hit <a class="fb" href="#">Feedback</a> and we’ll fix it.'
+      r4: 'Something off? Hit <a class="fb" href="#">Feedback</a> and we’ll fix it.'
     },
     secMonks: 'Monks on Duty',
     secTools: 'Odd Jobs',
@@ -127,8 +126,7 @@ window.QS_STRINGS = {
       r1: '不用注册，推门就用。',
       r2: '你的文件，不出你的电脑。',
       r3: '全部免费。',
-      r4: '用着顺手可以<span class="tip">随喜</span>，不随也照渡。',
-      r5: '有意见点「<a class="fb" href="#">提意见</a>」，贫僧照改。'
+      r4: '有意见点「<a class="fb" href="#">提意见</a>」，贫僧照改。'
     },
     secMonks: '在岗罗汉',
     secTools: '小工具',
@@ -191,9 +189,6 @@ window.QS_STRINGS = {
     fbTag: '总舵'
   }
 };
-/* 打赏页：Song 开好收款页后把网址填这里，规矩里「随喜 / Tips」两个字就变成链接。没填就是普通字，不放假链接。 */
-window.QS_TIP_URL = '';
-
 (function () {
   var S = window.QS_STRINGS, KEY = 'qianshou.lang', q = /[?&]lang=(zh|en)(?:&|$)/.exec(location.search), saved = null;
   try { saved = localStorage.getItem(KEY); } catch (e) {}
@@ -573,7 +568,6 @@ window.QS_TIP_URL = '';
           <li data-i18n="rules.r2"></li>
           <li data-i18n="rules.r3"></li>
           <li data-i18n="rules.r4"></li>
-          <li data-i18n="rules.r5"></li>
         </ul>
       </div>
     </div>
@@ -840,11 +834,6 @@ window.QS_TIP_URL = '';
           var i = pair.indexOf(':'), v = pick(T, pair.slice(i + 1));
           if (typeof v === 'string') el.setAttribute(pair.slice(0, i), v);
         });
-      });
-      // 随喜 / Tips：收款页开好（QS_TIP_URL 有值）才变成链接
-      if (window.QS_TIP_URL) document.querySelectorAll('.tip').forEach(function (el) {
-        var a = document.createElement('a'); a.href = window.QS_TIP_URL; a.target = '_blank'; a.rel = 'noopener'; a.textContent = el.textContent;
-        el.replaceWith(a);
       });
       var mail = document.getElementById('mail');
       mail.href = 'mailto:' + addr + '?subject=' + encodeURIComponent(T.mailSubject);

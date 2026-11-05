@@ -13,7 +13,7 @@ Cyber Zen · Hardcore Tools.
 - All homepage copy, both languages, lives in one place: `QS_STRINGS` near the top of `index.html`.
 - Served by GitHub Pages from the root of `main`.
 
-House rules: no sign-up, just open it. Your files never leave your device. Everything is free. Like it? Tips welcome; no tip, no guilt. Something off? Hit Feedback and we’ll fix it.
+House rules: no sign-up, just open it. Your files never leave your device. Everything is free. Something off? Hit Feedback and we’ll fix it.
 
 Monks on duty:
 
@@ -47,7 +47,7 @@ Odd jobs:
 - 首页中英两套字全在一处：`index.html` 顶上的 `QS_STRINGS`。
 - GitHub Pages 从 `main` 分支根目录发布。
 
-本院规矩：不用注册，推门就用。你的文件，不出你的电脑。全部免费。用着顺手可以随喜，不随也照渡。有意见点「提意见」，贫僧照改。
+本院规矩：不用注册，推门就用。你的文件，不出你的电脑。全部免费。有意见点「提意见」，贫僧照改。
 
 在岗罗汉：
 
