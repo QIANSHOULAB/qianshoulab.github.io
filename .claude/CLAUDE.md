@@ -6,7 +6,7 @@
 - Windows 电脑程序（zhike、saodi）由各自的 .github/workflows/<文件夹>.yml 出 exe，发到 GitHub Releases。
 - 提交作者：QIANSHOULAB <oilsongchengmin@gmail.com>。
 - 派活、认领、进度都在 _ops/：施工单队列.md、各轮施工单、认领/、进度.md。
-- 派单去哪：要 Song 电脑上常驻施工队干的单（默认都是），写成他电脑上的 `F:\songchengmin\施工单\待施工_NNN_名字.md`（编号接着最大的往下排，格式照那个文件夹的 README.md）。大管家看到新单，2 分钟内喊施工队开工，Song 不用说话。本仓库 `_ops/施工单队列.md` 只给 Song 亲手开的云会话，写在这里施工队看不见（11-11 公益站单就这么漏接过）。
+- 派单去哪：要 Song 电脑上常驻施工队干的单（默认都是），写成他电脑上的 `F:\songchengmin\施工单\待施工_NNN_名字.md`（编号接着最大的往下排，格式照那个文件夹的 README.md）。大管家看到新单，2 分钟内喊施工队开工，Song 不用说话。本仓库 `_ops/施工单队列.md` 只给 Song 亲手开的云会话，写在这里施工队看不见（11-11 公益站单就这么漏接过）。要新建公开仓库的单，派单前聊天这边先建好空仓库：施工队建公开仓库会被权限拦（009、021）。
 - 写施工单、接施工单、验收施工单之前，先读 _ops/模型选择.md：每张单第一行带「建议模型」，会话开头对一下当前模型。
 - 几尊同时干时，每尊开一个子代理，用 Agent 工具的 isolation: "worktree"：它在仓库的 .claude/worktrees/ 下拿到单独一份，互不共用工作区。推送用 git pull --rebase origin main 再 git push origin HEAD:main。
 - 产品设计记录写进 Song 的 Google 网盘「产品设计记录」文件夹（id 1l_EO2KIOb1lruVjJ0aW4zopXQpMKmxUi）下各尊的子文件夹。
