@@ -84,6 +84,7 @@ input[type=range]{width:100%;accent-color:var(--p);margin:0}
   <h3>开关</h3>
   <div class="toggles">
     <button id="tLens">掰弯壁纸</button><button id="tSkin">皮 A</button>
+    <button id="tRing">亮环</button><button id="tSlow">慢放</button>
   </div>
   <h3>参数</h3>
   <div id="sliders"></div>
@@ -111,11 +112,12 @@ const rr = (a, b) => a + (b - a) * rng();
 /* ---------- 参数 ---------- */
 const pick = (k, list, def) => list.includes(QS.get(k)) ? QS.get(k) : def;
 const P = { mode: 'idle', bg: pick('bg', ['black', 'light', 'dark'], 'black'),
-  iso: pick('iso', ['none', 'fog', 'dim', 'hole', 'eclipse'], 'dim'),       // 隔离：无 / 灰雾（042 的暗场）/ 熄灯 / 开洞 / 日食
+  iso: pick('iso', ['none', 'fog', 'dim', 'hole', 'eclipse'], 'hole'),      // 隔离：无 / 灰雾（042 的暗场）/ 熄灯 / 开洞 / 日食。048：默认开洞
   dimDepth: 0.3, holeR: 1.2, eclMode: 'auto',                                 // 熄灯深度、洞口半径（单位 R）、日食：自动 / 强制日食 / 强制恒星
+  holeFall: 2.0, ring: false, slow: false,                                    // 048：吸暗范围（外缘，单位 R）、洞口亮环（默认关）、慢放（0.25 倍速）
   lens: true, skin: 'A', shards: 9, debris: 24, speed: 1, bright: 1, lensK: 0.7, vol: 0 };
-/* 给测试脚本用：停住模拟时间、把某一类东西藏起来 */
-const dbg = { freeze: false, noCore: false, noShards: false, noParts: false, noArcs: false, noRings: false };
+/* 给测试脚本用：停住模拟时间、把某一类东西藏起来；noFall：开洞不吸暗（量吸暗时拿来对照） */
+const dbg = { freeze: false, noCore: false, noShards: false, noParts: false, noArcs: false, noRings: false, noFall: false };
 const eclU = { value: 0 };          // 日食程度 0..1，所有材质共用
 const MAX_MAIN = 14, MAX_DEBRIS = 40, N_PART = 600;
 
@@ -169,16 +171,29 @@ const loader = new THREE.TextureLoader();
 for (const [k, tex] of [['purple', matP], ['red', matR]]) if (MATCAP_URL[k]) loader.load(MATCAP_URL[k], t => {
   t.colorSpace = THREE.SRGBColorSpace; shardU[k === 'purple' ? 'tMatP' : 'tMatR'].value = t; }, undefined, () => {});
 
+/* ---------- 壁纸画在这张画布上（碎片登场时要用它的花纹，所以提前建好；怎么画见后面 drawBg） ---------- */
+const bgCanvas = document.createElement('canvas');
+const bgTex = new THREE.CanvasTexture(bgCanvas); bgTex.colorSpace = THREE.SRGBColorSpace;
+bgTex.wrapS = bgTex.wrapT = THREE.MirroredRepeatWrapping; bgTex.generateMipmaps = false; bgTex.minFilter = THREE.LinearFilter;
+
 /* ---------- 黑曜石碎片 ---------- */
+/* 048：开洞登场时，碎片是从屏幕上崩出来的那几块：刚飞出来还贴着原来那块壁纸的花纹（uBurn = 1），一秒内烧成黑曜石（uBurn → 0）。
+   uW0 是它崩出来那一刻平躺在屏幕上的位姿：花纹按那一刻每个顶点落在屏幕上的位置去取，所以花纹粘在碎片上跟着飞。每块碎片一份材质。 */
 const shardU = { uCoreI: { value: 1 }, uCrimson: { value: 0 }, uSkin: { value: 0 }, uCam: { value: new THREE.Vector3() },
-  tMatP: { value: matP }, tMatR: { value: matR }, uEcl: eclU, uCrackI: { value: 0 } };
+  tMatP: { value: matP }, tMatR: { value: matR }, uEcl: eclU, uCrackI: { value: 0 },
+  tBg: { value: bgTex }, uBurn: { value: 0 }, uW0: { value: new THREE.Matrix4() } };
 const shardMat = new THREE.ShaderMaterial({ uniforms: shardU, extensions: { derivatives: true },
-  vertexShader: `attribute vec3 aEdge; attribute float aCut;
-  varying vec3 vN; varying vec3 vWP; varying vec3 vVN; varying vec3 vE; varying float vCut;
+  vertexShader: `attribute vec3 aEdge; attribute float aCut; uniform mat4 uW0; uniform float uBurn;
+  varying vec3 vN; varying vec3 vWP; varying vec3 vVN; varying vec3 vE; varying float vCut; varying vec2 vBgUv;
   void main(){ vec4 wp = modelMatrix*vec4(position,1.0); vWP = wp.xyz; vN = normalize(mat3(modelMatrix)*normal);
-    vVN = normalize(normalMatrix*normal); vE = aEdge; vCut = aCut; gl_Position = projectionMatrix*viewMatrix*wp; }`,
-  fragmentShader: `uniform float uCoreI,uCrimson,uSkin,uEcl,uCrackI; uniform vec3 uCam; uniform sampler2D tMatP,tMatR;
-  varying vec3 vN; varying vec3 vWP; varying vec3 vVN; varying vec3 vE; varying float vCut;
+    vVN = normalize(normalMatrix*normal); vE = aEdge; vCut = aCut; gl_Position = projectionMatrix*viewMatrix*wp;
+    vBgUv = vec2(0.0);
+    if (uBurn > 0.0) { vec4 c0 = projectionMatrix*viewMatrix*uW0*vec4(position,1.0); vBgUv = c0.xy/c0.w*0.5 + 0.5; } }`,
+  fragmentShader: `uniform float uCoreI,uCrimson,uSkin,uEcl,uCrackI,uBurn; uniform vec3 uCam; uniform sampler2D tMatP,tMatR,tBg;
+  varying vec3 vN; varying vec3 vWP; varying vec3 vVN; varying vec3 vE; varying float vCut; varying vec2 vBgUv;
+  /* 合成时整个场景要过一道 ACES 曲线；带花纹的碎片先反算回去，过完曲线才和原来的壁纸一个颜色 */
+  vec3 invAces(vec3 y){ y = clamp(y, 0.0, 0.98); vec3 A = 2.51 - 2.43*y, B = 0.03 - 0.59*y, Cc = -0.14*y;
+    return (-B + sqrt(B*B - 4.0*A*Cc))/(2.0*A); }
   void main(){
     if (vCut > 0.5) {                                                                    // 切面：被缝里的红光照亮。缝口暗，越往里越亮
       float deep = smoothstep(0.0, 0.45, min(vE.x, min(vE.y, vE.z)));
@@ -205,6 +220,13 @@ const shardMat = new THREE.ShaderMaterial({ uniforms: shardU, extensions: { deri
     col += mix(vec3(0.32,0.0,0.035), vec3(0.5,0.0,0.03), uCrimson) * rim * 0.16 * min(uCoreI,1.6);
     float front = dot(vWP, normalize(uCam));
     col *= mix(1.0, 0.25, smoothstep(0.15, -0.65, front));
+    if (uBurn > 0.0) {                                                                   // 048：还贴着壁纸的花纹，正在烧
+      float sh = 0.68 + 0.42*max(dot(N, normalize(vec3(-0.45,0.62,0.64))), 0.0);          // 一点明暗，看得出是一块有厚度的碎片
+      vec3 wall = invAces(min(texture2D(tBg, vBgUv).rgb*sh, vec3(0.84)));                // 不超过辉光的门槛，不发光
+      col = mix(col, wall, uBurn);
+      float e = 1.0 - smoothstep(0.0, 0.1, min(vE.x, min(vE.y, vE.z)));                  // 贴着棱的一圈
+      col += vec3(0.42,0.0,0.012)*e*uBurn*(1.0 - uBurn)*4.0*2.2;                         // 烧到一半时边上闪一下暗红
+    }
     gl_FragColor = vec4(col,1.0);
   }` });
 
@@ -342,14 +364,18 @@ function makeShard(kind, i) {
   const main = kind === 'main';
   const L = main ? rr(0.24, 0.36) : rr(0.03, 0.08);
   const { geo, verts } = bladeGeometry(L);
-  const mesh = new THREE.Mesh(geo, shardMat); mesh.frustumCulled = false; mesh.layers.enable(1); scene.add(mesh);
+  addEdgeAttr(geo);                               // 048：烧的时候棱上那一圈暗红要知道哪儿是棱（只加属性，形状、随机数都不动）
+  const mat = new THREE.ShaderMaterial({ uniforms: { ...shardU, uBurn: { value: 0 }, uW0: { value: new THREE.Matrix4() } },
+    vertexShader: shardMat.vertexShader, fragmentShader: shardMat.fragmentShader, extensions: { derivatives: true } });
+  const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; mesh.layers.enable(1); scene.add(mesh);
   const r = main ? 0.45 + 0.55 * ((i * 0.618 + rr(0, 0.12)) % 1) : rr(0.35, 1.15);
   const T = main ? 12 + 18 * Math.min(1, (r - 0.45) / 0.55 * 0.75 + rr(0, 0.25)) : rr(8, 20);
   const dir = rng() < 0.68 ? 1 : -1;
   const s = { mesh, verts, L, main, r, w: dir * Math.PI * 2 / T, ph: rr(0, Math.PI * 2), ...orbitBasis(main ? 1.15 : 1.4),
     q0: new THREE.Quaternion().setFromEuler(new THREE.Euler(rr(0, 6.28), rr(0, 6.28), rr(0, 6.28))),
     axis: new THREE.Vector3(rr(-1, 1), rr(-1, 1), rr(-1, 1)).normalize(), spin: (main ? rr(0.15, 0.5) : rr(0.5, 1.6)) * (rng() < .5 ? 1 : -1),
-    corner: [rng() < .5 ? -1 : 1, rng() < .5 ? -1 : 1, rr(-0.6, 0.6)], delay: 0, pos: new THREE.Vector3(), jit: new THREE.Vector3(), on: false, crk: null };
+    corner: [rng() < .5 ? -1 : 1, rng() < .5 ? -1 : 1, rr(-0.6, 0.6)], delay: 0, pos: new THREE.Vector3(), jit: new THREE.Vector3(), on: false, crk: null,
+    mat, burn: mat.uniforms.uBurn, w0: mat.uniforms.uW0.value };
   if (main) s.crk = buildCrack(verts);
   shards.push(s); return s;
 }
@@ -358,6 +384,17 @@ for (let i = 0; i < MAX_DEBRIS; i++) makeShard('debris', i);
 shards.forEach((s, i) => { s.corner[0] = (i % 4 < 2) ? -1 : 1; s.corner[1] = (i % 2) ? -1 : 1; });   // 四个角都有
 const shardOrder = shards.map((s, i) => i).sort((a, b) => ((a * 7919) % 53) - ((b * 7919) % 53));
 shardOrder.forEach((idx, k) => shards[idx].delay = (k / shards.length) * 0.45);
+/* 048：开洞登场时每块碎片是从屏幕上哪一块崩出来的：平躺在屏幕平面（z = 0）上，离正中 0.25–0.75R（碎屑到 0.95R），长的那头朝外。
+   主碎片按黄金角排开，不管显示几块都绕着一圈；自己的种子，不动形状和轨道 */
+const rngP = rngOf(0x0480B0B0);
+shards.forEach((s, i) => {
+  const a = s.main ? i * 2.39996 + rngP() * 0.5 : rngP() * Math.PI * 2;
+  const r0 = s.main ? 0.25 + 0.5 * rngP() : 0.15 + 0.8 * Math.sqrt(rngP());
+  s.p0 = new V3(Math.cos(a) * r0, Math.sin(a) * r0, 0);
+  s.qf = new THREE.Quaternion().setFromEuler(new THREE.Euler((rngP() - 0.5) * 0.3, (rngP() - 0.5) * 0.3, a + (rngP() - 0.5) * 0.5));
+  s.out = (0.25 + 0.3 * rngP());                 // 往外甩多远（单位 R），往人这边飞约 1R
+  s.w0.compose(s.p0, s.qf, new V3(1, 1, 1));    // 崩出来那一刻的位姿：花纹按这个位姿落在屏幕上的位置取
+});
 
 /* ---------- 奇点核心 ---------- */
 const coreU = { uI: { value: 1 }, uRad: { value: 1 }, uCrimson: { value: 0 }, uT: { value: 0 }, uFlash: { value: 0 },
@@ -520,10 +557,7 @@ function spawnArc() {
   arc.age = 0; arc.life = 0.08 + Math.random() * 0.07;
 }
 
-/* ---------- 后期：背景、暗场、掰弯、辉光、合成 ---------- */
-const bgCanvas = document.createElement('canvas');
-const bgTex = new THREE.CanvasTexture(bgCanvas); bgTex.colorSpace = THREE.SRGBColorSpace;
-bgTex.wrapS = bgTex.wrapT = THREE.MirroredRepeatWrapping; bgTex.generateMipmaps = false; bgTex.minFilter = THREE.LinearFilter;
+/* ---------- 后期：背景、暗场、掰弯、辉光、合成（壁纸画布 bgCanvas / bgTex 在碎片前面建好了） ---------- */
 const rtOpt = { type: THREE.HalfFloatType, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter };
 const rtScene = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4, depthBuffer: true });
 const NLV = 6, down = [], up = [];
@@ -554,9 +588,68 @@ const upM = pmat({ tLow: { value: null }, tCur: { value: null }, uTx: { value: n
     gl_FragColor = vec4(texture2D(tCur,vUv).rgb + c/12.0*0.62, 1.0); }`);
 const compU = { tBg: { value: bgTex }, tScene: { value: null }, tBloom: { value: null }, tCrack: { value: null }, uRes: { value: new THREE.Vector2() },
   uRpx: { value: 1 }, uLens: { value: 0.7 }, uDark: { value: 1 }, uPres: { value: 0 }, uBloom: { value: 0.055 }, uExp: { value: 1 }, uSeed: { value: 0 }, uOff: { value: 0 },
-  uDim: { value: 1 }, uHole: { value: 0 }, uHoleK: { value: 1 }, uRingA: { value: 0 }, uRingI: { value: 0 }, uEcl: eclU, uT: { value: 0 }, uCrk: { value: 0 }, uBend: { value: 1 }, uDisk: { value: 0 }, uGam: { value: 0 }, uDpr: { value: 1 }, uCrimson: { value: 0 } };
+  uDim: { value: 1 }, uHole: { value: 0 }, uHoleK: { value: 1 }, uRingA: { value: 0 }, uRingI: { value: 0 }, uEcl: eclU, uT: { value: 0 }, uCrk: { value: 0 }, uBend: { value: 1 }, uDisk: { value: 0 }, uGam: { value: 0 }, uDpr: { value: 1 }, uCrimson: { value: 0 },
+  // 048：洞口外吸暗、亮环开关、登场的顶和裂
+  uFallOut: { value: 0 }, uFallP: { value: 2.6 }, uRingOn: { value: 0 }, uBumpA: { value: 0 }, uBumpR: { value: 1 },
+  uCrkR: { value: 0 }, uCrkA: { value: 0 }, uHair: { value: 0 } };
 const compM = pmat(compU, `uniform sampler2D tBg,tScene,tBloom,tCrack; uniform vec2 uRes;
-  uniform float uRpx,uLens,uDark,uPres,uBloom,uExp,uSeed,uOff,uDim,uHole,uHoleK,uRingA,uRingI,uEcl,uT,uCrk,uBend,uDisk,uGam,uDpr,uCrimson; varying vec2 vUv;
+  uniform float uRpx,uLens,uDark,uPres,uBloom,uExp,uSeed,uOff,uDim,uHole,uHoleK,uRingA,uRingI,uEcl,uT,uCrk,uBend,uDisk,uGam,uDpr,uCrimson;
+  uniform float uFallOut,uFallP,uRingOn,uBumpA,uBumpR,uCrkR,uCrkA,uHair; varying vec2 vUv;
+  /* 048 登场：屏幕被从后面顶起来。中间那块（半径 uBumpR）朝人鼓：采样往里收（放大），再按鼓包的坡打光（左上来的光） */
+  float bumpG(float rr){ float u = rr/uBumpR; if (u >= 1.0) return 0.0; float g = 1.0 - u*u; return g*g; }   // 鼓包的高度（正中 1，边上 0，边上是平着接回去的）
+  float bumpK(float rr){ if (uBumpA == 0.0) return 1.0; return 1.0 - 0.34*uBumpA*bumpG(rr); }
+  float h1(float n){ return fract(sin(n*91.345 + 3.17)*47453.5453); }
+  /* 玻璃裂纹（第 2 轮改成折线：原来的弯线像头发丝）。9 道从正中放射出去的裂，每走 0.16R 拐一下；一半的裂带一根岔；
+     相邻两道裂之间几段直的横裂，连成蛛网。只画到 uCrkR；uHair = 1 时只有几道短的发丝 */
+  float jag(float s, float sd){ float q = s/0.16, i = floor(q), f = q - i;
+    return mix(h1(i*1.37 + sd) - 0.5, h1(i*1.37 + 1.37 + sd) - 0.5, f)*0.11*min(1.0, s/0.12); }
+  float crackTh(float fk){ return (fk + 0.6*h1(fk + 0.31))*6.2831853/9.0; }
+  float crackLen(float fk){ return uCrkR*(0.66 + 0.34*h1(fk*3.1 + 0.7)); }
+  vec2 crackPt(float fk, float s){ float th = crackTh(fk); vec2 u = vec2(cos(th), sin(th));
+    return (u*s + vec2(-u.y, u.x)*jag(s, fk*11.1))*uRpx; }
+  float segD(vec2 p, vec2 a, vec2 b){ vec2 ab = b - a; float t = clamp(dot(p - a, ab)/dot(ab, ab), 0.0, 1.0); return length(p - a - ab*t); }
+  vec2 crackOf(vec2 d, float r){
+    float pw = max(0.7, 0.6*uDpr), core = 0.0, halo = 0.0, a = atan(d.y, d.x), ks = 8.0;
+    if (a < 0.0) a += 6.2831853;
+    for (int k = 0; k < 9; k++) {
+      float fk = float(k), th = crackTh(fk);
+      if (a >= th) ks = fk;                                     // 这个像素落在哪两道裂中间（横裂用）
+      if (uHair > 0.5 && h1(fk*7.7 + 1.3) > 0.5) continue;
+      vec2 u = vec2(cos(th), sin(th)), v = vec2(-u.y, u.x);
+      float al = dot(d, u)/uRpx, len = crackLen(fk);
+      if (al > 0.0) {
+        float i = floor(al/0.16), sl = (h1(i*1.37 + 1.37 + fk*11.1) - h1(i*1.37 + fk*11.1))*0.11/0.16;
+        float dist = abs(dot(d, v)/uRpx - jag(al, fk*11.1))*uRpx/sqrt(1.0 + sl*sl);
+        float on = (1.0 - smoothstep(len - 8.0*pw, len, al*uRpx))*smoothstep(0.0, 4.0*pw, r);
+        core = max(core, (1.0 - smoothstep(0.35*pw, 1.35*pw, dist))*on);
+        halo = max(halo, (1.0 - smoothstep(0.0, 3.5*pw, dist))*on);
+      }
+      if (uHair < 0.5 && h1(fk*5.9 + 2.0) < 0.55) {            // 岔：从裂的半路斜着分出去一根短的
+        float sb = 0.3 + 0.35*h1(fk*2.3 + 0.9), tb = th + (h1(fk*4.4) > 0.5 ? 1.0 : -1.0)*(0.3 + 0.25*h1(fk*8.8));
+        vec2 ub = vec2(cos(tb), sin(tb)), db = d - crackPt(fk, sb);
+        float ab = dot(db, ub)/uRpx, lb = 0.22 + 0.3*h1(fk*6.6 + 0.2);
+        if (ab > 0.0 && ab < lb) {
+          float dist = abs(dot(db, vec2(-ub.y, ub.x))/uRpx - 0.6*jag(ab, fk*23.7))*uRpx;
+          float on = (1.0 - smoothstep(uCrkR - 8.0*pw, uCrkR, length(d)))*(1.0 - smoothstep(lb - 0.05, lb, ab))*step(sb*uRpx, len);
+          core = max(core, (1.0 - smoothstep(0.35*pw, 1.35*pw, dist))*on*0.9);
+          halo = max(halo, (1.0 - smoothstep(0.0, 3.5*pw, dist))*on*0.9);
+        }
+      }
+    }
+    if (uHair < 0.5) {                                          // 横裂：相邻两道裂之间一段段直的，断断续续，连成蛛网（离中心越远隔得越开）
+      float k2 = mod(ks + 1.0, 9.0), l1 = crackLen(ks), l2 = crackLen(k2);
+      for (int j = 0; j < 5; j++) {
+        float fj = float(j), s0 = 0.18 + 0.18*fj + 0.03*fj*fj;
+        if (h1(ks*13.0 + fj*7.0 + 0.5) > 0.6) continue;
+        float s1 = s0*(1.0 + 0.16*(h1(ks*3.7 + fj) - 0.5)), s2 = s0*(1.0 + 0.16*(h1(k2*3.7 + fj + 0.5) - 0.5));
+        float dist = segD(d, crackPt(ks, s1), crackPt(k2, s2));
+        float on = (1.0 - smoothstep(l1 - 8.0*pw, l1, s1*uRpx))*(1.0 - smoothstep(l2 - 8.0*pw, l2, s2*uRpx))*0.85;
+        core = max(core, (1.0 - smoothstep(0.35*pw, 1.35*pw, dist))*on);
+        halo = max(halo, (1.0 - smoothstep(0.0, 3.5*pw, dist))*on);
+      }
+    }
+    return vec2(core, halo);
+  }
   vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0); }
   vec3 toSRGB(vec3 c){ return mix(c*12.92, 1.055*pow(c,vec3(1.0/2.4))-0.055, step(0.0031308,c)); }
   vec3 toLin(vec3 c){ return mix(c/12.92, pow((c+0.055)/1.055, vec3(2.4)), step(0.04045,c)); }
@@ -581,26 +674,47 @@ const compM = pmat(compU, `uniform sampler2D tBg,tScene,tBloom,tCrack; uniform v
       vec2 q = d/uRpx; float hz = uEcl*uPres*clamp(uLens/0.35, 0.0, 1.0)*(1.0 - smoothstep(0.18, 0.8, r/uRpx))*0.006*uRpx;
       hzv = hz*vec2(sin(q.y*19.0 + uT*5.3) + 0.6*sin(q.x*13.0 - uT*3.7), sin(q.x*17.0 - uT*4.6) + 0.6*sin(q.y*11.0 + uT*6.1));
     }
-    vec3 bg = texture2D(tBg, (c + dir*betaOf(r) + hzv)/uRes).rgb;
+    vec3 bg = texture2D(tBg, (c + dir*betaOf(r)*bumpK(r) + hzv)/uRes).rgb;
     if (uHole > 0.5 || uEcl > 0.0) {                            // 弯得狠的地方多采几下，壁纸上的线才不会被挤出锯齿
       vec2 tn = vec2(-dir.y, dir.x);
       for (int i = 0; i < 4; i++) { float a = float(i)*1.5708 + 0.6; vec2 o = 0.45*vec2(cos(a), sin(a));
-        bg += texture2D(tBg, (c + normalize(d + tn*o.y)*betaOf(r + o.x) + hzv)/uRes).rgb; }
+        bg += texture2D(tBg, (c + normalize(d + tn*o.y)*betaOf(r + o.x)*bumpK(r + o.x) + hzv)/uRes).rgb; }
       bg *= 0.2;
+    }
+    if (uBumpA != 0.0 && r < 1.3*uBumpR) {                      // 048：鼓包的明暗（弹回去过头时反过来，变成往里凹）
+      /* 第 2 轮：像浮雕那样打光——光从左上来，朝光那面亮、背光那面暗，右下边外面落一点影子。
+         第 1 轮那圈暗边去掉（一圈闭合的边让它像一颗玻璃球摆在屏幕上），高光点去掉；
+         亮面往白里提（提不爆），暗面乘暗——亮壁纸上主要靠暗面和花纹被撑开看出来 */
+      float sh = uBumpA*(bumpG(length(d + normalize(vec2(-0.55, 0.83))*0.22*uBumpR)) - bumpG(r));   // >0：朝光那边比这里高，这里背光
+      vec3 sb = toSRGB(clamp(bg, 0.0, 1.0));
+      sb = sh > 0.0 ? sb*(1.0 - 0.95*sh) : sb + (1.0 - sb)*0.7*(-sh);
+      bg = toLin(clamp(sb, 0.0, 1.0));
     }
     bg *= mix(1.0, smoothstep(0.18*E, 0.5*E, r), k*(1.0-hm));  // 正中心是视界，压黑
     float dark = mix(0.15, 1.0, smoothstep(0.0, 1.5*uRpx, r));
     bg *= mix(1.0, dark, uDark*uPres);                          // 灰雾（042 的暗场，原样）
     if (uEcl > 0.0) bg = dimS(bg, 1.0 - 0.35*uEcl*uPres*(1.0 - smoothstep(0.28*uRpx, 0.55*uRpx, r)));   // 日食：暗晕，到 0.55R，最深 35%
     if (uDim < 0.999) bg = dimS(bg, uDim);                      // 熄灯：整个舞台压暗，它自己和它的光不压
+    if (uCrkA > 0.0 && r < uCrkR + 2.0) {                      // 048：屏幕裂开。缝口一线亮（玻璃的反光），旁边压暗一点
+      vec2 dq = d*bumpK(r); vec2 ck = crackOf(dq, length(dq));   // 裂在玻璃面上：鼓包顶着的时候跟着一起被放大
+      // 048 第 1 轮：白线在亮天上看不见。亮的地方缝是暗线，暗的地方缝是亮线（玻璃反光），旁边都压暗一点
+      // 第 2 轮：亮暗之间平滑过渡（原来按 0.22 一刀切，一道裂走过明暗交界会突然换色）
+      float lum = dot(bg, vec3(0.2126, 0.7152, 0.0722));
+      bg = mix(bg, bg*0.4, ck.y*0.55*uCrkA);
+      bg = mix(bg, mix(vec3(1.15, 1.12, 1.18), vec3(0.015, 0.012, 0.025), smoothstep(0.12, 0.35, lum)), ck.x*0.85*uCrkA);
+    }
     float ring = 0.0;
     if (uHole > 0.5) {
-      bg *= smoothstep(uHole, uHole + max(0.012*uRpx, 1.5), r); // 一口真黑的井，洞口利落
+      /* 048：洞里纯黑；洞口往外被吸暗：越近越暗，近处陡、远处缓，到外缘 uFallOut 回到原样（按看上去的亮度压，和熄灯一个算法）。
+         043 的「0.012R 内过渡完、洞外一个像素不压」作废 */
+      float t = clamp((r - uHole)/max(uFallOut - uHole, 1.0), 0.0, 1.0);
+      float keep = 1.0 - pow(1.0 - t, uFallP);
+      bg = r < uHole ? vec3(0.0) : dimS(bg, keep);
       float ang = atan(d.y, d.x) - uRingA;
       float lop = 0.015 + 0.985*pow(0.5 + 0.5*cos(ang), 3.0);   // 洞口那道细亮环：一侧亮一侧暗，慢慢转
       lop *= 0.4 + 0.6*(0.5 + 0.5*sin(ang*5.0 + uT*0.6))*(0.6 + 0.4*sin(ang*13.0 - uT*0.37));   // 亮的那一侧也不匀
       float rc = uHole - 0.006*uRpx, sg = max(0.0045*uRpx, 0.9);
-      ring = exp(-pow((r-rc)/sg, 2.0))*lop*uRingI;
+      ring = exp(-pow((r-rc)/sg, 2.0))*lop*uRingI*uRingOn;      // 048：亮环默认关（一道硬线，和渐变打架），面板「亮环」打开
     }
     vec4 s = texture2D(tScene, vUv); vec3 bl = texture2D(tBloom, vUv).rgb;
     vec3 hdr = s.rgb + bl*uBloom*(1.0-0.8*s.a)*(1.0 - uEcl*max(0.85, s.a*(1.0 - smoothstep(uDisk - 1.0, uDisk + 1.0, r))));   // 日食不发光：辉光基本收掉，黑芯上一点不留
@@ -745,8 +859,22 @@ let volManualUntil = 0, volDragging = false;
 const st = { phase: 'enter', t: 0, mode: 'idle', prevMode: 'idle', wL: 0, wS: 0, wB: 0, coreOn: 0, presBg: 0, flash: 0,
   exitX: 1, exitV: 0, exitTarget: 1, ignited: false, orbitT: 0, tumbleT: 0, partT: 0, simT: 0, arcRate: 0.5, ringClock: 0, vol: 0, lastStage: -1,
   // 043：隔离、日食、裂开
-  wFog: P.iso === 'fog' ? 1 : 0, dim: 1, holeW: P.iso === 'hole' ? 1 : 0, holeX: 1, holeV: 0, holeTarget: 1, holeR: 0, lead: P.iso === 'hole' ? 0.4 : 0,
-  regret: 0, ecl: 0, bgLum: 0, bgOff: 0, crack: 0, holeS: 0, wGam: P.iso === 'none' || P.iso === 'fog' ? 0 : 1 };
+  wFog: P.iso === 'fog' ? 1 : 0, dim: 1, holeW: P.iso === 'hole' ? 1 : 0, holeX: 1, holeV: 0, holeTarget: 1, holeR: 0, lead: 0,
+  regret: 0, ecl: 0, bgLum: 0, bgOff: 0, crack: 0, holeS: 0, wGam: P.iso === 'none' || P.iso === 'fog' ? 0 : 1,
+  // 048：开洞的登场是「屏幕被顶两下再破屏」（punch）；fallSp 吸暗从洞口往外漫开的程度
+  punch: P.iso === 'hole', fallSp: 1, bump: 0, crkR: 0, crkA: 0, hair: 0 };
+/* 048 开洞登场的时间表（秒，慢放时整个钟慢 4 倍）：0–0.22 第一下小顶、弹回；停一拍；0.34–0.52 第二下大顶，顶住发抖，0.47 起冒发丝裂纹；
+   0.60 破屏：裂纹炸到 1.6R、洞 0.2 秒张到 1.2R、核心一闪、吸暗往外漫；碎片带着壁纸花纹飞出来，一秒内烧成黑曜石，弹簧落进轨道；
+   洞外剩下的裂纹 0.85 起一秒淡掉；2.0 登场完 */
+const BRK = 0.6, PEND = 2.0;
+function punchBump(t) {
+  if (t < 0.22) return 0.38 * Math.sin(Math.PI * t / 0.22);                // 第一下：小
+  if (t < 0.30) return -0.07 * Math.sin(Math.PI * (t - 0.22) / 0.08);       // 弹回去，稍微过头
+  if (t < 0.34) return 0;                                                   // 停一拍
+  if (t < 0.52) { const k = (t - 0.34) / 0.18; return 1 - Math.pow(1 - k, 3); }   // 第二下：更大
+  if (t < BRK) return 1 + 0.03 * Math.sin((t - 0.52) * 90);                // 顶住，发抖
+  return Math.max(0, 1 - (t - BRK) / 0.06);                                 // 破了，塌下去
+}
 function setMode(m) {
   if (m === 'enter') { startEnter(); return; }
   if (m === 'exit') {
@@ -759,7 +887,8 @@ function setMode(m) {
 }
 function startEnter() {
   st.phase = 'enter'; st.t = 0; st.ignited = false; st.coreOn = 0; st.exitX = 1; st.exitV = 0; st.exitTarget = 1;
-  st.holeX = 1; st.holeV = 0; st.holeTarget = 1; st.lead = P.iso === 'hole' ? 0.4 : 0;      // 开洞：洞先开 0.4 秒，碎片再飞进来
+  st.holeX = 1; st.holeV = 0; st.holeTarget = 1; st.lead = 0;
+  st.punch = P.iso === 'hole';                    // 048：开洞 = 屏幕被顶两下再破屏（043 的「洞先开 0.4 秒」不用了）；别的隔离照旧
   if (st.mode === 'exit') st.mode = 'idle'; ui();
 }
 
@@ -793,7 +922,10 @@ document.querySelectorAll('#isos button').forEach(b => b.onclick = () => setIso(
 document.querySelectorAll('#ecls button').forEach(b => b.onclick = () => { P.eclMode = b.dataset.e; ui(); });
 document.getElementById('tLens').onclick = () => { P.lens = !P.lens; ui(); };
 document.getElementById('tSkin').onclick = () => { P.skin = P.skin === 'A' ? 'B' : 'A'; ui(); };
+document.getElementById('tRing').onclick = () => { P.ring = !P.ring; ui(); };
+document.getElementById('tSlow').onclick = () => { P.slow = !P.slow; ui(); };
 const SL = [['dimDepth', '熄灯深度', 0.1, 0.6, 0.01, 'subDim', v => '剩' + Math.round(v * 100) + '%'], ['holeR', '洞口半径', 0.9, 1.5, 0.01, 'subHole', v => (+v).toFixed(2) + 'R'],
+  ['holeFall', '吸暗范围', 1.4, 2.6, 0.05, 'subHole', v => (+v).toFixed(2) + 'R'],
   ['shards', '主碎片', 6, 14, 1], ['debris', '碎屑', 0, 40, 1], ['speed', '转速倍率', 0.2, 3, 0.05],
   ['bright', '整体亮度', 0.5, 2, 0.05], ['lensK', '掰弯强度', 0, 1, 0.01], ['vol', '音量', 0, 1, 0.01]];
 const sliders = {};
@@ -824,6 +956,8 @@ function ui() {
   document.getElementById('subDim').classList.toggle('off', P.iso !== 'dim'); document.getElementById('subHole').classList.toggle('off', P.iso !== 'hole');
   document.getElementById('subEcl').classList.toggle('off', P.iso !== 'eclipse');
   document.getElementById('tLens').classList.toggle('on', P.lens);
+  document.getElementById('tRing').classList.toggle('on', P.ring); document.getElementById('tSlow').classList.toggle('on', P.slow);
+  document.getElementById('tRing').disabled = P.iso !== 'hole';
   const ts = document.getElementById('tSkin'); ts.textContent = P.skin === 'A' ? '皮 A 公式' : '皮 B 球'; ts.classList.toggle('on', P.skin === 'B');
 }
 ui();
@@ -833,13 +967,15 @@ jsonEl.addEventListener('focus', () => jsonEl.select());
 
 /* ---------- 主循环 ---------- */
 const sm = (x, t, dt, tau) => x + (t - x) * (1 - Math.exp(-dt / tau));
-const _q = new THREE.Quaternion(), _p = new THREE.Vector3();
+const _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _q2 = new THREE.Quaternion(), _f = new THREE.Vector3();
 let last = performance.now(), fpsAcc = 0, fpsN = 0, fpsShow = 0, uiClock = 0;
 const fpsLog = [];
+const pageT0 = performance.now(); let smoothN = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const rawDt = (now - last) / 1000; last = now;
-  const dtR = Math.min(rawDt, 0.05);              // 真时间：隔离、壁纸的过渡用
+  smoothN = rawDt < 0.03 ? smoothN + 1 : 0;
+  const dtR = Math.min(rawDt, 0.05) * (P.slow ? 0.25 : 1);   // 真时间：隔离、壁纸的过渡用。048：慢放时整个钟慢 4 倍
   const dt = dbg.freeze ? 0 : dtR;                // 模拟时间：测试时可以停住
   fpsAcc += rawDt; fpsN++; fpsLog.push(rawDt); if (fpsLog.length > 12000) fpsLog.shift();
   if (fpsAcc > 0.5) { fpsShow = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
@@ -860,10 +996,16 @@ function frame(now) {
   st.partT += dt * (1 + st.wB) * P.speed;
 
   // 登场 / 退场
-  st.t += dt;
+  // 048：刚打开网页那几帧在编着色器（掌机上头一帧卡 0.6 秒），登场的钟等画面顺了（连着 6 帧不卡）再走，最多等 3 秒：
+  // 不然第一下顶就是一顿一顿的。后来再召唤的登场不受影响
+  const holdEnter = st.phase === 'enter' && st.t === 0 && smoothN < 6 && now - pageT0 < 3000;
+  st.t += holdEnter ? 0 : dt;
   const tE = st.t - st.lead;                      // 开洞时洞先开 0.4 秒，登场的钟往后拨这么多；别的隔离是 0
   let implodeE = 0;
-  if (st.phase === 'enter') {
+  if (st.phase === 'enter' && st.punch) {         // 048：破屏那一下核心一闪点亮，2 秒登场完
+    if (!st.ignited && st.t >= BRK + 0.04) { st.ignited = true; st.flash = 1.0; st.coreOn = 1; }
+    if (st.t >= PEND) { st.phase = 'live'; st.punch = false; ui(); }
+  } else if (st.phase === 'enter') {
     if (!st.ignited && tE >= 1.15) { st.ignited = true; st.flash = 1.0; st.coreOn = 1; }
     if (tE >= 1.2) { st.phase = 'live'; ui(); }
   } else if (st.phase === 'exit') {
@@ -881,7 +1023,15 @@ function frame(now) {
   const hacc = 320 * (st.holeTarget - st.holeX) - 17 * st.holeV; st.holeV += hacc * dt; st.holeX += st.holeV * dt;
   const exitStage = st.phase === 'exit' ? Math.min(2, Math.floor(st.t)) + 1 : (st.phase === 'implode' ? 3 : 0);
   st.flash *= Math.exp(-dt / 0.075);
-  st.presBg = sm(st.presBg, (st.phase === 'hidden') ? 0 : (st.phase === 'enter' ? Math.min(1, st.t / 1.1) : 1), dt, st.phase === 'hidden' ? 0.12 : 0.15);
+  const punching = st.phase === 'enter' && st.punch, tb = st.t - BRK;      // tb：破屏以后过了多久
+  st.presBg = sm(st.presBg, (st.phase === 'hidden') ? 0 : (st.phase === 'enter' ? (punching ? THREE.MathUtils.clamp(tb / 0.6, 0, 1) : Math.min(1, st.t / 1.1)) : 1),
+    dt, st.phase === 'hidden' ? 0.12 : 0.15);
+  // 048：顶、裂纹（时间表见 BRK 上面）
+  st.bump = punching ? punchBump(st.t) : 0;
+  if (punching && st.t >= 0.47 && st.t < BRK) { st.hair = 1; st.crkR = 0.4 * Math.min(1, (st.t - 0.47) / 0.1); st.crkA = 0.8; }
+  else if (punching && st.t >= BRK) { st.hair = 0; st.crkR = 0.4 + 1.2 * (1 - Math.pow(1 - Math.min(1, tb / 0.12), 3));
+    st.crkA = tb < 0.25 ? 1 : Math.max(0, 1 - (tb - 0.25) / 1.0); }
+  else { st.hair = 0; st.crkR = 0; st.crkA = 0; }
 
   // ---- 隔离（走真时间）----
   const iso = P.iso, hid = st.phase === 'hidden', snap = (x, t) => Math.abs(x - t) < 1e-3 ? t : x;
@@ -901,8 +1051,9 @@ function frame(now) {
   st.dim = snap(sm(st.dim, dimT, dtR, dimTau), dimT);
   // 开洞：登场洞先开（0.4 秒），退场跟着三档收（1.2R 时是 1.0R / 0.8R / 0.6R），吸进去那一下合上
   st.holeW = snap(sm(st.holeW, iso === 'hole' ? 1 : 0, dtR, 0.09), iso === 'hole' ? 1 : 0);
-  const holeShape = st.phase === 'enter' ? (st.lead > 0 ? 1 - Math.pow(1 - Math.min(1, st.t / 0.4), 3) : 1)
+  const holeShape = st.phase === 'enter' ? (punching ? (tb < 0 ? 0 : 1 - Math.pow(1 - Math.min(1, tb / 0.2), 3)) : 1)   // 048：破屏后 0.2 秒张满
     : st.phase === 'implode' ? st.holeX * (1 - 0.6 * implodeE) : st.holeX;
+  st.fallSp = punching ? (tb < 0 ? 0 : 1 - Math.pow(1 - THREE.MathUtils.clamp((tb - 0.02) / 0.55, 0, 1), 2)) : 1;      // 吸暗从洞口往外漫开
   st.holeS = hid ? (st.holeS < 0.004 ? 0 : sm(st.holeS, 0, dtR, 0.05)) : holeShape;
   st.holeR = Math.min(P.holeR * st.holeS * st.holeW * orbitMul, (Math.min(W, H) / 2 - 6) / R);   // 现在的洞口半径（单位 R）；聆听时跟着轨道外扩 15%；手机竖屏放不下就缩到贴边
   // 日食：亮壁纸上吸光，暗壁纸上还是恒星；「自动」看脚下壁纸的亮度，0.6 秒过渡
@@ -931,14 +1082,22 @@ function frame(now) {
   const nMain = P.shards, nDeb = P.debris;
   const halfW = W / 2 / R + 0.4, halfH = H / 2 / R + 0.4;
   shards.forEach((s, i) => {
-    const on = (s.main ? i < nMain : (i - MAX_MAIN) < nDeb) && st.phase !== 'hidden' && !dbg.noShards;
+    const on = (s.main ? i < nMain : (i - MAX_MAIN) < nDeb) && st.phase !== 'hidden' && !dbg.noShards && !(punching && tb < 0);   // 048：破屏前还没崩出来
+    s.burn.value = punching ? 1 - THREE.MathUtils.smoothstep(tb, 0.15, 1.0) : 0;                 // 花纹一秒内烧掉
     const split = on && !!s.crk && ck > 0;        // 待机、聆听、说话：整块黑曜石，一条缝都没有；施工才换成切好的几瓣
     s.on = on; s.mesh.visible = on && !split; if (s.crk) s.crk.g.visible = split;
     if (!on) return;
     const th = s.ph + s.w * st.orbitT, rad = s.r * orbitMul * st.exitX * (1 - implodeE);
     _p.copy(s.u).multiplyScalar(Math.cos(th) * rad).addScaledVector(s.v, Math.sin(th) * rad);
-    let scl = 1 - implodeE * 0.85, extraSpin = 0;
-    if (st.phase === 'enter') {
+    let scl = 1 - implodeE * 0.85, extraSpin = 0, eP = -1;
+    if (punching) {                               // 048：从屏幕上崩出来——先往外、往人这边飞，再按原来的弹簧落进轨道
+      const fe = 1 - Math.pow(1 - Math.min(1, tb / 0.3), 3), l0 = Math.max(0.15, Math.hypot(s.p0.x, s.p0.y));
+      _f.set(s.p0.x / l0 * s.out, s.p0.y / l0 * s.out, 1.0).multiplyScalar(fe).add(s.p0);
+      const p = THREE.MathUtils.clamp((tb - 0.2 - s.delay * 0.35) / 0.8, 0, 1);
+      eP = p >= 1 ? 1 : 1 - Math.exp(-5.5 * p) * Math.cos(9 * p);
+      _p.lerpVectors(_f, _p, eP);
+      extraSpin = (1 - Math.min(1, eP)) * 3;
+    } else if (st.phase === 'enter') {
       const p = THREE.MathUtils.clamp((tE - s.delay) / 0.7, 0, 1);
       const e = p >= 1 ? 1 : 1 - Math.exp(-5.5 * p) * Math.cos(9 * p);
       _p.lerpVectors(new V3(s.corner[0] * halfW, s.corner[1] * halfH, s.corner[2]), _p, e);
@@ -947,6 +1106,7 @@ function frame(now) {
     if (st.wB > 0.01) { const a = 0.02 * s.L * st.wB; if (!dbg.freeze) s.jit.set(Math.random() - .5, Math.random() - .5, Math.random() - .5).multiplyScalar(2 * a); _p.add(s.jit); }
     s.pos.copy(_p); s.mesh.position.copy(_p);
     _q.setFromAxisAngle(s.axis, s.spin * st.tumbleT + extraSpin); s.mesh.quaternion.copy(s.q0).premultiply(_q);
+    if (eP >= 0) { _q2.copy(s.mesh.quaternion); s.mesh.quaternion.copy(s.qf).slerp(_q2, THREE.MathUtils.clamp(eP, 0, 1)); }   // 平躺在屏幕上 → 转起来
     s.mesh.scale.setScalar(scl);
     if (split) {                                  // 每一瓣沿切面的法线各让开半条缝；瓣不散架、不飞走
       const c = s.crk; c.g.position.copy(_p); c.g.quaternion.copy(s.mesh.quaternion); c.g.scale.setScalar(scl);
@@ -1032,6 +1192,13 @@ function frame(now) {
   compU.uGam.value = st.wGam; compU.uDpr.value = DPR; compU.uCrimson.value = st.wB;
   compU.uDark.value = st.wFog; compU.uPres.value = st.presBg;
   compU.uDim.value = st.dim; compU.uHole.value = st.holeR * R * DPR; compU.uHoleK.value = P.lens ? Math.min(1, P.lensK / 0.7) : 0;
+  {                                               // 048：吸暗的外缘跟着洞口一起缩放（退场三档、聆听外扩都跟着），登场时从洞口往外漫开
+    const holePx = st.holeR * R * DPR, fullOut = holePx * Math.max(P.holeFall, P.holeR * 1.1) / P.holeR;
+    compU.uFallOut.value = dbg.noFall ? holePx : holePx + (fullOut - holePx) * st.fallSp;
+    compU.uRingOn.value = P.ring ? 1 : 0;
+    compU.uBumpA.value = st.bump; compU.uBumpR.value = R * DPR;
+    compU.uCrkR.value = st.crkR * R * DPR; compU.uCrkA.value = st.crkA; compU.uHair.value = st.hair;
+  }
   compU.uRingA.value = st.simT * 0.26 + 0.9; compU.uRingI.value = 3.4 * P.bright; compU.uT.value = st.simT; compU.uCrk.value = ck > 0 && !hid ? 0.34 : 0;
   compU.uExp.value = 1 + st.flash * 0.3; compU.uSeed.value = (st.simT * 60) % 97;
   pass(compM, null);
@@ -1051,17 +1218,24 @@ function frame(now) {
       : P.eclMode === 'star' ? '强制恒星：不管壁纸亮不亮，都是原来那颗发光的核'
       : `自动：它脚下的壁纸亮度 ${st.bgLum.toFixed(2)}，` + (st.bgLum > 0.45 ? '高于 0.45 算亮，现在是日食（黑芯白冕）' : '不到 0.45 算暗，现在是恒星（原来那颗发光的核）');
     const j = JSON.stringify({ 状态: phaseName, 背景: P.bg, 隔离: { none: '无', fog: '灰雾', dim: '熄灯', hole: '开洞', eclipse: '日食' }[P.iso],
-      熄灯深度: P.dimDepth, 洞口半径: P.holeR, 日食档: P.eclMode, 脚下亮度: +st.bgLum.toFixed(2), 掰弯: P.lens, 皮: P.skin, 主碎片: P.shards, 碎屑: P.debris,
+      熄灯深度: P.dimDepth, 洞口半径: P.holeR, 吸暗范围: P.holeFall, 亮环: P.ring, 慢放: P.slow, 日食档: P.eclMode, 脚下亮度: +st.bgLum.toFixed(2), 掰弯: P.lens, 皮: P.skin, 主碎片: P.shards, 碎屑: P.debris,
       转速: P.speed, 亮度: P.bright, 掰弯强度: P.lensK, 音量: +st.vol.toFixed(2), 陀螺仪: par.gyro, dpr: DPR, R: Math.round(R) });
     if (document.activeElement !== jsonEl) jsonEl.value = j;
   }
 }
 resize();
+/* 048：所有材质开场前先编好（看不见的碎片、核心、电弧、缝里红光那遍都算），编的时候对准真画时的那张画布，
+   编出来的才是同一份。不然破屏那一下碎片和核心头一回出现才去编，掌机上那两帧卡 60 毫秒 */
+try {
+  renderer.setRenderTarget(rtScene); renderer.compile(scene, camera);
+  renderer.setRenderTarget(rtCrk); renderer.compile(new THREE.Mesh(new THREE.BufferGeometry(), crkMat), camera);
+  renderer.setRenderTarget(null);
+} catch (e) { console.warn('precompile', e); }
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 
 /* 给测试脚本用 */
 window.__xb = { sig: () => shards.map(s => s.verts.reduce((a, v) => a + v.x * 3 + v.y * 5 + v.z * 7, 0) + s.r + s.w + s.ph).reduce((a, b) => a + b, 0).toFixed(9), setMode, P, st, fpsLog, ui, drawBg, fold, setBg: b => { P.bg = b; drawBg(); ui(); },
-  setIso, dbg,
+  setIso, dbg, punch: { BRK, PEND }, bgCanvas, bgTex,          // 048：量吸暗时把壁纸刷成一片灰（只给测试脚本用）
   geom: () => ({ cx: W / 2, cy: H / 2 - (st.offY || 0), R, dpr: DPR, W, H, holePx: st.holeR * R }),
   mainShards: () => shards.filter(s => s.main && s.on).map(s => { const v = s.pos.clone().project(camera);
     return { i: shards.indexOf(s), x: (v.x * 0.5 + 0.5) * W, y: (0.5 - v.y * 0.5) * H, r: s.L * 0.5 * R }; }),
