@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>新小白样片 · 高维碎裂几何</title>
+<link rel="icon" href="data:,">
+<style>
+:root{color-scheme:dark;--p:#b14cff;--r:#c2002b}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;
+  font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#panel{position:fixed;z-index:2;box-sizing:border-box;overflow:auto;color:#ebe6f7;font-size:13px;
+  background:rgba(9,7,14,.74);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(177,76,255,.22);scrollbar-width:thin}
+@media (orientation:landscape){#panel{top:12px;right:12px;bottom:12px;width:300px;border-radius:14px;padding:10px 12px}}
+@media (orientation:portrait){#panel{left:0;right:0;bottom:0;max-height:42vh;border-radius:14px 14px 0 0;
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom))}}
+#panel.closed{display:none}
+#panel h3{margin:10px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;color:#9c90b8}
+#panel h3:first-of-type{margin-top:2px}
+.head{display:flex;align-items:center;justify-content:space-between}
+.head b{font-size:13px;font-weight:600;letter-spacing:.04em}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+button{font:inherit;color:#ebe6f7;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  border-radius:9px;padding:7px 4px;cursor:pointer;position:relative;overflow:hidden;touch-action:manipulation}
+button:hover{background:rgba(255,255,255,.1)}
+button.on{border-color:var(--p);background:rgba(177,76,255,.2);box-shadow:0 0 12px rgba(177,76,255,.25) inset}
+button.on.red{border-color:#ff2a4a;background:rgba(194,0,43,.25);box-shadow:0 0 12px rgba(255,30,60,.25) inset}
+button:disabled{opacity:.35;cursor:default}
+button .bar{position:absolute;left:0;bottom:0;height:3px;width:0;background:#ff2a4a}
+#fold{padding:4px 10px;font-size:12px}
+.row{display:grid;grid-template-columns:5.2em 1fr 3em;align-items:center;gap:8px;margin:5px 0}
+.row span:last-child{text-align:right;font-variant-numeric:tabular-nums;color:#c9bfe0}
+input[type=range]{width:100%;accent-color:var(--p);margin:0}
+.toggles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+#info{margin-top:10px;font-size:11px;color:#8f86a6}
+#fps{color:#d8ccff;font-variant-numeric:tabular-nums}
+#json{width:100%;box-sizing:border-box;margin-top:4px;font:11px ui-monospace,Consolas,monospace;color:#bfb3da;
+  background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:5px}
+#badge{position:fixed;z-index:2;display:none;font-size:12px;padding:8px 12px;border-radius:12px;
+  background:rgba(9,7,14,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+@media (orientation:landscape){#badge{top:12px;right:12px}}
+@media (orientation:portrait){#badge{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}}
+#badge.show{display:block}
+#err{position:fixed;left:12px;top:12px;z-index:3;color:#ff9aa8;font-size:13px;max-width:70vw}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="err"></div>
+<div id="panel">
+  <div class="head"><b>新小白样片</b><button id="fold">收起</button></div>
+  <h3>状态</h3>
+  <div class="grid" id="modes">
+    <button data-m="idle">待机</button><button data-m="listen">聆听</button><button data-m="speak">说话</button>
+    <button data-m="build">施工</button><button data-m="enter">登场</button><button data-m="exit">退场<i class="bar"></i></button>
+  </div>
+  <h3>背景</h3>
+  <div class="grid" id="bgs"><button data-b="black">纯黑</button><button data-b="light">亮壁纸</button><button data-b="dark">暗壁纸</button></div>
+  <h3>开关</h3>
+  <div class="toggles">
+    <button id="tDark">暗场</button><button id="tLens">掰弯壁纸</button><button id="tSkin">皮 A</button>
+  </div>
+  <h3>参数</h3>
+  <div id="sliders"></div>
+  <div id="info"><span id="fps">— fps</span> · 参数（可复制）<input id="json" readonly></div>
+</div>
+<button id="badge">面板</button>
+
+<script type="module">
+import * as THREE from 'three';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+
+/* ---------- 换皮：以后有了画好的球图，把地址填在这里（或者网址后面加 ?matcap=…&matcapRed=…），不用改别的 ---------- */
+const QS = new URLSearchParams(location.search);
+const MATCAP_URL = { purple: QS.get('matcap') || null, red: QS.get('matcapRed') || null };
+
+/* ---------- 固定种子 ---------- */
+function rngOf(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rng = rngOf(0x0420B1A0);
+const rr = (a, b) => a + (b - a) * rng();
+
+/* ---------- 参数 ---------- */
+const P = { mode: 'idle', bg: 'black', dark: true, lens: true, skin: 'A', shards: 9, debris: 24, speed: 1, bright: 1, lensK: 0.7, vol: 0 };
+const MAX_MAIN = 14, MAX_DEBRIS = 40, N_PART = 600;
+
+/* ---------- 渲染器 ---------- */
+const canvas = document.getElementById('c');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
+} catch (e) { document.getElementById('err').textContent = '这台设备打不开 WebGL：' + e.message; throw e; }
+renderer.setClearColor(0x000000, 0);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+let W = 1, H = 1, DPR = 1, R = 1, BW = 1, BH = 1, CAMD = 6;
+
+const AddBlend = m => { m.transparent = true; m.depthWrite = false; m.blending = THREE.CustomBlending;
+  m.blendSrc = THREE.OneFactor; m.blendDst = THREE.OneFactor; m.blendSrcAlpha = THREE.ZeroFactor; m.blendDstAlpha = THREE.OneFactor; return m; };
+
+/* ---------- 颜色（线性） ---------- */
+const C = {
+  purple: 'vec3(0.43,0.07,1.0)', crimson: 'vec3(1.0,0.012,0.06)',
+};
+
+/* ---------- 球图（皮 B）：代码画 ---------- */
+function drawMatcap(red) {
+  const s = 256, cv = document.createElement('canvas'); cv.width = cv.height = s; const g = cv.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, s, s);
+  g.save(); g.beginPath(); g.arc(s / 2, s / 2, s / 2 - 1, 0, Math.PI * 2); g.clip();
+  let gr = g.createRadialGradient(s * .45, s * .4, 4, s / 2, s / 2, s / 2); gr.addColorStop(0, '#0d0a12'); gr.addColorStop(1, '#020103');
+  g.fillStyle = gr; g.fillRect(0, 0, s, s);
+  const hi = red ? ['255,40,70', '255,120,130'] : ['150,60,255', '200,140,255'];
+  g.save(); g.translate(s * .3, s * .36); g.rotate(-0.9); g.scale(1, .22);       // 一侧：电光紫条状高光
+  gr = g.createRadialGradient(0, 0, 0, 0, 0, s * .42); gr.addColorStop(0, `rgba(${hi[1]},1)`); gr.addColorStop(.35, `rgba(${hi[0]},.85)`); gr.addColorStop(1, `rgba(${hi[0]},0)`);
+  g.fillStyle = gr; g.beginPath(); g.arc(0, 0, s * .42, 0, Math.PI * 2); g.fill(); g.restore();
+  g.save(); g.translate(s * .5, s * .98); g.scale(1, .35);                      // 底部一抹暗红
+  gr = g.createRadialGradient(0, 0, 0, 0, 0, s * .5); gr.addColorStop(0, red ? 'rgba(200,0,30,.95)' : 'rgba(150,0,28,.9)'); gr.addColorStop(1, 'rgba(120,0,24,0)');
+  g.fillStyle = gr; g.beginPath(); g.arc(0, 0, s * .5, 0, Math.PI * 2); g.fill(); g.restore();
+  g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineCap = 'round'; g.shadowColor = red ? 'rgba(255,90,110,.9)' : 'rgba(200,150,255,.9)'; g.shadowBlur = 14;
+  g.lineWidth = 9; g.beginPath(); g.moveTo(s * .16, s * .36); g.quadraticCurveTo(s * .3, s * .12, s * .6, s * .1); g.stroke();   // 一道粗白反光
+  g.lineWidth = 4; g.globalAlpha = .8; g.beginPath(); g.moveTo(s * .78, s * .5); g.quadraticCurveTo(s * .86, s * .68, s * .74, s * .86); g.stroke();   // 一道细的
+  g.globalAlpha = 1; g.shadowBlur = 0;
+  g.restore();
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const matP = drawMatcap(false), matR = drawMatcap(true);
+const loader = new THREE.TextureLoader();
+for (const [k, tex] of [['purple', matP], ['red', matR]]) if (MATCAP_URL[k]) loader.load(MATCAP_URL[k], t => {
+  t.colorSpace = THREE.SRGBColorSpace; shardU[k === 'purple' ? 'tMatP' : 'tMatR'].value = t; }, undefined, () => {});
+
+/* ---------- 黑曜石碎片 ---------- */
+const shardU = { uCoreI: { value: 1 }, uCrimson: { value: 0 }, uSkin: { value: 0 }, uCam: { value: new THREE.Vector3() },
+  tMatP: { value: matP }, tMatR: { value: matR } };
+const shardMat = new THREE.ShaderMaterial({ uniforms: shardU,
+  vertexShader: `varying vec3 vN; varying vec3 vWP; varying vec3 vVN;
+  void main(){ vec4 wp = modelMatrix*vec4(position,1.0); vWP = wp.xyz; vN = normalize(mat3(modelMatrix)*normal);
+    vVN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*viewMatrix*wp; }`,
+  fragmentShader: `uniform float uCoreI,uCrimson,uSkin; uniform vec3 uCam; uniform sampler2D tMatP,tMatR;
+  varying vec3 vN; varying vec3 vWP; varying vec3 vVN;
+  void main(){
+    vec3 N = normalize(vN); vec3 L = -vWP; float d = length(L); L /= max(d,1e-4);
+    vec3 V = normalize(uCam - vWP);
+    float ndl = dot(N,L), facing = max(ndl,0.0);
+    vec3 glow = mix(${C.purple}, ${C.crimson}, uCrimson);
+    float att = uCoreI/(0.30 + 3.2*d*d);
+    float rim = pow(1.0 - clamp(dot(N,V),0.0,1.0), 3.0);
+    vec3 col;
+    if (uSkin < 0.5) {
+      vec3 Hh = normalize(L+V);
+      float spec = pow(max(dot(N,Hh),0.0), 120.0) * step(0.0, ndl);
+      vec3 specC = mix(vec3(0.95,0.8,1.0), vec3(1.0,0.6,0.6), uCrimson);
+      col = vec3(0.0035,0.003,0.005) + glow*pow(facing,1.4)*att*1.1 + specC*spec*att*4.0;
+    } else {
+      vec2 muv = normalize(vVN).xy*0.48 + 0.5;
+      vec3 mc = mix(texture2D(tMatP,muv).rgb, texture2D(tMatR,muv).rgb, uCrimson);
+      col = mc*(0.45 + 1.5*pow(facing,1.3))*(0.35 + 0.65*min(att,1.6))*1.3;
+    }
+    col += mix(vec3(0.32,0.0,0.035), vec3(0.5,0.0,0.03), uCrimson) * rim * 0.16 * min(uCoreI,1.6);
+    float front = dot(vWP, normalize(uCam));
+    col *= mix(1.0, 0.25, smoothstep(0.15, -0.65, front));
+    gl_FragColor = vec4(col,1.0);
+  }` });
+
+function bladeGeometry(L) {
+  const w = L * rr(0.22, 0.36), t = L * rr(0.08, 0.14), V = THREE.Vector3, pts = [];
+  pts.push(new V(L * 0.5, rr(-0.15, 0.15) * w, rr(-0.2, 0.2) * t));                       // 尖头
+  pts.push(new V(-L * 0.5 * rr(0.55, 1.0), rr(-0.5, 0.5) * w, rr(-0.4, 0.4) * t));       // 断口那头
+  const n = 7 + Math.floor(rng() * 5);
+  for (let i = 0; i < n; i++) {
+    const x = L * rr(-0.42, 0.38), prof = Math.pow(1 - Math.abs(x / (L * 0.52)), 0.9);
+    const side = i % 2 ? 1 : -1;
+    pts.push(new V(x, side * w * prof * rr(0.35, 1.0), (rng() * 2 - 1) * t * prof));
+  }
+  pts.push(new V(L * rr(-0.15, 0.15), rr(0.9, 1.5) * w * (rng() < .5 ? 1 : -1), 0));         // 一个倒刺
+  const geo = new ConvexGeometry(pts);
+  const uniq = []; const pa = geo.attributes.position;
+  for (let i = 0; i < pa.count; i++) { const v = new V().fromBufferAttribute(pa, i); if (!uniq.some(u => u.distanceToSquared(v) < 1e-8)) uniq.push(v); }
+  return { geo, verts: uniq };
+}
+function orbitBasis(tiltMax) {
+  const n = new THREE.Vector3(0, 1, 0)
+    .applyAxisAngle(new THREE.Vector3(1, 0, 0), rr(-tiltMax, tiltMax))
+    .applyAxisAngle(new THREE.Vector3(0, 0, 1), rr(-0.45, 0.45)).normalize();
+  const u = new THREE.Vector3(1, 0, 0).cross(n).normalize(); if (u.lengthSq() < 1e-6) u.set(0, 0, 1);
+  const v = n.clone().cross(u).normalize(); return { u, v };
+}
+const shards = [];
+function makeShard(kind, i) {
+  const main = kind === 'main';
+  const L = main ? rr(0.24, 0.36) : rr(0.03, 0.08);
+  const { geo, verts } = bladeGeometry(L);
+  const mesh = new THREE.Mesh(geo, shardMat); mesh.frustumCulled = false; scene.add(mesh);
+  const r = main ? 0.45 + 0.55 * ((i * 0.618 + rr(0, 0.12)) % 1) : rr(0.35, 1.15);
+  const T = main ? 12 + 18 * Math.min(1, (r - 0.45) / 0.55 * 0.75 + rr(0, 0.25)) : rr(8, 20);
+  const dir = rng() < 0.68 ? 1 : -1;
+  const s = { mesh, verts, L, main, r, w: dir * Math.PI * 2 / T, ph: rr(0, Math.PI * 2), ...orbitBasis(main ? 1.15 : 1.4),
+    q0: new THREE.Quaternion().setFromEuler(new THREE.Euler(rr(0, 6.28), rr(0, 6.28), rr(0, 6.28))),
+    axis: new THREE.Vector3(rr(-1, 1), rr(-1, 1), rr(-1, 1)).normalize(), spin: (main ? rr(0.15, 0.5) : rr(0.5, 1.6)) * (rng() < .5 ? 1 : -1),
+    corner: [rng() < .5 ? -1 : 1, rng() < .5 ? -1 : 1, rr(-0.6, 0.6)], delay: 0, pos: new THREE.Vector3(), jit: new THREE.Vector3() };
+  shards.push(s); return s;
+}
+for (let i = 0; i < MAX_MAIN; i++) makeShard('main', i);
+for (let i = 0; i < MAX_DEBRIS; i++) makeShard('debris', i);
+shards.forEach((s, i) => { s.corner[0] = (i % 4 < 2) ? -1 : 1; s.corner[1] = (i % 2) ? -1 : 1; });   // 四个角都有
+const shardOrder = shards.map((s, i) => i).sort((a, b) => ((a * 7919) % 53) - ((b * 7919) % 53));
+shardOrder.forEach((idx, k) => shards[idx].delay = (k / shards.length) * 0.45);
+
+/* ---------- 奇点核心 ---------- */
+const coreU = { uI: { value: 1 }, uRad: { value: 1 }, uCrimson: { value: 0 }, uT: { value: 0 }, uFlash: { value: 0 } };
+const core = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), AddBlend(new THREE.ShaderMaterial({ uniforms: coreU,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader: `uniform float uI,uRad,uCrimson,uT,uFlash; varying vec2 vUv;
+  void main(){
+    vec2 p = (vUv-0.5)*1.6; float r0 = length(p); float r = r0/uRad; float a = atan(p.y,p.x);
+    float white = exp(-pow(r/0.034,2.0))*48.0 + exp(-pow(r/0.05,2.0))*3.0;
+    float mid = exp(-pow(r/0.10,2.0))*1.5 + exp(-pow(r/0.15,2.0))*0.55;
+    float n = 0.72 + 0.28*sin(a*5.0+uT*3.1)*sin(a*3.0-uT*2.3+sin(uT*1.7));
+    float outer = exp(-pow(r/0.22,1.4))*(1.0-smoothstep(0.28,0.55,r))*n;
+    vec3 pl = mix(${C.purple}, ${C.crimson}, uCrimson);
+    vec3 oc = mix(vec3(0.50,0.0,0.03), vec3(0.13,0.0,0.32), 0.5+0.5*sin(a*2.0+uT*0.9));
+    oc = mix(oc, vec3(0.62,0.0,0.03), uCrimson*0.7);
+    vec3 col = (vec3(1.0,0.97,1.0)*white + pl*mid + oc*outer*0.85)*uI;
+    col += vec3(1.0,0.92,1.0)*uFlash*(exp(-pow(r0/0.07,2.0))*16.0 + exp(-r0/0.09)*2.2 + exp(-r0/0.22)*0.35);
+    col *= 1.0 - smoothstep(0.55, 0.78, r0);          // 贴片边上归零，闪光不出方框
+    gl_FragColor = vec4(col,1.0);
+  }` })));
+core.renderOrder = 2; core.frustumCulled = false; scene.add(core);
+
+/* ---------- 粒子 ---------- */
+const pg = new THREE.BufferGeometry();
+{
+  const pos = new Float32Array(N_PART * 3), dir = new Float32Array(N_PART * 3), seed = new Float32Array(N_PART * 4), rank = new Float32Array(N_PART);
+  for (let i = 0; i < N_PART; i++) {
+    const z = rr(-1, 1), a = rr(0, Math.PI * 2), q = Math.sqrt(1 - z * z);
+    dir.set([q * Math.cos(a), z * 0.85, q * Math.sin(a)], i * 3);
+    seed.set([rng(), rng(), rng(), rng()], i * 4); rank[i] = (i + 0.5) / N_PART;
+  }
+  pg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); pg.setAttribute('aDir', new THREE.BufferAttribute(dir, 3));
+  pg.setAttribute('aSeed', new THREE.BufferAttribute(seed, 4)); pg.setAttribute('aRank', new THREE.BufferAttribute(rank, 1));
+}
+const partU = { uT: { value: 0 }, uScale: { value: 1 }, uDensity: { value: 0.5 }, uPx: { value: 1 }, uPres: { value: 0 }, uCrimson: { value: 0 }, uBright: { value: 1 } };
+const parts = new THREE.Points(pg, AddBlend(new THREE.ShaderMaterial({ uniforms: partU,
+  vertexShader: `attribute vec3 aDir; attribute vec4 aSeed; attribute float aRank;
+  uniform float uT,uScale,uDensity,uPx,uPres; varying float vA; varying float vH;
+  void main(){
+    float life = 1.4 + aSeed.x*1.6; float ph = fract(uT/life + aSeed.y);
+    bool inw = aSeed.z > 0.8;
+    float r = inw ? mix(1.05, 0.06, ph*(0.4+0.6*ph)) : mix(0.06, 1.08, ph);
+    float ang = ph*(0.5+aSeed.x)*(inw ? -1.4 : 1.0); float c = cos(ang), s = sin(ang);
+    vec3 d = vec3(c*aDir.x + s*aDir.z, aDir.y, -s*aDir.x + c*aDir.z);
+    vec4 mv = modelViewMatrix*vec4(d*r*uScale,1.0); gl_Position = projectionMatrix*mv;
+    gl_PointSize = (1.0 + aSeed.w*2.0)*uPx;
+    float fade = inw ? (1.0-smoothstep(0.85,1.05,r))*smoothstep(0.06,0.16,r) : smoothstep(0.06,0.14,r)*(1.0-smoothstep(0.7,1.04,r));
+    vA = fade*clamp((uDensity-aRank)*30.0,0.0,1.0)*uPres; vH = aSeed.w;
+  }`,
+  fragmentShader: `uniform float uCrimson,uBright; varying float vA; varying float vH;
+  void main(){ vec2 q = gl_PointCoord*2.0-1.0; float m = max(0.0,1.0-dot(q,q));
+    float hot = step(0.93,vH);
+    vec3 c = mix(mix(${C.purple}, vec3(0.8,0.6,1.0), hot), mix(${C.crimson}, vec3(1.0,0.5,0.45), hot), uCrimson);
+    gl_FragColor = vec4(c*m*vA*1.25*uBright, 1.0); }` })));
+parts.frustumCulled = false; scene.add(parts);
+
+/* ---------- 声波环（聆听） ---------- */
+const rings = [];
+for (let i = 0; i < 12; i++) {
+  const u = { uR: { value: 0 }, uA: { value: 0 }, uCrimson: partU.uCrimson };
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), AddBlend(new THREE.ShaderMaterial({ uniforms: u,
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader: `uniform float uR,uA,uCrimson; varying vec2 vUv;
+    void main(){ vec2 p = (vUv-0.5)*2.4; float d = abs(length(p)-uR);
+      float line = exp(-pow(d/0.0042,2.0))*1.5 + exp(-d/0.02)*0.05;
+      vec3 c = mix(vec3(0.55,0.14,1.0), ${C.crimson}, uCrimson);
+      gl_FragColor = vec4(c*line*uA, 1.0); }` })));
+  m.visible = false; m.frustumCulled = false; m.renderOrder = 3; scene.add(m);
+  rings.push({ m, u, age: 0, life: 1, a0: 0 });
+}
+
+/* ---------- 电弧 ---------- */
+const arcs = [];
+for (let i = 0; i < 6; i++) {
+  const mat = AddBlend(new LineMaterial({ color: 0xffffff, linewidth: 1.5, transparent: true }));
+  const mat2 = AddBlend(new LineMaterial({ color: 0xffffff, linewidth: 1.0, transparent: true }));
+  const a = new Line2(new LineGeometry(), mat), b = new Line2(new LineGeometry(), mat2);
+  a.visible = b.visible = false; a.frustumCulled = b.frustumCulled = false; a.renderOrder = b.renderOrder = 4; scene.add(a); scene.add(b);
+  arcs.push({ a, b, mat, mat2, age: 0, life: 0 });
+}
+const V3 = THREE.Vector3;
+function jag(S, T, n, amp) {
+  const d = T.clone().sub(S), len = d.length(); const dn = d.clone().normalize();
+  const p1 = new V3(0, 1, 0).cross(dn); if (p1.lengthSq() < 1e-4) p1.set(1, 0, 0); p1.normalize(); const p2 = dn.clone().cross(p1);
+  const out = [];
+  for (let j = 0; j <= n; j++) {
+    const t = j / n, e = Math.sin(Math.PI * t);
+    const p = S.clone().lerp(T, t).addScaledVector(p1, (Math.random() - .5) * amp * len * e).addScaledVector(p2, (Math.random() - .5) * amp * len * e);
+    out.push(p);
+  }
+  return out;
+}
+const flat = pts => pts.flatMap(p => [p.x, p.y, p.z]);
+function spawnArc() {
+  const vis = shards.filter(s => s.mesh.visible);
+  if (!vis.length) return;
+  vis.sort((a, b) => a.pos.lengthSq() - b.pos.lengthSq());
+  const s = vis[Math.floor(Math.random() * Math.min(4, vis.length))];
+  s.mesh.updateMatrixWorld();
+  let T = null, best = 1e9;
+  for (const v of s.verts) { const w = v.clone().applyMatrix4(s.mesh.matrixWorld); const l = w.lengthSq(); if (l < best) { best = l; T = w; } }
+  const S = T.clone().normalize().multiplyScalar(0.06);
+  const arc = arcs.find(a => a.age >= a.life) || arcs[0];
+  const main = jag(S, T, 9, 0.22);
+  arc.a.geometry.dispose(); arc.a.geometry = new LineGeometry(); arc.a.geometry.setPositions(flat(main));
+  const j0 = 3 + Math.floor(Math.random() * 4), B0 = main[j0];
+  const bdir = T.clone().sub(S).normalize().add(new V3(Math.random() - .5, Math.random() - .5, Math.random() - .5).multiplyScalar(1.4)).normalize();
+  const B1 = B0.clone().addScaledVector(bdir, T.distanceTo(S) * (0.22 + Math.random() * 0.22));
+  arc.b.geometry.dispose(); arc.b.geometry = new LineGeometry(); arc.b.geometry.setPositions(flat(jag(B0, B1, 4, 0.3)));
+  arc.b.userData.show = Math.random() < 0.85;
+  arc.age = 0; arc.life = 0.08 + Math.random() * 0.07;
+}
+
+/* ---------- 后期：背景、暗场、掰弯、辉光、合成 ---------- */
+const bgCanvas = document.createElement('canvas');
+const bgTex = new THREE.CanvasTexture(bgCanvas); bgTex.colorSpace = THREE.SRGBColorSpace;
+bgTex.wrapS = bgTex.wrapT = THREE.MirroredRepeatWrapping; bgTex.generateMipmaps = false; bgTex.minFilter = THREE.LinearFilter;
+const rtOpt = { type: THREE.HalfFloatType, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter };
+const rtScene = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4, depthBuffer: true });
+const NLV = 6, down = [], up = [];
+for (let i = 0; i < NLV; i++) { down.push(new THREE.WebGLRenderTarget(1, 1, rtOpt)); if (i < NLV - 1) up.push(new THREE.WebGLRenderTarget(1, 1, rtOpt)); }
+
+const qGeo = new THREE.BufferGeometry();
+qGeo.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
+qGeo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
+const quad = new THREE.Mesh(qGeo); quad.frustumCulled = false;
+const qScene = new THREE.Scene(); qScene.add(quad); const qCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const QV = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy,0.0,1.0); }`;
+const pmat = (uniforms, frag) => new THREE.ShaderMaterial({ uniforms, vertexShader: QV, fragmentShader: frag, depthTest: false, depthWrite: false });
+function pass(mat, target) { quad.material = mat; renderer.setRenderTarget(target); renderer.render(qScene, qCam); }
+
+const preM = pmat({ tSrc: { value: null }, uTx: { value: new THREE.Vector2() } }, `uniform sampler2D tSrc; uniform vec2 uTx; varying vec2 vUv;
+  vec3 th(vec3 c){ float b = max(c.r,max(c.g,c.b)); float k = 0.5; float s = clamp(b-0.85+k,0.0,2.0*k); s = s*s/(4.0*k+1e-4);
+    return c*max(s,b-0.85)/max(b,1e-4); }
+  void main(){ vec3 c = th(texture2D(tSrc,vUv+uTx*vec2(-1,-1)).rgb)+th(texture2D(tSrc,vUv+uTx*vec2(1,-1)).rgb)
+    +th(texture2D(tSrc,vUv+uTx*vec2(-1,1)).rgb)+th(texture2D(tSrc,vUv+uTx*vec2(1,1)).rgb); gl_FragColor = vec4(min(c*0.25,vec3(60.0)),1.0); }`);
+const downM = pmat({ tSrc: { value: null }, uTx: { value: new THREE.Vector2() } }, `uniform sampler2D tSrc; uniform vec2 uTx; varying vec2 vUv;
+  void main(){ vec3 c = texture2D(tSrc,vUv).rgb*4.0 + texture2D(tSrc,vUv-uTx).rgb + texture2D(tSrc,vUv+uTx).rgb
+    + texture2D(tSrc,vUv+vec2(uTx.x,-uTx.y)).rgb + texture2D(tSrc,vUv-vec2(uTx.x,-uTx.y)).rgb; gl_FragColor = vec4(c/8.0,1.0); }`);
+const upM = pmat({ tLow: { value: null }, tCur: { value: null }, uTx: { value: new THREE.Vector2() } }, `uniform sampler2D tLow,tCur; uniform vec2 uTx; varying vec2 vUv;
+  void main(){ vec2 h = uTx;
+    vec3 c = texture2D(tLow,vUv+vec2(-2.0*h.x,0)).rgb + texture2D(tLow,vUv+vec2(-h.x,h.y)).rgb*2.0 + texture2D(tLow,vUv+vec2(0,2.0*h.y)).rgb
+      + texture2D(tLow,vUv+vec2(h.x,h.y)).rgb*2.0 + texture2D(tLow,vUv+vec2(2.0*h.x,0)).rgb + texture2D(tLow,vUv+vec2(h.x,-h.y)).rgb*2.0
+      + texture2D(tLow,vUv+vec2(0,-2.0*h.y)).rgb + texture2D(tLow,vUv+vec2(-h.x,-h.y)).rgb*2.0;
+    gl_FragColor = vec4(texture2D(tCur,vUv).rgb + c/12.0*0.62, 1.0); }`);
+const compU = { tBg: { value: bgTex }, tScene: { value: null }, tBloom: { value: null }, uRes: { value: new THREE.Vector2() },
+  uRpx: { value: 1 }, uLens: { value: 0.7 }, uDark: { value: 1 }, uPres: { value: 0 }, uBloom: { value: 0.055 }, uExp: { value: 1 }, uSeed: { value: 0 }, uOff: { value: 0 } };
+const compM = pmat(compU, `uniform sampler2D tBg,tScene,tBloom; uniform vec2 uRes; uniform float uRpx,uLens,uDark,uPres,uBloom,uExp,uSeed,uOff; varying vec2 vUv;
+  vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0); }
+  vec3 toSRGB(vec3 c){ return mix(c*12.92, 1.055*pow(c,vec3(1.0/2.4))-0.055, step(0.0031308,c)); }
+  void main(){
+    vec2 px = vUv*uRes, c = uRes*0.5 + vec2(0.0,uOff), d = px-c; float r = length(d), rs = max(r,1.0);
+    float Rl = 1.6*uRpx, k = uLens*uPres, E = 0.5*uRpx*k;
+    float w = 1.0 - smoothstep(0.3*Rl, Rl, r);
+    float beta = rs - (E*E/rs)*w;                               // 点质量透镜：越靠近越弯，1.6R 处平滑归零
+    vec3 bg = texture2D(tBg, (c + d/rs*beta)/uRes).rgb;
+    bg *= mix(1.0, smoothstep(0.18*E, 0.5*E, r), k);           // 正中心是视界，压黑
+    float dark = mix(0.15, 1.0, smoothstep(0.0, 1.5*uRpx, r));
+    bg *= mix(1.0, dark, uDark*uPres);
+    vec4 s = texture2D(tScene, vUv); vec3 bl = texture2D(tBloom, vUv).rgb;
+    vec3 col = bg*(1.0-s.a) + aces((s.rgb + bl*uBloom*(1.0-0.8*s.a))*uExp);
+    col = toSRGB(clamp(col,0.0,1.0));
+    col += (fract(sin(dot(px+uSeed, vec2(12.9898,78.233)))*43758.5453)-0.5)/255.0;
+    gl_FragColor = vec4(col,1.0);
+  }`);
+
+/* ---------- 壁纸（代码画） ---------- */
+function drawBg() {
+  const s = Math.min(DPR, 2), w = Math.round(W * s), h = Math.round(H * s);
+  bgCanvas.width = w; bgCanvas.height = h; const g = bgCanvas.getContext('2d');
+  const R2 = rngOf(42), r2 = (a, b) => a + (b - a) * R2();
+  if (P.bg === 'black') { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); bgTex.needsUpdate = true; return; }
+  const lite = P.bg === 'light';
+  let gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, lite ? '#a9d8ff' : '#070b1f'); gr.addColorStop(0.55, lite ? '#ffe0c8' : '#1b0f30'); gr.addColorStop(1, lite ? '#ffc6a8' : '#0a0618');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  const blobs = lite ? [['#6fd6c9', .78, .26, .42], ['#c6b3ff', .2, .72, .45], ['#fff1a8', .52, .18, .26], ['#ff9fb4', .9, .8, .35]]
+    : [['#0f4152', .78, .28, .45], ['#3d1048', .22, .7, .45], ['#1b2a6b', .5, .2, .3], ['#401030', .9, .82, .35]];
+  for (const [col, x, y, rad] of blobs) { gr = g.createRadialGradient(x * w, y * h, 0, x * w, y * h, rad * Math.max(w, h));
+    gr.addColorStop(0, col); gr.addColorStop(1, col + '00'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+  if (!lite) for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(220,225,255,${r2(.25, .9)})`; const z = r2(.5, 1.6) * s; g.fillRect(r2(0, w), r2(0, h * .7), z, z); }
+  if (lite) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.arc(w * .64, h * .26, Math.min(w, h) * .08, 0, 7); g.fill(); }
+  const layers = lite ? [['#9cc3e6', .58], ['#6f9cca', .68], ['#3c6b9c', .8]] : [['#1a2246', .6], ['#121937', .7], ['#0a0f24', .82]];
+  layers.forEach(([col, base], li) => {
+    g.beginPath(); g.moveTo(0, h); let x = 0; g.lineTo(0, base * h);
+    while (x < w) { x += r2(.04, .11) * w; g.lineTo(x, (base - r2(.02, .16) * (1 - li * .25)) * h); x += r2(.03, .08) * w; g.lineTo(x, (base + r2(-.02, .04)) * h); }
+    g.lineTo(w, h); g.closePath(); g.fillStyle = col; g.fill();
+    if (!lite) { g.strokeStyle = 'rgba(110,140,255,.35)'; g.lineWidth = 1.2 * s; g.stroke(); }
+  });
+  g.lineWidth = 3 * s; g.lineCap = 'round';                                                       // 几条清楚的直线：看扭曲用
+  const lines = [[0, .3, 1, .6], [0, .66, 1, .4], [.3, 0, .66, 1], [0, .55, 1, .44], [.58, 0, .46, 1]];
+  lines.forEach(([x0, y0, x1, y1], i) => { g.strokeStyle = lite ? (i % 2 ? 'rgba(30,50,110,.75)' : 'rgba(255,255,255,.9)') : (i % 2 ? 'rgba(90,220,255,.55)' : 'rgba(255,170,240,.45)');
+    g.beginPath(); g.moveTo(x0 * w, y0 * h); g.lineTo(x1 * w, y1 * h); g.stroke(); });
+  // 两列假桌面图标
+  const k = Math.min(1, Math.max(0.62, Math.min(W, H) / 900)) * s, size = 50 * k, gapY = 92 * k, colX = [20 * k, 104 * k];
+  const names = ['此电脑', '回收站', '浏览器', 'Steam', '音乐', '照片', '记事本', '设置', '文件夹', '游戏', '地图', '邮件'];
+  const hues = [210, 140, 190, 225, 330, 30, 50, 260, 40, 0, 160, 200];
+  const rows = Math.max(3, Math.min(6, Math.floor((H * s - 30 * k) / gapY)));
+  let n = 0;
+  for (let c = 0; c < 2; c++) for (let rI = 0; rI < rows; rI++, n++) {
+    const x = colX[c] + (84 * k - size) / 2, y = 22 * k + rI * gapY, hu = hues[n % hues.length];
+    gr = g.createLinearGradient(x, y, x + size, y + size); gr.addColorStop(0, `hsl(${hu},80%,62%)`); gr.addColorStop(1, `hsl(${hu + 25},75%,42%)`);
+    g.fillStyle = gr; g.beginPath(); g.roundRect(x, y, size, size, 11 * k); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.92)'; g.strokeStyle = 'rgba(255,255,255,.92)'; g.lineWidth = 3 * k;
+    const cx = x + size / 2, cy = y + size / 2, q = size * .22;
+    switch (n % 6) {
+      case 0: g.fillRect(cx - q * 1.3, cy - q * .9, q * 2.6, q * 1.6); break;
+      case 1: g.beginPath(); g.moveTo(cx - q, cy - q); g.lineTo(cx + q, cy - q); g.lineTo(cx + q * .75, cy + q * 1.1); g.lineTo(cx - q * .75, cy + q * 1.1); g.closePath(); g.fill(); break;
+      case 2: g.beginPath(); g.arc(cx, cy, q * 1.2, 0, 7); g.stroke(); g.beginPath(); g.ellipse(cx, cy, q * .5, q * 1.2, 0, 0, 7); g.stroke(); break;
+      case 3: g.beginPath(); g.arc(cx, cy, q * 1.1, 0, 7); g.fill(); g.fillStyle = `hsl(${hu},70%,40%)`; g.beginPath(); g.arc(cx, cy, q * .45, 0, 7); g.fill(); break;
+      case 4: g.fillRect(cx - q * .1, cy - q * 1.1, q * .3, q * 1.8); g.beginPath(); g.arc(cx - q * .3, cy + q * .7, q * .45, 0, 7); g.fill(); break;
+      default: g.beginPath(); g.moveTo(cx - q * 1.2, cy + q); g.lineTo(cx - q * .2, cy - q * .6); g.lineTo(cx + q * 1.2, cy + q); g.closePath(); g.fill();
+    }
+    g.font = `${12.5 * k}px system-ui,"Microsoft YaHei","PingFang SC",sans-serif`; g.textAlign = 'center';
+    g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(names[n % names.length], colX[c] + 42 * k + 1 * k, y + size + 17 * k + 1 * k);
+    g.fillStyle = '#fff'; g.fillText(names[n % names.length], colX[c] + 42 * k, y + size + 17 * k);
+  }
+  bgTex.needsUpdate = true;
+}
+
+/* ---------- 尺寸 ---------- */
+function resize() {
+  W = innerWidth; H = innerHeight; DPR = Math.min(devicePixelRatio || 1, 2); R = Math.min(H * 0.275, W * 0.45);
+  renderer.setPixelRatio(DPR); renderer.setSize(W, H, false);
+  const v = renderer.getDrawingBufferSize(new THREE.Vector2()); BW = v.x; BH = v.y;
+  rtScene.setSize(BW, BH);
+  for (let i = 0; i < NLV; i++) { const w = Math.max(1, BW >> (i + 1)), h = Math.max(1, BH >> (i + 1)); down[i].setSize(w, h); if (i < NLV - 1) up[i].setSize(w, h); }
+  camera.aspect = W / H; CAMD = H / (2 * R * Math.tan(THREE.MathUtils.degToRad(15)));
+  camera.near = Math.max(0.1, CAMD - 3); camera.far = CAMD + 3; st.offYSet = -1; camera.updateProjectionMatrix();
+  compU.uRes.value.set(BW, BH); compU.uRpx.value = R * DPR; partU.uPx.value = DPR;
+  for (const a of arcs) { a.mat.resolution.set(BW, BH); a.mat2.resolution.set(BW, BH); a.mat.linewidth = 1.6 * DPR; a.mat2.linewidth = 1.0 * DPR; }
+  drawBg();
+}
+addEventListener('resize', resize);
+
+/* ---------- 模拟音量：像人说话 ---------- */
+const voice = { env: 0, sent: 0, pause: 0.5, syl: 0, sylDur: 0.22, sylAmp: 0, contour: 1, out: 0,
+  update(dt) {
+    if (this.pause > 0) { this.pause -= dt; this.env = 0; if (this.pause <= 0) { this.sent = 1.2 + Math.random() * 2.6; this.sentLen = this.sent; this.syl = 1; } }
+    else {
+      this.sent -= dt; this.syl += dt / this.sylDur;
+      if (this.syl >= 1) { this.syl = 0; this.sylDur = 1 / (4 + Math.random()); this.sylAmp = 0.45 + Math.random() * 0.55; }
+      const prog = 1 - this.sent / this.sentLen; this.contour = 1 - 0.35 * prog * prog;
+      this.env = Math.pow(Math.sin(Math.PI * this.syl), 0.7) * this.sylAmp * this.contour;
+      if (this.sent <= 0) this.pause = 0.3 + Math.random() * 0.5;
+    }
+    const k = this.env > this.out ? 1 - Math.exp(-dt / 0.025) : 1 - Math.exp(-dt / 0.07);
+    this.out += (this.env - this.out) * k; return this.out;
+  } };
+let volManualUntil = 0, volDragging = false;
+
+/* ---------- 状态机 ---------- */
+const st = { phase: 'enter', t: 0, mode: 'idle', prevMode: 'idle', wL: 0, wS: 0, wB: 0, coreOn: 0, presBg: 0, flash: 0,
+  exitX: 1, exitV: 0, exitTarget: 1, ignited: false, orbitT: 0, tumbleT: 0, partT: 0, simT: 0, arcRate: 0.5, ringClock: 0, vol: 0, lastStage: -1 };
+function setMode(m) {
+  if (m === 'enter') { startEnter(); return; }
+  if (m === 'exit') {
+    if (st.phase === 'exit') { st.phase = 'live'; st.exitTarget = 1; ui(); return; }      // 3 秒内再按 = 反悔
+    if (st.phase === 'live') { st.phase = 'exit'; st.t = 0; st.lastStage = -1; ui(); }
+    return;
+  }
+  if (st.phase === 'hidden' || st.phase === 'implode') return;
+  st.mode = m; P.mode = m; ui();
+}
+function startEnter() {
+  st.phase = 'enter'; st.t = 0; st.ignited = false; st.coreOn = 0; st.exitX = 1; st.exitV = 0; st.exitTarget = 1;
+  if (st.mode === 'exit') st.mode = 'idle'; ui();
+}
+
+/* ---------- 视差 ---------- */
+const par = { yaw: 0, pitch: 0, ty: 0, tp: 0, held: false, lastMove: -1e9, gyro: false, g0: null };
+const DEG = Math.PI / 180;
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse' && !par.held) return;
+  par.ty = THREE.MathUtils.clamp((e.clientX / W - 0.5) * 2, -1, 1) * 10 * DEG;
+  par.tp = THREE.MathUtils.clamp((e.clientY / H - 0.5) * 2, -1, 1) * 10 * DEG; par.lastMove = performance.now();
+});
+canvas.addEventListener('pointerdown', e => { par.held = true; canvas.setPointerCapture?.(e.pointerId); });
+const release = () => { par.held = false; par.lastMove = -1e9; };
+canvas.addEventListener('pointerup', release); canvas.addEventListener('pointercancel', release); canvas.addEventListener('pointerleave', release);
+addEventListener('deviceorientation', e => {
+  if (e.beta == null || e.gamma == null) return;
+  if (!par.g0) par.g0 = { b: e.beta, g: e.gamma };
+  par.gyro = true;
+  par.gy = THREE.MathUtils.clamp(e.gamma - par.g0.g, -10, 10) * DEG; par.gp = THREE.MathUtils.clamp(e.beta - par.g0.b, -10, 10) * DEG;
+});
+
+/* ---------- 面板 ---------- */
+const panel = document.getElementById('panel'), badge = document.getElementById('badge');
+const fold = open => { panel.classList.toggle('closed', !open); badge.classList.toggle('show', !open); };
+document.getElementById('fold').onclick = () => fold(false); badge.onclick = () => fold(true);
+if (QS.get('panel') === '0') fold(false);
+document.querySelectorAll('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.m));
+document.querySelectorAll('#bgs button').forEach(b => b.onclick = () => { P.bg = b.dataset.b; drawBg(); ui(); });
+document.getElementById('tDark').onclick = () => { P.dark = !P.dark; ui(); };
+document.getElementById('tLens').onclick = () => { P.lens = !P.lens; ui(); };
+document.getElementById('tSkin').onclick = () => { P.skin = P.skin === 'A' ? 'B' : 'A'; ui(); };
+const SL = [['shards', '主碎片', 6, 14, 1], ['debris', '碎屑', 0, 40, 1], ['speed', '转速倍率', 0.2, 3, 0.05],
+  ['bright', '整体亮度', 0.5, 2, 0.05], ['lensK', '掰弯强度', 0, 1, 0.01], ['vol', '音量', 0, 1, 0.01]];
+const sliders = {};
+for (const [key, label, min, max, step] of SL) {
+  const row = document.createElement('label'); row.className = 'row';
+  row.innerHTML = `<span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${P[key]}"><span></span>`;
+  const inp = row.querySelector('input'), val = row.querySelector('span:last-child');
+  inp.addEventListener('input', () => { P[key] = +inp.value; if (key === 'vol') volManualUntil = performance.now() + 1500; });
+  if (key === 'vol') {
+    inp.addEventListener('pointerdown', () => volDragging = true);
+    addEventListener('pointerup', () => { if (volDragging) { volDragging = false; volManualUntil = performance.now() + 1500; } });
+  }
+  sliders[key] = { inp, val, step }; document.getElementById('sliders').appendChild(row);
+}
+const NAMES = { idle: '待机', listen: '聆听', speak: '说话', build: '施工' };
+function ui() {
+  const hidden = st.phase === 'hidden' || st.phase === 'implode';
+  document.querySelectorAll('#modes button').forEach(b => {
+    const m = b.dataset.m;
+    b.classList.toggle('on', (m === st.mode && st.phase !== 'hidden') || (m === 'exit' && st.phase === 'exit') || (m === 'enter' && st.phase === 'enter'));
+    b.classList.toggle('red', m === 'build' || m === 'exit');
+    b.disabled = hidden && m !== 'enter';
+  });
+  document.querySelectorAll('#bgs button').forEach(b => b.classList.toggle('on', b.dataset.b === P.bg));
+  document.getElementById('tDark').classList.toggle('on', P.dark);
+  document.getElementById('tLens').classList.toggle('on', P.lens);
+  const ts = document.getElementById('tSkin'); ts.textContent = P.skin === 'A' ? '皮 A 公式' : '皮 B 球'; ts.classList.toggle('on', P.skin === 'B');
+}
+ui();
+const exitBtn = document.querySelector('#modes [data-m=exit]'), exitBar = exitBtn.querySelector('.bar');
+const fpsEl = document.getElementById('fps'), jsonEl = document.getElementById('json');
+jsonEl.addEventListener('focus', () => jsonEl.select());
+
+/* ---------- 主循环 ---------- */
+const sm = (x, t, dt, tau) => x + (t - x) * (1 - Math.exp(-dt / tau));
+const _q = new THREE.Quaternion(), _p = new THREE.Vector3();
+let last = performance.now(), fpsAcc = 0, fpsN = 0, fpsShow = 0, uiClock = 0;
+const fpsLog = [];
+function frame(now) {
+  requestAnimationFrame(frame);
+  const rawDt = (now - last) / 1000; last = now;
+  const dt = Math.min(rawDt, 0.05);
+  fpsAcc += rawDt; fpsN++; fpsLog.push(rawDt); if (fpsLog.length > 12000) fpsLog.shift();
+  if (fpsAcc > 0.5) { fpsShow = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
+  st.simT += dt;
+
+  // 音量
+  const sim = voice.update(dt);
+  if (volDragging || now < volManualUntil) st.vol = P.vol; else { st.vol = sim; P.vol = Math.round(sim * 100) / 100; }
+
+  // 状态权重
+  const live = st.phase === 'live' || st.phase === 'exit';
+  st.wL = sm(st.wL, st.mode === 'listen' ? 1 : 0, dt, 0.22);
+  st.wS = sm(st.wS, st.mode === 'speak' ? 1 : 0, dt, 0.22);
+  st.wB = sm(st.wB, st.mode === 'build' ? 1 : 0, dt, 0.22);
+  const orbitMul = 1 + 0.15 * st.wL;
+  const speedMul = (1 + 0.8 * st.wL + 0.4 * st.wB) * P.speed;
+  st.orbitT += dt * speedMul; st.tumbleT += dt * speedMul;
+  st.partT += dt * (1 + st.wB) * P.speed;
+
+  // 登场 / 退场
+  st.t += dt;
+  let implodeE = 0;
+  if (st.phase === 'enter') {
+    if (!st.ignited && st.t >= 1.15) { st.ignited = true; st.flash = 1.0; st.coreOn = 1; }
+    if (st.t >= 1.2) { st.phase = 'live'; ui(); }
+  } else if (st.phase === 'exit') {
+    const stage = Math.min(2, Math.floor(st.t));
+    if (stage !== st.lastStage) { st.lastStage = stage; st.exitTarget = [0.85, 0.70, 0.55][stage]; st.exitV -= 1.6; }
+    if (st.t >= 3) { st.phase = 'implode'; st.t = 0; ui(); }
+  } else if (st.phase === 'implode') {
+    const k = Math.min(1, st.t / 0.25); implodeE = k * k;
+    if (k >= 1) { st.phase = 'hidden'; st.flash = 1.2; st.coreOn = 0; st.exitTarget = 1; st.exitX = 1; st.exitV = 0; ui(); }
+  }
+  if (st.phase === 'hidden') implodeE = 1;
+  // 退场每一档的顿挫：弹簧
+  const acc = 320 * (st.exitTarget - st.exitX) - 17 * st.exitV; st.exitV += acc * dt; st.exitX += st.exitV * dt;
+  const exitStage = st.phase === 'exit' ? Math.min(2, Math.floor(st.t)) + 1 : (st.phase === 'implode' ? 3 : 0);
+  st.flash *= Math.exp(-dt / 0.075);
+  st.presBg = sm(st.presBg, (st.phase === 'hidden') ? 0 : (st.phase === 'enter' ? Math.min(1, st.t / 1.1) : 1), dt, st.phase === 'hidden' ? 0.12 : 0.15);
+
+  // 核心
+  const t = st.simT;
+  const breath = 1 + 0.06 * Math.sin(t * Math.PI * 2 * 1.2) + 0.02 * Math.sin(t * Math.PI * 2 * 10.3) * (0.6 + 0.4 * Math.sin(t * 7.7));
+  const coreMul = (1 + 0.3 * st.wL + 0.15 * st.wB + 0.6 * st.vol * st.wS) * (1 + 0.15 * exitStage);
+  const radMul = 1 + 0.25 * st.vol * st.wS;
+  const coreI = st.coreOn * breath * coreMul * P.bright * (1 - implodeE * 0.3);
+  coreU.uI.value = coreI; coreU.uRad.value = radMul * breath * (st.phase === 'implode' ? 1 - 0.5 * implodeE : 1);
+  coreU.uT.value = t; coreU.uFlash.value = st.flash; coreU.uCrimson.value = st.wB;
+  shardU.uCoreI.value = coreI + st.flash * 2.5 + (st.phase === 'enter' && !st.ignited ? 0.5 : 0);
+  shardU.uCrimson.value = st.wB; shardU.uSkin.value = P.skin === 'B' ? 1 : 0;
+  partU.uCrimson.value = st.wB; partU.uDensity.value = 0.5 + 0.5 * st.wB; partU.uBright.value = P.bright;
+  partU.uPres.value = st.coreOn * (1 - implodeE); partU.uScale.value = orbitMul * st.exitX * (1 - implodeE); partU.uT.value = st.partT;
+
+  // 碎片
+  const nMain = P.shards, nDeb = P.debris;
+  const halfW = W / 2 / R + 0.4, halfH = H / 2 / R + 0.4;
+  shards.forEach((s, i) => {
+    const on = (s.main ? i < nMain : (i - MAX_MAIN) < nDeb) && st.phase !== 'hidden';
+    s.mesh.visible = on; if (!on) return;
+    const th = s.ph + s.w * st.orbitT, rad = s.r * orbitMul * st.exitX * (1 - implodeE);
+    _p.copy(s.u).multiplyScalar(Math.cos(th) * rad).addScaledVector(s.v, Math.sin(th) * rad);
+    let scl = 1 - implodeE * 0.85, extraSpin = 0;
+    if (st.phase === 'enter') {
+      const p = THREE.MathUtils.clamp((st.t - s.delay) / 0.7, 0, 1);
+      const e = p >= 1 ? 1 : 1 - Math.exp(-5.5 * p) * Math.cos(9 * p);
+      _p.lerpVectors(new V3(s.corner[0] * halfW, s.corner[1] * halfH, s.corner[2]), _p, e);
+      extraSpin = (1 - Math.min(1, e)) * 6;
+    }
+    if (st.wB > 0.01) { const a = 0.02 * s.L * st.wB; s.jit.set(Math.random() - .5, Math.random() - .5, Math.random() - .5).multiplyScalar(2 * a); _p.add(s.jit); }
+    s.pos.copy(_p); s.mesh.position.copy(_p);
+    _q.setFromAxisAngle(s.axis, s.spin * st.tumbleT + extraSpin); s.mesh.quaternion.copy(s.q0).premultiply(_q);
+    s.mesh.scale.setScalar(scl);
+  });
+  core.visible = st.coreOn > 0 || st.flash > 0.01;
+
+  // 电弧
+  const arcTarget = THREE.MathUtils.lerp(1 / 2, 1 / 0.4, st.wB);
+  st.arcRate = arcTarget;
+  if (live && st.coreOn > 0.5 && Math.random() < st.arcRate * dt) spawnArc();
+  const crim = st.wB;
+  for (const a of arcs) {
+    a.age += dt; const on = a.age < a.life && st.phase !== 'hidden';
+    a.a.visible = on; a.b.visible = on && a.b.userData.show;
+    if (on) { const f = (0.55 + 0.45 * Math.random()) * P.bright;
+      a.mat.color.setRGB(THREE.MathUtils.lerp(2.6, 5, crim) * f, THREE.MathUtils.lerp(2.0, 0.3, crim) * f, THREE.MathUtils.lerp(5.0, 0.5, crim) * f);
+      a.mat2.color.setRGB(THREE.MathUtils.lerp(1.2, 2.6, crim) * f, THREE.MathUtils.lerp(0.6, 0.12, crim) * f, THREE.MathUtils.lerp(2.6, 0.3, crim) * f); }
+  }
+
+  // 声波环（聆听）
+  if (st.wL > 0.5 && live && st.coreOn > 0.5) {
+    st.ringClock -= dt;
+    if (st.ringClock <= 0 && st.vol > 0.06) {
+      const r = rings.find(x => x.age >= x.life);
+      if (r) { r.age = 0; r.life = THREE.MathUtils.lerp(1.7, 0.85, st.vol); r.a0 = (0.1 + 0.8 * st.vol) * P.bright; r.m.visible = true; }
+      st.ringClock = THREE.MathUtils.lerp(0.75, 0.3, st.vol);
+    }
+  }
+  for (const r of rings) {
+    if (r.age >= r.life) { r.m.visible = false; continue; }
+    r.age += dt; const k = Math.min(1, r.age / r.life);
+    r.u.uR.value = (0.12 + 0.88 * (1 - Math.pow(1 - k, 1.6))) * orbitMul;
+    r.u.uA.value = r.a0 * Math.pow(1 - k, 2.0) * st.wL; r.m.quaternion.copy(camera.quaternion);
+  }
+
+  // 竖屏且面板开着：把它挪到面板上面那块的正中（收起面板就回正中）
+  const offT = (H > W && !panel.classList.contains('closed')) ? panel.getBoundingClientRect().height / 2 : 0;
+  st.offY = sm(st.offY || 0, offT, dt, 0.18);
+  if (Math.abs(st.offY - (st.offYSet ?? -1)) > 0.05) { st.offYSet = st.offY; camera.setViewOffset(W, H, 0, st.offY, W, H); }
+  compU.uOff.value = st.offY * DPR;
+
+  // 视差
+  let ty = 0, tp = 0;
+  if (par.held || now - par.lastMove < 700) { ty = par.ty; tp = par.tp; }
+  else if (par.gyro) { ty = par.gy; tp = par.gp; }
+  par.yaw = sm(par.yaw, ty, dt, 0.25); par.pitch = sm(par.pitch, tp, dt, 0.25);
+  camera.position.set(Math.sin(par.yaw) * Math.cos(par.pitch), Math.sin(par.pitch), Math.cos(par.yaw) * Math.cos(par.pitch)).multiplyScalar(CAMD);
+  camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
+  core.quaternion.copy(camera.quaternion);
+  shardU.uCam.value.copy(camera.position);
+
+  // 渲染
+  renderer.setRenderTarget(rtScene); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, camera);
+  preM.uniforms.tSrc.value = rtScene.texture; preM.uniforms.uTx.value.set(1 / BW, 1 / BH); pass(preM, down[0]);
+  for (let i = 1; i < NLV; i++) { downM.uniforms.tSrc.value = down[i - 1].texture; downM.uniforms.uTx.value.set(1 / down[i - 1].width, 1 / down[i - 1].height); pass(downM, down[i]); }
+  for (let i = NLV - 2; i >= 0; i--) {
+    const low = i === NLV - 2 ? down[NLV - 1] : up[i + 1];
+    upM.uniforms.tLow.value = low.texture; upM.uniforms.tCur.value = down[i].texture; upM.uniforms.uTx.value.set(1 / low.width, 1 / low.height); pass(upM, up[i]);
+  }
+  compU.tScene.value = rtScene.texture; compU.tBloom.value = up[0].texture;
+  compU.uLens.value = P.lens ? P.lensK : 0; compU.uDark.value = P.dark ? 1 : 0; compU.uPres.value = st.presBg;
+  compU.uExp.value = 1 + st.flash * 0.3; compU.uSeed.value = (st.simT * 60) % 97;
+  pass(compM, null);
+
+  // 面板（每 0.15 秒刷新一次）
+  uiClock -= rawDt;
+  if (uiClock <= 0) {
+    uiClock = 0.15;
+    fpsEl.textContent = `${fpsShow.toFixed(0)} fps`;
+    for (const k in sliders) { const s = sliders[k]; if (k !== 'vol' || !(volDragging || now < volManualUntil)) s.inp.value = P[k];
+      s.val.textContent = s.step < 1 ? (+P[k]).toFixed(2) : P[k]; }
+    if (st.phase === 'exit') { exitBtn.firstChild.textContent = `退场 ${Math.max(1, Math.ceil(3 - st.t))}`; exitBar.style.width = `${Math.min(100, st.t / 3 * 100)}%`; badge.textContent = `面板 · 退场 ${Math.max(1, Math.ceil(3 - st.t))}`; }
+    else { exitBtn.firstChild.textContent = '退场'; exitBar.style.width = '0'; badge.textContent = '面板'; }
+    const phaseName = { enter: '登场', exit: '退场倒计时', implode: '退场', hidden: '空屏', live: NAMES[st.mode] }[st.phase];
+    const j = JSON.stringify({ 状态: phaseName, 背景: P.bg, 暗场: P.dark, 掰弯: P.lens, 皮: P.skin, 主碎片: P.shards, 碎屑: P.debris,
+      转速: P.speed, 亮度: P.bright, 掰弯强度: P.lensK, 音量: +st.vol.toFixed(2), 陀螺仪: par.gyro, dpr: DPR, R: Math.round(R) });
+    if (document.activeElement !== jsonEl) jsonEl.value = j;
+  }
+}
+resize();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+
+/* 给测试脚本用 */
+window.__xb = { sig: () => shards.map(s => s.verts.reduce((a, v) => a + v.x * 3 + v.y * 5 + v.z * 7, 0) + s.r + s.w + s.ph).reduce((a, b) => a + b, 0).toFixed(9), setMode, P, st, fpsLog, ui, drawBg, fold, setBg: b => { P.bg = b; drawBg(); ui(); } };
+</script>
+</body>
+</html>
