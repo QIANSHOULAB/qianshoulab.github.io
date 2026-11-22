@@ -87,7 +87,10 @@ window.QS_STRINGS = {
         note: '(Runs on your\u00a0phone)', go: 'Frame it ›' },
       baozuseng: { name: 'Rent Splitter', sub: 'Power bill, split to the cent. Drama not included.',
         what: 'Paste the tenant list, enter the power bill. Rent and power split by head and by day, and who owes what is obvious at a glance. Made for month-end sublet math.',
-        note: '(Runs on your\u00a0phone. The books stay\u00a0there.)', go: 'Split rent ›' }
+        note: '(Runs on your\u00a0phone. The books stay\u00a0there.)', go: 'Split rent ›' },
+      tiexie: { name: 'Tiexie · CNC Kung Fu', sub: 'Ancient scrolls. Real G-code.',
+        what: 'Shop-floor kung fu, starting with probing. Every move battle-tested on a real machine. Made for the new setter frozen in front of the control.',
+        note: '(Chinese\u00a0only. Reads fine on your\u00a0phone)', go: 'Read the scrolls ›' }
     },
     abbot: {
       h: '🧘 The Abbot: Master Hands-Off',
@@ -175,7 +178,10 @@ window.QS_STRINGS = {
         note: '（手机打开就能用）', go: '请他装裱 ›' },
       baozuseng: { name: '二房东算账', sub: '电费掰到分，狮子吼都省了',
         what: '租客名单一贴，电费总数一填，房租电费按人头按天自己摊，谁欠钱一眼看穿。专治二房东月底那顿算盘。',
-        note: '（手机打开就能用，账只存你手机）', go: '去算账 ›' }
+        note: '（手机打开就能用，账只存你手机）', go: '去算账 ›' },
+      tiexie: { name: '铁屑江湖', sub: '刀光剑影，铁屑横飞',
+        what: '机床边的武功秘籍：从探头找零起，一招一式都在车间实战过。专治新人对着机床发呆。',
+        note: '（手机打开就能看）', go: '翻秘籍 ›' }
     },
     abbot: {
       h: '🧘 方丈法号：释手',
@@ -897,6 +903,25 @@ window.QS_STRINGS = {
         <div class="what"><span data-i18n="cards.baozuseng.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.baozuseng.note"></span></div>
       </div>
       <span class="go" data-i18n="cards.baozuseng.go"></span>
+    </a>
+    <!-- 铁屑江湖（Song 11-22 挂进小工具）：网站开在 Grok，不在本仓库，这张卡只是门牌。图标是一本线装书：左上题签、题签下朱印、右边四眼穿线，底色取铁屑江湖书皮的靛蓝。 -->
+    <a class="card monk" href="https://songcm.grok.me/" data-tint="#7D8FE0" data-glyph="铁">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs><linearGradient id="g13" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7D8FE0"/><stop offset="1" stop-color="#34447A"/></linearGradient></defs>
+        <rect width="64" height="64" rx="15" fill="url(#g13)"/>
+        <rect x="15" y="11" width="34" height="42" rx="4" fill="#fff"/>
+        <rect x="20" y="16" width="8" height="21" rx="1.5" fill="none" stroke="#34447A" stroke-width="2.4"/>
+        <rect x="21" y="41" width="6" height="6" rx="1.2" fill="#E8553F"/>
+        <path d="M42 16v32" stroke="#34447A" stroke-width="2" stroke-opacity=".45"/>
+        <path d="M42 17h7M42 27.5h7M42 38h7M42 48h7" stroke="#34447A" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="name" data-i18n="cards.tiexie.name"></div>
+        <div class="sub" data-i18n="cards.tiexie.sub"></div>
+        <div class="what"><span data-i18n="cards.tiexie.what"></span><span class="gap"> </span><span class="note" data-i18n="cards.tiexie.note"></span></div>
+      </div>
+      <span class="go" data-i18n="cards.tiexie.go"></span>
     </a>
     </div>
   </section>
