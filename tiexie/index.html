@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>铁屑江湖</title>
+<meta name="theme-color" content="#ebe2cc">
+<meta name="description" content="机床边的武林：CNC 秘籍，一招一式都在车间实战过。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="铁屑江湖">
+<meta property="og:description" content="机床边的武林">
+<meta property="og:url" content="https://qianshoulab.github.io/tiexie/">
+<meta property="og:image" content="https://qianshoulab.github.io/tiexie/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&display=swap">
+<!-- 铁屑江湖 · 2026-11-22 从 Grok（songcm.grok.me）搬来，只读版。长相照 Grok 那版的样式表原样搬；秘籍内容在页面底部 tx-data 那段 JSON 里，加秘籍就改那里。 -->
+<style>
+/* reset：Grok 版靠 Tailwind 自带的这一套打底，这里照抄要用到的几条 */
+*, ::before, ::after { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid; }
+html { line-height: 1.5; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+h1, h2, h3 { font-size: inherit; font-weight: inherit; }
+b, strong { font-weight: bolder; }
+code { font-size: 1em; }
+img, svg { display: block; vertical-align: middle; }
+img { max-width: 100%; height: auto; }
+button { font: inherit; color: inherit; letter-spacing: inherit; background-color: transparent; border-radius: 0; }
+button:not(:disabled) { cursor: pointer; }
+
+/* The printed page. Rules below are the original sheet, kept as-is. */
+/* Layout: an old printed book page on rice paper. Title + seal on top; one double-ruled frame (四周双边) below, split into a 目录 column on the left and the chosen book's cover on the right; tapping the cover opens the book. Single light theme by choice: the page is paper. */
+:root {
+  --paper: #ebe2cc;
+  --paper-hi: #f4eddd;
+  --ink: #1e1b17;
+  --ink-soft: #5d5346;
+  --rule: #7d6d55;
+  --indigo: #25314b;
+  --label: #f1e9d6;
+  --seal: #b3352b;
+  --wash: rgba(30, 27, 23, 0.065);
+  --brush: "Ma Shan Zheng", "STKaiti", "KaiTi", "Kaiti SC", serif;
+  --serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.26 0 0 0 0 0.17 0 0 0 0.11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --fiber: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.011 0.09' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.38 0 0 0 0 0.3 0 0 0 0 0.18 0 0 0 0.22 -0.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  --cloth: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.86 0 0 0 0 0.87 0 0 0 0 0.92 0 0 0 0.13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+html { background: var(--paper); }
+body {
+  min-height: 100vh;
+  min-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.7;
+  isolation: isolate;
+  background-color: var(--paper);
+  background-image: var(--grain), var(--fiber),
+    radial-gradient(ellipse at 50% 35%, rgba(255, 249, 232, 0.6), rgba(255, 249, 232, 0) 62%),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 60%, rgba(92, 70, 38, 0.15) 100%);
+}
+/* Ink sheet sits in the paper, under the type. White was knocked out so it reads as one surface. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url("wulin-ink.webp") center / cover no-repeat;
+  opacity: 0.15;
+}
+@media (max-width: 759px) {
+  body::before {
+    /* Portrait: show the whole sheet, not a cropped slice of one figure. */
+    background-size: 100% auto;
+    background-position: center 38%;
+  }
+}
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 920px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 56px;
+}
+.shell-home {
+  min-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+}
+
+/* title */
+.head { position: relative; margin: 0 2px 18px; }
+.title-row, .sub { position: relative; z-index: 1; }
+.title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.site { margin: 0; font-family: var(--brush); font-weight: 400; font-size: clamp(40px, 11.5vw, 58px); line-height: 1.1; letter-spacing: 0.06em; }
+.seal {
+  display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 2px; flex: none;
+  width: 46px; height: 46px; box-sizing: border-box;
+  border-radius: 4px; background: var(--seal); color: var(--paper-hi);
+  box-shadow: inset 0 0 0 2px rgba(244, 237, 221, 0.5);
+  font-family: var(--brush); font-size: 17px; line-height: 1;
+  transform: rotate(-4deg); opacity: 0.93;
+}
+.col { display: flex; flex-direction: column; align-items: center; }
+.sub { margin-top: 6px; color: var(--ink-soft); font-size: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lane { display: flex; margin: 4px 2px 16px; }
+.lane-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--brush);
+  font-size: clamp(15px, 4.4vw, 24px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  position: relative;
+}
+.lane-btn[aria-current="page"] { color: var(--seal); }
+.lane-btn[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 1.6em;
+  height: 3px;
+  transform: translateX(-50%);
+  background: var(--seal);
+  border-radius: 1px;
+}
+.ink-fig {
+  position: absolute;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.1;
+}
+.ink-behind {
+  left: -4px;
+  top: 2px;
+  width: 92px;
+  height: 74px;
+  background-image: url("ink/leap.webp");
+}
+.ink-aside {
+  right: -14px;
+  top: -8px;
+  width: clamp(132px, 42vw, 260px);
+  aspect-ratio: 455 / 480;
+  background-image: url("ink/kick.webp");
+}
+.ink-below {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 200px;
+  pointer-events: none;
+}
+.ink-low-a {
+  left: -2%;
+  top: 4%;
+  width: min(62%, 380px);
+  aspect-ratio: 598 / 392;
+  background-image: url("ink/dash.webp");
+}
+.ink-low-b {
+  right: -4%;
+  top: 36%;
+  width: min(48%, 300px);
+  aspect-ratio: 727 / 381;
+  background-image: url("ink/thrust.webp");
+  transform: scaleX(-1);
+}
+.ink-low-c {
+  left: 36%;
+  bottom: 2%;
+  width: min(36%, 210px);
+  aspect-ratio: 486 / 511;
+  background-image: url("ink/palm.webp");
+}
+@media (max-width: 759px) {
+  .ink-behind {
+    left: 0;
+    top: 8px;
+    width: 68px;
+    height: 54px;
+  }
+  .ink-aside {
+    right: 0;
+    top: 0;
+    width: 150px;
+    height: 118px;
+    aspect-ratio: auto;
+    background-position: right center;
+  }
+  .ink-low-a {
+    left: 0;
+    top: 0;
+    width: 56%;
+  }
+  .ink-low-b {
+    right: 0;
+    top: auto;
+    bottom: 6%;
+    width: 54%;
+  }
+  .ink-low-c {
+    left: 28%;
+    top: 34%;
+    bottom: auto;
+    width: 32%;
+  }
+}
+@media (min-width: 760px) {
+  .ink-aside {
+    right: 12px;
+    top: -6px;
+    width: 250px;
+  }
+  .ink-low-a { top: 10%; width: 340px; }
+  .ink-low-b { top: 28%; width: 300px; }
+  .ink-low-c { left: 40%; width: 190px; }
+}
+.chip { font-size: 12px; line-height: 1.6; color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 0 7px; }
+.chip-btn { font: inherit; font-size: 12px; line-height: 1.6; color: var(--ink-soft); background: transparent; border: 1px dashed var(--rule); border-radius: 3px; padding: 0 7px; cursor: pointer; }
+
+/* the double-ruled frame (四周双边) */
+.frame, .doc {
+  border: 3px solid var(--rule);
+  box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px var(--rule);
+  background-color: rgba(255, 250, 238, 0.3);
+}
+.frame { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 37%) minmax(0, 1fr); padding: 6px; }
+.toc { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--rule); }
+.toc-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 13px 10px 13px 10px; box-sizing: border-box;
+  border: 0; border-bottom: 1px solid rgba(125, 109, 85, 0.45);
+  background: transparent; color: var(--ink-soft);
+  font-family: var(--brush); font-size: clamp(16px, 4.3vw, 21px); line-height: 1.3;
+  text-align: left; cursor: pointer;
+}
+.toc-item span { min-width: 0; overflow-wrap: anywhere; }
+.toc-item::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid transparent; }
+.toc-item[aria-current="true"] { color: var(--ink); background: rgba(37, 49, 75, 0.06); }
+.toc-item[aria-current="true"]::before { border-color: var(--seal); }
+.toc-add { font-family: var(--serif); font-size: 15px; color: var(--ink-soft); border-bottom-style: dashed; }
+.toc-add::before { display: none; }
+.toc-empty { margin: 14px 10px; color: var(--ink-soft); font-size: 14px; }
+.stage { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 12px 14px; min-width: 0; }
+.cover-btn { display: block; width: min(100%, 300px); padding: 0; border: 0; background: none; border-radius: 4px; cursor: pointer; }
+.cover-btn .book, .cover-btn .cover-img { transition: transform 0.18s ease; }
+.cover-btn:hover .book, .cover-btn:hover .cover-img { transform: translateY(-3px); }
+.cap { margin: 4px 0 0; font-family: var(--brush); font-size: clamp(18px, 4.8vw, 24px); line-height: 1.3; text-align: center; overflow-wrap: anywhere; }
+.tap { margin: -6px 0 0; font-size: 13px; color: var(--ink-soft); text-align: center; }
+
+/* the drawn book: indigo cover, title slip, four-hole thread binding */
+.book {
+  position: relative; width: 100%; aspect-ratio: 3 / 4; container-type: inline-size; overflow: hidden;
+  border-radius: 3px 5px 5px 3px;
+  background-color: var(--indigo);
+  background-image: var(--cloth), linear-gradient(100deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.2));
+  box-shadow: 0 12px 26px -8px rgba(48, 34, 14, 0.45), 0 3px 6px rgba(48, 34, 14, 0.2);
+}
+.book::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 18% 10%, rgba(255, 255, 255, 0.08), transparent 55%), radial-gradient(ellipse at 92% 100%, rgba(0, 0, 0, 0.3), transparent 55%); }
+.book-label {
+  position: absolute; left: 11%; top: 7%; width: 21%; height: 64%;
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3cqw 0;
+  background-color: var(--label); background-image: var(--grain);
+  outline: 1px solid rgba(30, 27, 23, 0.4); outline-offset: -2cqw;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.book-title {
+  display: flex; flex-direction: column; align-items: center;
+  font-family: var(--brush); color: var(--ink); line-height: 1.06;
+  font-size: min(10cqw, calc(76cqw / var(--n, 6)));
+}
+.book-bind { position: absolute; top: 0; bottom: 0; right: 0; width: 11%; border-left: 1px solid rgba(255, 255, 255, 0.08); background: linear-gradient(90deg, rgba(0, 0, 0, 0.14), rgba(255, 255, 255, 0.03)); }
+.book-bind::before { content: ""; position: absolute; top: 9%; bottom: 9%; left: 38%; width: 1.5px; background: rgba(228, 216, 188, 0.72); }
+.book-bind i { position: absolute; left: 38%; right: 0; height: 1.5px; background: rgba(228, 216, 188, 0.78); }
+.book-bind i::before { content: ""; position: absolute; left: -2px; top: -2px; width: 5px; height: 5px; border-radius: 50%; background: rgba(12, 15, 24, 0.9); box-shadow: 0 0 0 1px rgba(228, 216, 188, 0.5); }
+.book-bind i:nth-child(1) { top: 9%; }
+.book-bind i:nth-child(2) { top: 36%; }
+.book-bind i:nth-child(3) { top: 64%; }
+.book-bind i:nth-child(4) { top: 91%; }
+.book-seal {
+  position: absolute; left: 15%; top: 75%; width: 13cqw; height: 13cqw;
+  display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; border-radius: 1cqw;
+  background: var(--seal); color: var(--label); opacity: 0.9;
+  font-family: var(--brush); font-size: 5.4cqw; line-height: 1;
+}
+.cover-img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; background: var(--paper-hi); box-shadow: 0 12px 26px -8px rgba(48, 34, 14, 0.45), 0 3px 6px rgba(48, 34, 14, 0.2); }
+.set-bar { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; min-width: 0; }
+.set-h { margin: 0; flex: 1; min-width: 0; font-family: var(--brush); font-weight: 400; font-size: clamp(28px, 7.4vw, 40px); line-height: 1.2; overflow-wrap: anywhere; }
+
+/* reading view */
+.topbar { margin: -4px 0 8px; }
+.back { display: inline-flex; align-items: center; gap: 2px; padding: 8px 6px 8px 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: 16px; cursor: pointer; text-decoration: none; }
+svg.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.book-h { margin: 0 0 14px; font-family: var(--brush); font-weight: 400; font-size: clamp(30px, 8.4vw, 42px); line-height: 1.25; text-wrap: balance; overflow-wrap: anywhere; }
+.doc { padding: 22px 18px 24px; min-width: 0; }
+.doc h3 { margin: 22px 0 6px; font-family: var(--brush); font-weight: 400; font-size: 23px; line-height: 1.35; text-wrap: balance; }
+.doc > h3:first-child { margin-top: 0; }
+.doc p { margin: 0 0 6px; overflow-wrap: anywhere; }
+.doc strong { font-weight: 700; }
+.doc .gap { height: 10px; }
+.code { margin: 6px 0 4px; padding: 10px 12px; border-radius: 3px; background: var(--wash); display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow-x: auto; }
+.code code { display: block; font-family: var(--mono); font-size: 14px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; }
+.code .tok { white-space: nowrap; }
+.code .note { margin-top: 1px; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+
+/* controls */
+.btn { padding: 8px 16px; border: 1.5px solid var(--ink); border-radius: 4px; background: transparent; color: var(--ink); font: inherit; font-size: 15px; line-height: 1.4; cursor: pointer; }
+.btn.solid { background: var(--ink); color: var(--paper-hi); }
+.btn.danger { color: var(--seal); border-color: var(--seal); }
+.btn:disabled { opacity: 0.55; cursor: default; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, label.file:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+.confirm-q { flex-basis: 100%; font-size: 15px; }
+.banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; padding: 12px 14px; border: 1.5px dashed var(--rule); border-radius: 4px; font-size: 15px; }
+.banner p { margin: 0; flex: 1 1 200px; min-width: 0; }
+.form { display: flex; flex-direction: column; gap: 18px; }
+.lab { display: block; margin-bottom: 6px; color: var(--ink-soft); font-size: 14px; }
+.field input[type="text"], .field input[type="password"], .field textarea, .field select {
+  display: block; width: 100%; box-sizing: border-box;
+  padding: 11px 13px; border: 1.5px solid var(--rule); border-radius: 4px;
+  background: rgba(255, 252, 244, 0.65); color: var(--ink); font: inherit; font-size: 16px;
+}
+.field select { min-height: 44px; }
+.plate-list { display: flex; flex-direction: column; gap: 12px; }
+.plate-list button { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.plate-list img { display: block; width: 100%; height: auto; }
+.plate-edit-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.plate-edit { display: flex; gap: 12px; align-items: center; }
+.plate-edit img { width: 112px; height: 84px; object-fit: cover; flex: none; background: var(--paper-hi); border-radius: 3px; }
+.plate-edit .btn { min-height: 44px; }
+.zoom {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(18, 14, 10, 0.94);
+  display: flex; align-items: center; justify-content: center;
+  touch-action: none;
+}
+.zoom-img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+  touch-action: none; user-select: none;
+}
+.zoom-close {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  min-width: 44px; min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid rgba(244, 237, 221, 0.75);
+  border-radius: 4px;
+  background: rgba(20, 16, 12, 0.55);
+  color: var(--paper-hi);
+  font: inherit; font-size: 16px;
+}
+.field textarea { min-height: 48vh; line-height: 1.6; resize: vertical; }
+.cover-edit { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; }
+.cover-thumb { width: 112px; flex: none; }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.cover-edit .tools { flex-direction: column; align-items: flex-start; }
+label.file { display: inline-block; padding: 8px 16px; border: 1.5px solid var(--ink); border-radius: 4px; font-size: 15px; line-height: 1.4; cursor: pointer; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.hint { margin: 8px 0 0; color: var(--ink-soft); font-size: 13px; line-height: 1.65; }
+.row { display: flex; gap: 12px; }
+.row .btn { flex: 1; padding: 12px 16px; font-size: 17px; }
+.status { margin: 0; min-height: 1.5em; color: var(--ink-soft); font-size: 14px; }
+@media (min-width: 760px) {
+  .frame { grid-template-columns: minmax(0, 32%) minmax(0, 1fr); }
+  .stage { padding: 28px 20px 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cover-btn .book, .cover-btn .cover-img { transition: none; }
+  .cover-btn:hover .book, .cover-btn:hover .cover-img { transform: none; }
+}
+
+html, body { overflow-x: clip; }
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+img { max-width: 100%; }
+</style>
+</head>
+<body>
+<div id="app" class="shell shell-home"></div>
+<noscript><p style="padding:24px">这本秘籍要开 JavaScript 才翻得开。</p></noscript>
+<script type="application/json" id="tx-data">
+{
+ "site": {
+  "name": "铁屑江湖",
+  "sub": "机床边的武林"
+ },
+ "books": [
+  {
+   "id": "vm10",
+   "title": "VM10探零宝典",
+   "category": "baodian",
+   "setId": null,
+   "img": "img/vm10.jpg",
+   "body": "第一式·探囊取物·内圆零点\nG65 P9738 ;\nG54 ;（G54~G59对号入座）\nG65 P9712 I20. J1 Q1 ;（I = 孔直径）\n\n第二式·四面楚歌·外圆零点\nG65 P9738 ;\nG54 ;（G54~G59对号入座）\nG65 P9713 I20. J1 Q1 K-10. ;（I = 圆柱直径，K = 探头下降距离）\n\n第三式·家徒四壁·内框零点\nG65 P9738 ;\nG54 ;（G54~G59对号入座）\nG65 P9712 U30. V20. J1 Q1 ;（U = 框X宽，V = 框Y宽，单写一个只测那个方向）\n\n第四式·十面埋伏·外框零点（待确认）\nG65 P9738 ;\nG54 ;（G54~G59对号入座）\nG65 P9713 U30. V20. J1 Q1 K-10. ;（U = X宽，V = Y宽，K = 探头下降距离）\n\n第五式·蜻蜓点水·平面Z零点\nG65 P9738 ;\nG54 ;（G54~G59对号入座）\nG65 P9728 D5. J1 Q1 H60 ;（D = 探头离表面高度，H60 = 探头长度补偿）\n\n【独孤三探】\n三探既出，零点无所遁形。\n第一探·入穴式（测孔、内框）：针沉穴中，立于中宫，目测居中即可。\n第二探·悬顶式（测外圆、外框）：针悬顶门，离顶须小于K。悬得太高，纵身一跃仍在半空，横扫一招，只斩清风。\n第三探·凌空式（测平面）：针悬平川之上约5mm，D写几，便悬几。\n\n【五大禁忌·犯者走火入魔】\n一戒·冰炭不同炉：I字诀破圆，U、V双诀破方，两派只可择一。强行同修，真气逆冲，报警十号。\n二戒·一粒金丹：数字尾后必点金丹，20.、30.、-10.。漏这一点，二十或只剩零点零二，功力散去九成九点九。外家犯此戒，等同犯四戒。\n三戒·缩骨功：测孔、内框，尺寸宁小勿大。贪大者自以为洞府宽敞，一步踏出，面门撞壁。此步乃赶路，非试探，针毁机亡。\n四戒·凌波微步：测外圆、外框，尺寸宁大勿小。写大不过多走两步；写小，针以为柱子清瘦，纵身一跃，正落柱顶，粉身碎骨。\n五戒·祖师遗训：J1 Q1乃祖师亲笔，其义至今无人参透。照抄者平安；改了会如何，江湖上尚无人知晓，莫做第一个。\n\n【保命总口诀】\n内大撞墙外小砸，\nI与UV不同家；\n金丹一粒千斤重，\n神针不断走天涯。\n\n此谱贴于机床之侧，后世子孙习得，阅后焚毁，本门绝学不可外传。",
+   "plates": []
+  },
+  {
+   "id": "vm12",
+   "title": "VM12探零宝典",
+   "category": "baodian",
+   "setId": null,
+   "img": "",
+   "body": "第一式·泰山压顶·顶面Z零点\nG65 P9500 Z-10. W55. ;（Z = 探头下降距离，W54～W59 = G54～G59）\n\n第二式·左右开弓·X分中\nG65 P9500 S100. X1. Z-10. W55. ;（S = X宽）\n\n第三式·腹背受敌·Y分中\nG65 P9500 S80. Y1. Z-10. W55. ;（S = Y宽）\n\n第四式·瓮中捉鳖·孔内XY分中\nG65 P9500 S40. W55. ;（S = 孔直径）\n\n【独孤三探】\n独孤求败一生纵横江湖，只求一败而不可得。晚年改行当设定员，上班头一天连败三阵，求仁得仁。痛定思痛，留下这三探。\n第一探·凌空式（顶面Z）：针悬顶面之上约5mm，离面须小于Z。悬得太高，探头飞身而下，落足十毫米仍未沾地，惊觉自己已练成踏空而行的绝世轻功，当场亮起红灯，昭告全车间。班长闻讯赶来，为此功赐名：凌空虚度。\n第二探·悬顶式（X、Y分中）：针悬工件正中之上约5mm，目测居中即可。Z要深过顶边，又不能碰到虎钳。浅了，横扫一招从工件头顶掠过，只削去三千烦恼丝；深了，一掌结结实实拍在钳口上。据本门史料，探头与虎钳交手三千零七次，零胜三千零七负。虎钳至今不知道自己赢过。\n第三探·入穴式（孔内）：针沉孔中，降到要测的深度，目测居中再跑。切莫悬在洞外发功，否则探头会对着空气一丝不苟地摸出一个并不存在的圆，摸完参透四大皆空，当场罢工，申请调岗去测平面。\n\n【三大禁忌·犯者经脉逆行】\n一戒·同宗同源：三行W须写同一个。若Z拜入W55门下，X、Y却投了W54，一个工件从此认下两个祖宗。待下一刀杀到，主轴悬在半空，陷入伦理绝境，不知该往谁家祠堂磕头，最终以头抢地，撞机以谢天下。\n二戒·妄断肥瘦：外宽S宁大勿小，内孔S宁小勿大。神针天生目盲，却是个老实人：你报几尺，它便闭眼迈几尺，从不还价。测外写小，它当工件清瘦，纵身一跃，正踏天灵盖上；测孔写大，它当洞府宽敞，昂首阔步，以铁头功迎向洞壁。功是真功，头是红宝石。一声脆响，满地首饰。\n三戒·一粒金丹：S100.、X1.、Z-10.、W55.，尾后必点金丹，一颗不可少。漏此一点，百尺功力散去九成九点九，S100只剩一根头发丝；W55漏了金丹，零点当场走火飞升。祖师爷连夜下山掐指一算，只算出它落进了一个野坐标，从此杳无音信，逢年过节也不回家。\n\n【保命总口诀】\n深拍虎钳浅掠风，\n三行W字认一宗；\n外宽宁大孔宁小，\n金丹一点保神功。\n\n此谱只认VM12。拿去VM10施展，口诀一字不差，VM10只回四个字：查无此人。",
+   "plates": []
+  }
+ ],
+ "sets": []
+}
+</script>
+<script>
+(function () {
+  "use strict";
+
+  // 栏目：宝典｜刀法｜布阵图｜兵器谱。网址后面的 # 决定在哪：#baodian、#daofa、#buzhen、#bingqi、#某本秘籍的 id、#某个布阵图大标题的 id。
+  var CATS = [
+    { id: "baodian", label: "宝典" },
+    { id: "daofa", label: "刀法" },
+    { id: "buzhen", label: "布阵图" },
+    { id: "bingqi", label: "兵器谱" }
+  ];
+
+  var data = JSON.parse(document.getElementById("tx-data").textContent);
+  data.site = data.site || { name: "铁屑江湖", sub: "" };
+  data.books = data.books || [];
+  data.sets = data.sets || [];
+  var app = document.getElementById("app");
+  var sel = data.books.length ? data.books[0].id : null;
+
+  function chars(s) { return Array.from(String(s == null ? "" : s)); }
+  function isCat(id) { return CATS.some(function (c) { return c.id === id; }); }
+  function findById(list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
+
+  function h(tag, props, kids) {
+    var n = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach(function (k) {
+        var v = props[k];
+        if (v == null || v === false) return;
+        if (k === "class") n.className = v;
+        else if (k === "text") n.textContent = v;
+        else if (k === "style") n.setAttribute("style", v);
+        else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), v);
+        else n.setAttribute(k, v === true ? "" : String(v));
+      });
+    }
+    (kids || []).forEach(function (c) {
+      if (c == null) return;
+      n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    });
+    return n;
+  }
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function backIcon() {
+    var s = document.createElementNS(SVGNS, "svg");
+    s.setAttribute("class", "ic");
+    s.setAttribute("viewBox", "0 0 24 24");
+    s.setAttribute("aria-hidden", "true");
+    var p = document.createElementNS(SVGNS, "path");
+    p.setAttribute("d", "M15 18l-6-6 6-6");
+    s.appendChild(p);
+    return s;
+  }
+
+  // 印章：两字一列，从右往左读
+  function seal(text, cls) {
+    var letters = chars(text), cols = [];
+    for (var i = 0; i < letters.length; i += 2) {
+      cols.push(h("span", { class: "col" }, letters.slice(i, i + 2).map(function (ch) { return h("span", { text: ch }); })));
+    }
+    return h("span", { class: cls, "aria-hidden": "true" }, cols);
+  }
+
+  // 封面：有图用图；没图用代码画一本靛蓝线装书
+  function cover(title, img) {
+    if (img) return h("img", { class: "cover-img", src: img, alt: "《" + title + "》封面", decoding: "async" });
+    var t = chars(title);
+    return h("div", { class: "book", role: "img", "aria-label": "《" + title + "》书皮" }, [
+      h("div", { class: "book-label" }, [
+        h("span", { class: "book-title", style: "--n:" + Math.max(4, t.length) }, t.map(function (ch) { return h("span", { text: ch }); }))
+      ]),
+      h("div", { class: "book-bind" }, [h("i"), h("i"), h("i"), h("i")]),
+      seal(chars(data.site.name || "铁屑").slice(0, 2).join(""), "book-seal")
+    ]);
+  }
+
+  // 正文自动排版（跟原来那版同一套规矩）
+  var A = String.fromCharCode(0x3400), B = String.fromCharCode(0x9fff), C = String.fromCharCode(0xf900), D = String.fromCharCode(0xfaff);
+  var CJK = new RegExp("[" + A + "-" + B + C + "-" + D + "]");
+  var NOTE = new RegExp("^(.*?)\\s*[（(]([^）)]*[" + A + "-" + B + "][^）)]*)[）)]\\s*$");
+  var CODE = /^(?:[A-Z]-?[\d.#]|#\d|%|\(|IF\s*\[|WHILE\s*\[|GOTO|END\d|DO\d)/;
+  function splitNote(s) { var m = s.match(NOTE); return m ? { code: m[1], note: m[2] } : { code: s, note: "" }; }
+  function isCode(code) { return !!code && !CJK.test(code) && CODE.test(code); }
+  function isHeading(s) {
+    if (/^【.+】$/.test(s) || /^《.+》$/.test(s)) return true;
+    return /^第[一二三四五六七八九十百零〇\d]+[式章节回篇部卷]/.test(s) && s.indexOf("：") < 0 && s.length <= 40;
+  }
+  function typeset(text, into) {
+    var lines = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+    var box = null, gap = false, any = false;
+    function flush() {
+      if (!box) return;
+      into.appendChild(box);
+      box = null;
+      gap = false;
+    }
+    lines.forEach(function (raw) {
+      var line = raw.trim();
+      if (!line) {
+        flush();
+        if (!gap && any) { into.appendChild(h("div", { class: "gap" })); gap = true; }
+        return;
+      }
+      var parts = splitNote(line);
+      if (isCode(parts.code)) {
+        if (!box) box = h("div", { class: "code" });
+        var code = h("code");
+        parts.code.split(/(\s+)/).forEach(function (tok) {
+          if (!tok) return;
+          code.appendChild(/^\s+$/.test(tok) ? document.createTextNode(tok) : h("span", { class: "tok", text: tok }));
+        });
+        box.appendChild(h("div", null, [code, parts.note ? h("div", { class: "note", text: parts.note }) : null]));
+        any = true;
+        return;
+      }
+      flush();
+      if (isHeading(line)) {
+        into.appendChild(h("h3", { text: line }));
+      } else {
+        var lead = line.match(/^([^：]{1,24})：\s*(.+)$/);
+        into.appendChild(lead ? h("p", null, [h("strong", { text: lead[1] + "：" }), lead[2]]) : h("p", { text: line }));
+      }
+      any = true;
+      gap = false;
+    });
+    flush();
+    if (gap && into.lastChild && into.lastChild.className === "gap") into.removeChild(into.lastChild);
+  }
+
+  // 布阵图大图：全屏，双指放大、拖动，滚轮也能缩放
+  function openZoom(src, alt) {
+    var g = { scale: 1, x: 0, y: 0, pointers: new Map(), startDist: 1, startScale: 1, startX: 0, startY: 0, startMid: { x: 0, y: 0 }, panStart: { x: 0, y: 0 }, origin: { x: 0, y: 0 } };
+    var img = h("img", { class: "zoom-img", src: src, alt: alt, draggable: "false" });
+    var btn = h("button", { class: "zoom-close", type: "button", text: "关闭" });
+    var wrap = h("div", { class: "zoom", role: "dialog", "aria-modal": "true", "aria-label": alt }, [img, btn]);
+    var prev = document.body.style.overflow;
+    function apply(scale, x, y) {
+      var next = Math.min(5, Math.max(1, scale));
+      if (next === 1) { x = 0; y = 0; }
+      g.scale = next; g.x = x; g.y = y;
+      img.style.transform = "translate(" + x + "px, " + y + "px) scale(" + next + ")";
+    }
+    function two() { var p = Array.from(g.pointers.values()); return [p[0], p[1]]; }
+    function close() {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+      if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    btn.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+    btn.addEventListener("click", close);
+    wrap.addEventListener("pointerdown", function (e) {
+      try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      g.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (g.pointers.size >= 2) {
+        var ab = two(), a = ab[0], b = ab[1];
+        g.startDist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+        g.startScale = g.scale;
+        g.startMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        g.startX = g.x; g.startY = g.y;
+      } else {
+        g.panStart = { x: e.clientX, y: e.clientY };
+        g.origin = { x: g.x, y: g.y };
+      }
+    });
+    wrap.addEventListener("pointermove", function (e) {
+      if (!g.pointers.has(e.pointerId)) return;
+      g.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (g.pointers.size >= 2) {
+        var ab = two(), a = ab[0], b = ab[1];
+        var dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+        var mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        apply(g.startScale * (dist / g.startDist), g.startX + (mid.x - g.startMid.x), g.startY + (mid.y - g.startMid.y));
+      } else if (g.scale > 1) {
+        apply(g.scale, g.origin.x + (e.clientX - g.panStart.x), g.origin.y + (e.clientY - g.panStart.y));
+      }
+    });
+    function up(e) {
+      g.pointers.delete(e.pointerId);
+      if (g.pointers.size === 1) {
+        // 两指松开一指：剩下那指接着拖，不跳
+        var p = Array.from(g.pointers.values())[0];
+        g.panStart = { x: p.x, y: p.y };
+        g.origin = { x: g.x, y: g.y };
+      }
+    }
+    wrap.addEventListener("pointerup", up);
+    wrap.addEventListener("pointercancel", up);
+    wrap.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      apply(g.scale * (e.deltaY < 0 ? 1.12 : 0.89), g.x, g.y);
+    }, { passive: false });
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    document.body.appendChild(wrap);
+    btn.focus();
+  }
+
+  function tocItem(id, title, on) {
+    return h("button", {
+      class: "toc-item", type: "button", "aria-current": on ? "true" : null,
+      onclick: function () { sel = id; render(); }
+    }, [h("span", { text: title })]);
+  }
+
+  function home(hash, openSet) {
+    var category = openSet ? "buzhen" : isCat(hash) ? hash : "baodian";
+    var groupShelf = category === "buzhen" && !openSet;
+    var shelf = data.books.filter(function (b) { return openSet ? b.setId === openSet.id : b.category === category; });
+    var current = groupShelf ? null : findById(shelf, sel) || shelf[0] || null;
+    var currentSet = groupShelf ? findById(data.sets, sel) || data.sets[0] || null : null;
+    var label = (findById(CATS, category) || CATS[0]).label;
+    var out = [];
+
+    out.push(h("header", { class: "head" }, [
+      h("span", { class: "ink-fig ink-behind", "aria-hidden": "true" }),
+      h("span", { class: "ink-fig ink-aside", "aria-hidden": "true" }),
+      h("div", { class: "title-row" }, [
+        h("h1", { class: "site", text: data.site.name }),
+        seal(chars(data.site.name).slice(0, 4).join(""), "seal")
+      ]),
+      h("div", { class: "sub" }, [data.site.sub ? h("span", { text: data.site.sub }) : null])
+    ]));
+
+    out.push(h("nav", { class: "lane", "aria-label": "栏目" }, CATS.map(function (c) {
+      return h("button", {
+        class: "lane-btn", type: "button", "aria-current": c.id === category ? "page" : null, text: c.label,
+        onclick: function () {
+          if ((location.hash.replace(/^#/, "") || "baodian") === c.id) return;
+          location.hash = c.id;
+        }
+      });
+    })));
+
+    if (openSet) {
+      out.push(h("div", { class: "set-bar" }, [
+        h("button", { class: "back", type: "button", onclick: function () { location.hash = "buzhen"; } }, [backIcon(), h("span", { text: "返回" })]),
+        h("h2", { class: "set-h", text: openSet.title })
+      ]));
+    }
+
+    var toc = h("nav", { class: "toc", "aria-label": label + "目录" });
+    var rows = groupShelf ? data.sets : shelf;
+    var on = groupShelf ? currentSet : current;
+    rows.forEach(function (r) { toc.appendChild(tocItem(r.id, r.title, on && r.id === on.id)); });
+    if (!rows.length) toc.appendChild(h("p", { class: "toc-empty", text: "尚未收录" }));
+
+    var stage = h("div", { class: "stage" });
+    if (currentSet) {
+      stage.appendChild(h("button", { class: "cover-btn", type: "button", "aria-label": "进入" + currentSet.title, onclick: function () { location.hash = currentSet.id; } }, [cover(currentSet.title, currentSet.img)]));
+      stage.appendChild(h("p", { class: "cap", text: currentSet.title }));
+      stage.appendChild(h("p", { class: "tap", text: "进入" }));
+    } else if (current) {
+      stage.appendChild(h("button", { class: "cover-btn", type: "button", "aria-label": "翻开《" + current.title + "》", onclick: function () { location.hash = current.id; } }, [cover(current.title, current.img)]));
+      stage.appendChild(h("p", { class: "cap", text: "《" + current.title + "》" }));
+      stage.appendChild(h("p", { class: "tap", text: category === "buzhen" ? "点图查看" : "点书翻开" }));
+    } else {
+      stage.appendChild(h("p", { class: "tap", text: "尚未收录" }));
+    }
+
+    out.push(h("section", { class: "frame" }, [toc, stage]));
+    out.push(h("div", { class: "ink-below", "aria-hidden": "true" }, [
+      h("span", { class: "ink-fig ink-low-a" }),
+      h("span", { class: "ink-fig ink-low-b" }),
+      h("span", { class: "ink-fig ink-low-c" })
+    ]));
+    return out;
+  }
+
+  function bookPage(book) {
+    var doc = h("article", { class: "doc" });
+    if (book.category === "buzhen") {
+      var plates = book.plates || [];
+      if (!plates.length) {
+        doc.appendChild(h("p", { class: "tap", text: "还没有图纸。" }));
+      } else {
+        doc.appendChild(h("div", { class: "plate-list" }, plates.map(function (src, i) {
+          return h("button", { type: "button", "aria-label": "全屏查看第 " + (i + 1) + " 张", onclick: function () { openZoom(src, book.title); } }, [
+            h("img", { src: src, alt: book.title + " 第 " + (i + 1) + " 张", loading: i ? "lazy" : null, decoding: "async" })
+          ]);
+        })));
+      }
+    } else {
+      typeset(book.body, doc);
+    }
+    return [
+      h("div", { class: "topbar" }, [
+        h("button", {
+          class: "back", type: "button",
+          onclick: function () { location.hash = book.category === "buzhen" && book.setId ? book.setId : book.category || "baodian"; }
+        }, [backIcon(), h("span", { text: "返回目录" })])
+      ]),
+      h("h1", { class: "book-h", text: "《" + book.title + "》" }),
+      doc
+    ];
+  }
+
+  function render() {
+    var hash = location.hash.replace(/^#/, "");
+    try { hash = decodeURIComponent(hash); } catch (err) { /* keep raw */ }
+    var openSet = findById(data.sets, hash);
+    var openBook = hash && !isCat(hash) && !openSet ? findById(data.books, hash) : null;
+
+    if (openBook) {
+      sel = openBook.id;
+    } else if (openSet) {
+      var inSet = data.books.filter(function (b) { return b.setId === openSet.id; });
+      if (!findById(inSet, sel)) sel = inSet[0] ? inSet[0].id : null;
+    } else if (hash === "buzhen") {
+      if (!findById(data.sets, sel)) sel = data.sets[0] ? data.sets[0].id : null;
+    } else {
+      var cat = isCat(hash) ? hash : "baodian";
+      var inCat = data.books.filter(function (b) { return b.category === cat; });
+      if (!findById(inCat, sel)) sel = inCat[0] ? inCat[0].id : null;
+    }
+
+    var nodes = openBook ? bookPage(openBook) : home(hash, openSet);
+    app.className = openBook ? "shell" : "shell shell-home";
+    app.textContent = "";
+    nodes.forEach(function (n) { app.appendChild(n); });
+    document.title = openBook ? "《" + openBook.title + "》· " + data.site.name : data.site.name;
+  }
+
+  window.addEventListener("hashchange", function () {
+    render();
+    window.scrollTo(0, 0);
+  });
+  render();
+})();
+</script>
+</body>
+</html>

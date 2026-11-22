@@ -71,4 +71,4 @@ Odd jobs:
 - [工时榨汁机](https://qianshoulab.github.io/gongshi/)：水分榨干，只剩真工时（换型实际用时，自动扣茶歇饭点）
 - [一叶笺](https://qianshoulab.github.io/qianye/)：随手成画（手写拍照、打字粘贴，一键排成好看的图分享）
 - [二房东算账](https://qianshoulab.github.io/baozuseng/)：电费掰到分，狮子吼都省了（二房东记账，手机网页，账只存手机）
-- [铁屑江湖](https://songcm.grok.me/)：刀光剑影，铁屑横飞（CNC 机床边的武功秘籍；网站开在 Grok 上，不在本仓库，源码备份在私有库 QIANSHOULAB/tiexie-jianghu）
+- [铁屑江湖](https://qianshoulab.github.io/tiexie/)：刀光剑影，铁屑横飞（CNC 机床边的武功秘籍，只读；11-22 从 Grok 搬进 `tiexie/`，怎么加秘籍见 `tiexie/README.md`；Grok 时代的源码备份在私有库 QIANSHOULAB/tiexie-jianghu）
