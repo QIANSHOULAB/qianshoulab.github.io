@@ -10,12 +10,13 @@ Cyber Zen · Hardcore Tools.
 - English by default; Chinese is one click away (top right, **EN / 中文**). Your pick is remembered. Add `?lang=zh` or `?lang=en` to the URL to force one for a single visit.
 - Two skins, picked at random on each visit: A “Thousand Hands” (a halo of hands and eyes) or B “Cyber Gate” (neon gate and pagoda). Add `?a` or `?b` to the URL to pick one.
 - The 3D is drawn live with three.js, no images: `scene-a.js`, `scene-b.js`.
+- Tools sit on two tabs, **Office Tools** and **Odd Jobs**; cards swipe sideways (arrows on desktop). The last tab you picked is remembered.
 - All homepage copy, both languages, lives in one place: `QS_STRINGS` near the top of `index.html`.
 - Served by GitHub Pages from the root of `main`.
 
 House rules: no sign-up, just open it. Your files never leave your device. Everything is free. Something off? Hit Feedback and we’ll fix it.
 
-Monks on duty:
+Office tools:
 
 - [Luru · Photo Typist](https://qianshoulab.github.io/luruseng/): Go play. The monk keys it in. (Photos of paper sheets into Excel, Windows app)
 - [Dubiao · PDF to Excel](https://qianshoulab.github.io/pabiao/): Liberates tables trapped in PDFs. (Scans too, runs in your browser, no uploads)
@@ -44,12 +45,13 @@ Odd jobs:
 - 每次打开随机换一套皮：A「千手法相」（千手千眼的光环）或 B「赛博山门」（霓虹牌坊和五层宝塔）。
   想指定就在网址后面加 `?a` 或 `?b`。
 - 3D 是网页自己用 three.js 现画的，没有图片：`scene-a.js`、`scene-b.js`。
+- 工具分两页：**办公工具**、**小工具**；卡片左右滑（电脑上右上角有箭头）。上次看哪页，下次打开还是那页。
 - 首页中英两套字全在一处：`index.html` 顶上的 `QS_STRINGS`。
 - GitHub Pages 从 `main` 分支根目录发布。
 
 本院规矩：不用注册，推门就用。你的文件，不出你的电脑。全部免费。有意见点「提意见」，贫僧照改。
 
-在岗罗汉：
+办公工具：
 
 - [录入僧](https://qianshoulab.github.io/luruseng/)：施主去玩，贫僧填表
 - [渡表僧](https://qianshoulab.github.io/pabiao/)：表丢来，你去玩，贫僧超度（PDF 转 Excel，扫描件也认，文件不上传）

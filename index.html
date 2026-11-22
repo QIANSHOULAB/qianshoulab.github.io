@@ -43,8 +43,11 @@ window.QS_STRINGS = {
       r3: 'Everything is free.',
       r4: 'Something off? Hit <a class="fb" href="#">Feedback</a> and we’ll fix it.'
     },
-    secMonks: 'Monks on Duty',
+    secMonks: 'Office Tools',
     secTools: 'Odd Jobs',
+    tabsLabel: 'Tools',
+    prev: 'Previous',
+    next: 'Next',
     cards: {
       luruseng: { name: 'Luru · Photo Typist', sub: 'Snap the forms. Skip the typing.',
         what: 'Drop photos of paper sheets into a folder and the Excel table fills itself in. Made for shop-floor tool tickets and scribbled daily logs.',
@@ -128,8 +131,11 @@ window.QS_STRINGS = {
       r3: '全部免费。',
       r4: '有意见点「<a class="fb" href="#">提意见</a>」，贫僧照改。'
     },
-    secMonks: '在岗罗汉',
+    secMonks: '办公工具',
     secTools: '小工具',
+    tabsLabel: '工具',
+    prev: '上一页',
+    next: '下一页',
     cards: {
       luruseng: { name: '录入僧', sub: '施主去玩，贫僧填表',
         what: '照片往文件夹里一丢，Excel 表自己长出来。专治车间刀单、流水杂表。',
@@ -472,13 +478,93 @@ window.QS_STRINGS = {
   html[data-skin="b"] .lang button[aria-pressed="true"] { background: rgba(0, 240, 255, .16); color: #00F0FF; text-shadow: 0 0 8px rgba(0, 240, 255, .6); }
   html[data-skin="b"] .lang button:focus-visible { outline-color: #00F0FF; }
 
+  /* 工具架：上面两个大字分页，下面卡片左右滑（Song 11-22：「两个选项的分页」「工具横滑动不是往下翻」）。
+     卡片左边跟上下几块对齐，右边一直伸到屏幕边（apple.com 那种货架）；手机一屏一张，露出下一张的边；
+     电脑一屏三张，右上角左右箭头一次翻一屏。宽度用 cqw 量工具架自己（不含滚动条），老浏览器退回 vw。 */
+  section.shelf { max-width: none; padding: 0 0 26px; container-type: inline-size;
+                  --wrap: 860px; --gap: 14px; --edge: 20px; --cw: min(320px, calc(100vw - 72px)); }
+  html[data-skin="b"] section.shelf { --wrap: 880px; }
+  @supports (width: 1cqw) {
+    section.shelf { --edge: max(20px, calc((100cqw - var(--wrap)) / 2 + 20px)); --cw: min(320px, calc(100cqw - 72px)); }
+  }
+  @media (min-width: 640px) {
+    section.shelf { --gap: 16px; --cw: calc((100vw - 56px) / 2); }
+    @supports (width: 1cqw) { section.shelf { --cw: calc((min(100cqw, var(--wrap)) - 56px) / 2); } }
+  }
+  @media (min-width: 900px) {
+    section.shelf { --cw: calc((var(--wrap) - 72px) / 3); }
+  }
+
+  .shelf-head { max-width: var(--wrap); margin: 0 auto; padding: 26px 20px 12px;
+                display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .tabs { position: relative; display: flex; gap: 24px; padding-bottom: 8px; }
+  .tab { -webkit-appearance: none; appearance: none; border: 0; margin: 0; padding: 0; min-height: 44px; cursor: pointer;
+         font-family: var(--serif); font-weight: 900; font-size: 26px; line-height: 1.3; letter-spacing: .06em;
+         opacity: .38; transition: opacity .24s cubic-bezier(.2, .8, .2, 1); -webkit-tap-highlight-color: transparent; }
+  .tab:hover { opacity: .7; }
+  .tab[aria-selected="true"] { opacity: 1; cursor: default; }
+  .tab:focus-visible { outline: 2px solid #FFC46B; outline-offset: 4px; border-radius: 4px; }
+  html:not([data-skin="b"]) .tab { background: linear-gradient(90deg, #FFE7B3, #FF9A3D); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  html[data-skin="b"] .tab { background: none; color: #fff; font-size: 27px; letter-spacing: .08em; text-shadow: 0 0 12px rgba(0, 240, 255, .8); }
+  html[data-skin="b"] .tab:focus-visible { outline-color: #00F0FF; }
+  .tab-bar { position: absolute; left: 0; bottom: 0; width: 0; height: 3px; border-radius: 2px; background: #FF8A2A;
+             box-shadow: 0 0 12px rgba(255, 138, 42, .6); pointer-events: none;
+             transition: transform .32s cubic-bezier(.2, .8, .2, 1), width .32s cubic-bezier(.2, .8, .2, 1); }
+  html[data-skin="b"] .tab-bar { border-radius: 0; background: #00F0FF; box-shadow: 0 0 10px rgba(0, 240, 255, .8); }
+
+  /* 左右箭头：只在有鼠标的电脑上、而且这一页一屏放不下时出现 */
+  .arrows { display: none; gap: 10px; padding-bottom: 14px; }
+  @media (hover: hover) and (pointer: fine) { .shelf[data-scroll] .arrows { display: flex; } }
+  .arrow { position: relative; width: 36px; height: 36px; padding: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+           color: #FFC46B; background: rgba(8, 9, 20, .94); border: 1px solid rgba(255, 196, 107, .3);
+           transition: opacity .2s, border-color .2s, background .2s; }
+  .arrow::after { content: ""; position: absolute; inset: -4px; }
+  .arrow svg { width: 16px; height: 16px; display: block; }
+  .arrow:hover:not(:disabled) { border-color: rgba(255, 196, 107, .65); background: rgba(32, 26, 44, .96); }
+  .arrow:disabled { opacity: .28; cursor: default; }
+  .arrow:focus-visible { outline: 2px solid #FFC46B; outline-offset: 2px; }
+  html[data-skin="b"] .arrow { border-radius: 6px; color: #00F0FF; background: rgba(11, 2, 33, .94); border-color: rgba(0, 240, 255, .4); }
+  html[data-skin="b"] .arrow:hover:not(:disabled) { border-color: rgba(0, 240, 255, .8); background: rgba(24, 6, 52, .96); box-shadow: 0 0 14px -2px rgba(0, 240, 255, .6); }
+  html[data-skin="b"] .arrow:focus-visible { outline-color: #00F0FF; }
+
+  /* 货架本身：上下多留的那几十像素是给悬停发光和阴影的，用负外边距收回来，不占版面 */
+  .rail { display: flex; align-items: stretch; gap: var(--gap); overflow-x: auto; overflow-y: hidden;
+          overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: var(--edge);
+          padding: 14px 0 36px var(--edge); margin: -14px 0 -36px;
+          scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail::after { content: ""; flex: 0 0 calc(var(--edge) - var(--gap)); }   /* 尾巴留白：最后一张也停在右边那条线上 */
+  .rail[hidden] { display: none; }
+  .rail.enter { animation: railIn .34s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes railIn { from { opacity: 0; transform: translateX(var(--from, 24px)); } to { opacity: 1; transform: none; } }
+
+  .rail > .monk.card { flex: 0 0 var(--cw); min-width: 0; margin: 0; scroll-snap-align: start;
+                       display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 24px 22px 22px; }
+  .rail > .monk.card > div { width: 100%; }
+  .rail > .monk svg { width: 56px; height: 56px; flex: none; margin-bottom: 16px; }
+  .rail > .monk .name { font-size: 22px; line-height: 1.3; }
+  .rail > .monk .sub { margin-top: 4px; line-height: 1.5; }
+  .rail > .monk .what { margin-top: 10px; line-height: 1.6; }
+  .rail > .monk .go { margin-top: auto; padding-top: 18px; }
+  html[data-skin="b"] .rail > .monk .name { font-size: 23px; }
+
+  @media (max-width: 560px) {
+    .tabs { gap: 20px; }
+    .tab, html[data-skin="b"] .tab { font-size: 22px; }
+    .shelf-head { padding-top: 22px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rail.enter { animation: none; }
+    .tab, .tab-bar { transition: none; }
+  }
+
   /* 英文：西文字体排前面（中文那套不变）；标题宋体照旧用 Noto Serif SC（只取用到的字），万一没载到就落到西文衬线 */
   html[lang="en"] body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui,
                                       "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
                          line-height: 1.6; }
   html[lang="en"] { --serif: "Noto Serif SC", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Han Serif SC", serif; }
   html[lang="en"] .title { font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif; }
-  html[lang="en"] h2, html[lang="en"] .sec-title, html[lang="en"] .monk .name, html[lang="en"] .rules h3 { letter-spacing: 0; }
+  html[lang="en"] h2, html[lang="en"] .sec-title, html[lang="en"] .monk .name, html[lang="en"] .rules h3, html[lang="en"] .tab { letter-spacing: 0; }
   html[lang="en"] .card p { line-height: 1.6; }
   html[lang="en"] .monk .sub { margin-top: 2px; }
   html[lang="en"] .tag { letter-spacing: .06em; padding: 6px 20px; }
@@ -573,8 +659,24 @@ window.QS_STRINGS = {
     </div>
   </section>
 
-  <section>
-    <div class="sec-title" data-i18n="secMonks"></div>
+  <!-- 工具架：两个分页（办公工具 / 小工具），卡片左右滑（Song 11-22）。选过哪页记住，下次直接是那页。 -->
+  <section class="shelf" id="shelf">
+    <div class="shelf-head">
+      <div class="tabs" role="tablist" data-i18n-attr="aria-label:tabsLabel">
+        <button type="button" class="tab" role="tab" id="tab-monks" aria-controls="rail-monks" aria-selected="true" data-tab="monks" data-i18n="secMonks"></button>
+        <button type="button" class="tab" role="tab" id="tab-tools" aria-controls="rail-tools" aria-selected="false" tabindex="-1" data-tab="tools" data-i18n="secTools"></button>
+        <span class="tab-bar" aria-hidden="true"></span>
+      </div>
+      <div class="arrows">
+        <button type="button" class="arrow" data-dir="-1" data-i18n-attr="aria-label:prev">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="arrow" data-dir="1" data-i18n-attr="aria-label:next">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="rail" id="rail-monks" role="tabpanel" aria-labelledby="tab-monks">
     <a class="card monk" href="/luruseng/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
         <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
@@ -731,10 +833,8 @@ window.QS_STRINGS = {
       </div>
       <span class="go" data-i18n="cards.saodi.go"></span>
     </a>
-  </section>
-
-  <section>
-    <div class="sec-title" data-i18n="secTools"></div>
+    </div>
+    <div class="rail" id="rail-tools" role="tabpanel" aria-labelledby="tab-tools" hidden>
     <a class="card monk" href="/gongshi/">
       <svg viewBox="0 0 64 64" aria-hidden="true">
         <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
@@ -782,6 +882,7 @@ window.QS_STRINGS = {
       </div>
       <span class="go" data-i18n="cards.baozuseng.go"></span>
     </a>
+    </div>
   </section>
 
   <section>
@@ -861,6 +962,97 @@ window.QS_STRINGS = {
     });
     fill();
     if (document.documentElement.getAttribute('data-skin') !== 'b') window.qsRing();
+  })();
+
+  // 工具架：点分页换货架（选过的记住），左右箭头一次翻一屏，分页底下那道杠跟着滑
+  (function () {
+    var shelf = document.getElementById('shelf');
+    if (!shelf) return;
+    var KEY = 'qianshou.tab', cur = null, raf = 0;
+    var tabs = Array.prototype.slice.call(shelf.querySelectorAll('.tab'));
+    var bar = shelf.querySelector('.tab-bar'), head = shelf.querySelector('.shelf-head');
+    var prev = shelf.querySelector('.arrow[data-dir="-1"]'), next = shelf.querySelector('.arrow[data-dir="1"]');
+    var rails = { monks: document.getElementById('rail-monks'), tools: document.getElementById('rail-tools') };
+    var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function moveBar(slide) {
+      var t = tabs.filter(function (x) { return x.getAttribute('data-tab') === cur; })[0];
+      if (!t) return;
+      if (!slide) bar.style.transition = 'none';
+      bar.style.width = t.offsetWidth + 'px';
+      bar.style.transform = 'translateX(' + t.offsetLeft + 'px)';
+      if (!slide) { void bar.offsetWidth; bar.style.transition = ''; }
+    }
+    function update() {
+      raf = 0;
+      var r = rails[cur], max = r.scrollWidth - r.clientWidth;
+      if (max > 2) shelf.setAttribute('data-scroll', ''); else shelf.removeAttribute('data-scroll');
+      prev.disabled = r.scrollLeft <= 2;
+      next.disabled = r.scrollLeft >= max - 2;
+    }
+    function later() { if (!raf) raf = requestAnimationFrame(update); }
+    function select(name, byHand) {
+      if (!rails[name]) name = 'monks';
+      if (name === cur) return;
+      var from = cur;
+      cur = name;
+      tabs.forEach(function (t) {
+        var on = t.getAttribute('data-tab') === name;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+      });
+      for (var k in rails) rails[k].hidden = k !== name;
+      var r = rails[name];
+      if (byHand) {
+        r.scrollLeft = 0;
+        if (!still && from) {
+          r.style.setProperty('--from', (name === 'tools' ? 24 : -24) + 'px');
+          r.classList.remove('enter'); void r.offsetWidth; r.classList.add('enter');
+        }
+        try { localStorage.setItem(KEY, name); } catch (e) {}
+      }
+      moveBar(byHand && !still);
+      update();
+    }
+    // 一屏放几张就翻几张：电脑三张、平板两张、手机一张
+    function page(dir) {
+      var r = rails[cur], card = r.querySelector('.monk');
+      if (!card) return;
+      var gap = parseFloat(getComputedStyle(r).columnGap) || 16, step = card.offsetWidth + gap;
+      var n = Math.max(1, Math.floor((head.clientWidth - 40 + gap) / step + 0.02));
+      r.scrollBy({ left: dir * n * step, behavior: still ? 'auto' : 'smooth' });
+    }
+
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () { select(t.getAttribute('data-tab'), true); });
+    });
+    shelf.querySelector('.tabs').addEventListener('keydown', function (e) {
+      var i = tabs.indexOf(document.activeElement), j = -1;
+      if (i < 0) return;
+      if (e.key === 'ArrowRight') j = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') j = 0;
+      else if (e.key === 'End') j = tabs.length - 1;
+      if (j < 0) return;
+      e.preventDefault();
+      tabs[j].focus();
+      select(tabs[j].getAttribute('data-tab'), true);
+    });
+    prev.addEventListener('click', function () { page(-1); });
+    next.addEventListener('click', function () { page(1); });
+    for (var k in rails) rails[k].addEventListener('scroll', later, { passive: true });
+    // 换语言、字体载完、转屏，分页的字宽会变：杠跟着对齐
+    window.addEventListener('resize', function () { moveBar(false); later(); });
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(function () { moveBar(false); later(); });
+      tabs.forEach(function (t) { ro.observe(t); });
+      ro.observe(shelf);
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { moveBar(false); later(); });
+
+    var saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (e) {}
+    select(saved === 'tools' ? 'tools' : 'monks', false);
   })();
 </script>
 <script type="module">
