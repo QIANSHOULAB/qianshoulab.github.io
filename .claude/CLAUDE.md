@@ -10,6 +10,7 @@
 - 写施工单、接施工单、验收施工单之前，先读 _ops/模型选择.md：每张单第一行带「建议模型」和「档位」（低/中/高/超高/最高；按活的难度和单子写得多细一起判，挑能做成的最省一组，格式和判法都在那份文件里），会话开头对一下当前模型和档位。掌机的单（pc-butler orders 的 掌机/NNN.md）掌机自动工照这一行开会话。
 - 几尊同时干时，每尊开一个子代理，用 Agent 工具的 isolation: "worktree"：它在仓库的 .claude/worktrees/ 下拿到单独一份，互不共用工作区。推送用 git pull --rebase origin main 再 git push origin HEAD:main。
 - 产品设计记录写进 Song 的 Google 网盘「产品设计记录」文件夹（id 1l_EO2KIOb1lruVjJ0aW4zopXQpMKmxUi）下各尊的子文件夹。
+- 改完、发了版，回话里直接给最新版的网址，不等 Song 问（Song 11-22：「以后每次改完自动发网址」）。网页给页面网址；一叶笺 iPhone 版给 .ipa 下载地址 `https://github.com/QIANSHOULAB/qianye/releases/download/ios-v<版本>/Yiye-<版本>.ipa`（CI 发版完再给，SideStore 源跟着更新）；电脑程序给 Releases 里的 exe 地址。
 
 ## 仓库主人的授权
 仓库主人 Song 不写代码。2026-11-03 他的原话：「权限全开全自己决定」「能不用我授权的都不用」。照 _ops/ 里的单子干活时，下面这些都是他要的，不用再问他：
