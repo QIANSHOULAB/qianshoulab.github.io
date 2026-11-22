@@ -68,6 +68,7 @@ if (renderer) {
 
   // 霓虹线框：亮线 + 一层淡一点、略大的「光晕」+ 深紫半透明的面挡住后面
   const faceMat = new THREE.MeshBasicMaterial({ color: 0x12032a, transparent: true, opacity: 0.82, side: THREE.DoubleSide });
+  const towerMats = [];          // 千手指路：塔身那几层青色线，工具架滑到哪尊就染成那尊的颜色
   function neon(geo, color, parent, x, y, z, ry = 0, sx = 1, sy = 1, sz = 1) {
     const holder = new THREE.Group();
     holder.position.set(x, y, z); holder.rotation.y = ry; holder.scale.set(sx, sy, sz);
@@ -79,6 +80,7 @@ if (renderer) {
     halo.scale.setScalar(1.025);
     holder.add(halo);
     parent.add(holder);
+    if (parent === pagoda && color === CYAN) towerMats.push(holder.children[1].material, halo.material);
     return holder;
   }
   function roof(R, H) {          // 四角起翘的屋顶：凹面四棱锥（车床旋转 4 段）
@@ -191,6 +193,13 @@ if (renderer) {
     my = (e.clientY / window.innerHeight - 0.5) * 2;
   }, { passive: true });
 
+  // 千手指路（Song 11-22 选 B）：window.qsFocus 由页面里工具架那段脚本写。工具架到了屏幕中间，
+  // 滑一张卡，镜头就绕着宝塔走一段（第一尊在左前方，最后一尊在右前方）；塔身、地上光网、雾染成那尊的颜色；
+  // 绕塔那十个大字换卡时猛转一圈再慢下来
+  const BASE_CYAN = new THREE.Color(CYAN), BASE_A = new THREE.Color(PINK), BASE_B = new THREE.Color(VIOLET), BASE_FOG = new THREE.Color(0x1a0533);
+  const tintGoal = new THREE.Color(0x5ab4ff), tintNow = new THREE.Color(0x5ab4ff), tmp = new THREE.Color();
+  let amt = 0, orbit = 0, seen = -1, kick = 0, spun = 0;
+
   const hero = document.getElementById('hero');
   const clock = new THREE.Clock();
   const speed = still ? 0.2 : 1;
@@ -202,8 +211,22 @@ if (renderer) {
     sx += (mx - sx) * 0.04; sy += (my - sy) * 0.04;
     grid.material.uniforms.uTime.value = t;
     pagoda.rotation.y = t * 0.12;
+    const F = window.qsFocus;
+    const k = (r) => 1 - Math.pow(1 - r, dt * 60);              // 按 60 帧/秒折算的追赶系数，掉帧的手机也一样快
+    amt += (((F && F.on) || 0) - amt) * k(0.06);
+    if (F && F.color) tintGoal.set(F.color);
+    tintNow.lerp(tintGoal, k(0.05));
+    if (F && F.at !== seen) { if (seen !== -1 && amt > 0.2 && !still) kick = 1; seen = F.at; }
+    kick *= Math.pow(0.96, dt * 60);
+    spun += kick * dt * 2.2;                                     // 换卡那一下多转的角度，慢慢停住
+    const f = F && typeof F.f === 'number' ? F.f - 0.5 : 0;
+    orbit += (f * 1.2 * amt - orbit) * k(0.04);
+    towerMats.forEach((m) => { m.color.copy(BASE_CYAN).lerp(tintNow, amt * 0.85); });
+    grid.material.uniforms.uA.value.copy(BASE_A).lerp(tintNow, amt * 0.6);
+    grid.material.uniforms.uB.value.copy(BASE_B).lerp(tmp.copy(tintNow).multiplyScalar(0.6), amt * 0.5);
+    scene.fog.color.copy(BASE_FOG).lerp(tmp.copy(tintNow).multiplyScalar(0.28), amt * 0.6);
     glyphs.forEach((s) => {
-      const u = s.userData, a = u.a + t * u.sp;
+      const u = s.userData, a = u.a + t * u.sp + spun;
       s.position.set(Math.cos(a) * u.r, u.y + Math.sin(t * 0.8 + u.a) * 0.6, -48 + Math.sin(a) * u.r);
     });
     for (let i = 0; i < N; i++) {
@@ -216,7 +239,8 @@ if (renderer) {
     const s = Math.min(window.scrollY / (window.innerHeight * 1.1), 1);
     const e = s * s * (3 - 2 * s);
     const z0 = narrow ? 14 : 19;
-    camera.position.set(sx * 1.2, 2.6 + e * 1.8 - sy * 0.4, z0 + e * (-26 - z0));
+    const cx = sx * 1.2, cz = z0 + e * (-26 - z0) + 48;          // 先算好平常的位置（以塔为圆心），再绕塔转 orbit 那么多
+    camera.position.set(cx * Math.cos(orbit) + cz * Math.sin(orbit), 2.6 + e * 1.8 - sy * 0.4, -48 - cx * Math.sin(orbit) + cz * Math.cos(orbit));
     camera.lookAt(sx * 0.6, (narrow ? 7 : 10.5) + e * 2, -48);
     hero.style.opacity = String(Math.max(0, 1 - s * 2.2));
     renderer.render(scene, camera);

@@ -60,6 +60,13 @@ if (renderer) {
   }));
   bloom.scale.set(10, 10, 1);                       // 光晕收一点，只托着圈
   halo.add(bloom);
+  // 千手指路：工具架滑到哪尊，圈后面再托一团那尊颜色的光（白底贴图 × 颜色，金色那团跟着让位）
+  const tintBloom = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTexture([[0, 'rgba(255,255,255,0.6)'], [0.35, 'rgba(255,255,255,0.2)'], [1, 'rgba(255,255,255,0)']]),
+    blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
+  }));
+  tintBloom.scale.set(10, 10, 1);
+  halo.add(tintBloom);
 
   // 千手：五圈，一圈比一圈长、一圈比一圈靠后；单数圈顺转，双数圈逆转
   const LAYERS = [
@@ -72,36 +79,46 @@ if (renderer) {
   const eyeMat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false,
     // 眼睛离圈越远越暗（到屏幕边上剩 45%）：大屏幕上满屏亮色，「千手院」那个圈就出不来（Song：「颜色都是亮色，突出不了主题」）
-    uniforms: { uTime: { value: 0 }, uPixel: { value: PR * EYE }, uAspect: { value: 1 }, uEdge: { value: 0.45 } },
+    // 千手指路（Song 11-22 选 B）：uTarget 是工具架上当前那张卡在屏幕上的位置，九百六十只眼睛一起往那儿看（uLook 0~1）；
+    // uTint 是那尊的颜色，手尖的眼睛往那个色偏（uTintAmt）；uWave 是换卡以后过了几秒，一圈一圈从里往外眨一下眼
+    uniforms: { uTime: { value: 0 }, uPixel: { value: PR * EYE }, uAspect: { value: 1 }, uEdge: { value: 0.45 },
+                uTint: { value: new THREE.Color(0x5ab4ff) }, uTintAmt: { value: 0 },
+                uTarget: { value: new THREE.Vector2(0, -0.4) }, uLook: { value: 0 }, uWave: { value: 100 } },
     vertexShader: `
       attribute float aPhase; attribute float aSize; attribute vec3 aColor;
       uniform float uTime; uniform float uPixel; uniform float uAspect; uniform float uEdge;
-      varying float vOpen; varying vec3 vColor; varying float vDim;
+      uniform vec3 uTint; uniform float uTintAmt; uniform vec2 uTarget; uniform float uLook; uniform float uWave;
+      varying float vOpen; varying vec3 vColor; varying float vDim; varying vec2 vLook;
       void main() {
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_Position = projectionMatrix * mv;
         gl_PointSize = aSize * uPixel * (16.0 / -mv.z);
         float t = fract(uTime * 0.11 + aPhase);
         float shut = smoothstep(0.0, 0.015, t) * (1.0 - smoothstep(0.025, 0.045, t));
-        vOpen = 1.0 - shut;
-        vColor = aColor;
+        float w = uWave - (length(position.xy) - 4.0) * 0.045 - aPhase * 0.06;     // 离圈越远眨得越晚：一道波往外荡
+        float wink = smoothstep(0.0, 0.05, w) * (1.0 - smoothstep(0.1, 0.17, w));
+        vOpen = (1.0 - shut) * (1.0 - wink);
+        vColor = mix(aColor, uTint, uTintAmt);
         vec2 ndc = gl_Position.xy / gl_Position.w;
         vDim = mix(1.0, uEdge, smoothstep(0.55, 1.6, length(vec2(ndc.x * uAspect, ndc.y))));
+        vec2 d = vec2((uTarget.x - ndc.x) * uAspect, uTarget.y - ndc.y);
+        vLook = d / (length(d) + 0.08) * uLook;
       }`,
     fragmentShader: `
-      varying float vOpen; varying vec3 vColor; varying float vDim;
+      varying float vOpen; varying vec3 vColor; varying float vDim; varying vec2 vLook;
       void main() {
         vec2 p = gl_PointCoord * 2.0 - 1.0;
+        vec2 look = vec2(vLook.x * 0.32, -vLook.y * 0.14);          // 眼珠往卡片那边挪（屏幕 y 朝上，点精灵 y 朝下）
         float lid = 0.5 * (1.0 - p.x * p.x) * max(vOpen, 0.05);
         float d = abs(p.y) - lid;
         float inside = (1.0 - smoothstep(-0.05, 0.03, d)) * step(abs(p.x), 1.0);
         float rim = (1.0 - smoothstep(0.0, 0.07, abs(d))) * step(abs(p.x), 0.98);
-        float r = length(p);
+        float r = length(p - look);
         float iris = 1.0 - smoothstep(0.26, 0.32, r);
         float pupil = 1.0 - smoothstep(0.1, 0.15, r);
         vec3 col = mix(vec3(1.0, 0.93, 0.82) * 0.7, vColor, iris);   // 眼白不那么白
         col = mix(col, vec3(0.06, 0.03, 0.01), pupil);
-        float glow = exp(-r * r * 2.6) * 0.3;
+        float glow = exp(-dot(p, p) * 2.6) * 0.3;
         vec3 c = col * inside + vColor * rim * 1.3 + vColor * glow;
         float a = max(max(inside, rim), glow);
         if (a < 0.02) discard;
@@ -221,6 +238,12 @@ if (renderer) {
     ty = (e.clientX / window.innerWidth - 0.5) * 0.7;
   }, { passive: true });
 
+  // 千手指路：window.qsFocus 由页面里工具架那段脚本写（当前哪张卡、第几张、什么颜色、工具架离屏幕正中多近 on）
+  const ENSO = new THREE.Color(0xffc06a), ENSO_IN = new THREE.Color(0xfff1d6);
+  const tintGoal = new THREE.Color(0x5ab4ff), tintNow = new THREE.Color(0x5ab4ff);
+  const look = new THREE.Vector2(0, -0.4);
+  let amt = 0, swing = 0, turn = 0, seen = -1, wave = 100;
+
   const clock = new THREE.Clock();
   const speed = still ? 0.25 : 1;
   function frame() {
@@ -230,11 +253,36 @@ if (renderer) {
     const t = clock.elapsedTime * speed;
     rx += (tx - rx) * 0.05;
     ry += (ty - ry) * 0.05;
+    // 千手指路：工具架越靠屏幕正中越听它的；滑一张，整圈千手往那边偏、往那边拧一下，眼睛一起盯过去
+    const F = window.qsFocus;
+    const k = (r) => 1 - Math.pow(1 - r, dt * 60);              // 按 60 帧/秒折算的追赶系数，掉帧的手机也一样快
+    amt += (((F && F.on) || 0) - amt) * k(0.06);
+    if (F && F.color) tintGoal.set(F.color);
+    tintNow.lerp(tintGoal, k(0.05));
+    if (F && F.at !== seen) { if (seen !== -1 && amt > 0.2 && !still) wave = 0; seen = F.at; }
+    wave += dt;
+    const f = F && typeof F.f === 'number' ? F.f - 0.5 : 0;
+    swing += (f * 0.7 * amt - swing) * k(0.045);
+    turn += (f * 1.1 * amt - turn) * k(0.045);
+    if (F && F.el && amt > 0.01) {
+      const b = F.el.getBoundingClientRect();
+      look.lerp({ x: (b.left + b.width / 2) / window.innerWidth * 2 - 1, y: 1 - (b.top + b.height * 0.35) / window.innerHeight * 2 }, k(0.12));
+    }
+    eyeMat.uniforms.uTarget.value.copy(look);
+    eyeMat.uniforms.uLook.value = amt;
+    eyeMat.uniforms.uTint.value.copy(tintNow);
+    eyeMat.uniforms.uTintAmt.value = amt * 0.7;
+    eyeMat.uniforms.uWave.value = wave;
+    enso.material.color.copy(ENSO).lerp(tintNow, amt * 0.75);
+    ensoInner.material.color.copy(ENSO_IN).lerp(tintNow, amt * 0.4);
+    tintBloom.material.color.copy(tintNow);
+    tintBloom.material.opacity = amt * 0.55;
     halo.rotation.x = rx + Math.sin(t * 0.2) * 0.06;
-    halo.rotation.y = ry + Math.cos(t * 0.17) * 0.05;
+    halo.rotation.y = ry + Math.cos(t * 0.17) * 0.05 + swing;
+    halo.rotation.z = turn;
     layers.forEach((g, i) => { g.rotation.z = t * (i % 2 ? -1 : 1) * spins[i]; });
     enso.rotation.z = Math.PI * 0.3 + Math.sin(t * 0.35) * 0.06;
-    bloom.material.opacity = 0.75 + Math.sin(t * 1.3) * 0.12;
+    bloom.material.opacity = (0.75 + Math.sin(t * 1.3) * 0.12) * (1 - amt * 0.7);
     eyeMat.uniforms.uTime.value = t;
     for (let i = 0; i < EMBERS; i++) {
       emberPos[i * 3 + 1] += emberVel[i] * dt * speed;

@@ -11,6 +11,7 @@ Cyber Zen · Hardcore Tools.
 - Two skins, picked at random on each visit: A “Thousand Hands” (a halo of hands and eyes) or B “Cyber Gate” (neon gate and pagoda). Add `?a` or `?b` to the URL to pick one.
 - The 3D is drawn live with three.js, no images: `scene-a.js`, `scene-b.js`.
 - Tools sit on two tabs, **Office Tools** and **Odd Jobs**; cards swipe sideways (arrows on desktop). The last tab you picked is remembered.
+- Swipe to a tool and the whole temple follows it: the thousand hands turn, every eye looks at that card and the page takes on its color (skin B: the camera walks around the pagoda). Each card's color is its `data-tint`.
 - All homepage copy, both languages, lives in one place: `QS_STRINGS` near the top of `index.html`.
 - Served by GitHub Pages from the root of `main`.
 
@@ -46,6 +47,7 @@ Odd jobs:
   想指定就在网址后面加 `?a` 或 `?b`。
 - 3D 是网页自己用 three.js 现画的，没有图片：`scene-a.js`、`scene-b.js`。
 - 工具分两页：**办公工具**、**小工具**；卡片左右滑（电脑上右上角有箭头）。上次看哪页，下次打开还是那页。
+- 千手指路：滑到哪尊，背后跟着它——千手往那边转、九百六十只眼睛一起盯着那张卡、整页染成它的颜色（赛博山门那套是镜头绕着宝塔走）。每张卡的颜色写在它的 `data-tint`，新加一尊记得写。
 - 首页中英两套字全在一处：`index.html` 顶上的 `QS_STRINGS`。
 - GitHub Pages 从 `main` 分支根目录发布。
 
