@@ -2,6 +2,7 @@ import SwiftUI
 
 // 工时榨汁机的界面：开始、结束两个大框（边打边加冒号），「现在」一按填上，次日结束一拨；
 // 答案带出实际换型分钟数；休息表就地改：改起止、改名字、加一段、删一段、恢复默认，存在这台手机上。
+// 134 起长相照网页 index.html（深色工单皮，样子在 GongShiLook.swift）。网页顶上切三个工具的标签和 EN/中文 不搬：app 里从工具箱进出，只要中文。
 
 enum GongShiTool {
     static let entry = ToolEntry(id: "gongshi", name: GongShiStrings.name, sub: GongShiStrings.tile, symbol: "timer") {
@@ -58,34 +59,42 @@ struct GongShiView: View {
     var body: some View {
         let shown = GongShi.render(start: shownStart, end: shownEnd, nextDay: shownNext,
                                    startFinal: focus != .start, endFinal: focus != .end, rules: rules)
-        ToolPage(title: GongShiStrings.name, sub: GongShiStrings.sub) {
-            PaperCard {
-                timeRow(GongShiStrings.start, text: timeBinding(start: true), field: .start, placeholder: "830") {
-                    setNow(start: true)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(GongShiStrings.name).font(GS.ui(22, bold: true)).foregroundStyle(GS.ink)
+                    Text(GongShiStrings.sub).font(GS.ui(15)).foregroundStyle(GS.muted).lineSpacing(4)
                 }
-                divider
-                timeRow(GongShiStrings.end, text: timeBinding(start: false), field: .end, placeholder: "1321") {
-                    setNow(start: false)
+                GSCard(padding: EdgeInsets(top: 2, leading: 14, bottom: 14, trailing: 14)) {
+                    timeRow(GongShiStrings.start, text: timeBinding(start: true), field: .start, placeholder: "830",
+                            bad: GongShi.parse(shownStart, final: focus != .start) == .bad) {
+                        setNow(start: true)
+                    }
+                    timeRow(GongShiStrings.end, text: timeBinding(start: false), field: .end, placeholder: "1321",
+                            bad: GongShi.parse(shownEnd, final: focus != .end) == .bad) {
+                        setNow(start: false)
+                    }
+                    Toggle(isOn: Binding(get: { shownNext }, set: { v in touch(); next = v })) {
+                        Text(GongShiStrings.nextDay).font(GS.ui(16, bold: true)).foregroundStyle(GS.ink)
+                    }
+                    .toggleStyle(GSSwitch())
+                    .padding(.top, 14)
                 }
-                divider
-                Toggle(isOn: Binding(get: { shownNext }, set: { v in touch(); next = v })) {
-                    Text(GongShiStrings.nextDay).font(Paper.serif(16))
-                }
-                .tint(Paper.indigo)
-                .frame(minHeight: 52)
+                band(shown)
+                ledger(shown.result, days: shownNext ? 1 : 0)
+                Text(GongShiStrings.foot(on: GongShi.fmt(rules.on), off: GongShi.fmt(rules.off))
+                     + (GongShi.isDefault(rules) ? "" : " · " + GongShiStrings.footCustom))
+                    .font(GS.ui(12.5)).foregroundStyle(GS.muted)
+                    .padding(.horizontal, 2)
             }
-            VStack(alignment: .leading, spacing: 10) {
-                AnswerBand(label: GongShiStrings.band, value: shown.big, unit: GongShiStrings.unit, line: shown.line,
-                           chip: touched ? nil : GongShiStrings.chip)
-                if shown.showFix {
-                    InkButton(title: GongShiStrings.fix, solid: true) { touch(); next = true }
-                }
-            }
-            ledger(shown.result, days: shownNext ? 1 : 0)
-            Text(GongShiStrings.foot(on: GongShi.fmt(rules.on), off: GongShi.fmt(rules.off))
-                 + (GongShi.isDefault(rules) ? "" : " · " + GongShiStrings.footCustom))
-                .font(Paper.serif(12)).foregroundStyle(Paper.inkSoft)
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 32)
         }
+        .scrollDismissesKeyboard(.interactively)
+        .background(GS.bg.ignoresSafeArea())
+        .environment(\.colorScheme, .dark)
+        .toolChrome(tint: GS.accent, dark: true)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -93,10 +102,6 @@ struct GongShiView: View {
             }
         }
         .onChange(of: focus) { old, _ in blurred(old) }
-    }
-
-    private var divider: some View {
-        Rectangle().fill(Paper.rule.opacity(0.45)).frame(height: 1).padding(.vertical, 4)
     }
 
     // 第一次打开填个例子（08:30 → 13:21），一动就算自己的
@@ -152,31 +157,70 @@ struct GongShiView: View {
         }
     }
 
-    private func timeRow(_ label: String, text: Binding<String>, field: Field, placeholder: String, now: @escaping () -> Void) -> some View {
+    /// 网页 .row：50 宽的字 | 时间框 | 亮蓝「现在」，底下一条细线
+    private func timeRow(_ label: String, text: Binding<String>, field: Field, placeholder: String, bad: Bool, now: @escaping () -> Void) -> some View {
         HStack(spacing: 10) {
-            Text(label).font(Paper.serif(17)).bold().frame(width: 44, alignment: .leading)
-            BigField(placeholder: placeholder, text: text, keyboard: .numberPad, size: 32)
+            Text(label).font(GS.ui(16, bold: true)).foregroundStyle(GS.ink).frame(width: 50, alignment: .leading)
+            GSTimeField(placeholder: placeholder, text: text, bad: bad, focused: focus == field)
                 .focused($focus, equals: field)
             Button(action: now) {
-                Text(GongShiStrings.now).font(Paper.serif(16))
-                    .frame(minWidth: 64, minHeight: 58)
-                    .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Paper.ink, lineWidth: 1.5))
+                Text(GongShiStrings.now).font(GS.ui(15, bold: true)).foregroundStyle(GS.onAccent)
+                    .padding(.horizontal, 14)
+                    .frame(minWidth: 64, minHeight: 54)
+                    .background(GS.accent, in: RoundedRectangle(cornerRadius: 8))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(GSPress())
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 12)
+        .overlay(alignment: .bottom) { GS.line.frame(height: 1) }
     }
 
-    // ------------------------------------------------------------ 休息表
+    /// 网页 .band：深蓝答案带，大数字 80；结束比开始早时底下一个白底「改成次日」
+    private func band(_ shown: GongShi.Shown) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text(GongShiStrings.band).font(GS.ui(14, bold: true))
+                Spacer()
+                if !touched {
+                    Text(GongShiStrings.chip).font(GS.ui(12, bold: true)).foregroundStyle(GS.bandMuted)
+                        .padding(.horizontal, 9).padding(.vertical, 4)
+                        .overlay(Capsule().strokeBorder(GS.bandMuted, lineWidth: 1))
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(shown.big).font(GS.num(80, heavy: true)).monospacedDigit().tracking(0.8)
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                Text(GongShiStrings.unit).font(GS.ui(16, bold: true)).foregroundStyle(GS.bandMuted)
+            }
+            .padding(.top, 4)
+            Text(shown.line).font(GS.ui(15)).foregroundStyle(GS.bandMuted).padding(.top, 8)
+            if shown.showFix {
+                Button { touch(); next = true } label: {
+                    Text(GongShiStrings.fix).font(GS.ui(15, bold: true)).foregroundStyle(GS.band)
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(GS.bandInk, in: RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(GSPress())
+                .padding(.top, 10)
+            }
+        }
+        .foregroundStyle(GS.bandInk)
+        .padding(EdgeInsets(top: 14, leading: 16, bottom: 16, trailing: 16))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(GS.band, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    // ------------------------------------------------------------ 休息表（网页 .ledger）
     @ViewBuilder
     private func ledger(_ res: GongShi.Result?, days: Int) -> some View {
-        PaperCard {
-            HStack {
-                Text(GongShiStrings.breaks).font(Paper.brush(22, relativeTo: .title3))
+        GSCard(padding: EdgeInsets(top: 12, leading: 14, bottom: 4, trailing: 14)) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(GongShiStrings.breaks)
                 Spacer()
-                Text(GongShiStrings.deducted).font(Paper.serif(13)).foregroundStyle(Paper.inkSoft)
+                Text(GongShiStrings.deducted).opacity(draft == nil ? 1 : 0)
             }
-            .padding(.bottom, 6)
+            .font(GS.ui(13, bold: true)).foregroundStyle(GS.muted)
+            .padding(.bottom, 4)
             if draft != nil {
                 editor
             } else {
@@ -187,8 +231,9 @@ struct GongShiView: View {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, it in
                     ledgerRow(it.0, it.1, it.2)
                 }
-                InkButton(title: GongShiStrings.edit) { openEditor() }
-                    .padding(.top, 10)
+                GSGhost(title: GongShiStrings.edit) { openEditor() }
+                    .padding(.vertical, 10)
+                    .overlay(alignment: .top) { GS.line.frame(height: 1) }
             }
         }
     }
@@ -207,75 +252,100 @@ struct GongShiView: View {
         return out
     }
 
+    /// 一行：起止（数字 18）| 名字（14 灰）| 扣的分钟（金色 20；不扣的灰「—」）
     private func ledgerRow(_ t: String, _ n: String, _ v: Int) -> some View {
-        HStack {
-            Text(t).font(.system(size: 18, weight: .semibold, design: .rounded).monospacedDigit()).frame(width: 120, alignment: .leading)
-            Text(n).font(Paper.serif(15))
-            Spacer()
-            Text(v > 0 ? "−\(v)" : "—").font(.system(size: 18, weight: .bold, design: .rounded).monospacedDigit())
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(t).font(GS.num(18)).monospacedDigit().foregroundStyle(v > 0 ? GS.ink : GS.muted)
+            Text(n).font(GS.ui(14)).foregroundStyle(GS.muted).lineLimit(1)
+            Spacer(minLength: 0)
+            Text(v > 0 ? "−\(v)" : "—")
+                .font(v > 0 ? GS.num(20) : GS.ui(20))
+                .monospacedDigit()
+                .foregroundStyle(v > 0 ? GS.deduct : GS.faint)
         }
-        .opacity(v > 0 ? 1 : 0.5)
-        .frame(minHeight: 40)
+        .padding(.vertical, 9)
+        .overlay(alignment: .top) { GS.line.frame(height: 1) }
     }
 
     @ViewBuilder
     private var editor: some View {
         if let d = draft {
-            HStack(spacing: 10) {
-                Text(GongShiStrings.clockIn).font(Paper.serif(15))
-                smallTime(Binding(get: { draft?.on ?? "" }, set: { draft?.on = GongShi.mask($0); applyDraft(live: true) }), "815", .on)
-                Text(GongShiStrings.clockOut).font(Paper.serif(15))
-                smallTime(Binding(get: { draft?.off ?? "" }, set: { draft?.off = GongShi.mask($0); applyDraft(live: true) }), "2030", .off)
-            }
-            .padding(.bottom, 8)
             ForEach(Array(d.rows.enumerated()), id: \.element.id) { i, _ in
                 HStack(spacing: 6) {
-                    smallTime(Binding(get: { row(i)?.s ?? "" }, set: { v in setRow(i) { $0.s = GongShi.mask(v) } }), "开始", .rowS(i))
-                    Text("–")
-                    smallTime(Binding(get: { row(i)?.e ?? "" }, set: { v in setRow(i) { $0.e = GongShi.mask(v) } }), "结束", .rowE(i))
-                    TextField(GongShiStrings.breakName, text: Binding(get: { row(i)?.name ?? "" },
-                                                                    set: { v in setRow(i) { $0.name = String(v.prefix(GongShiStrings.nameMax)) } }))
-                        .font(Paper.serif(15))
+                    GSTimeField(placeholder: "开始", text: Binding(get: { row(i)?.s ?? "" }, set: { v in setRow(i) { $0.s = GongShi.mask(v) } }),
+                                small: true, focused: focus == .rowS(i))
+                        .frame(width: 68)
+                        .focused($focus, equals: .rowS(i))
+                        .accessibilityLabel("第 \(i + 1) 段开始")
+                    Text("–").font(GS.ui(15)).foregroundStyle(GS.muted)
+                    GSTimeField(placeholder: "结束", text: Binding(get: { row(i)?.e ?? "" }, set: { v in setRow(i) { $0.e = GongShi.mask(v) } }),
+                                small: true, focused: focus == .rowE(i))
+                        .frame(width: 68)
+                        .focused($focus, equals: .rowE(i))
+                        .accessibilityLabel("第 \(i + 1) 段结束")
+                    TextField("", text: Binding(get: { row(i)?.name ?? "" },
+                                                set: { v in setRow(i) { $0.name = String(v.prefix(GongShiStrings.nameMax)) } }),
+                              prompt: Text(GongShiStrings.breakName).foregroundColor(GS.faint))
+                        .font(GS.ui(15, bold: true))
+                        .foregroundStyle(GS.ink)
                         .padding(.horizontal, 8)
-                        .frame(minHeight: 48)
-                        .background(Paper.field, in: RoundedRectangle(cornerRadius: 6))
+                        .frame(height: 40)
+                        .background(GS.surface, in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(GS.fieldLine, lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: 7).stroke(GS.accent, lineWidth: 2).padding(-2).opacity(focus == .rowName(i) ? 1 : 0))
                         .focused($focus, equals: .rowName(i))
+                        .accessibilityLabel("第 \(i + 1) 段叫什么")
                     Button {
                         draft?.rows.remove(at: i)
                         applyDraft()
                     } label: {
-                        Image(systemName: "xmark").font(.system(size: 16, weight: .bold)).frame(width: 44, height: 48)
+                        Text("×").font(GS.ui(24)).foregroundStyle(GS.muted).frame(width: 34, height: 40).contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(GSPress())
                     .accessibilityLabel("删掉第 \(i + 1) 段")
                 }
+                .padding(.vertical, 8)
+                .overlay(alignment: .top) { GS.line.frame(height: 1) }
             }
-            HStack(spacing: 10) {
-                InkButton(title: GongShiStrings.add) {
-                    guard (draft?.rows.count ?? 0) < GongShi.maxBreaks else { return }
-                    draft?.rows.append(DraftRow(s: "", e: "", name: ""))
-                    focus = .rowS((draft?.rows.count ?? 1) - 1)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    shiftField(GongShiStrings.clockIn, Binding(get: { draft?.on ?? "" }, set: { draft?.on = GongShi.mask($0); applyDraft(live: true) }), "815", .on)
+                    shiftField(GongShiStrings.clockOut, Binding(get: { draft?.off ?? "" }, set: { draft?.off = GongShi.mask($0); applyDraft(live: true) }), "2030", .off)
                 }
-                InkButton(title: GongShiStrings.reset) {
-                    draft = Draft.from(.defaults)
-                    applyDraft()
+                HStack(spacing: 8) {
+                    GSGhost(title: GongShiStrings.add) {
+                        guard (draft?.rows.count ?? 0) < GongShi.maxBreaks else { return }
+                        draft?.rows.append(DraftRow(s: "", e: "", name: ""))
+                        focus = .rowS((draft?.rows.count ?? 1) - 1)
+                    }
+                    .disabled(d.rows.count >= GongShi.maxBreaks)
+                    .opacity(d.rows.count >= GongShi.maxBreaks ? 0.45 : 1)
+                    GSGhost(title: GongShiStrings.reset) {
+                        draft = Draft.from(.defaults)
+                        applyDraft()
+                    }
+                    Button { closeEditor() } label: {
+                        Text(GongShiStrings.done).font(GS.ui(15, bold: true)).foregroundStyle(GS.onAccent)
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                            .background(GS.accent, in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(GSPress())
                 }
-                InkButton(title: GongShiStrings.done, solid: true) { closeEditor() }
+                Text(d.note).font(GS.ui(12.5)).foregroundStyle(d.bad ? GS.warn : GS.muted)
             }
-            .padding(.top, 10)
-            Text(d.note).font(Paper.serif(13)).foregroundStyle(d.bad ? Paper.seal : Paper.inkSoft).padding(.top, 6)
+            .padding(.vertical, 12)
+            .overlay(alignment: .top) { GS.line.frame(height: 1) }
         }
     }
 
-    private func smallTime(_ b: Binding<String>, _ ph: String, _ f: Field) -> some View {
-        TextField(ph, text: b)
-            .keyboardType(.numberPad)
-            .multilineTextAlignment(.center)
-            .font(.system(size: 18, weight: .semibold, design: .rounded).monospacedDigit())
-            .frame(width: 72, height: 48)
-            .background(Paper.field, in: RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Paper.rule, lineWidth: 1))
-            .focused($focus, equals: f)
+    /// 网页 .shift：「上班」+ 小时间框
+    private func shiftField(_ label: String, _ b: Binding<String>, _ ph: String, _ f: Field) -> some View {
+        HStack(spacing: 8) {
+            Text(label).font(GS.ui(15, bold: true)).foregroundStyle(GS.ink)
+            GSTimeField(placeholder: ph, text: b, small: true, focused: focus == f)
+                .focused($focus, equals: f)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func row(_ i: Int) -> DraftRow? {

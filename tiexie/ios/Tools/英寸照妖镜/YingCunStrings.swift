@@ -8,7 +8,7 @@ enum YingCunStrings {
     static let faceIdle = "拍照"
     static let faceBusy = "照妖中"
     static let hintTitle = "对着检查表拍"
-    static let hintText = "尺寸、公差、控制范围当场现原形。\n认字在手机里跑，照片不出手机。"
+    static let hintText = "尺寸、公差、控制范围当场现原形。"
     static let album = "相册"
     static let stepOrient = "照片扶正中…"
     static let stepRead = "认字中…"

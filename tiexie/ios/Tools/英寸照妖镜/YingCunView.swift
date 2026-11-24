@@ -2,9 +2,11 @@ import SwiftUI
 import PhotosUI
 import UIKit
 
-// 英寸照妖镜的界面：宣纸页上，标题、两种模式，中间一块墨色镜龛里挂网页版那面照妖镜（八卦镜框、藤蔓，镜面就是快门），
-// 下面是结果图：红字写在原图上，点红字改数，能两指放大、能横过来看，能存图。
-// 镜子的几层（藤蔓后层带镜光、外圈法阵、八卦镜框、藤蔓前层）是网页版自己画出来截的透明图（zhaoyao-*.webp），镜面这里画。
+// 英寸照妖镜的界面：照网页 inch/index.html（134 起长相也照网页：深色工单皮，样子在 YingCunLook.swift）。
+// 一条竖栏：标题 → 两种模式 → 照妖镜（八卦镜框、藤蔓、萤火，镜面就是快门，直接放在页面上）→ 进度 → 提示 → 相册 → 结果图。
+// 结果图：红字写在原图上，点红字改数，能两指放大、能横过来看，能存图。
+// 镜子的几层（藤蔓后层带镜光、外圈法阵、八卦镜框、藤蔓前层）是网页版自己画出来截的透明图（zhaoyao-*.webp），镜面、萤火这里画。
+// 网页顶上切三个工具的标签和 EN/中文 不搬：app 里从工具箱进出，只要中文。
 
 enum YingCunTool {
     static let entry = ToolEntry(id: "zhaoyao", name: YingCunStrings.name, sub: YingCunStrings.tile, symbol: "camera.metering.center.weighted") {
@@ -82,51 +84,42 @@ struct YingCunView: View {
     @State private var pinch: CGFloat = 1
     @State private var sideways = false
     @State private var flash = 0
+    /// 照过一次以后「对着检查表拍」那句就不出了（网页也是）
+    @State private var ran = false
 
     private var mode: YCMode { YCMode(rawValue: modeRaw) ?? .in2mm }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(YingCunStrings.name).font(Paper.brush(38, relativeTo: .largeTitle))
-                        Text(YingCunStrings.sub).font(Paper.serif(15, relativeTo: .subheadline)).foregroundStyle(Paper.inkSoft)
-                    }
-                    modePicker
-                    ZhaoYaoShrine(busy: vm.busy, flash: flash) { shoot() }
-                    HStack(spacing: 10) {
-                        PhotosPicker(selection: $album, maxSelectionCount: 1, matching: .images) {
-                            Text(YingCunStrings.album)
-                                .font(Paper.serif(17, relativeTo: .body))
-                                .frame(maxWidth: .infinity, minHeight: 52)
-                                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Paper.ink, lineWidth: 1.5))
+        GeometryReader { outer in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 14) {
+                        header.zIndex(2)
+                        modePicker.zIndex(2)
+                        ZhaoYaoMirror(width: outer.size.width, busy: vm.busy, flash: flash) { shoot() }
+                            .padding(.horizontal, -16)
+                            .zIndex(1)
+                        statusCard.zIndex(2)
+                        if !ran {
+                            hint.zIndex(2)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(vm.busy)
-                        if vm.drawn != nil {
-                            InkButton(title: YingCunStrings.again) { shoot() }.disabled(vm.busy)
+                        albumButton.zIndex(2)
+                        if vm.job != nil || vm.drawn != nil {
+                            result.id("result").zIndex(2)
                         }
                     }
-                    statusLine
-                    if vm.job != nil || vm.drawn != nil {
-                        result.id("result")
-                    } else if !vm.busy && vm.error == nil {
-                        PaperCard {
-                            Text(YingCunStrings.hintTitle).font(Paper.serif(16)).bold()
-                            Text(YingCunStrings.hintText).font(Paper.serif(14)).foregroundStyle(Paper.inkSoft).padding(.top, 2)
-                        }
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
+                    .padding(.bottom, 32)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 40)
-            }
-            .onChange(of: vm.drawn != nil) { _, has in
-                if has { withAnimation { proxy.scrollTo("result", anchor: .top) } }
+                .onChange(of: vm.drawn != nil) { _, has in
+                    if has { withAnimation { proxy.scrollTo("result", anchor: .top) } }
+                }
             }
         }
-        .paperPage(figures: false)
+        .background(YC.bg.ignoresSafeArea())
+        .environment(\.colorScheme, .dark)
+        .toolChrome(tint: YC.accent, dark: true)
         .onAppear {
             // 截图用：-TXDemo YES -TXSample <检查表照片>，进来就照一张
             if Demo.on, vm.job == nil, !vm.busy, let path = UserDefaults.standard.string(forKey: "TXSample"), let img = UIImage(contentsOfFile: path) { start(img) }
@@ -148,6 +141,9 @@ struct YingCunView: View {
                 vm.editing = nil
             }
             .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(20)
+            .presentationBackground(YC.surface2)
         }
         .onChange(of: album) { _, new in
             guard let it = new.first else { return }
@@ -169,54 +165,84 @@ struct YingCunView: View {
 
     private func start(_ img: UIImage) {
         zoom = 1
+        ran = true
         vm.run(img, mode: mode)
     }
 
-    // ------------------------------------------------------------ 两种模式
-    private var modePicker: some View {
-        HStack(spacing: 0) {
-            ForEach(YCMode.allCases, id: \.self) { m in
-                let on = m == mode
-                Button {
-                    modeRaw = m.rawValue
-                } label: {
-                    Text(m == .in2mm ? YingCunStrings.in2mm : YingCunStrings.mm2in)
-                        .font(Paper.serif(16, relativeTo: .body))
-                        .bold(on)
-                        .frame(maxWidth: .infinity, minHeight: 46)
-                        .foregroundStyle(on ? Paper.paperHi : Paper.ink)
-                        .background(on ? Paper.indigo : Color.clear, in: RoundedRectangle(cornerRadius: 5))
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
+    // ------------------------------------------------------------ 标题（网页 .head：居中，30 号，字距拉开一点）
+    private var header: some View {
+        VStack(spacing: 6) {
+            Text(YingCunStrings.name).font(YC.ui(30, .bold)).tracking(1.8).foregroundStyle(YC.ink)
+            Text(YingCunStrings.sub).font(YC.ui(15)).foregroundStyle(YC.muted).multilineTextAlignment(.center).lineSpacing(5)
         }
-        .padding(3)
-        .background(Paper.field, in: RoundedRectangle(cornerRadius: 7))
-        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Paper.rule, lineWidth: 1.2))
+        .frame(maxWidth: .infinity)
+        .padding(.top, 2)
     }
 
-    // ------------------------------------------------------------ 状态
-    @ViewBuilder private var statusLine: some View {
+    // ------------------------------------------------------------ 两种模式（网页 .seg：亮蓝滑块左右滑）
+    private var modePicker: some View {
+        GeometryReader { g in
+            let half = (g.size.width - 6) / 2
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 10).fill(YC.accent)
+                    .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
+                    .frame(width: half)
+                    .offset(x: mode == .in2mm ? 0 : half)
+                    .animation(.timingCurve(0.3, 0.7, 0.2, 1, duration: 0.24), value: modeRaw)
+                HStack(spacing: 0) {
+                    ForEach(YCMode.allCases, id: \.self) { m in
+                        let on = m == mode
+                        Button {
+                            modeRaw = m.rawValue
+                        } label: {
+                            Text(m == .in2mm ? YingCunStrings.in2mm : YingCunStrings.mm2in)
+                                .font(YC.ui(16, .bold)).tracking(0.16)
+                                .foregroundStyle(on ? YC.onAccent : YC.muted)
+                                .animation(.easeOut(duration: 0.2), value: on)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                    }
+                }
+            }
+            .padding(3)
+        }
+        .frame(height: 58)
+        .background(YC.surface, in: RoundedRectangle(cornerRadius: 13))
+        .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(YC.line, lineWidth: 1))
+    }
+
+    // ------------------------------------------------------------ 进度（网页 .status：一张小卡，字 + 百分比 + 一根细条；失败时橙边、没有条）
+    @ViewBuilder private var statusCard: some View {
         if let s = vm.step {
-            let t = Self.stepText(s), p = Self.stepPct(s)
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(t).font(Paper.serif(15))
+            let p = Self.stepPct(s)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(Self.stepText(s)).font(YC.ui(15, .semibold)).foregroundStyle(YC.ink)
                     Spacer()
-                    Text("\(Int(p * 100))%").font(.system(size: 14, weight: .bold).monospacedDigit()).foregroundStyle(Paper.inkSoft)
+                    Text("\(Int(p * 100))%").font(YC.num(17)).monospacedDigit().foregroundStyle(YC.accent)
                 }
                 GeometryReader { g in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Paper.wash)
-                        Capsule().fill(Paper.indigo).frame(width: g.size.width * p)
+                        Capsule().fill(YC.line)
+                        Capsule().fill(YC.accent).frame(width: g.size.width * p)
                     }
                 }
-                .frame(height: 6)
-                .animation(.easeOut(duration: 0.4), value: p)
+                .frame(height: 4)
+                .padding(.top, 10)
+                .animation(.easeOut(duration: 0.3), value: p)
             }
+            .padding(EdgeInsets(top: 13, leading: 14, bottom: 14, trailing: 14))
+            .background(YC.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(YC.line, lineWidth: 1))
         } else if let e = vm.error {
-            Text(e).font(Paper.serif(15)).foregroundStyle(Paper.seal)
+            Text(e).font(YC.ui(15, .semibold)).foregroundStyle(YC.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(EdgeInsets(top: 13, leading: 14, bottom: 14, trailing: 14))
+                .background(YC.surface, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(YC.warn, lineWidth: 1))
         }
     }
 
@@ -238,42 +264,75 @@ struct YingCunView: View {
         }
     }
 
-    // ------------------------------------------------------------ 结果
+    // ------------------------------------------------------------ 提示 + 相册（网页 .hint、.album）
+    private var hint: some View {
+        VStack(spacing: 2) {
+            Text(YingCunStrings.hintTitle).font(YC.ui(17, .bold)).tracking(0.68).foregroundStyle(YC.ink)
+            Text(YingCunStrings.hintText).font(YC.ui(13.5)).foregroundStyle(YC.muted)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var albumButton: some View {
+        PhotosPicker(selection: $album, maxSelectionCount: 1, matching: .images) {
+            HStack(spacing: 10) {
+                Image(systemName: "photo").font(.system(size: 19, weight: .medium))
+                Text(YingCunStrings.album).font(YC.ui(16, .bold))
+            }
+            .foregroundStyle(YC.ink)
+            .frame(maxWidth: 300, minHeight: 52)
+            .background(YC.surface, in: Capsule())
+            .overlay(Capsule().strokeBorder(YC.fieldLine, lineWidth: 1))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(YCPress())
+        .disabled(vm.busy)
+        .frame(maxWidth: .infinity)
+    }
+
+    // ------------------------------------------------------------ 结果（网页 .result）
     @ViewBuilder private var result: some View {
         let sum = vm.summary(mode: mode)
         let line = sum.0, flagged = sum.1
+        let none = vm.job == nil || vm.drawn == nil
         VStack(alignment: .leading, spacing: 10) {
-            Text(line)
-                .font(Paper.serif(15, relativeTo: .subheadline)).bold()
-                .padding(.horizontal, 12).padding(.vertical, 9)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(flagged ? Color(hex: 0xffd60a, alpha: 0.35) : Paper.wash, in: RoundedRectangle(cornerRadius: 6))
+            HStack(alignment: .top, spacing: 9) {
+                Circle().fill(none ? YC.warn : (flagged ? YC.flag : YC.ok)).frame(width: 9, height: 9).padding(.top, 6)
+                Text(line).font(YC.ui(15, .bold)).foregroundStyle(YC.ink).lineSpacing(3)
+            }
             if let job = vm.job, let u = job.unit, u != (mode == .in2mm ? "in" : "mm") {
-                HStack {
-                    Text(YingCunStrings.unitWrong(u == "in" ? YingCunStrings.inches : YingCunStrings.mm)).font(Paper.serif(15))
-                    Spacer()
-                    Button(YingCunStrings.unitFix) { modeRaw = (mode == .in2mm ? YCMode.mm2in : YCMode.in2mm).rawValue }
-                        .font(Paper.serif(15)).bold()
+                HStack(spacing: 12) {
+                    Text(YingCunStrings.unitWrong(u == "in" ? YingCunStrings.inches : YingCunStrings.mm)).font(YC.ui(14)).foregroundStyle(YC.ink)
+                    Spacer(minLength: 0)
+                    Button { modeRaw = (mode == .in2mm ? YCMode.mm2in : YCMode.in2mm).rawValue } label: {
+                        Text(YingCunStrings.unitFix).font(YC.ui(14, .bold)).foregroundStyle(YC.onAccent)
+                            .padding(.horizontal, 14).frame(minHeight: 36)
+                            .background(YC.warn, in: RoundedRectangle(cornerRadius: 9))
+                    }
+                    .buttonStyle(YCPress())
                 }
-                .padding(10)
-                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Paper.seal.opacity(0.6)))
+                .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 12))
+                .background(YC.warn.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(YC.warn.opacity(0.45), lineWidth: 1))
             }
             if let d = vm.drawn {
                 picture(d)
                 if d.image.size.width > 1200 {
-                    Text(YingCunStrings.turn).font(Paper.serif(13)).foregroundStyle(Paper.inkSoft)
+                    Text(YingCunStrings.turn).font(YC.ui(13)).foregroundStyle(YC.muted)
+                        .multilineTextAlignment(.center).frame(maxWidth: .infinity)
                 }
                 HStack(spacing: 10) {
                     ShareLink(item: Image(uiImage: d.image), preview: SharePreview(YingCunStrings.fileName, image: Image(uiImage: d.image))) {
-                        Text(YingCunStrings.save)
-                            .font(Paper.serif(17, relativeTo: .body))
+                        Text(YingCunStrings.save).font(YC.ui(16, .bold)).foregroundStyle(YC.onAccent)
                             .frame(maxWidth: .infinity, minHeight: 52)
-                            .foregroundStyle(Paper.paperHi)
-                            .background(Paper.ink, in: RoundedRectangle(cornerRadius: 6))
+                            .background(YC.accent, in: RoundedRectangle(cornerRadius: 15))
                     }
-                    .buttonStyle(.plain)
-                    InkButton(title: YingCunStrings.sideways) { sideways = true }
+                    .buttonStyle(YCPress())
+                    YCButton(action: { shoot() }) { Text(YingCunStrings.again) }
+                        .disabled(vm.busy)
                 }
+                YCButton(action: { sideways = true }) { Text(YingCunStrings.sideways) }
             }
         }
     }
@@ -306,8 +365,9 @@ struct YingCunView: View {
             )
         }
         .aspectRatio(d.image.size.width / max(1, d.image.size.height), contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
-        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Paper.rule, lineWidth: 1))
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(YC.line, lineWidth: 1))
         .accessibilityLabel("换算结果：原图数字旁边的红字是换算后的值")
     }
 
@@ -328,9 +388,11 @@ private struct EditBox: Identifiable {
     var id: ObjectIdentifier { ObjectIdentifier(label.item) }
 }
 
-// ================================================================ 镜龛
-/// 墨色镜龛里那面照妖镜：镜面一按就开相机；外圈法阵慢慢转，照妖时转快、镜面扫光
-struct ZhaoYaoShrine: View {
+// ================================================================ 照妖镜（网页 .hero）
+/// 照妖镜直接放在页面上（网页就是这样，藤蔓的蓝光在深底上才亮）：整屏宽，高 = 镜子 + 56；藤蔓往上下伸出去，压在标题、按钮底下。
+/// 镜面一按就开相机；外圈法阵慢慢转，照妖时转快、镜面扫光、萤火停住
+struct ZhaoYaoMirror: View {
+    var width: CGFloat
     var busy: Bool
     var flash: Int
     var action: () -> Void
@@ -341,42 +403,35 @@ struct ZhaoYaoShrine: View {
     @Environment(\.accessibilityReduceMotion) private var reduce
 
     var body: some View {
-        GeometryReader { g in
-            let D = min(g.size.width * 0.68, 300)
-            let cx = g.size.width / 2, cy = g.size.height / 2
-            ZStack {
-                layer("zhaoyao-back", side: D * 2)
-                    .scaleEffect(grown || reduce ? 1 : 0.62)
-                    .opacity(grown || reduce ? 1 : 0)
-                TimelineView(.animation(paused: reduce)) { t in
-                    layer("zhaoyao-spin", side: D * 1.02)
-                        .rotationEffect(.degrees(clock.angle(at: t.date, busy: busy)))
-                }
-                layer("zhaoyao-rim", side: D * 1.02)
-                Button(action: action) { face(D * 0.6286) }
-                    .buttonStyle(MirrorPress())
-                    .accessibilityLabel(YingCunStrings.faceIdle)
-                Circle()
-                    .stroke(Color(hex: 0xa8c8ff, alpha: 0.9), lineWidth: 2)
-                    .shadow(color: Color(hex: 0x6fa3ff, alpha: 0.6), radius: 14)
-                    .frame(width: D, height: D)
-                    .scaleEffect(burst ? 1.75 : 0.62)
-                    .opacity(burst ? 0 : (flash > 0 ? 0.95 : 0))
-                    .allowsHitTesting(false)
-                layer("zhaoyao-front", side: D * 2)
-                    .scaleEffect(grown || reduce ? 1 : 0.62)
-                    .opacity(grown || reduce ? 1 : 0)
-                    .allowsHitTesting(false)
+        let D = min(width * 0.68, 300)
+        ZStack {
+            layer("zhaoyao-back", side: D * 2)
+                .scaleEffect(grown || reduce ? 1 : 0.62)
+                .opacity(grown || reduce ? 1 : 0)
+            if !reduce {
+                YCSpores(side: D * 2, paused: busy)
             }
-            .position(x: cx, y: cy)
+            TimelineView(.animation(paused: reduce)) { t in
+                layer("zhaoyao-spin", side: D * 1.02)
+                    .rotationEffect(.degrees(clock.angle(at: t.date, busy: busy)))
+            }
+            layer("zhaoyao-rim", side: D * 1.02)
+            Button(action: action) { face(D * 0.6286) }
+                .buttonStyle(MirrorPress())
+                .accessibilityLabel(YingCunStrings.faceIdle)
+            Circle()
+                .stroke(Color(hex: 0xa8c8ff, alpha: 0.9), lineWidth: 2)
+                .shadow(color: Color(hex: 0x6fa3ff, alpha: 0.6), radius: 14)
+                .frame(width: D, height: D)
+                .scaleEffect(burst ? 1.75 : 0.62)
+                .opacity(burst ? 0 : (flash > 0 ? 0.95 : 0))
+                .allowsHitTesting(false)
+            layer("zhaoyao-front", side: D * 2)
+                .scaleEffect(grown || reduce ? 1 : 0.62)
+                .opacity(grown || reduce ? 1 : 0)
+                .allowsHitTesting(false)
         }
-        .frame(height: 340)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(LinearGradient(colors: [Color(hex: 0x16202e), Color(hex: 0x0e141c)], startPoint: .top, endPoint: .bottom))
-        )
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Paper.rule, lineWidth: 2))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .frame(width: width, height: D + 56)
         .onAppear {
             withAnimation(.timingCurve(0.2, 0.7, 0.2, 1, duration: 2.2)) { grown = true }
         }
@@ -388,7 +443,7 @@ struct ZhaoYaoShrine: View {
     }
 
     @ViewBuilder private func layer(_ name: String, side: CGFloat) -> some View {
-        if let img = Paper.bundled(name + ".webp") {
+        if let img = YC.image(name + ".webp") {
             Image(uiImage: img).resizable().interpolation(.high).frame(width: side, height: side).allowsHitTesting(false)
         }
     }
@@ -416,7 +471,7 @@ struct ZhaoYaoShrine: View {
             VStack(spacing: 4) {
                 Image(systemName: "camera").font(.system(size: 30, weight: .regular)).opacity(0.88)
                 Text(busy ? YingCunStrings.faceBusy : YingCunStrings.faceIdle)
-                    .font(.system(size: 18, weight: .bold)).tracking(2)
+                    .font(YC.ui(18, .bold)).tracking(2.16)
             }
             .foregroundStyle(Color(hex: 0x0b1626))
         }
@@ -450,7 +505,7 @@ private struct MirrorPress: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.975 : 1)
-            .animation(.easeOut(duration: 0.18), value: configuration.isPressed)
+            .animation(.timingCurve(0.3, 0.7, 0.2, 1, duration: 0.18), value: configuration.isPressed)
     }
 }
 
@@ -481,19 +536,23 @@ private struct SidewaysViewer: View {
                     .onEnded { v in zoom = min(4, max(1, zoom * v.magnification)); pinch = 1 }
             )
         }
-        .background(Color.black)
+        .background(YC.bg)
         .ignoresSafeArea()
         .overlay(alignment: .topTrailing) {
-            Button(YingCunStrings.close, action: close)
-                .font(.system(size: 17, weight: .bold))
-                .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(.ultraThinMaterial, in: Capsule())
-                .padding(16)
+            Button(action: close) {
+                Text(YingCunStrings.close).font(YC.ui(16, .bold)).foregroundStyle(YC.ink)
+                    .padding(.horizontal, 16).frame(minHeight: 44)
+                    .background(YC.surface, in: Capsule())
+                    .overlay(Capsule().strokeBorder(YC.fieldLine, lineWidth: 1))
+            }
+            .buttonStyle(YCPress())
+            .padding(16)
         }
+        .environment(\.colorScheme, .dark)
     }
 }
 
-// ================================================================ 改数
+// ================================================================ 改数（网页底部弹出的 .sheet）
 private struct YingCunEdit: View {
     var label: YCLabel
     var job: YCJob?
@@ -507,52 +566,79 @@ private struct YingCunEdit: View {
 
     var body: some View {
         let p = YingCun.parseNum(text)
+        let bad = p == nil && !text.trimmingCharacters(in: .whitespaces).isEmpty
         let unit = mode == .in2mm ? YingCunStrings.mm : YingCunStrings.inches
-        VStack(alignment: .leading, spacing: 14) {
-            Text(YingCunStrings.edTitle).font(Paper.brush(28, relativeTo: .title))
-            Text(meta).font(Paper.serif(14)).foregroundStyle(Paper.inkSoft)
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(YingCunStrings.edTitle).font(YC.ui(18, .bold)).foregroundStyle(YC.ink)
+            Text(meta).font(YC.ui(13.5)).foregroundStyle(YC.muted).padding(.top, 2).padding(.bottom, 12)
+            HStack(spacing: 8) {
                 Button {
                     let v = text.trimmingCharacters(in: .whitespaces)
                     if v.hasPrefix("-") { text = String(v.dropFirst()) } else if v.hasPrefix("+") { text = "-" + String(v.dropFirst()) } else { text = "-" + v }
                 } label: {
-                    Text("±").font(.system(size: 26, weight: .bold)).frame(width: 58, height: 58)
-                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Paper.ink, lineWidth: 1.5))
+                    Text("±").font(YC.num(26)).foregroundStyle(YC.ink).frame(width: 54, height: 58)
+                        .background(YC.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(YC.fieldLine, lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(YCPress())
                 .accessibilityLabel(YingCunStrings.signLabel)
-                BigField(placeholder: YingCunStrings.numLabel, text: $text, keyboard: .numbersAndPunctuation, bad: p == nil && !text.trimmingCharacters(in: .whitespaces).isEmpty)
+                TextField("", text: $text)
+                    .keyboardType(.numbersAndPunctuation)
+                    .font(YC.num(34)).monospacedDigit().tracking(0.68)
+                    .foregroundStyle(YC.ink)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .padding(.horizontal, 14)
+                    .frame(height: 58)
+                    .background(YC.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(bad ? YC.warn : YC.fieldLine, lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: 13).stroke(bad ? YC.warn : YC.accent, lineWidth: 2).padding(-2).opacity(focused ? 1 : 0))
                     .focused($focused)
+                    .accessibilityLabel(YingCunStrings.numLabel)
                     .onSubmit { if let p { done(p, text.trimmingCharacters(in: .whitespaces)) } }
             }
-            if let p {
-                (Text("= ") + Text(YingCun.convert(p, mode)).bold().foregroundColor(YingCunColors.red) + Text(" " + unit))
-                    .font(.system(size: 22, weight: .semibold).monospacedDigit())
-            } else {
-                Text(YingCunStrings.numHint).font(Paper.serif(14)).foregroundStyle(Paper.inkSoft)
-            }
-            if let s = suggestion {
-                HStack {
-                    (Text(label.key == "LCL" || label.key == "UCL" ? YingCunStrings.sugCalc : YingCunStrings.sugBack) + Text(s).bold())
-                        .font(Paper.serif(15))
-                    Spacer()
-                    Button(YingCunStrings.sugUse) { text = s }.font(Paper.serif(15)).bold()
+            Group {
+                if let p {
+                    (Text("= ") + Text(YingCun.convert(p, mode) + " ").font(YC.num(22)).foregroundColor(YC.prevRed) + Text(unit))
+                } else {
+                    Text(YingCunStrings.numHint)
                 }
-                .padding(10)
-                .background(Color(hex: 0xffd60a, alpha: 0.3), in: RoundedRectangle(cornerRadius: 6))
+            }
+            .font(YC.ui(15)).foregroundStyle(YC.muted)
+            .padding(.top, 10).padding(.horizontal, 2)
+            if let s = suggestion {
+                HStack(spacing: 10) {
+                    (Text(label.key == "LCL" || label.key == "UCL" ? YingCunStrings.sugCalc : YingCunStrings.sugBack)
+                     + Text(s).font(YC.num(20)).foregroundColor(YC.flag))
+                        .font(YC.ui(14)).foregroundStyle(YC.ink)
+                    Spacer(minLength: 0)
+                    Button { text = s } label: {
+                        Text(YingCunStrings.sugUse).font(YC.ui(14, .bold)).foregroundStyle(Color(hex: 0x1a1500))
+                            .padding(.horizontal, 14).frame(minHeight: 36)
+                            .background(YC.flag, in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(YCPress())
+                }
+                .padding(.horizontal, 12).padding(.vertical, 10)
+                .background(YC.flag.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(YC.flag.opacity(0.4), lineWidth: 1))
+                .padding(.top, 12)
             }
             HStack(spacing: 10) {
-                InkButton(title: YingCunStrings.cancel, action: cancel)
-                InkButton(title: YingCunStrings.ok, solid: true) {
+                YCButton(action: cancel) { Text(YingCunStrings.cancel) }
+                YCButton(primary: true, action: {
                     if let p { done(p, text.trimmingCharacters(in: .whitespaces)) }
-                }
+                }) { Text(YingCunStrings.ok) }
                 .disabled(p == nil)
-                .opacity(p == nil ? 0.45 : 1)
             }
+            .padding(.top, 16)
             Spacer(minLength: 0)
         }
-        .padding(20)
-        .paperPage(figures: false)
+        .padding(.horizontal, 16)
+        .padding(.top, 20)
+        .padding(.bottom, 18)
+        .environment(\.colorScheme, .dark)
+        .tint(YC.accent)
         .onAppear {
             text = label.item.num?.s ?? label.item.text
             focused = true
@@ -572,8 +658,4 @@ private struct YingCunEdit: View {
         guard label.row >= 0, let k = label.key, let d = drawn, label.row < d.checks.count else { return nil }
         return d.checks[label.row].sugg[k]
     }
-}
-
-enum YingCunColors {
-    static let red = Color(hex: 0xd70015)
 }

@@ -28,7 +28,7 @@ enum GongShiStrings {
     static let add = "＋ 加一段"
     static let reset = "恢复默认"
     static let done = "完成"
-    static let noteOk = "改了马上算数，存在这台手机上。"
+    static let noteOk = "改了马上算数，只存在这台手机上。"
     static func noteBad(_ why: String) -> String { "\(why)。直接打数字，比如 1000 就是 10:00。" }
     static let badOn = "上班时间看不懂"
     static let badOff = "下班时间看不懂"
