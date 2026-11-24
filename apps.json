@@ -32,6 +32,15 @@
       },
       "versions": [
         {
+          "version": "0.3.2",
+          "buildVersion": "6",
+          "date": "2026-11-25",
+          "localizedDescription": "0.3.2：工具箱里的英寸照妖镜、工时榨汁机、角度算距离换回各自网页版的样子：深色底、网页同款数字字体，照妖镜直接放在页面上（不再挂在镜龛里），萤火照样飘；角度算距离底下多了网页上那张「原理，说人话版」。照妖镜出结果时不再顶到屏幕最上面跟返回键叠在一起。算法、认字一点没动。工具箱那一页、铁件点钞机不变。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.2/TieXie-0.3.2.ipa",
+          "size": 22230029,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.3.1",
           "buildVersion": "5",
           "date": "2026-11-24",
@@ -77,11 +86,11 @@
           "minOSVersion": "26.0"
         }
       ],
-      "version": "0.3.1",
-      "versionDate": "2026-11-24",
-      "versionDescription": "0.3.1：工具箱里的英寸照妖镜、工时榨汁机、角度算距离换回各自网页版的样子：深色底、网页同款数字字体，照妖镜直接放在页面上（不再挂在镜龛里），萤火照样飘；角度算距离底下多了网页上那张「原理，说人话版」。算法、认字一点没动。工具箱那一页、铁件点钞机不变。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.1/TieXie-0.3.1.ipa",
-      "size": 22227866
+      "version": "0.3.2",
+      "versionDate": "2026-11-25",
+      "versionDescription": "0.3.2：工具箱里的英寸照妖镜、工时榨汁机、角度算距离换回各自网页版的样子：深色底、网页同款数字字体，照妖镜直接放在页面上（不再挂在镜龛里），萤火照样飘；角度算距离底下多了网页上那张「原理，说人话版」。照妖镜出结果时不再顶到屏幕最上面跟返回键叠在一起。算法、认字一点没动。工具箱那一页、铁件点钞机不变。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.2/TieXie-0.3.2.ipa",
+      "size": 22230029
     }
   ]
 }
