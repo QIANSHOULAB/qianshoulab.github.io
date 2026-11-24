@@ -462,6 +462,24 @@ enum YingCun {
         }
     }
 
+    /// app 加的（网页版没有）：Vision 偶尔把「DIMENSION 尺寸」认成一串乱码（122 的毫米表认成「DIENRJ」），表头就找不到了。
+    /// 表头那排有 LSL、USL 却没有 DIMENSION 时，把 LSL 左边紧挨着的那个不是数的字框当 DIMENSION。只在网页版的读法读不出表时才用。
+    @discardableResult
+    static func repairHeader(_ items: [YCItem]) -> Bool {
+        guard items.count >= 6 else { return false }
+        let th = median(items.map(\.h))
+        for L in items where hdrKey(L.text) == "LSL" {
+            let row = items.filter { !$0.text.isEmpty && abs($0.cy - L.cy) < 0.6 * th }
+            let keys = row.compactMap { hdrKey($0.text) }
+            guard keys.contains("USL"), !keys.contains("DIM") else { continue }
+            let left = row.filter { $0.x1 <= L.x0 + 2 && $0.num == nil && $0.text.contains(where: { $0.isLetter }) }
+            guard let d = left.max(by: { $0.x1 < $1.x1 }), L.x0 - d.x1 < 8 * th else { continue }
+            d.text = "DIMENSION"
+            return true
+        }
+        return false
+    }
+
     /// 表上写的是哪个单位
     static func unitHint(_ items: [YCItem]) -> String? {
         for it in items {

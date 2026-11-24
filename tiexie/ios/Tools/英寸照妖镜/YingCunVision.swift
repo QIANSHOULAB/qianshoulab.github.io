@@ -315,6 +315,9 @@ enum YingCunVision {
             notes.append("余歪 框\(YingCunVision.deg(p2.quad)) 邻\(YingCunVision.deg(p2.nb)) 行\(lines.count)")
             await MainActor.run { onStep(.check) }
             let found = YingCunVision.items(lines)
+            if YingCun.headerOf(found, YingCun.median(found.map(\.h))) == nil, YingCun.repairHeader(found) {
+                notes.append("表头补了 DIMENSION")
+            }
             YingCun.prune(found)
             guard let raster = YCRaster(up) else { throw YCError.badImage }
             let job = YCJob(up: raster, items: found, angle: deg)
