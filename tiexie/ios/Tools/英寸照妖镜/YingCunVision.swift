@@ -315,6 +315,8 @@ enum YingCunVision {
             notes.append("余歪 框\(YingCunVision.deg(p2.quad)) 邻\(YingCunVision.deg(p2.nb)) 行\(lines.count)")
             await MainActor.run { onStep(.check) }
             let found = YingCunVision.items(lines)
+            let split = YingCun.splitHeaderWords(found)
+            if split > 0 { notes.append("表头拆了\(split)个") }
             if YingCun.headerOf(found, YingCun.median(found.map(\.h))) == nil, YingCun.repairHeader(found) {
                 notes.append("表头补了 DIMENSION")
             }

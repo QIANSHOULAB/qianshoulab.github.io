@@ -462,6 +462,22 @@ enum YingCun {
         }
     }
 
+    /// app 加的（网页版没有）：PaddleOCR 把「STOCK 余量」认成两个框，Vision 常认成一个，中文那半还会认成乱码（「STOCK *#」「STOCK FE」），
+    /// 整串就不像表头了。第一个词自己就是表头（LSL、STOCK、NO.……）、后面是不带数字的短尾巴时，只留第一个词。回改了几个
+    @discardableResult
+    static func splitHeaderWords(_ items: [YCItem]) -> Int {
+        var n = 0
+        for it in items where !it.text.isEmpty && hdrKey(it.text) == nil {
+            let words = it.text.split(whereSeparator: { $0.isWhitespace }).map(String.init)
+            guard words.count >= 2, let first = words.first, first.count >= 2, hdrKey(first) != nil else { continue }
+            let tail = words.dropFirst().joined()
+            guard tail.count <= 4, !tail.contains(where: { isDigit($0) }) else { continue }
+            it.text = first
+            n += 1
+        }
+        return n
+    }
+
     /// app 加的（网页版没有）：Vision 偶尔把「DIMENSION 尺寸」认成一串乱码（122 的毫米表认成「DIENRJ」），表头就找不到了。
     /// 表头那排有 LSL、USL 却没有 DIMENSION 时，把 LSL 左边紧挨着的那个不是数的字框当 DIMENSION。只在网页版的读法读不出表时才用。
     @discardableResult
