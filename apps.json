@@ -1,0 +1,36 @@
+{
+  "name": "千手院",
+  "identifier": "lab.qianshou.apps",
+  "subtitle": "千手院自家地里长的 iPhone app",
+  "description": "住进 LiveContainer 的千手院 app 都在这一个源里。加一次，出新版点一下就换。",
+  "iconURL": "https://qianshoulab.github.io/tiexie/ios/icon.png",
+  "website": "https://qianshoulab.github.io/",
+  "tintColor": "#B3352B",
+  "sourceURL": "https://qianshoulab.github.io/apps.json",
+  "apps": [
+    {
+      "name": "铁屑江湖",
+      "bundleIdentifier": "lab.qianshou.tiexie",
+      "developerName": "QIANSHOU LAB",
+      "subtitle": "机床边的武林",
+      "localizedDescription": "CNC 秘籍随身带：探头零点、刀法、布阵图，断网也翻得开。每页都能改，改完经大管家推上 GitHub，网页跟着变。工具箱里有角度算距离、工时榨汁机。",
+      "iconURL": "https://qianshoulab.github.io/tiexie/ios/icon.png",
+      "tintColor": "#B3352B",
+      "category": "utilities",
+      "screenshots": [
+        "https://qianshoulab.github.io/tiexie/ios/shots/01-home.jpg",
+        "https://qianshoulab.github.io/tiexie/ios/shots/02-book.jpg",
+        "https://qianshoulab.github.io/tiexie/ios/shots/05-toolbox.jpg",
+        "https://qianshoulab.github.io/tiexie/ios/shots/07-gongshi.jpg"
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "给秘籍拍封面、拍布阵图纸。",
+          "NSPhotoLibraryUsageDescription": "从相册挑封面和布阵图纸。"
+        }
+      },
+      "versions": []
+    }
+  ]
+}

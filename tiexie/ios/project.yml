@@ -1,0 +1,111 @@
+# 铁屑江湖 iPhone 版（施工单 120）：XcodeGen 在 CI 里生成 TieXie.xcodeproj，不手写 pbxproj。
+# 住在 LiveContainer 里：不带扩展，不用 App Group、iCloud、推送。
+# 文件按文件夹收：加工具只加 Tools/<工具>/ 和注册表一行，不改这里。
+# 字库（Fonts/）CI 里现下（tools/fetch_fonts.sh），不进仓库。
+name: TieXie
+options:
+  bundleIdPrefix: lab.qianshou
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: zh-Hans
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  TieXie:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: UI
+      - path: Shared
+      - path: Tools
+        excludes:
+          - "**/Tests/**"
+          - "**/*.md"
+      - path: Resources
+      - path: Fonts
+        buildPhase: resources
+      # 网站那份当底子：data.json、图、背景小人
+      - path: ../data.json
+        buildPhase: resources
+      - path: ../img
+        type: folder
+        buildPhase: resources
+      - path: ../ink
+        type: folder
+        buildPhase: resources
+      - path: ../wulin-ink.webp
+        buildPhase: resources
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 铁屑江湖
+        CFBundleName: TieXie
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: zh-Hans
+        CFBundleLocalizations: [zh-Hans]
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UIDesignRequiresCompatibility: true
+        UILaunchScreen:
+          UIColorName: LaunchPaper
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiredDeviceCapabilities: [arm64]
+        UIUserInterfaceStyle: Light
+        UIAppFonts: [MaShanZheng-Regular.ttf, NotoSerifSC.ttf]
+        LSApplicationQueriesSchemes: [livecontainer]
+        CFBundleURLTypes:
+          - CFBundleURLName: lab.qianshou.tiexie
+            CFBundleURLSchemes: [tiexie]
+        NSCameraUsageDescription: 给秘籍拍封面、拍布阵图纸。
+        NSPhotoLibraryUsageDescription: 从相册挑封面和布阵图纸。
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: lab.qianshou.tiexie
+        PRODUCT_NAME: TieXie
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_PREVIEWS: NO
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+  TieXieTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+      - path: Tools
+        includes:
+          - "**/Tests/*.swift"
+    dependencies:
+      - target: TieXie
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: lab.qianshou.tiexie.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+schemes:
+  TieXie:
+    build:
+      targets:
+        TieXie: all
+        TieXieTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - TieXieTests
+    archive:
+      config: Release

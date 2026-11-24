@@ -1,0 +1,187 @@
+name: 铁屑江湖 iOS
+# 铁屑江湖 iPhone 版（施工单 120，照一叶笺 qianye 的 ios.yml）：macos-26 上 XcodeGen 生成工程 → 编译 → 单测 → 模拟器截图；
+# tiexie/ios/project.yml 的 MARKETING_VERSION 没发过，就出未签名 TieXie-<版本>.ipa，建 Release tiexie-v<版本>，改千手院总源 apps.json。
+# 只在 tiexie/ios/** 和这个文件变了才跑：大管家推 data.json、img/ 不触发。
+# 一叶笺 0.7.8 死在「截图提交回 main」两趟撞车，所以：同一时间只跑一趟（不取消在跑的）；截图平时只当附件，
+# 只在发版那一下跟 apps.json 一起提交一次（[skip ci]）；推之前 pull --rebase，推不上再拉再推，最多 5 次，不许 --force。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tiexie/ios/**'
+      - '!tiexie/ios/shots/**'
+      - '!tiexie/ios/**/*.md'
+      - '.github/workflows/tiexie-ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tiexie-ios
+  cancel-in-progress: false
+
+env:
+  XCODE: /Applications/Xcode_26.6.app
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode 26 + XcodeGen
+        run: |
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          brew install xcodegen
+          xcodegen --version
+
+      - name: 字库（OFL，整套）
+        run: bash tiexie/ios/ci/fetch_fonts.sh
+
+      - name: 生成工程
+        run: cd tiexie/ios && xcodegen generate
+
+      - name: 挑模拟器
+        run: python3 tiexie/ios/ci/pick_sim.py >> "$GITHUB_ENV"
+
+      - name: 编译 + 单测（模拟器）
+        run: |
+          set -o pipefail
+          xcodebuild -project tiexie/ios/TieXie.xcodeproj -scheme TieXie -configuration Debug \
+            -destination "id=$SIM_UDID" -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO test 2>&1 | tee build.log | xcbeautify --renderer github-actions
+
+      - name: 编不过 / 测不过：把错误原样贴出来
+        if: failure()
+        run: |
+          grep -E "error:|failed|XCTAssert" build.log | sort -u | head -120 || true
+
+      - name: 包里有没有字、秘籍、图
+        run: |
+          APP=build/Build/Products/Debug-iphonesimulator/TieXie.app
+          ls -la "$APP" | head -40
+          for f in MaShanZheng-Regular.ttf NotoSerifSC.ttf data.json img/vm10.jpg ink/leap.webp wulin-ink.webp; do
+            test -e "$APP/$f" || { echo "::error::包里没有 $f"; exit 1; }
+          done
+
+      - name: 模拟器截图
+        run: bash tiexie/ios/ci/shots.sh "$SIM_UDID" build/Build/Products/Debug-iphonesimulator/TieXie.app shots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tiexie-shots
+          path: shots
+          if-no-files-found: ignore
+
+  # 验收：删掉一个工具 = 删它的文件夹 + 注册表一行，照样编译、照样过测试
+  tool-split:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode 26 + XcodeGen
+        run: |
+          sudo xcode-select -s "$XCODE"
+          brew install xcodegen
+      - name: 字库
+        run: bash tiexie/ios/ci/fetch_fonts.sh
+      - name: 拆掉工时榨汁机
+        run: |
+          cd tiexie/ios
+          rm -rf Tools/GongShi
+          grep -v 'GongShiTool.entry' Tools/Registry.swift > /tmp/r && mv /tmp/r Tools/Registry.swift
+          cat Tools/Registry.swift
+          xcodegen generate
+      - name: 照样编译、照样过测试
+        run: |
+          set -o pipefail
+          SIM=$(python3 tiexie/ios/ci/pick_sim.py | grep SIM_UDID | cut -d= -f2)
+          xcodebuild -project tiexie/ios/TieXie.xcodeproj -scheme TieXie -configuration Debug \
+            -destination "id=$SIM" -derivedDataPath build CODE_SIGNING_ALLOWED=NO test 2>&1 | xcbeautify --renderer github-actions
+
+  release:
+    needs: [build]
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.build.result == 'success' }}
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 版本号（这一版发过就不发）
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(grep -E '^\s*MARKETING_VERSION' tiexie/ios/project.yml | head -1 | sed -E 's/.*: *"?([0-9.]+)"?.*/\1/')
+          echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::版本号不对：$V"; exit 1; }
+          TAG="tiexie-v$V"
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "$TAG 发过了，不发"; echo "SKIP=1" >> "$GITHUB_ENV"; fi
+          echo "V=$V" >> "$GITHUB_ENV"; echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Xcode 26 + 字库 + 工程
+        if: env.SKIP != '1'
+        run: |
+          sudo xcode-select -s "$XCODE"
+          brew install xcodegen
+          bash tiexie/ios/ci/fetch_fonts.sh
+          cd tiexie/ios && xcodegen generate
+
+      - name: 编未签名的 .ipa
+        if: env.SKIP != '1'
+        run: |
+          set -o pipefail
+          xcodebuild -project tiexie/ios/TieXie.xcodeproj -scheme TieXie -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | xcbeautify --renderer github-actions
+          rm -rf out && mkdir -p out/Payload
+          cp -R build/Build/Products/Release-iphoneos/TieXie.app out/Payload/
+          (cd out && zip -qry "../TieXie-$V.ipa" Payload)
+          ls -la "TieXie-$V.ipa"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" -c "Print :CFBundleShortVersionString" -c "Print :MinimumOSVersion" out/Payload/TieXie.app/Info.plist
+          plutil -convert json -o info.json out/Payload/TieXie.app/Info.plist
+
+      - name: 发 Releases
+        if: env.SKIP != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "TieXie-$V.ipa" --clobber
+          else
+            gh release create "$TAG" "TieXie-$V.ipa" --target "$GITHUB_SHA" --title "铁屑江湖 iPhone $V" --notes-file tiexie/ios/release-notes.md
+          fi
+
+      - uses: actions/download-artifact@v4
+        if: env.SKIP != '1'
+        continue-on-error: true
+        with:
+          name: tiexie-shots
+          path: shots
+
+      - name: 改千手院总源 apps.json，截图一起提交一次
+        if: env.SKIP != '1'
+        run: |
+          SIZE=$(stat -f%z "TieXie-$V.ipa")
+          NAME="$(git log -1 --format=%an)"; MAIL="$(git log -1 --format=%ae)"
+          git fetch -q origin main
+          git checkout -q -B main origin/main
+          python3 tiexie/ios/ci/update_source.py "$V" "$SIZE" "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/$TAG/TieXie-$V.ipa"
+          python3 tiexie/ios/ci/check_source.py info.json
+          if ls shots/*.jpg >/dev/null 2>&1; then
+            rm -rf tiexie/ios/shots && mkdir -p tiexie/ios/shots && cp shots/*.jpg tiexie/ios/shots/
+          fi
+          git config user.name "$NAME"
+          git config user.email "$MAIL"
+          git add apps.json tiexie/ios/shots
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m "千手院总源：铁屑江湖 $V [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep 8
+          done
+          exit 1
