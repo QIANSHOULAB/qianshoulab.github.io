@@ -1,10 +1,10 @@
 #!/bin/bash
-# 模拟器截图（390 宽那台 iPhone）：宝典目录、一本书、布阵图空着、改的时候、工具箱、两个工具、设置。
+# 模拟器截图（390 宽那台 iPhone）：宝典目录、一本书、布阵图空着、改的时候、工具箱、四个工具、设置。
 # 用法：shots.sh <模拟器 UDID> <TieXie.app> <输出目录>
 set -uo pipefail
 SIM="$1"; APP="$2"; OUT="$3"
 BID=lab.qianshou.tiexie
-SCREENS="home book buzhen edit toolbox jiaodu gongshi settings"
+SCREENS="home book buzhen edit toolbox jiaodu gongshi tool-zhaoyao tool-dianchao settings"
 xcrun simctl boot "$SIM" 2>/dev/null || true
 xcrun simctl bootstatus "$SIM" -b >/dev/null
 xcrun simctl status_bar "$SIM" override --time "9:41" --dataNetwork wifi --wifiMode active --wifiBars 3 \

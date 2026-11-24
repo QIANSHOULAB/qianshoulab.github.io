@@ -70,7 +70,9 @@ final class Nav: ObservableObject {
         case "jiaodu": n.path = [.toolbox, .tool("jiaodu")]
         case "gongshi": n.path = [.toolbox, .tool("gongshi")]
         case "settings": n.path = [.settings]
-        default: break
+        default:
+            // 工具箱里的工具：-TXScreen tool-<工具 id>（122 起，加工具不用再改这里）
+            if Demo.screen.hasPrefix("tool-") { n.path = [.toolbox, .tool(String(Demo.screen.dropFirst(5)))] }
         }
     }
 }

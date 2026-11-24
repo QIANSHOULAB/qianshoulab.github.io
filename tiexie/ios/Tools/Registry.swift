@@ -5,5 +5,6 @@ enum ToolRegistry {
     static let all: [ToolEntry] = [
         JiaoDuTool.entry,   // 角度算距离 Tools/JiaoDu
         GongShiTool.entry,  // 工时榨汁机 Tools/GongShi
+        YingCunTool.entry,  // 英寸照妖镜 Tools/英寸照妖镜
     ]
 }
