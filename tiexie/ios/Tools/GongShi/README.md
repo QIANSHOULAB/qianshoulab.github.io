@@ -8,5 +8,7 @@
 - 打字：只打数字，小时后面自动加冒号（830 → 8:30，1321 → 13:21），离开框写成 08:30；「现在」填当前时间，按开始的「现在」会清掉上一单的结束。
 - 搬自：QIANSHOULAB/gongshi `index.html` v0.5.5 的 CO 那段（字在 `strings.js` 的 zh.co）。
 - 单测：`Tests/GongShiTests.swift`，十组输入 × 默认 / 改过的两套休息表，网页、app 出的字一个不差。
-- 文件：`GongShi.swift` 算法，`GongShiStrings.swift` 字，`GongShiView.swift` 界面。
-- 版本：0.1.0（铁屑江湖 0.1.0 起）。
+- 长相（134 起）：照网页版 `index.html` 的深色工单皮，颜色、字号、圆角、间距都抄它的样式表，网页只有深色一套，这里也只有一套；不套铁屑江湖的宣纸。网页顶上切三个工具的标签、EN/中文、底下的版本号不搬（app 里从工具箱进出、只要中文）。
+- 字：西文和数字用网页同款 Barlow / Barlow Condensed（SIL OFL 1.1，`Barlow/`，许可在 `Barlow/GongShi-Barlow-OFL.txt`；文件名带 `GongShi-` 前缀，几个工具带同一套字时包里不撞名），中文落到苹方，跟网页在 iPhone 上一样。字没装上就退回系统字。
+- 文件：`GongShi.swift` 算法，`GongShiStrings.swift` 字，`GongShiView.swift` 界面，`GongShiLook.swift` 长相（颜色、字、卡片、时间框、开关）。
+- 版本：0.1.0（铁屑江湖 0.1.0 起）；0.3.1 换回网页版长相。
