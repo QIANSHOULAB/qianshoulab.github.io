@@ -14,6 +14,10 @@ final class Butler: ObservableObject {
     /// 刚配上、大管家回了招呼
     @Published private(set) var greeted = false
     @Published var pairMessage: String?
+    /// 大管家递来过备用信箱的配置（设置里「备用通道：有」）
+    @Published private(set) var backupHave = false
+    /// 现在信走的是备用通道（设置里一行小字，不弹提示）
+    @Published private(set) var backupActive = false
 
     let store: Store
     let appVersion: String
@@ -24,12 +28,24 @@ final class Butler: ObservableObject {
     private var helloReq: String?
     private var helloSent = false
     private var active = false
+    // 131 备用信箱（谷歌 Firebase）：平时不连，进了备用模式才开流、写「在」
+    private var route = BackupRoute()
+    private var fbCfg: FBConfig?
+    private var fb: FBMailbox?
+    private var fbStream: FBStream?
+    private var seenLetters = SeenLetters()
+    private var lastSeenMark = Date.distantPast
+    private lazy var net = NetWatch()
 
     init(store: Store) {
         self.store = store
         self.appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
         if !store.demo, let d = Keychain.read(), let s = String(data: d, encoding: .utf8) {
             pairing = TXPairing.parse(s)
+        }
+        if !store.demo {
+            fbCfg = FBConfig.load()
+            setupFB()
         }
         store.onChange = { [weak self] in
             Task { @MainActor in await self?.flush() }
@@ -50,6 +66,7 @@ final class Butler: ObservableObject {
         }
         stop()
         pairing = p
+        setupFB()
         greeted = false
         pairMessage = "配上了，等大管家回个话"
         helloReq = UUID().uuidString
@@ -61,6 +78,7 @@ final class Butler: ObservableObject {
         stop()
         Keychain.delete()
         pairing = nil
+        fb = nil  // 备用信箱的配置不是哪个信箱的，留着；重新配对再用
         greeted = false
         online = false
         pairMessage = nil
@@ -74,16 +92,25 @@ final class Butler: ObservableObject {
         let s = MailSocket(url: url, onPush: { [weak self] push in
             Task { @MainActor in self?.handle(push) }
         }, onDown: { [weak self] _ in
-            Task { @MainActor in self?.online = false }
+            Task { @MainActor in
+                self?.online = false
+                self?.route.socketDown(Date())
+            }
         })
         socket = s
         helloSent = false
+        route.socketDown(Date())
+        if fb == nil { setupFB() }
         s.start()
         ticker?.cancel()
+        // 每 10 秒看一眼走哪条管子，每 30 秒看一眼有没有该寄的
         ticker = Task { [weak self] in
+            var n = 0
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 30_000_000_000)
-                await self?.flush()
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                n += 1
+                await self?.tickRoute()
+                if n % 3 == 0 { await self?.flush() }
             }
         }
     }
@@ -95,9 +122,104 @@ final class Butler: ObservableObject {
         client = nil
         ticker?.cancel()
         ticker = nil
+        stopFBStream()
+        route = BackupRoute()
+        backupActive = false
+    }
+
+    // ------------------------------------------------------------ 备用信箱（131）
+    private func setupFB() {
+        stopFBStream()
+        fb = nil
+        backupHave = fbCfg != nil
+        guard let cfg = fbCfg, let p = pairing else { return }
+        fb = FBMailbox(config: cfg, box: p.box, auth: FBAuth(config: cfg))
+        routeChanged()
+    }
+
+    /// 备用模式：信走 Firebase、两条都听、每 60 秒报「在」；回去：只走 Cloudflare
+    private func routeChanged() {
+        let on = route.backup && fb != nil && active
+        if on != backupActive { backupActive = on }
+        if on { startFBStream() } else { stopFBStream() }
+    }
+
+    private func startFBStream() {
+        guard fbStream == nil, let m = fb else { return }
+        let s = FBStream(mailbox: m, onLetter: { [weak self] l in
+            Task { @MainActor in await self?.receiveBackup(l) }
+        }, onState: { _ in })
+        fbStream = s
+        s.start()
+    }
+
+    private func stopFBStream() {
+        fbStream?.stop()
+        fbStream = nil
+    }
+
+    private func tickRoute() async {
+        guard fb != nil, active else { return }
+        let was = backupActive
+        route.tick(Date(), netOK: net.ok)
+        routeChanged()
+        guard backupActive else { return }
+        if Date().timeIntervalSince(lastSeenMark) >= 60 {
+            lastSeenMark = Date()
+            try? await fb?.markSeen()
+        }
+        if !was { await flush() }
+    }
+
+    /// 寄一封：平时 Cloudflare；备用模式走 Firebase（Firebase 也不通再试 Cloudflare）；Cloudflare 叫不应这一封改走 Firebase
+    private func deliver(_ env: MailEnvelope, via c: MailClient, timeout: TimeInterval = 30) async throws {
+        if backupActive, let m = fb {
+            do {
+                try await m.putLetter(mid: env.id, sealed: try c.seal(env, to: c.peer), to: c.peer)
+                return
+            } catch {
+                // 备用管子也不通：再试 Cloudflare
+            }
+        }
+        do {
+            _ = try await c.send(env, timeout: timeout)
+        } catch {
+            guard let m = fb, BackupRoute.shouldFailover(error) else { throw error }
+            route.sendFailed(Date())
+            routeChanged()
+            try await m.putLetter(mid: env.id, sealed: try c.seal(env, to: c.peer), to: c.peer)
+        }
+    }
+
+    /// Firebase 那头来的信：办了再删整封（ack）
+    private func receiveBackup(_ l: FBLetter) async {
+        guard let c = client, let m = fb else { return }
+        do {
+            let env = try c.open(l.sealed)
+            await process(env)
+            try? await m.deleteLetter(mid: l.mid)
+        } catch let e as MailError where e.isPermanent {
+            try? await m.deleteLetter(mid: l.mid)
+        } catch {
+            // 网不通：下次连上流会再给一遍
+        }
+    }
+
+    /// 大管家递来的备用信箱配置：存钥匙串，回「收到」。配置只走 Cloudflare 递，不进日志
+    private func handleDelivery(_ env: MailEnvelope) async {
+        guard !store.demo, let got = FBConfig.fromDelivery(env.data), got.config.save() else { return }
+        if fbCfg != got.config {
+            fbCfg = got.config
+            setupFB()
+        }
+        guard let c = client else { return }
+        let id = UUID().uuidString
+        let ok = MailEnvelope(kind: .request, id: id, at: ISOTime.string(), data: json(["id": id, "ask": "fb-config-ok", "of": got.id]), files: [:])
+        try? await deliver(ok, via: c)
     }
 
     private func handle(_ push: MailPush) {
+        route.socketUp(Date())
         switch push {
         case .hello(let items, let pc, let pcSeen):
             online = pc
@@ -123,27 +245,36 @@ final class Butler: ObservableObject {
         guard let c = client else { return }
         do {
             let env = try await c.receive(it)
-            // 工具箱寄的一次性的信（122 点钞机）：回信交给等着的工具，不进发件箱
-            if env.kind == .result, let re = Butler.replyTo(env.data), let waiter = toolWaiters[re] {
-                waiter(env.data)
-                try? await c.ack(it.seq)
-                return
-            }
-            if env.kind == .result, let r = try? JSONDecoder().decode(TXResult.self, from: env.data) {
-                let re = r.request ?? env.id
-                if re == helloReq {
-                    greeted = r.ok
-                    pairMessage = r.ok ? "配上了，大管家回话了" : "大管家没认：\(r.why ?? r.error ?? "")"
-                    helloReq = nil
-                } else {
-                    store.update { $0.handleResult(re: re, ok: r.ok, stale: r.stale ?? false, why: r.why ?? r.error) }
-                }
-            }
+            await process(env)
             try? await c.ack(it.seq)
         } catch let e as MailError where e.isPermanent {
             try? await c.ack(it.seq)
         } catch {
             // 网不通：下次连上再拿
+        }
+    }
+
+    /// 一封拆开的信怎么办（两条管子来的都走这里；同一封两条路都来了只办一次）
+    private func process(_ env: MailEnvelope) async {
+        guard seenLetters.first(SeenLetters.key(env)) else { return }
+        if env.kind == .delivery {
+            await handleDelivery(env)
+            return
+        }
+        // 工具箱寄的一次性的信（122 点钞机）：回信交给等着的工具，不进发件箱
+        if env.kind == .result, let re = Butler.replyTo(env.data), let waiter = toolWaiters[re] {
+            waiter(env.data)
+            return
+        }
+        if env.kind == .result, let r = try? JSONDecoder().decode(TXResult.self, from: env.data) {
+            let re = r.request ?? env.id
+            if re == helloReq {
+                greeted = r.ok
+                pairMessage = r.ok ? "配上了，大管家回话了" : "大管家没认：\(r.why ?? r.error ?? "")"
+                helloReq = nil
+            } else {
+                store.update { $0.handleResult(re: re, ok: r.ok, stale: r.stale ?? false, why: r.why ?? r.error) }
+            }
         }
     }
 
@@ -155,7 +286,7 @@ final class Butler: ObservableObject {
         if let h = helloReq, !helloSent {
             helloSent = true
             let env = MailEnvelope(kind: .request, id: h, at: ISOTime.string(), data: json(TXAsk.hello(id: h, app: appVersion)), files: [:])
-            _ = try? await c.send(env)
+            try? await deliver(env, via: c)
         }
         for p in store.state.due() {
             let ask: [String: Any]? = p.op == .put ? TXAsk.put(p, state: store.state, app: appVersion) : TXAsk.del(p, app: appVersion)
@@ -169,7 +300,7 @@ final class Butler: ObservableObject {
             }
             let env = MailEnvelope(kind: .request, id: p.req, at: ISOTime.string(), data: json(obj), files: files)
             do {
-                _ = try await c.send(env)
+                try await deliver(env, via: c)
                 store.update { $0.markSent(req: p.req) }
             } catch {
                 break  // 网不通：下回再寄
@@ -190,7 +321,7 @@ final class Butler: ObservableObject {
         toolWaiters[id] = onReply
         let env = MailEnvelope(kind: .request, id: id, at: ISOTime.string(), data: json(data), files: files)
         do {
-            _ = try await c.send(env, timeout: 60)
+            try await deliver(env, via: c, timeout: 60)
         } catch {
             toolWaiters[id] = nil
             throw error

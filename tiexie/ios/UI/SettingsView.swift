@@ -18,6 +18,12 @@ struct SettingsView: View {
                     if butler.online {
                         row("大管家", "在线")
                     }
+                    if butler.backupHave {
+                        row("备用通道", "有")
+                    }
+                    if butler.backupActive {
+                        Text("走备用通道").font(Paper.serif(13)).foregroundStyle(Paper.inkSoft)
+                    }
                 }
                 PasteButton(payloadType: String.self) { strings in
                     guard let s = strings.first else { return }
