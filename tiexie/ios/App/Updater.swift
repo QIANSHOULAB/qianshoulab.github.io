@@ -2,7 +2,10 @@ import Foundation
 import UIKit
 
 // 查新版：打开时看千手院总源 https://qianshoulab.github.io/apps.json，有新版就在设置图标上点个小红点。
-// 点了更新：先把发件箱寄一遍，再交给 LiveContainer：livecontainer://install?url=<ipa 网址，百分号编码>。
+// 点了更新：先把发件箱寄一遍，再切回 LiveContainer 本体（livecontainer://livecontainer-launch?bundle-name=ui），
+// 在本体 Sources → 千手院 → 铁屑江湖 → Install 换包。
+// 不能直接开 livecontainer://install：LiveContainer 里正跑着 app（就是我们自己）时，那个链接只弹
+// “Please restart LiveContainer to install apps.”、不装（LiveContainer 3.8.14 TweakLoader/UIKit+GuestHooks.m 的 install 分支）。
 
 struct AppUpdate: Equatable {
     var version: String
@@ -50,11 +53,6 @@ final class Updater: ObservableObject {
         return 0
     }
 
-    /// livecontainer://install?url=<百分号编码的 ipa 网址>
-    nonisolated static func installURL(_ ipa: String) -> URL? {
-        var allowed = CharacterSet.alphanumerics
-        allowed.insert(charactersIn: "-._~")
-        guard let enc = ipa.addingPercentEncoding(withAllowedCharacters: allowed) else { return nil }
-        return URL(string: "livecontainer://install?url=\(enc)")
-    }
+    /// 切回 LiveContainer 本体主屏（会先问一句 “switch to LiveContainer?”）
+    nonisolated static let homeURL = URL(string: "livecontainer://livecontainer-launch?bundle-name=ui")!
 }

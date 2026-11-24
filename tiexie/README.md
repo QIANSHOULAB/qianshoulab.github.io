@@ -29,3 +29,4 @@ Song 的 CNC 秘籍手机网站：https://qianshoulab.github.io/tiexie/
 - 2026-11-24 · 网页 · 秘籍从 `index.html` 搬进 `data.json`，页面改成读它，长相、网址一点没变（390 宽前后截图逐像素一样） · app、大管家、网页三家读同一份（施工单 120）
 - 2026-11-24 · iPhone 0.1.0 · 住进 LiveContainer：离线看、每页能改、经大管家推上 GitHub；工具箱：角度算距离、工时榨汁机 · Song：「我就不用一直去找网页了，因为那个探头我一直要用到」（施工单 120）
 - 2026-11-24 · iPhone 0.2.0 · 工具箱加英寸照妖镜（苹果本机认字，读表对账照网页版搬）、铁件点钞机（0.5.0 的脸，大管家数，圆点能手改） · Song：「把照妖镜……放到工具箱里面去」「我拍张照，他把数量数了，然后跟我讲是多少个」（施工单 122）
+- 2026-11-24 · iPhone 0.2.1 · 设置里「有新版」改成先回 LiveContainer 本体，再在 Sources 点 Install · 从 app 里直接开 `livecontainer://install` 只弹 “Please restart LiveContainer”，装不上（施工单 120 收尾）

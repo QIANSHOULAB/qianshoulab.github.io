@@ -84,10 +84,9 @@ final class MailboxTests: XCTestCase {
         XCTAssertEqual(p.boxShort.count, 6)
     }
 
-    func testInstallURLIsPercentEncoded() {
-        let u = Updater.installURL("https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.1.0/TieXie-0.1.0.ipa")
-        XCTAssertEqual(u?.absoluteString,
-                       "livecontainer://install?url=https%3A%2F%2Fgithub.com%2FQIANSHOULAB%2Fqianshoulab.github.io%2Freleases%2Fdownload%2Ftiexie-v0.1.0%2FTieXie-0.1.0.ipa")
+    func testUpdateGoesBackToLiveContainerHome() {
+        // livecontainer://install 从住在里面的 app 发出去只弹 “Please restart LiveContainer”，所以先回本体
+        XCTAssertEqual(Updater.homeURL.absoluteString, "livecontainer://livecontainer-launch?bundle-name=ui")
     }
 
     func testUpdaterReadsSource() throws {

@@ -50,7 +50,7 @@ struct SettingsView: View {
                         updating = true
                         Task {
                             await butler.flush()
-                            if let url = Updater.installURL(u.url) { openURL(url) }
+                            openURL(Updater.homeURL)
                             updating = false
                         }
                     } label: {
@@ -63,7 +63,12 @@ struct SettingsView: View {
                     }
                     .disabled(updating)
                 }
-            } header: { head("版本") }
+            } header: { head("版本") } footer: {
+                if updater.available != nil {
+                    Text("点了先回 LiveContainer：Sources → 千手院 → 铁屑江湖 → Install，选替换那项（不选 Install as New）。")
+                        .font(Paper.serif(12)).foregroundStyle(Paper.inkSoft)
+                }
+            }
         }
         .scrollContentBackground(.hidden)
         .background(PaperBackground(showFigures: false))
