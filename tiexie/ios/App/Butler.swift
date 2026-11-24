@@ -35,7 +35,7 @@ final class Butler: ObservableObject {
     private var fbStream: FBStream?
     private var seenLetters = SeenLetters()
     private var lastSeenMark = Date.distantPast
-    private lazy var net = NetWatch()
+    private lazy var net = RouteNetProbe()
 
     init(store: Store) {
         self.store = store

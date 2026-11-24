@@ -442,7 +442,7 @@ struct BackupRoute: Equatable {
 }
 
 /// 有没有网（只看系统说通不通，不发包）：「网在、WebSocket 却断了」才算 Cloudflare 的事
-final class NetWatch: @unchecked Sendable {
+final class RouteNetProbe: @unchecked Sendable {
     private let monitor = NWPathMonitor()
     private let q = DispatchQueue(label: "lab.qianshou.tiexie.netwatch")
     private var up = true
