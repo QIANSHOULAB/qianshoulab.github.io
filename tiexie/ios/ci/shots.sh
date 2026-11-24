@@ -15,8 +15,14 @@ rm -rf "$OUT"; mkdir -p "$OUT"
 fail=0; i=1
 for s in $SCREENS; do
   xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
-  xcrun simctl launch "$SIM" "$BID" -TXDemo YES -TXScreen "$s" -AppleLanguages "(zh-Hans)" -AppleLocale zh_CN >/dev/null
-  sleep 5
+  # 122：两个拍照的工具拿测试用的照片演示（照妖镜真跑一遍 Vision，要多等一会儿）
+  EXTRA=(); WAIT=5
+  case "$s" in
+    tool-zhaoyao) EXTRA=(-TXSample "$PWD/tiexie/ios/Tools/英寸照妖镜/Tests/Fixtures/s6_persp_tilt_shadow.jpg"); WAIT=40 ;;
+    tool-dianchao) EXTRA=(-TXSample "$PWD/tiexie/ios/Tools/铁件点钞机/Tests/Fixtures/demo-tray.jpg"); WAIT=8 ;;
+  esac
+  xcrun simctl launch "$SIM" "$BID" -TXDemo YES -TXScreen "$s" ${EXTRA[@]+"${EXTRA[@]}"} -AppleLanguages "(zh-Hans)" -AppleLocale zh_CN >/dev/null
+  sleep $WAIT
   png="$OUT/$(printf %02d $i)-$s.png"
   if xcrun simctl io "$SIM" screenshot --type=png "$png" >/dev/null 2>&1; then
     sips --resampleWidth 780 -s format jpeg -s formatOptions 84 "$png" --out "${png%.png}.jpg" >/dev/null && rm "$png"

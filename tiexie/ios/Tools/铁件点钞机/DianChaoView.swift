@@ -45,7 +45,10 @@ struct DianChaoView: View {
         .foregroundStyle(DCColor.white)
         .overlay(alignment: .bottom) { deck }
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .onAppear { vm.post = butler }
+        .onAppear {
+            vm.post = butler
+            if Demo.on, vm.photo == nil, let path = UserDefaults.standard.string(forKey: "TXSample"), let img = UIImage(contentsOfFile: path) { vm.showDemo(img) }
+        }
         .onDisappear { vm.leave() }
         .fullScreenCover(isPresented: $camera) {
             CameraPicker { img in

@@ -127,6 +127,10 @@ struct YingCunView: View {
             }
         }
         .paperPage(figures: false)
+        .onAppear {
+            // 截图用：-TXDemo YES -TXSample <检查表照片>，进来就照一张
+            if Demo.on, vm.job == nil, !vm.busy, let path = UserDefaults.standard.string(forKey: "TXSample"), let img = UIImage(contentsOfFile: path) { start(img) }
+        }
         .fullScreenCover(isPresented: $camera) {
             CameraPicker { img in
                 camera = false

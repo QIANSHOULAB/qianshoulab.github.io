@@ -152,6 +152,20 @@ final class DianChaoModel: ObservableObject {
         run = r
     }
 
+    /// 截图用（-TXDemo YES -TXSample <托盘照片>）：不寄，摆一盘数好的（Tests/Fixtures/demo-tray.jpg 的十件，第二眼补了一件）
+    func showDemo(_ img: UIImage) {
+        guard let s = Self.shrink(img) else { return }
+        photo = s.0
+        let raw: [[Double]] = [[235, 330], [345, 330], [455, 330], [565, 330], [785, 330], [235, 690], [455, 690], [565, 690], [675, 690], [785, 690]]
+        let pts: [DCPoint] = raw.enumerated().map { i, p in DCPoint(y: p[0], x: p[1], aud: i == 8) }
+        var r = DCRun(id: "demo-tray", sentAt: Date())
+        r.trays = [DCTray(box: [150, 120, 880, 900], complete: true, main: true, on: true, pts: DianChao.rowSorted(pts))]
+        r.added = 1
+        r.audited = true
+        r.phase = .done
+        run = r
+    }
+
     func leave() {
         finish()
         photo = nil

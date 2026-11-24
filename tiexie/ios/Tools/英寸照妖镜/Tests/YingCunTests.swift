@@ -249,7 +249,7 @@ final class YingCunTests: XCTestCase {
         let (good, total, summary) = try await Self.runVision()
         XCTAssertGreaterThan(total, 300)
         // 网页版落红字的格，至少 98% 一样（差的写进报告）
-        XCTAssertGreaterThanOrEqual(Double(good), Double(total) * 0.98, summary)
+        XCTAssertEqual(good, total, summary)   // 122 临时：要准确数字写报告，发版前改回 98% 门槛
     }
 
     /// 不管过没过，把每张的结果当「跳过」的理由报出来（CI 的注释里看得见）
