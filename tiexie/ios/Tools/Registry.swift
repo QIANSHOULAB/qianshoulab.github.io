@@ -6,5 +6,6 @@ enum ToolRegistry {
         JiaoDuTool.entry,   // 角度算距离 Tools/JiaoDu
         GongShiTool.entry,  // 工时榨汁机 Tools/GongShi
         YingCunTool.entry,  // 英寸照妖镜 Tools/英寸照妖镜
+        DianChaoTool.entry, // 铁件点钞机 Tools/铁件点钞机
     ]
 }

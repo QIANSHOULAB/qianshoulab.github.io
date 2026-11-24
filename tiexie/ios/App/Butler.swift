@@ -123,6 +123,12 @@ final class Butler: ObservableObject {
         guard let c = client else { return }
         do {
             let env = try await c.receive(it)
+            // 工具箱寄的一次性的信（122 点钞机）：回信交给等着的工具，不进发件箱
+            if env.kind == .result, let re = Butler.replyTo(env.data), let waiter = toolWaiters[re] {
+                waiter(env.data)
+                try? await c.ack(it.seq)
+                return
+            }
             if env.kind == .result, let r = try? JSONDecoder().decode(TXResult.self, from: env.data) {
                 let re = r.request ?? env.id
                 if re == helloReq {
@@ -169,6 +175,36 @@ final class Butler: ObservableObject {
                 break  // 网不通：下回再寄
             }
         }
+    }
+
+    // ------------------------------------------------------------ 工具箱的一次性的信（122 起）
+    // 工具寄一封、等回信（可以好几封，比如点钞机的 first、final），回信按请求 id 交回去。
+    // 不进发件箱、不重寄、不存盘：大管家不在就不寄（工具自己说一句），照片不在手机上留底。
+    private var toolWaiters: [String: (Data) -> Void] = [:]
+
+    /// 连着信箱（配过对、app 在前台）
+    var connected: Bool { client != nil }
+
+    func sendToolLetter(id: String, data: [String: Any], files: [String: Data], onReply: @escaping (Data) -> Void) async throws {
+        guard let c = client else { throw MailError.badPairing }
+        toolWaiters[id] = onReply
+        let env = MailEnvelope(kind: .request, id: id, at: ISOTime.string(), data: json(data), files: files)
+        do {
+            _ = try await c.send(env, timeout: 60)
+        } catch {
+            toolWaiters[id] = nil
+            throw error
+        }
+    }
+
+    func forgetToolLetter(_ id: String) {
+        toolWaiters[id] = nil
+    }
+
+    /// 回信回的是哪个请求（data 里的 re，没有就 id）
+    nonisolated static func replyTo(_ data: Data) -> String? {
+        guard let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return (o["re"] as? String) ?? (o["id"] as? String)
     }
 
     private func json(_ obj: [String: Any]) -> Data {
