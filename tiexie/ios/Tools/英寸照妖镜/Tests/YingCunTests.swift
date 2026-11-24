@@ -155,6 +155,7 @@ final class YingCunTests: XCTestCase {
             }
             let th = YingCun.median(job.items.map(\.h))
             var note = "\(n): \(job.kind.rawValue) 转\(Int(job.angle.rounded()))°(网页\(Int(fx.webAngle.rounded()))) 字框\(job.items.count) th\(Int(th))"
+            note += " [" + job.notes.joined(separator: "；") + "]"
             guard case .rows(let rows)? = fx.expect["in2mm"] else {
                 // 没表头那张：网页版换了哪些数
                 if case .loose(let list)? = fx.expect["in2mm"] {
@@ -170,10 +171,21 @@ final class YingCunTests: XCTestCase {
                 continue
             }
             let A = job.table
+            if A == nil {
+                // 排查：表头找没找到、字框长啥样
+                let hd = YingCun.headerOf(job.items, th)
+                note += " 表头" + (hd.map { h in h.hs.keys.joined(separator: ",") } ?? "没找到")
+                let cand = job.items.compactMap { i in YingCun.hdrKey(i.text).map { "\($0)=\(i.text)@\(Int(i.cx)),\(Int(i.cy))" } }
+                note += " 候选[" + cand.prefix(12).joined(separator: " ") + "]"
+                let sample = job.items.sorted { $0.cy < $1.cy }.prefix(40).map { "\($0.text)@\(Int($0.cx)),\(Int($0.cy)),\(Int($0.h))" }
+                note += " 字框[" + sample.joined(separator: " ") + "]"
+            }
             var hit = 0, cnt = 0
             var miss: [String] = []
             for (i, w) in rows.enumerated() {
                 for (k, v) in w.conv.sorted(by: { $0.key < $1.key }) {
+                    // 余量是 0 的那格网页版不落红字（SHOW 跳过），不算
+                    if k == "STOCK" && v == "0.000" { continue }
                     cnt += 1
                     let got = (A != nil && i < A!.rows.count) ? A!.rows[i][k]?.num.map { YingCun.convert($0, .in2mm) } : nil
                     if got == v { hit += 1 } else if miss.count < 4 { miss.append("r\(i + 1)\(k):\(got ?? "无")≠\(v)") }

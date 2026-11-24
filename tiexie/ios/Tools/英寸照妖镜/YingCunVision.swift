@@ -20,6 +20,8 @@ final class YCJob {
     /// 逆时针转了几度才扶正
     var angle: Double
     var unit: String?
+    /// 扶正每一步量了多少（单测、排查用，不进日志）
+    var notes: [String] = []
 
     init(up: YCRaster, items: [YCItem], angle: Double) {
         self.up = up
@@ -128,6 +130,14 @@ enum YingCunVision {
 
     /// 字行歪了几度（弧度，y 朝下）：先看 Vision 给的字框四角，四角是正的（老版本只给正框）就看左右相邻字框的高低差
     static func skew(_ lines: [Line]) -> Double {
+        let p = skewParts(lines)
+        if let q = p.quad, abs(q) > 0.3 * .pi / 180 { return q }
+        return p.nb ?? 0
+    }
+
+    /// 两种量法各自的结果（弧度）：quad = Vision 字框四角，nb = 左右相邻字框的高低差
+    static func skewParts(_ lines: [Line]) -> (quad: Double?, nb: Double?) {
+        var quad: Double?
         var ws: [(Double, Double)] = []
         for l in lines where l.box.width > 2.5 * l.box.height { if let t = l.tilt, abs(t) < 0.6 { ws.append((t, Double(l.box.width))) } }
         if ws.count >= 3 {
@@ -136,16 +146,13 @@ enum YingCunVision {
             var acc = 0.0
             for (t, w) in s {
                 acc += w
-                if acc >= total / 2 {
-                    if abs(t) > 0.3 * .pi / 180 { return t }
-                    break
-                }
+                if acc >= total / 2 { quad = t; break }
             }
         }
         // 相邻字框：每个字框找右边最近、高低差不到一个字高（再放宽一点给歪着的）的那个，斜率取中位数
         let hs = lines.map { Double($0.box.height) }
         let h = YingCun.median(hs)
-        guard h.isFinite, h > 0 else { return 0 }
+        guard h.isFinite, h > 0 else { return (quad, nil) }
         var slopes: [Double] = []
         for a in lines {
             var best: (dx: Double, dy: Double)?
@@ -156,8 +163,10 @@ enum YingCunVision {
             }
             if let best { slopes.append(best.dy / best.dx) }
         }
-        return slopes.count >= 3 ? atan(YingCun.median(slopes)) : 0
+        return (quad, slopes.count >= 3 ? atan(YingCun.median(slopes)) : nil)
     }
+
+    static func deg(_ r: Double?) -> String { r.map { String(format: "%.1f", $0 * 180 / .pi) } ?? "-" }
 
     /// 一行字按大空隙拆开（空隙比 0.9 个字高宽就拆），每段一个字框
     static func items(_ lines: [Line]) -> [YCItem] {
@@ -212,18 +221,25 @@ enum YingCunVision {
             guard let src = YingCunVision.upright(img, maxSide: YingCunVision.work) else { throw YCError.badImage }
             // 四个方向各看一眼（小图、fast）
             var best: (q: Int, score: Double, lines: [Line])?
+            var notes: [String] = []
+            var scores: [String] = []
             for q in 0..<4 {
                 guard let r = YingCunVision.rotate(src, deg: Double(q) * 90, maxSide: 1024) else { continue }
                 let lines = (try? YingCunVision.recognize(r, accurate: false)) ?? []
                 let s = YingCunVision.score(lines)
+                scores.append(String(format: "%.0f", s))
                 if best == nil || s > best!.score { best = (q, s, lines) }
             }
             let q = best?.q ?? 0
+            let p1 = YingCunVision.skewParts(best?.lines ?? [])
+            notes.append("向" + scores.joined(separator: "/") + " 歪1 框\(YingCunVision.deg(p1.quad)) 邻\(YingCunVision.deg(p1.nb))")
             var deg = Double(q) * 90 + (best.map { YingCunVision.skew($0.lines) } ?? 0) * 180 / .pi
             guard var up = YingCunVision.rotate(src, deg: deg) else { throw YCError.badImage }
             await MainActor.run { onStep(.read) }
             var lines = try YingCunVision.recognize(up, accurate: true)
             // 还歪着一度以上（小图看不准）：照大图的字行再转一次
+            let p2 = YingCunVision.skewParts(lines)
+            notes.append("歪2 框\(YingCunVision.deg(p2.quad)) 邻\(YingCunVision.deg(p2.nb))")
             let more = YingCunVision.skew(lines) * 180 / .pi
             if abs(more) > 1, let again = YingCunVision.rotate(src, deg: deg + more) {
                 deg += more
@@ -234,7 +250,9 @@ enum YingCunVision {
             let found = YingCunVision.items(lines)
             YingCun.prune(found)
             guard let raster = YCRaster(up) else { throw YCError.badImage }
-            return YCJob(up: raster, items: found, angle: deg)
+            let job = YCJob(up: raster, items: found, angle: deg)
+            job.notes = notes
+            return job
         }.value
     }
 }
