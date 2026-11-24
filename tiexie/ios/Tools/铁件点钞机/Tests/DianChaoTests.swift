@@ -78,7 +78,7 @@ final class DianChaoTests: XCTestCase {
         let relay: FakeRelay
 
         /// 收一封 tx-count：回 (请求 id, 照片)
-        func take() async throws -> (String, Data)? {
+        func takeLetter() async throws -> (String, Data)? {
             for it in relay.waiting(for: "pc") {
                 let env = try await client.receive(it)
                 try await client.ack(it.seq)
@@ -170,7 +170,7 @@ final class DianChaoTests: XCTestCase {
         XCTAssertEqual(m.photo?.size, CGSize(width: 2212, height: 1659))
         XCTAssertEqual(m.run?.phase, .waiting)
         try await waitLetter(to: "pc")
-        let got = try await butler.take()
+        let got = try await butler.takeLetter()
         let (rid, jpeg) = try XCTUnwrap(got)
         XCTAssertEqual(rid, m.run?.id)
         XCTAssertEqual(Array(jpeg.prefix(2)), [0xFF, 0xD8], "照片是 JPEG")
@@ -273,7 +273,7 @@ final class DianChaoTests: XCTestCase {
         m.post = post
         m.take(Self.photo(1000, 800))
         try await waitLetter(to: "pc")
-        let got = try await butler.take()
+        let got = try await butler.takeLetter()
         let (rid, _) = try XCTUnwrap(got)
         try await butler.fail(rid, why: "大脑 90 秒没数完")
         try await post.pump()
