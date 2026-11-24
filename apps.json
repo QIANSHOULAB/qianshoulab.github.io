@@ -32,6 +32,15 @@
       },
       "versions": [
         {
+          "version": "0.2.0",
+          "buildVersion": "2",
+          "date": "2026-11-24",
+          "localizedDescription": "0.2.0：工具箱多两件。英寸照妖镜：拍检查表，英寸换毫米（毫米换英寸也行），红字写在原图上，对不上账的标黄，点红字改；认字用苹果自己的，照片不出手机。铁件点钞机：拍一盘工件，大管家数，数码管跳出总数，每件一颗圆点，数错的点一下就改，能存图。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.2.0/TieXie-0.2.0.ipa",
+          "size": 21420449,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.1.0",
           "buildVersion": "1",
           "date": "2026-11-24",
@@ -41,11 +50,11 @@
           "minOSVersion": "26.0"
         }
       ],
-      "version": "0.1.0",
+      "version": "0.2.0",
       "versionDate": "2026-11-24",
-      "versionDescription": "0.1.0：铁屑江湖住进手机了。秘籍断网也翻得开，每页右上角「改」，改完经大管家推上 GitHub，网页跟着变。工具箱先放两件：角度算距离、工时榨汁机。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.1.0/TieXie-0.1.0.ipa",
-      "size": 20590057
+      "versionDescription": "0.2.0：工具箱多两件。英寸照妖镜：拍检查表，英寸换毫米（毫米换英寸也行），红字写在原图上，对不上账的标黄，点红字改；认字用苹果自己的，照片不出手机。铁件点钞机：拍一盘工件，大管家数，数码管跳出总数，每件一颗圆点，数错的点一下就改，能存图。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.2.0/TieXie-0.2.0.ipa",
+      "size": 21420449
     }
   ]
 }
