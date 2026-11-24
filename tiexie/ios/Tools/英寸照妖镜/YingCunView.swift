@@ -98,6 +98,8 @@ struct YingCunView: View {
                         modePicker.zIndex(2)
                         ZhaoYaoMirror(width: outer.size.width, busy: vm.busy, flash: flash) { shoot() }
                             .padding(.horizontal, -16)
+                            // 出结果时滚到这根记号：结果上面留出状态栏 + 返回键那一截（约 120），不让返回键压在相册按钮上
+                            .overlay(alignment: .bottom) { Color.clear.frame(height: 40).id("result-top").allowsHitTesting(false) }
                             .zIndex(1)
                         statusCard.zIndex(2)
                         if !ran {
@@ -113,7 +115,7 @@ struct YingCunView: View {
                     .padding(.bottom, 32)
                 }
                 .onChange(of: vm.drawn != nil) { _, has in
-                    if has { withAnimation { proxy.scrollTo("result", anchor: .top) } }
+                    if has { withAnimation { proxy.scrollTo("result-top", anchor: .top) } }
                 }
             }
         }
