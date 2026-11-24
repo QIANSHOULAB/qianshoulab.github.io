@@ -111,7 +111,9 @@ struct JiaoDuView: View {
     /// 网页那句结果里 TP 的数是 <b>：亮一档、加粗
     private func lineText(_ s: String) -> Text {
         guard let rg = s.range(of: "TP 约 ", options: .backwards) else { return Text(s) }
-        return Text(s[..<rg.upperBound]) + Text(s[rg.upperBound...]).font(JD.ui(15, bold: true)).foregroundColor(JD.bandInk)
+        let head = Text(s[..<rg.upperBound])
+        let tp = Text(s[rg.upperBound...]).font(JD.ui(15, bold: true)).foregroundColor(JD.bandInk)
+        return Text("\(head)\(tp)")
     }
 
     /// 网页 .formulas

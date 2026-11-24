@@ -599,7 +599,8 @@ private struct YingCunEdit: View {
             }
             Group {
                 if let p {
-                    (Text("= ") + Text(YingCun.convert(p, mode) + " ").font(YC.num(22)).foregroundColor(YC.prevRed) + Text(unit))
+                    let v = Text(verbatim: YingCun.convert(p, mode) + " ").font(YC.num(22)).foregroundColor(YC.prevRed)
+                    Text("= \(v)\(Text(verbatim: unit))")
                 } else {
                     Text(YingCunStrings.numHint)
                 }
@@ -608,8 +609,9 @@ private struct YingCunEdit: View {
             .padding(.top, 10).padding(.horizontal, 2)
             if let s = suggestion {
                 HStack(spacing: 10) {
-                    (Text(label.key == "LCL" || label.key == "UCL" ? YingCunStrings.sugCalc : YingCunStrings.sugBack)
-                     + Text(s).font(YC.num(20)).foregroundColor(YC.flag))
+                    let why = Text(verbatim: label.key == "LCL" || label.key == "UCL" ? YingCunStrings.sugCalc : YingCunStrings.sugBack)
+                    let val = Text(verbatim: s).font(YC.num(20)).foregroundColor(YC.flag)
+                    Text("\(why)\(val)")
                         .font(YC.ui(14)).foregroundStyle(YC.ink)
                     Spacer(minLength: 0)
                     Button { text = s } label: {
