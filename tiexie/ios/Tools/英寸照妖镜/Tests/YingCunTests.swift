@@ -139,6 +139,34 @@ final class YingCunTests: XCTestCase {
         XCTAssertEqual(YingCun.checkRows([r])[0].flag, ["UCL"])
     }
 
+    // ------------------------------------------------------------ 扶正
+    func testRotateIsCounterClockwise() throws {
+        // 白底，右边正中一个黑块；逆时针转 90° 以后应该在上边正中
+        let f = UIGraphicsImageRendererFormat()
+        f.scale = 1
+        let img = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100), format: f).image { c in
+            UIColor.white.setFill(); c.fill(CGRect(x: 0, y: 0, width: 200, height: 100))
+            UIColor.black.setFill(); c.fill(CGRect(x: 180, y: 40, width: 20, height: 20))
+        }.cgImage!
+        let r = try XCTUnwrap(YingCunVision.rotate(img, deg: 90))
+        let ras = try XCTUnwrap(YCRaster(r))
+        XCTAssertEqual(ras.width, 100)
+        XCTAssertEqual(ras.height, 200)
+        func dark(_ x: Int, _ y: Int) -> Bool { ras.px[(y * ras.width + x) * 4] < 100 }
+        XCTAssertTrue(dark(50, 10), "转完黑块在上边")
+        XCTAssertFalse(dark(50, 190), "不在下边")
+    }
+
+    func testProfileSkewMatchesTruth() throws {
+        // 假表是 PIL 逆时针转的：s2 转了 7°、s3 转了 183°、s6 透视后转了 -11°、s7 转了 -4°；把它转平要逆时针转的度数（跟横竖差多少）
+        let want: [String: Double] = ["s1_flat": 0, "s2_tilt7": -7, "s3_upside": -3, "s4_sideways": 0, "s6_persp_tilt_shadow": 11, "s7_mm": 4, "s8_loose": -3]
+        for (n, w) in want {
+            let img = try XCTUnwrap(UIImage(contentsOfFile: Self.dir.appendingPathComponent(n + ".jpg").path))
+            let src = try XCTUnwrap(YingCunVision.upright(img, maxSide: YingCunVision.work))
+            XCTAssertEqual(YingCunVision.profileSkew(src), w, accuracy: 0.6, n)
+        }
+    }
+
     // ------------------------------------------------------------ 3) 苹果 Vision 整条链
     func testVisionMatchesWeb() async throws {
         var lines: [String] = []

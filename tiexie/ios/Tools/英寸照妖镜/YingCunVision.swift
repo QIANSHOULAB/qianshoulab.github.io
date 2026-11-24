@@ -215,37 +215,104 @@ enum YingCunVision {
     }
 
     // ------------------------------------------------------------------ 一张照片从头到尾
+    // ------------------------------------------------------------------ 量歪了几度：投影法
+    /// 把纸转平要逆时针转几度（-45°~45°，只管跟横竖差多少，正着倒着交给 Vision 挑）：
+    /// 缩到长边 800，比周围暗一截的像素算墨（阴影不算），试一圈角度，哪个角度下墨的横向投影最尖（表格线、字行最平）就是它
+    static func profileSkew(_ src: CGImage) -> Double {
+        let k = min(1, 800 / Double(max(src.width, src.height)))
+        let w = max(1, Int((Double(src.width) * k).rounded())), h = max(1, Int((Double(src.height) * k).rounded()))
+        var g = [UInt8](repeating: 255, count: w * h)
+        let ok: Bool = g.withUnsafeMutableBytes { b in
+            guard let ctx = CGContext(data: b.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                      space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+            ctx.interpolationQuality = .medium
+            ctx.draw(src, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        guard ok else { return 0 }
+        // 积分图算 25×25 的局部平均
+        let W1 = w + 1
+        var ii = [Double](repeating: 0, count: (h + 1) * W1)
+        for y in 0..<h {
+            var row = 0.0
+            for x in 0..<w {
+                row += Double(g[y * w + x])
+                ii[(y + 1) * W1 + x + 1] = ii[y * W1 + x + 1] + row
+            }
+        }
+        let r = 12
+        var xs: [Double] = [], ys: [Double] = []
+        for y in 0..<h {
+            let y0 = max(0, y - r), y1 = min(h, y + r + 1)
+            for x in 0..<w {
+                let x0 = max(0, x - r), x1 = min(w, x + r + 1)
+                let s = ii[y1 * W1 + x1] - ii[y0 * W1 + x1] - ii[y1 * W1 + x0] + ii[y0 * W1 + x0]
+                let mean = s / Double((y1 - y0) * (x1 - x0))
+                if Double(g[y * w + x]) < mean - 25 {
+                    xs.append(Double(x) - Double(w) / 2)
+                    ys.append(Double(y) - Double(h) / 2)
+                }
+            }
+        }
+        if xs.count < 200 { return 0 }
+        if xs.count > 40000 {
+            let step = xs.count / 40000 + 1
+            xs = stride(from: 0, to: xs.count, by: step).map { xs[$0] }
+            ys = stride(from: 0, to: ys.count, by: step).map { ys[$0] }
+        }
+        let n = Double(w + h) * 2 + 4
+        var hist = [Double](repeating: 0, count: Int(n) + 2)
+        func score(_ deg: Double) -> Double {
+            let a = deg * .pi / 180, sa = sin(a), ca = cos(a)
+            for i in 0..<hist.count { hist[i] = 0 }
+            for i in 0..<xs.count {
+                let yp = -xs[i] * sa + ys[i] * ca + n / 2
+                let bi = Int(yp)
+                if bi >= 0 && bi < hist.count { hist[bi] += 1 }
+            }
+            return hist.reduce(0) { $0 + $1 * $1 }
+        }
+        var best = (s: -1.0, d: 0.0)
+        var d = -45.0
+        while d < 45 {
+            let s = score(d)
+            if s > best.s { best = (s, d) }
+            d += 0.5
+        }
+        let d0 = best.d
+        d = d0 - 0.5
+        while d <= d0 + 0.501 {
+            let s = score(d)
+            if s > best.s { best = (s, d) }
+            d += 0.1
+        }
+        return best.d
+    }
+
+    // ------------------------------------------------------------------ 一张照片从头到尾
     static func read(_ img: UIImage, onStep: @escaping (YCStep) -> Void = { _ in }) async throws -> YCJob {
         try await Task.detached(priority: .userInitiated) {
             await MainActor.run { onStep(.orient) }
             guard let src = YingCunVision.upright(img, maxSide: YingCunVision.work) else { throw YCError.badImage }
-            // 四个方向各看一眼（小图、fast）
-            var best: (q: Int, score: Double, lines: [Line])?
             var notes: [String] = []
+            // 1) 转平（投影法）；2) 转平以后四个方向各让 Vision 看一眼（小图、fast），认出字最多、最有把握的是正的
+            let a = YingCunVision.profileSkew(src)
+            var best: (q: Int, score: Double)?
             var scores: [String] = []
             for q in 0..<4 {
-                guard let r = YingCunVision.rotate(src, deg: Double(q) * 90, maxSide: 1024) else { continue }
+                guard let r = YingCunVision.rotate(src, deg: a + Double(q) * 90, maxSide: 1024) else { continue }
                 let lines = (try? YingCunVision.recognize(r, accurate: false)) ?? []
                 let s = YingCunVision.score(lines)
                 scores.append(String(format: "%.0f", s))
-                if best == nil || s > best!.score { best = (q, s, lines) }
+                if best == nil || s > best!.score { best = (q, s) }
             }
-            let q = best?.q ?? 0
-            let p1 = YingCunVision.skewParts(best?.lines ?? [])
-            notes.append("向" + scores.joined(separator: "/") + " 歪1 框\(YingCunVision.deg(p1.quad)) 邻\(YingCunVision.deg(p1.nb))")
-            var deg = Double(q) * 90 + (best.map { YingCunVision.skew($0.lines) } ?? 0) * 180 / .pi
-            guard var up = YingCunVision.rotate(src, deg: deg) else { throw YCError.badImage }
+            let deg = a + Double(best?.q ?? 0) * 90
+            notes.append(String(format: "平%.1f 向", a) + scores.joined(separator: "/"))
+            guard let up = YingCunVision.rotate(src, deg: deg) else { throw YCError.badImage }
             await MainActor.run { onStep(.read) }
-            var lines = try YingCunVision.recognize(up, accurate: true)
-            // 还歪着一度以上（小图看不准）：照大图的字行再转一次
+            let lines = try YingCunVision.recognize(up, accurate: true)
             let p2 = YingCunVision.skewParts(lines)
-            notes.append("歪2 框\(YingCunVision.deg(p2.quad)) 邻\(YingCunVision.deg(p2.nb))")
-            let more = YingCunVision.skew(lines) * 180 / .pi
-            if abs(more) > 1, let again = YingCunVision.rotate(src, deg: deg + more) {
-                deg += more
-                up = again
-                lines = try YingCunVision.recognize(up, accurate: true)
-            }
+            notes.append("余歪 框\(YingCunVision.deg(p2.quad)) 邻\(YingCunVision.deg(p2.nb)) 行\(lines.count)")
             await MainActor.run { onStep(.check) }
             let found = YingCunVision.items(lines)
             YingCun.prune(found)
