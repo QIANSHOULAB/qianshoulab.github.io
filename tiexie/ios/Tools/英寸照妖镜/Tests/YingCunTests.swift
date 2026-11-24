@@ -141,7 +141,7 @@ final class YingCunTests: XCTestCase {
 
     func testHeaderRepairsForVision() {
         func it(_ s: String, _ x: Double) -> YCItem { YCItem(x0: x, y0: 0, x1: x + 60, y1: 40, text: s, conf: 0.9) }
-        let items = ["STOCK *#", "LSL F", "NO. tE", "PART NO.: 7731", "SIGN:", "USL E"].enumerated().map { it($1, Double($0) * 100) }
+        let items = ["STOCK FE", "LSL F", "NO. tE", "PART NO.: 7731", "SIGN:", "USL E"].enumerated().map { it($1, Double($0) * 100) }
         XCTAssertEqual(YingCun.splitHeaderWords(items), 2)
         XCTAssertEqual(items.map(\.text), ["STOCK", "LSL F", "NO.", "PART NO.: 7731", "SIGN:", "USL E"])
         // DIMENSION 认成乱码：LSL 左边那个当 DIMENSION
