@@ -152,7 +152,8 @@ final class Butler: ObservableObject {
             _ = try? await c.send(env)
         }
         for p in store.state.due() {
-            guard let obj = p.op == .put ? TXAsk.put(p, state: store.state, app: appVersion) : TXAsk.del(p, app: appVersion) else {
+            let ask: [String: Any]? = p.op == .put ? TXAsk.put(p, state: store.state, app: appVersion) : TXAsk.del(p, app: appVersion)
+            guard let obj = ask else {
                 // 本地已经没有这一条（又被扔了）：等扔的那封
                 continue
             }

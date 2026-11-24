@@ -180,9 +180,7 @@ struct GongShiView: View {
             if draft != nil {
                 editor
             } else {
-                let items: [(String, String, Int)] = rules.breaks.enumerated().map { i, b in
-                    ("\(GongShi.fmt(b.s))–\(GongShi.fmt(b.e))", b.name.isEmpty ? GongShiStrings.breakName : b.name, res?.breaks[i] ?? 0)
-                } + (days > 0 ? [("\(GongShi.fmt(rules.off))–\(GongShi.fmt(rules.on))", GongShiStrings.overnight, res?.night ?? 0)] : [])
+                let items = ledgerItems(res, days: days)
                 if items.isEmpty {
                     ledgerRow("—", GongShiStrings.noBreaks, 0)
                 }
@@ -193,6 +191,20 @@ struct GongShiView: View {
                     .padding(.top, 10)
             }
         }
+    }
+
+    private func ledgerItems(_ res: GongShi.Result?, days: Int) -> [(String, String, Int)] {
+        var out: [(String, String, Int)] = []
+        for (i, b) in rules.breaks.enumerated() {
+            let span = GongShi.fmt(b.s) + "–" + GongShi.fmt(b.e)
+            let name = b.name.isEmpty ? GongShiStrings.breakName : b.name
+            let cut = res.map { i < $0.breaks.count ? $0.breaks[i] : 0 } ?? 0
+            out.append((span, name, cut))
+        }
+        if days > 0 {
+            out.append((GongShi.fmt(rules.off) + "–" + GongShi.fmt(rules.on), GongShiStrings.overnight, res?.night ?? 0))
+        }
+        return out
     }
 
     private func ledgerRow(_ t: String, _ n: String, _ v: Int) -> some View {

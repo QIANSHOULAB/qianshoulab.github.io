@@ -31,10 +31,11 @@ final class Store: ObservableObject {
     }
 
     init(demo: Bool = false, folder: URL? = nil) {
+        let f = folder ?? Store.dir
         self.demo = demo
-        self.folder = folder ?? Store.dir
-        try? FileManager.default.createDirectory(at: self.folder.appendingPathComponent("img", isDirectory: true), withIntermediateDirectories: true)
-        if !demo, let d = try? Data(contentsOf: self.folder.appendingPathComponent("state.json")),
+        self.folder = f
+        try? FileManager.default.createDirectory(at: f.appendingPathComponent("img", isDirectory: true), withIntermediateDirectories: true)
+        if !demo, let d = try? Data(contentsOf: f.appendingPathComponent("state.json")),
            let s = try? JSONDecoder().decode(SavedState.self, from: d) {
             state = s
             // 包里新带的图也算网上有的

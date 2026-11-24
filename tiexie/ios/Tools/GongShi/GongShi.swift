@@ -56,7 +56,7 @@ enum GongShi {
         guard let first = d.first else { return "" }
         let hl = first >= "3" ? 1 : 2
         if d.count <= hl { return d }
-        let a = d.prefix(hl), b = d.dropFirst(hl).prefix(2)
+        let a = String(d.prefix(hl)), b = String(d.dropFirst(hl).prefix(2))
         return a + ":" + b
     }
 
