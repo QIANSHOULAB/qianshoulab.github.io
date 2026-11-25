@@ -32,6 +32,15 @@
       },
       "versions": [
         {
+          "version": "0.3.3",
+          "buildVersion": "7",
+          "date": "2026-11-25",
+          "localizedDescription": "0.3.3：铁件点钞机快了一倍：拍完以后，大管家一边数一边把点寄过来，照片上的点一个个亮、数码管跟着跳；以前要等十几秒才出数，现在 5～8 秒出第一遍的数，再 2 秒左右复查完。最后的数还是第一遍 + 复查的那个，准头没动（大管家那头换的是写点的格式和提前备好的大脑，不是换笨的）。别的工具不变。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.3/TieXie-0.3.3.ipa",
+          "size": 22230439,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.3.2",
           "buildVersion": "6",
           "date": "2026-11-25",
@@ -86,11 +95,11 @@
           "minOSVersion": "26.0"
         }
       ],
-      "version": "0.3.2",
+      "version": "0.3.3",
       "versionDate": "2026-11-25",
-      "versionDescription": "0.3.2：工具箱里的英寸照妖镜、工时榨汁机、角度算距离换回各自网页版的样子：深色底、网页同款数字字体，照妖镜直接放在页面上（不再挂在镜龛里），萤火照样飘；角度算距离底下多了网页上那张「原理，说人话版」。照妖镜出结果时不再顶到屏幕最上面跟返回键叠在一起。算法、认字一点没动。工具箱那一页、铁件点钞机不变。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.2/TieXie-0.3.2.ipa",
-      "size": 22230029
+      "versionDescription": "0.3.3：铁件点钞机快了一倍：拍完以后，大管家一边数一边把点寄过来，照片上的点一个个亮、数码管跟着跳；以前要等十几秒才出数，现在 5～8 秒出第一遍的数，再 2 秒左右复查完。最后的数还是第一遍 + 复查的那个，准头没动（大管家那头换的是写点的格式和提前备好的大脑，不是换笨的）。别的工具不变。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.3/TieXie-0.3.3.ipa",
+      "size": 22230439
     }
   ]
 }
