@@ -1,10 +1,12 @@
 import SwiftUI
 import PhotosUI
+import Photos
 import UIKit
 
 // 英寸照妖镜的界面：照网页 inch/index.html（134 起长相也照网页：深色工单皮，样子在 YingCunLook.swift）。
 // 一条竖栏：标题 → 两种模式 → 照妖镜（八卦镜框、藤蔓、萤火，镜面就是快门，直接放在页面上）→ 进度 → 提示 → 相册 → 结果图。
 // 结果图：红字写在原图上，点红字改数，能两指放大、能横过来看，能存图。
+// 166：结果顶上「管控线 / 全要」（默认管控线，只换 LCL / UCL，记住上回选的）；「存原图」把没盖红字的原照片存进相册。
 // 镜子的几层（藤蔓后层带镜光、外圈法阵、八卦镜框、藤蔓前层）是网页版自己画出来截的透明图（zhaoyao-*.webp），镜面、萤火这里画。
 // 网页顶上切三个工具的标签和 EN/中文 不搬：app 里从工具箱进出，只要中文。
 
@@ -22,18 +24,25 @@ final class YingCunModel: ObservableObject {
     @Published var step: YCStep?
     @Published var error: String?
     @Published var editing: YCLabel?
+    /// 这回照的原照片（存原图用；相册挑的还留着原文件）
+    @Published var source: UIImage?
+    var sourceData: Data?
+    @Published var saveNote: String?
 
-    func run(_ img: UIImage, mode: YCMode) {
+    func run(_ img: UIImage, data: Data? = nil, mode: YCMode, pick: YCPick) {
         guard !busy else { return }
         busy = true
         error = nil
         step = .orient
+        source = img
+        sourceData = data
+        saveNote = nil
         Task {
             do {
                 let job = try await YingCunVision.read(img) { [weak self] s in self?.step = s }
                 self.step = .draw
                 self.job = job
-                await redraw(mode)
+                await redraw(mode, pick)
             } catch {
                 self.job = nil
                 self.drawn = nil
@@ -44,39 +53,72 @@ final class YingCunModel: ObservableObject {
         }
     }
 
-    func redraw(_ mode: YCMode) async {
+    func redraw(_ mode: YCMode, _ pick: YCPick) async {
         guard let job else { drawn = nil; return }
-        let d = await Task.detached(priority: .userInitiated) { YingCunRender.draw(job, mode) }.value
+        let d = await Task.detached(priority: .userInitiated) { YingCunRender.draw(job, mode, pick) }.value
         drawn = d
     }
 
     /// 点红字改了原数
-    func commit(_ L: YCLabel, _ p: YCNum, text: String, mode: YCMode) {
+    func commit(_ L: YCLabel, _ p: YCNum, text: String, mode: YCMode, pick: YCPick) {
         L.item.num = p
         L.item.text = text
         L.item.edited = true
         L.item.conf = 1
         editing = nil
-        Task { await redraw(mode) }
+        Task { await redraw(mode, pick) }
     }
 
-    /// 结果那一句
+    /// 存原图：没盖红字的那张进相册（只要「添加照片」权限）。相册挑的存原文件，现拍的存那张照片
+    func saveOriginal() {
+        guard let img = source else { return }
+        let data = sourceData
+        Task {
+            let st = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+            guard st == .authorized || st == .limited else {
+                self.saveNote = YingCunStrings.saveDenied
+                return
+            }
+            do {
+                try await PHPhotoLibrary.shared().performChanges {
+                    if let data {
+                        PHAssetCreationRequest.forAsset().addResource(with: .photo, data: data, options: nil)
+                    } else {
+                        PHAssetChangeRequest.creationRequestForAsset(from: img)
+                    }
+                }
+                self.saveNote = YingCunStrings.savedOriginal
+            } catch {
+                self.saveNote = YingCunStrings.saveFailed
+            }
+        }
+    }
+
+    /// 改数单子里「标号」从哪张表找（管控线模式可能是单找的那张）
+    var drawnTable: YCTable? { drawn?.pick == .limits ? job?.limits : job?.table }
+
+    /// 结果那一句（第二个：要不要亮黄灯）
     func summary(mode: YCMode) -> (String, Bool) {
         guard let job, let d = drawn else { return (YingCunStrings.none, false) }
         let red = YingCunStrings.redIs(mode == .in2mm ? YingCunStrings.mm : YingCunStrings.inches)
-        if job.kind == .table {
-            if d.flags > 0 { return (red + " · " + YingCunStrings.flags(d.flags), true) }
-            if d.checked > 0 { return (red + " · " + YingCunStrings.checked(d.okRows), false) }
-            return (red + " · " + YingCunStrings.tapToFix, false)
+        if d.missing { return (YingCunStrings.limitsNone, true) }
+        if d.pick == .limits || job.kind == .table {
+            let head = d.pick == .limits ? red + " · " + YingCunStrings.limitsOnly : red
+            if d.flags > 0 { return (head + " · " + YingCunStrings.flags(d.flags), true) }
+            if d.checked > 0 { return (head + " · " + YingCunStrings.checked(d.okRows), false) }
+            return (head + " · " + YingCunStrings.tapToFix, false)
         }
         var t = YingCunStrings.loose + " · " + red
         if d.flags > 0 { t += " · " + YingCunStrings.looseFlags }
-        return (t, d.flags > 0)
+        if d.skipped > 0 { t += " · " + YingCunStrings.skipped(d.skipped) }
+        return (t, d.flags > 0 || d.skipped > 0)
     }
 }
 
 struct YingCunView: View {
     @AppStorage("tiexie.zhaoyao.mode") private var modeRaw = YCMode.in2mm.rawValue
+    /// 166：管控线 / 全要，默认管控线，记住上回选的
+    @AppStorage("tiexie.zhaoyao.pick") private var pickRaw = YCPick.limits.rawValue
     @StateObject private var vm = YingCunModel()
     @State private var camera = false
     @State private var album: [PhotosPickerItem] = []
@@ -88,6 +130,7 @@ struct YingCunView: View {
     @State private var ran = false
 
     private var mode: YCMode { YCMode(rawValue: modeRaw) ?? .in2mm }
+    private var pick: YCPick { YCPick(rawValue: pickRaw) ?? .limits }
 
     var body: some View {
         GeometryReader { outer in
@@ -124,7 +167,13 @@ struct YingCunView: View {
         .toolChrome(tint: YC.accent, dark: true)
         .onAppear {
             // 截图用：-TXDemo YES -TXSample <检查表照片>，进来就照一张
-            if Demo.on, vm.job == nil, !vm.busy, let path = UserDefaults.standard.string(forKey: "TXSample"), let img = UIImage(contentsOfFile: path) { start(img) }
+            if Demo.on, vm.job == nil, !vm.busy, let path = UserDefaults.standard.string(forKey: "TXSample"), let img = UIImage(contentsOfFile: path) {
+                start(img, data: try? Data(contentsOf: URL(fileURLWithPath: path)))
+            }
+        }
+        .onChange(of: vm.drawn != nil) { _, has in
+            // 截图用：-TXSaveOriginal YES，出结果就点一下「存原图」（CI 数相册里多没多一张）
+            if has, Demo.on, UserDefaults.standard.bool(forKey: "TXSaveOriginal"), vm.saveNote == nil { vm.saveOriginal() }
         }
         .fullScreenCover(isPresented: $camera) {
             CameraPicker { img in
@@ -137,8 +186,8 @@ struct YingCunView: View {
             if let d = vm.drawn { SidewaysViewer(image: d.image) { sideways = false } }
         }
         .sheet(item: Binding(get: { vm.editing.map(EditBox.init) }, set: { if $0 == nil { vm.editing = nil } })) { box in
-            YingCunEdit(label: box.label, job: vm.job, drawn: vm.drawn, mode: mode) { p, text in
-                vm.commit(box.label, p, text: text, mode: mode)
+            YingCunEdit(label: box.label, table: vm.drawnTable, drawn: vm.drawn, mode: mode) { p, text in
+                vm.commit(box.label, p, text: text, mode: mode, pick: pick)
             } cancel: {
                 vm.editing = nil
             }
@@ -151,11 +200,14 @@ struct YingCunView: View {
             guard let it = new.first else { return }
             album = []
             Task {
-                if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) { start(img) }
+                if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) { start(img, data: d) }
             }
         }
         .onChange(of: modeRaw) { _, _ in
-            Task { await vm.redraw(mode) }
+            Task { await vm.redraw(mode, pick) }
+        }
+        .onChange(of: pickRaw) { _, _ in
+            Task { await vm.redraw(mode, pick) }
         }
     }
 
@@ -165,10 +217,10 @@ struct YingCunView: View {
         if CameraPicker.available { camera = true }
     }
 
-    private func start(_ img: UIImage) {
+    private func start(_ img: UIImage, data: Data? = nil) {
         zoom = 1
         ran = true
-        vm.run(img, mode: mode)
+        vm.run(img, data: data, mode: mode, pick: pick)
     }
 
     // ------------------------------------------------------------ 标题（网页 .head：居中，30 号，字距拉开一点）
@@ -183,21 +235,33 @@ struct YingCunView: View {
 
     // ------------------------------------------------------------ 两种模式（网页 .seg：亮蓝滑块左右滑）
     private var modePicker: some View {
-        GeometryReader { g in
+        segment([(YCMode.in2mm.rawValue, YingCunStrings.in2mm), (YCMode.mm2in.rawValue, YingCunStrings.mm2in)], value: $modeRaw, height: 58)
+    }
+
+    /// 166：结果顶上「管控线 / 全要」，跟单位那个一个样子，矮一点
+    private var pickPicker: some View {
+        segment([(YCPick.limits.rawValue, YingCunStrings.pickLimits), (YCPick.all.rawValue, YingCunStrings.pickAll)], value: $pickRaw, height: 46)
+    }
+
+    /// 两段开关（网页 .seg：亮蓝滑块左右滑）
+    private func segment(_ opts: [(String, String)], value: Binding<String>, height: CGFloat) -> some View {
+        let first = value.wrappedValue == opts[0].0 || !opts.contains { $0.0 == value.wrappedValue }
+        return GeometryReader { g in
             let half = (g.size.width - 6) / 2
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 10).fill(YC.accent)
                     .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
                     .frame(width: half)
-                    .offset(x: mode == .in2mm ? 0 : half)
-                    .animation(.timingCurve(0.3, 0.7, 0.2, 1, duration: 0.24), value: modeRaw)
+                    .offset(x: first ? 0 : half)
+                    .animation(.timingCurve(0.3, 0.7, 0.2, 1, duration: 0.24), value: value.wrappedValue)
                 HStack(spacing: 0) {
-                    ForEach(YCMode.allCases, id: \.self) { m in
-                        let on = m == mode
+                    ForEach(opts.indices, id: \.self) { i in
+                        let o = opts[i]
+                        let on = (o.0 == opts[0].0) == first
                         Button {
-                            modeRaw = m.rawValue
+                            value.wrappedValue = o.0
                         } label: {
-                            Text(m == .in2mm ? YingCunStrings.in2mm : YingCunStrings.mm2in)
+                            Text(o.1)
                                 .font(YC.ui(16, .bold)).tracking(0.16)
                                 .foregroundStyle(on ? YC.onAccent : YC.muted)
                                 .animation(.easeOut(duration: 0.2), value: on)
@@ -211,7 +275,7 @@ struct YingCunView: View {
             }
             .padding(3)
         }
-        .frame(height: 58)
+        .frame(height: height)
         .background(YC.surface, in: RoundedRectangle(cornerRadius: 13))
         .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(YC.line, lineWidth: 1))
     }
@@ -299,6 +363,9 @@ struct YingCunView: View {
         let line = sum.0, flagged = sum.1
         let none = vm.job == nil || vm.drawn == nil
         VStack(alignment: .leading, spacing: 10) {
+            if vm.job != nil {
+                pickPicker
+            }
             HStack(alignment: .top, spacing: 9) {
                 Circle().fill(none ? YC.warn : (flagged ? YC.flag : YC.ok)).frame(width: 9, height: 9).padding(.top, 6)
                 Text(line).font(YC.ui(15, .bold)).foregroundStyle(YC.ink).lineSpacing(3)
@@ -334,7 +401,15 @@ struct YingCunView: View {
                     YCButton(action: { shoot() }) { Text(YingCunStrings.again) }
                         .disabled(vm.busy)
                 }
-                YCButton(action: { sideways = true }) { Text(YingCunStrings.sideways) }
+                HStack(spacing: 10) {
+                    YCButton(action: { sideways = true }) { Text(YingCunStrings.sideways) }
+                    YCButton(action: { vm.saveOriginal() }) { Text(YingCunStrings.saveOriginal) }
+                        .disabled(vm.source == nil)
+                }
+                if let n = vm.saveNote {
+                    Text(n).font(YC.ui(13.5)).foregroundStyle(YC.muted)
+                        .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+                }
             }
         }
     }
@@ -557,7 +632,8 @@ private struct SidewaysViewer: View {
 // ================================================================ 改数（网页底部弹出的 .sheet）
 private struct YingCunEdit: View {
     var label: YCLabel
-    var job: YCJob?
+    /// 这个红字所在的表（管控线模式可能是单找的那张）
+    var table: YCTable?
     var drawn: YCDrawn?
     var mode: YCMode
     var done: (YCNum, String) -> Void
@@ -651,7 +727,7 @@ private struct YingCunEdit: View {
 
     private var meta: String {
         var s = ""
-        if label.row >= 0, let A = job?.table, label.row < A.rows.count, let no = A.rows[label.row]["NO"], !no.text.isEmpty {
+        if label.row >= 0, let A = table, label.row < A.rows.count, let no = A.rows[label.row]["NO"], !no.text.isEmpty {
             s += YingCunStrings.edRow(no.text) + " · "
         }
         s += label.key.flatMap { YingCunStrings.names[$0] } ?? YingCunStrings.edLoose

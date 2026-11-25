@@ -3,6 +3,7 @@ import UIKit
 // 英寸照妖镜出图：照网页版 renderTable / renderLoose / footer 搬。
 // 有表：四个角 → 透视矫正（行列拉直）→ 从「标号」裁到最右边要换的那列 → 每行原数下面插一条，原图像素往下抻 → 边贴到表格线上 → 落红字。
 // 没表：照片里的纯数字全换，红字贴在右边。底下接一条「红字 = 毫米」。
+// 166：管控线模式只落 LCL / UCL 两列；没表时红字不大于原数那一格，挤了就缩、换个边，缩到看不清就不写（不再一行压一行）。
 
 /// 图上的一块红字（点它改数）
 struct YCLabel {
@@ -21,6 +22,12 @@ struct YCDrawn {
     var checks: [YCCheck]
     /// 一共几行、几行对上账、几个黄格
     var rows = 0, checked = 0, okRows = 0, flags = 0
+    /// 166：哪种模式画的
+    var pick: YCPick = .all
+    /// 管控线模式没找到管控线：图是没盖红字的照片
+    var missing = false
+    /// 挤得写不下、没落红字的数
+    var skipped = 0
 }
 
 /// RGBA 像素（扶正后的图，整张放内存里；2016 长边约 16 MB）
@@ -158,13 +165,15 @@ enum YingCunRender {
     }
 
     // ------------------------------------------------------------------ 有表
-    static func renderTable(_ up: YCRaster, _ A: YCTable, _ chk: [YCCheck], _ mode: YCMode) -> (UIImage, [YCLabel]) {
+    /// keys：落红字的列（全要 = 六列；管控线 = LCL、UCL）
+    static func renderTable(_ up: YCRaster, _ A: YCTable, _ chk: [YCCheck], _ mode: YCMode,
+                            keys: Set<String> = Set(YingCun.keys6)) -> (UIImage, [YCLabel]) {
         let rows = A.rows, lines = A.lines, th = A.th, glyph = 0.59 * th
         func colx(_ k: String, _ y: Double) -> Double { let l = lines[k]!; return l.0 + l.1 * y }
         // 1) 四个角 → 透视矫正（行列拉直）
         var H: [Double]? = nil
         let full = rows.filter { $0.count >= 3 }
-        let left = ["NO", "SYM", "DIM"].first { lines.has($0) }
+        let left = ["NO", "SYM", "DIM", "LCL"].first { lines.has($0) }
         let right = ["UCL", "LCL", "STOCK", "USL"].first { lines.has($0) }
         if full.count >= 2, let left, let right, left != right {
             func rowfit(_ r: YCMap<YCItem>) -> (Double, Double) {
@@ -219,8 +228,9 @@ enum YingCunRender {
             return i >= 0 && i < order.count ? order[i] : nil
         }
         // 从标号一直裁到最右边要换的那列（有控制范围就到 UCL，没有就到上差）
-        let lk = colX["NO"] != nil ? "NO" : (colX["SYM"] != nil ? "SYM" : "DIM")
-        let rk = colX["UCL"] != nil ? "UCL" : (colX["LCL"] != nil ? "LCL" : "USL")
+        // 管控线模式单找的表只有 LCL、UCL 两列：从 LCL 裁到 UCL
+        let lk = ["NO", "SYM", "DIM"].first { colX[$0] != nil } ?? order.first!
+        let rk = ["UCL", "LCL", "USL"].first { colX[$0] != nil } ?? order.last!
         let n1 = nb(lk, 1), n2 = nb(rk, 1), p2 = nb(rk, -1)
         let gapL: Double = n1.map { colX[$0]! - colX[lk]! } ?? 3 * th
         let gapPrev: Double = p2.map { colX[rk]! - colX[$0]! } ?? 3 * th
@@ -229,7 +239,7 @@ enum YingCunRender {
         let rightEdge = colX[rk]!
         func show(_ r: YCMap<YCItem>) -> [String] {
             ["DIM", "LSL", "USL", "STOCK", "LCL", "UCL"].filter { k in
-                guard let it = r[k], let n = it.num, let cx = colX[k] else { return false }
+                guard keys.contains(k), let it = r[k], let n = it.num, let cx = colX[k] else { return false }
                 return cx <= rightEdge + 1 && (k != "STOCK" || n.n != 0)
             }
         }
@@ -368,7 +378,56 @@ enum YingCunRender {
     }
 
     // ------------------------------------------------------------------ 没表
-    static func renderLoose(_ up: YCRaster, _ items: [YCItem], _ mode: YCMode) -> (UIImage, [YCLabel]) {
+    /// 红字放哪儿：每个数的红字框不高过原数那一格、不宽过它 1.6 倍（至少 3.5 个字宽）；先试右边，再下、左、上；
+    /// 跟别的字、别的红字撞了就缩一档再试；缩到原字一半（最少 7 像素）还放不下就不写。回 (每个数的框和字高, 没写的个数)
+    static func placeLoose(_ nums: [YCItem], obstacles: [CGRect], bounds: CGRect, mode: YCMode,
+                           measure: (String, Double) -> Double) -> ([(YCItem, CGRect, Double)], Int) {
+        var taken = obstacles
+        var out: [(YCItem, CGRect, Double)] = []
+        var skipped = 0
+        let order = nums.stableSorted { a, b in abs(a.cy - b.cy) > 0.5 * min(a.h, b.h) ? a.cy < b.cy : a.cx < b.cx }
+        for it in order {
+            let txt = YingCun.convert(it.num!, mode)
+            let glyph = 0.59 * it.h
+            let own = CGRect(x: it.x0, y: it.y0, width: it.x1 - it.x0, height: it.h)
+            // 红字框高 = cap × (1 + 2 × 0.3 / 0.72) ≈ 1.83 cap：不高过原数那一格
+            let capMax = min(0.92 * glyph, it.h / 1.84)
+            let capMin = max(0.5 * glyph, 7)
+            let maxW = max(1.6 * Double(own.width), 3.5 * glyph)
+            var placed: (CGRect, Double)?
+            var cap = capMax
+            while placed == nil && cap >= capMin - 0.01 {
+                var c = cap
+                var tw = measure(txt, c / 0.72)
+                if tw + 0.6 * c / 0.72 > maxW {          // 太宽：按宽缩
+                    let k = maxW / (tw + 0.6 * c / 0.72)
+                    c *= k
+                    tw *= k
+                }
+                if c >= capMin - 0.01 {
+                    let pc = 0.3 * c / 0.72, g = 0.15 * c / 0.72
+                    let w = tw + 2 * pc, h = c + 2 * pc
+                    let cands = [CGRect(x: own.maxX + g, y: it.cy - h / 2, width: w, height: h),
+                                 CGRect(x: it.cx - w / 2, y: own.maxY + g, width: w, height: h),
+                                 CGRect(x: own.minX - g - w, y: it.cy - h / 2, width: w, height: h),
+                                 CGRect(x: it.cx - w / 2, y: own.minY - g - h, width: w, height: h)]
+                    if let r = cands.first(where: { r in bounds.contains(r) && !taken.contains { $0.intersects(r) } }) {
+                        placed = (r, c)
+                    }
+                }
+                cap *= 0.85
+            }
+            if let (r, c) = placed {
+                taken.append(r)
+                out.append((it, r, c))
+            } else {
+                skipped += 1
+            }
+        }
+        return (out, skipped)
+    }
+
+    static func renderLoose(_ up: YCRaster, _ items: [YCItem], _ mode: YCMode) -> (UIImage, [YCLabel], Int) {
         let nums = items.filter { $0.num != nil }
         let th = YingCun.median(items.map(\.h))
         var x0 = items.map(\.x0).min() ?? 0, y0 = items.map(\.y0).min() ?? 0
@@ -379,31 +438,63 @@ enum YingCunRender {
         y1 = min(Double(up.height), (y1 + 1.5 * th).rounded(.up))
         let W = x1 - x0, Hh = y1 - y0
         let crop = up.cgImage()?.cropping(to: CGRect(x: x0, y: y0, width: W, height: Hh))
+        // 别的字（数和字都算，自己那一格也算）都是障碍；字框当初撑大过（boxGrow），这里收回原来的高
+        let obstacles = items.filter { !$0.text.isEmpty }.map { i -> CGRect in
+            let h = i.h / YingCunVision.boxGrow
+            return CGRect(x: i.x0, y: i.cy - h / 2, width: i.x1 - i.x0, height: h)
+        }
+        let (spots, skipped) = placeLoose(nums, obstacles: obstacles, bounds: CGRect(x: x0, y: y0, width: W, height: Hh), mode: mode) { t, fs in
+            width(t, font(fs))
+        }
         var labels: [YCLabel] = []
         let img = render(W, Hh) {
             if let crop { UIImage(cgImage: crop).draw(in: CGRect(x: 0, y: 0, width: W, height: Hh)) }
-            for it in nums {
-                let glyph = 0.59 * it.h, cap = 1.15 * glyph, fs = cap / 0.72, pad = 0.3 * fs
+            for (it, r, cap) in spots {
+                let fs = cap / 0.72, pad = 0.3 * fs
                 let txt = YingCun.convert(it.num!, mode)
-                let f = font(fs)
-                let tw = width(txt, f)
-                var lx = it.x1 - x0 + 0.15 * fs
-                var base = it.cy - y0 + cap / 2
-                if lx + tw + 2 * pad > W {
-                    lx = it.cx - x0 - tw / 2 - pad
-                    base = it.y1 - y0 + cap + 0.4 * fs
-                }
+                let lx = Double(r.minX) - x0, ly = Double(r.minY) - y0
                 let bg = it.flag ? UIColor(red: 1, green: 0xd6 / 255, blue: 0x0a / 255, alpha: 0.95) : UIColor(white: 1, alpha: 0.88)
-                roundRect(lx, base - cap - pad, tw + 2 * pad, cap + 2 * pad, 0.3 * fs, bg)
-                drawText(txt, x: lx + pad, base: base, font: f, color: red)
-                labels.append(YCLabel(x: lx, y: base - cap - pad, w: tw + 2 * pad, h: cap + 2 * pad, row: -1, key: nil, item: it, flagged: it.flag))
+                roundRect(lx, ly, Double(r.width), Double(r.height), 0.3 * fs, bg)
+                drawText(txt, x: lx + pad, base: ly + pad + cap, font: font(fs), color: red)
+                labels.append(YCLabel(x: lx, y: ly, w: Double(r.width), h: Double(r.height), row: -1, key: nil, item: it, flagged: it.flag))
             }
         }
-        return (footer(img, glyph: 0.59 * th, mode: mode), labels)
+        return (footer(img, glyph: 0.59 * th, mode: mode), labels, skipped)
+    }
+
+    /// 没盖红字的照片（管控线模式没找到管控线时给他看）：缩到长边 1600
+    static func plain(_ up: YCRaster) -> UIImage {
+        guard let cg = up.cgImage() else { return UIImage() }
+        let k = min(1, 1600 / Double(max(up.width, up.height)))
+        let w = Double(up.width) * k, h = Double(up.height) * k
+        return render(w, h) { UIImage(cgImage: cg).draw(in: CGRect(x: 0, y: 0, width: w, height: h)) }
     }
 
     // ------------------------------------------------------------------ 出图
-    static func draw(_ job: YCJob, _ mode: YCMode) -> YCDrawn? {
+    static func draw(_ job: YCJob, _ mode: YCMode, _ pick: YCPick = .all) -> YCDrawn? {
+        if job.kind == .none && job.limits == nil { return nil }
+        if pick == .limits {
+            // 管控线：只换 LCL、UCL；对账照旧跑，黄格、倒推只留这两列的
+            guard let A = job.limits else {
+                var d = YCDrawn(image: plain(job.up), labels: [], checks: [])
+                d.pick = .limits
+                d.missing = true
+                return d
+            }
+            var chk = YingCun.checkRows(A.rows)
+            for i in chk.indices {
+                chk[i].flag.formIntersection(YingCun.limitKeys)
+                chk[i].sugg = chk[i].sugg.filter { YingCun.limitKeys.contains($0.key) }
+            }
+            let (img, labels) = renderTable(job.up, A, chk, mode, keys: YingCun.limitKeys)
+            var d = YCDrawn(image: img, labels: labels, checks: chk)
+            d.pick = .limits
+            d.rows = A.rows.count
+            d.checked = chk.filter { $0.checked }.count
+            d.okRows = chk.filter { $0.checked && $0.flag.isEmpty }.count
+            d.flags = chk.reduce(0) { $0 + $1.flag.count }
+            return d
+        }
         switch job.kind {
         case .table:
             guard let A = job.table else { return nil }
@@ -417,9 +508,10 @@ enum YingCunRender {
             return d
         case .loose:
             for i in job.items { i.flag = i.num != nil && !i.edited && i.conf < 0.9 }
-            let (img, labels) = renderLoose(job.up, job.items, mode)
+            let (img, labels, skipped) = renderLoose(job.up, job.items, mode)
             var d = YCDrawn(image: img, labels: labels, checks: [])
             d.flags = job.items.filter { $0.flag }.count
+            d.skipped = skipped
             return d
         case .none:
             return nil

@@ -6,6 +6,8 @@ import Vision
 // 2) 扶正：四个方向（0/90/180/270）各用 fast 认一遍，认出字最多、最有把握的那个方向是正的；再看字行歪了几度，转平；
 // 3) accurate 认全图；一行字按大空隙拆成一个个字框（网页版的字框也是一格一个）；
 // 4) 交给 YingCun：只留要的几列 → 读表 → 对账。透视交给出图那步的四角矫正（跟网页版一样）。
+// 166：扶正多试一组「只差不到 15°」的角度（整张单子横拍、字小的时候，投影法会被拐到 45°，照片反被转歪）；
+//      没抹过的字框另存一份给管控线模式；两种表头都没找到、原图又比 2016 大，就用原图大小再认一遍。
 
 enum YCKind: String {
     case table, loose, none
@@ -17,15 +19,20 @@ final class YCJob {
     var items: [YCItem]
     var table: YCTable?
     var kind: YCKind
+    /// 没抹过的字框（管控线模式用）
+    var raw: [YCItem]
+    /// 管控线模式的表（LCL / UCL 两列）；nil = 没找到管控线
+    var limits: YCTable?
     /// 逆时针转了几度才扶正
     var angle: Double
     var unit: String?
     /// 扶正每一步量了多少（单测、排查用，不进日志）
     var notes: [String] = []
 
-    init(up: YCRaster, items: [YCItem], angle: Double) {
+    init(up: YCRaster, items: [YCItem], raw: [YCItem]? = nil, angle: Double) {
         self.up = up
         self.items = items
+        self.raw = raw ?? items.map { $0.copy() }
         self.angle = angle
         let A = YingCun.analyze(items)
         if let A, A.rows.contains(where: { r in ["DIM", "LSL", "USL"].contains { r[$0]?.num != nil } }) {
@@ -37,7 +44,11 @@ final class YCJob {
             kind = .none
         }
         unit = YingCun.unitHint(items)
+        limits = YingCun.limitsTable(full: table, raw: self.raw)
     }
+
+    /// 两种表头哪个都没找到
+    var noHeader: Bool { table == nil && limits == nil }
 }
 
 enum YCStep {
@@ -101,12 +112,12 @@ enum YingCunVision {
         var cand: VNRecognizedText
     }
 
-    static func recognize(_ img: CGImage, accurate: Bool) throws -> [Line] {
+    static func recognize(_ img: CGImage, accurate: Bool, minHeight: Float = 0.006) throws -> [Line] {
         let req = VNRecognizeTextRequest()
         req.recognitionLevel = accurate ? .accurate : .fast
         req.usesLanguageCorrection = false
         if accurate { req.recognitionLanguages = ["en-US", "zh-Hans"] }
-        req.minimumTextHeight = 0.006
+        req.minimumTextHeight = minHeight
         #if targetEnvironment(simulator)
         req.usesCPUOnly = true
         #endif
@@ -218,7 +229,7 @@ enum YingCunVision {
     // ------------------------------------------------------------------ 量歪了几度：投影法
     /// 把纸转平要逆时针转几度（-45°~45°，只管跟横竖差多少，正着倒着交给 Vision 挑）：
     /// 缩到长边 800，比周围暗一截的像素算墨（阴影不算），试一圈角度，哪个角度下墨的横向投影最尖（表格线、字行最平）就是它
-    static func profileSkew(_ src: CGImage) -> Double {
+    static func profileSkew(_ src: CGImage, range: Double = 45) -> Double {
         let k = min(1, 800 / Double(max(src.width, src.height)))
         let w = max(1, Int((Double(src.width) * k).rounded())), h = max(1, Int((Double(src.height) * k).rounded()))
         var g = [UInt8](repeating: 255, count: w * h)
@@ -273,8 +284,8 @@ enum YingCunVision {
             return hist.reduce(0) { $0 + $1 * $1 }
         }
         var best = (s: -1.0, d: 0.0)
-        var d = -45.0
-        while d < 45 {
+        var d = -range
+        while d < range {
             let s = score(d)
             if s > best.s { best = (s, d) }
             d += 0.5
@@ -290,41 +301,81 @@ enum YingCunVision {
     }
 
     // ------------------------------------------------------------------ 一张照片从头到尾
-    static func read(_ img: UIImage, onStep: @escaping (YCStep) -> Void = { _ in }) async throws -> YCJob {
+    /// hires：nil = 自动（读不出表头、原图又大，就用原图大小再认一遍）；true = 直接用原图大小认（单测用）
+    static func read(_ img: UIImage, hires: Bool? = nil, onStep: @escaping (YCStep) -> Void = { _ in }) async throws -> YCJob {
         try await Task.detached(priority: .userInitiated) {
             await MainActor.run { onStep(.orient) }
             guard let src = YingCunVision.upright(img, maxSide: YingCunVision.work) else { throw YCError.badImage }
             var notes: [String] = []
-            // 1) 转平（投影法）；2) 转平以后四个方向各让 Vision 看一眼（小图、fast），认出字最多、最有把握的是正的
+            // 1) 转平（投影法）。整张单子、字小的时候投影法会被拐到 ±45°（166：Song 横拍的整张单子被转成了斜的），
+            //    所以再在 ±15° 里找一个；两组角度各转四个方向，让 Vision 看一眼（小图、fast），认出字最多、最有把握的是正的
             let a = YingCunVision.profileSkew(src)
-            var best: (q: Int, score: Double)?
+            let a2 = YingCunVision.profileSkew(src, range: 15)
+            var bases = [a]
+            if abs(a2 - a) > 3 { bases.append(a2) }
+            var best: (deg: Double, score: Double)?
             var scores: [String] = []
-            for q in 0..<4 {
-                guard let r = YingCunVision.rotate(src, deg: a + Double(q) * 90, maxSide: 1024) else { continue }
-                let lines = (try? YingCunVision.recognize(r, accurate: false)) ?? []
-                let s = YingCunVision.score(lines)
-                scores.append(String(format: "%.0f", s))
-                if best == nil || s > best!.score { best = (q, s) }
+            for base in bases {
+                for q in 0..<4 {
+                    let deg = base + Double(q) * 90
+                    guard let r = YingCunVision.rotate(src, deg: deg, maxSide: 1024) else { continue }
+                    let lines = (try? YingCunVision.recognize(r, accurate: false)) ?? []
+                    let s = YingCunVision.score(lines)
+                    scores.append(String(format: "%.0f", s))
+                    if best == nil || s > best!.score { best = (deg, s) }
+                }
             }
-            let deg = a + Double(best?.q ?? 0) * 90
-            notes.append(String(format: "平%.1f 向", a) + scores.joined(separator: "/"))
-            guard let up = YingCunVision.rotate(src, deg: deg) else { throw YCError.badImage }
+            let deg = best?.deg ?? a
+            notes.append(String(format: "平%.1f", a) + (bases.count > 1 ? String(format: "/%.1f", a2) : "") + " 向" + scores.joined(separator: "/")
+                         + String(format: " 取%.1f", deg))
             await MainActor.run { onStep(.read) }
-            let lines = try YingCunVision.recognize(up, accurate: true)
-            let p2 = YingCunVision.skewParts(lines)
-            notes.append("余歪 框\(YingCunVision.deg(p2.quad)) 邻\(YingCunVision.deg(p2.nb)) 行\(lines.count)")
-            await MainActor.run { onStep(.check) }
-            let found = YingCunVision.items(lines)
-            let split = YingCun.splitHeaderWords(found)
-            if split > 0 { notes.append("表头拆了\(split)个") }
-            if YingCun.headerOf(found, YingCun.median(found.map(\.h))) == nil, YingCun.repairHeader(found) {
-                notes.append("表头补了 DIMENSION")
+            let side = Double(max(img.size.width, img.size.height))
+            var job: YCJob
+            if hires == true {
+                job = try YingCunVision.readAt(img, maxSide: 4032, deg: deg, notes: &notes)
+            } else {
+                guard let up = YingCunVision.rotate(src, deg: deg) else { throw YCError.badImage }
+                job = try YingCunVision.readUp(up, angle: deg, minHeight: 0.006, notes: &notes)
+                // 2) 两种表头都没找到、原图比 2016 大一截：整张单子字太小，用原图大小（最大 4032）再认一遍
+                if hires == nil, job.noHeader, side > Double(YingCunVision.work) * 1.3 {
+                    var n2: [String] = []
+                    if let j2 = try? YingCunVision.readAt(img, maxSide: 4032, deg: deg, notes: &n2), !j2.noHeader {
+                        notes.append("原图大小重认")
+                        notes += n2
+                        job = j2
+                    } else {
+                        notes.append("原图大小重认也没表头")
+                    }
+                }
             }
-            YingCun.prune(found)
-            guard let raster = YCRaster(up) else { throw YCError.badImage }
-            let job = YCJob(up: raster, items: found, angle: deg)
+            await MainActor.run { onStep(.check) }
             job.notes = notes
             return job
         }.value
+    }
+
+    /// 用原图大小（最大 maxSide）转 deg 度认一遍
+    static func readAt(_ img: UIImage, maxSide: CGFloat, deg: Double, notes: inout [String]) throws -> YCJob {
+        guard let big = upright(img, maxSide: maxSide), let up = rotate(big, deg: deg) else { throw YCError.badImage }
+        // 字框门槛按像素不变（2016 上 0.006 ≈ 12 像素高），大图上放低一点，小字也收
+        let k = Double(work) / Double(max(big.width, big.height))
+        return try readUp(up, angle: deg, minHeight: Float(max(0.002, 0.006 * k * 0.8)), notes: &notes)
+    }
+
+    /// 扶正好的图：认字 → 字框 → 修表头 → 只留要的列 → 读表
+    static func readUp(_ up: CGImage, angle: Double, minHeight: Float, notes: inout [String]) throws -> YCJob {
+        let lines = try recognize(up, accurate: true, minHeight: minHeight)
+        let p2 = skewParts(lines)
+        notes.append("余歪 框\(YingCunVision.deg(p2.quad)) 邻\(YingCunVision.deg(p2.nb)) 行\(lines.count) 宽\(up.width)")
+        let found = items(lines)
+        let split = YingCun.splitHeaderWords(found)
+        if split > 0 { notes.append("表头拆了\(split)个") }
+        if YingCun.headerOf(found, YingCun.median(found.map(\.h))) == nil, YingCun.repairHeader(found) {
+            notes.append("表头补了 DIMENSION")
+        }
+        let raw = found.map { $0.copy() }
+        YingCun.prune(found)
+        guard let raster = YCRaster(up) else { throw YCError.badImage }
+        return YCJob(up: raster, items: found, raw: raw, angle: angle)
     }
 }

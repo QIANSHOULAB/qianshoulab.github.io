@@ -48,4 +48,14 @@ enum YingCunStrings {
     static let imgBrand = "英寸照妖镜"
     static let fileName = "英寸照妖镜"
     static let close = "收起"
+    // 166：管控线 / 全要、存原图
+    static let pickLimits = "管控线"
+    static let pickAll = "全要"
+    static let limitsOnly = "只换了管控线"
+    static let limitsNone = "这张没找到 CONTROL LIMIT（LCL / UCL），本镜一个数都没碰。真要全换，点「全要」"
+    static func skipped(_ n: Int) -> String { "\(n) 个数挤得没地方写，没硬塞；凑近拍一段更清楚" }
+    static let saveOriginal = "存原图"
+    static let savedOriginal = "原图进相册了，没盖红字的那张"
+    static let saveDenied = "没存上：设置 → 铁屑江湖 → 照片，给个「添加照片」"
+    static let saveFailed = "没存上，再点一次试试"
 }
