@@ -200,22 +200,55 @@ enum YingCunVision {
             // 字框按整张图的像素算（l.box 是像素，bb 是 0~1）
             let W = l.box.width > 0 ? Double(l.box.maxX) / Double(max(1e-9, l.obs.boundingBox.maxX)) : 0
             let H = l.box.height > 0 ? Double(l.box.height) / Double(max(1e-9, l.obs.boundingBox.height)) : 0
-            var groups: [(String.Index, String.Index, CGRect)] = []
+            var groups: [(String.Index, String.Index, CGRect, [(Range<String.Index>, CGRect)])] = []
             if tokens.count <= 1 || W <= 0 || H <= 0 {
-                out.append(item(l.box, s.trimmingCharacters(in: .whitespaces), l.conf))
+                // 166：Vision 给不出每个词的框时，整行一个框；里面夹着数、整串又不是一个数，就按字数把词摊开
+                let whole = s.trimmingCharacters(in: .whitespaces)
+                let words = wordRanges(s)
+                if words.count >= 2, YingCun.parseNum(whole) == nil, words.contains(where: { YingCun.parseNum(String(s[$0])) != nil }) {
+                    let n = Double(s.count)
+                    for r in words {
+                        let a = Double(s.distance(from: s.startIndex, to: r.lowerBound)) / n, b = Double(s.distance(from: s.startIndex, to: r.upperBound)) / n
+                        let box = CGRect(x: l.box.minX + l.box.width * a, y: l.box.minY, width: l.box.width * (b - a), height: l.box.height)
+                        out.append(item(box, String(s[r]), l.conf))
+                    }
+                } else {
+                    out.append(item(l.box, whole, l.conf))
+                }
                 continue
             }
             for (r, nb) in tokens {
                 let px = CGRect(x: nb.minX * W, y: nb.minY * H, width: nb.width * W, height: nb.height * H)
                 if let last = groups.last, Double(px.minX - last.2.maxX) < 0.9 * Double(l.box.height) {
-                    groups[groups.count - 1] = (last.0, r.upperBound, last.2.union(px))
+                    groups[groups.count - 1] = (last.0, r.upperBound, last.2.union(px), last.3 + [(r, px)])
                 } else {
-                    groups.append((r.lowerBound, r.upperBound, px))
+                    groups.append((r.lowerBound, r.upperBound, px, [(r, px)]))
                 }
             }
             for g in groups {
-                out.append(item(g.2, String(s[g.0..<g.1]), l.conf))
+                let text = String(s[g.0..<g.1])
+                // 166：挨得近被并成一块的（「0.6457 BG」这种：数跟隔壁的字粘在一起），整块又不是一个数，就一个词一个框拆开
+                if g.3.count >= 2, YingCun.parseNum(text) == nil, g.3.contains(where: { YingCun.parseNum(String(s[$0.0])) != nil }) {
+                    for (r, px) in g.3 { out.append(item(px, String(s[r]), l.conf)) }
+                } else {
+                    out.append(item(g.2, text, l.conf))
+                }
             }
+        }
+        return out
+    }
+
+    /// 一行字里每个词（不含空白）的位置
+    static func wordRanges(_ s: String) -> [Range<String.Index>] {
+        var out: [Range<String.Index>] = []
+        var i = s.startIndex
+        while i < s.endIndex {
+            while i < s.endIndex, s[i].isWhitespace { i = s.index(after: i) }
+            if i >= s.endIndex { break }
+            var j = i
+            while j < s.endIndex, !s[j].isWhitespace { j = s.index(after: j) }
+            out.append(i..<j)
+            i = j
         }
         return out
     }
