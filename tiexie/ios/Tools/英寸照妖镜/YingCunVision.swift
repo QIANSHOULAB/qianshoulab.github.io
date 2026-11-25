@@ -469,21 +469,29 @@ enum YingCunVision {
                 fresh.append(f)
             }
         }
-        // 原来那片已经有字的不要（中心落在原有字框里），几块之间重的也只要一个
+        // 原来那片已经有字的不要（中心落在原有字框里），几块之间重的也只要一个；
+        // 原来那儿是认不成数的一坨、这回认出了数，就换成这回的
         var have = job.raw.filter { !$0.text.isEmpty }
         var add: [YCItem] = []
-        for f in fresh where !have.contains(where: { o in f.cx > o.x0 - 2 && f.cx < o.x1 + 2 && f.cy > o.y0 && f.cy < o.y1 }) {
-            add.append(f)
-            have.append(f)
+        var drop = Set<ObjectIdentifier>()
+        for f in fresh {
+            let hit = have.filter { o in f.cx > o.x0 - 2 && f.cx < o.x1 + 2 && f.cy > o.y0 && f.cy < o.y1 }
+            if hit.isEmpty || (f.num != nil && hit.allSatisfy { $0.num == nil }) {
+                for o in hit { drop.insert(ObjectIdentifier(o)) }
+                have.removeAll { drop.contains(ObjectIdentifier($0)) }
+                add.append(f)
+                have.append(f)
+            }
         }
         if add.isEmpty { notes.append(tag + " 0"); return job }
         YingCun.splitHeaderWords(add)
-        let raw = job.raw.map { $0.copy() } + add
+        let replaced = drop.count
+        let raw = job.raw.filter { !drop.contains(ObjectIdentifier($0)) }.map { $0.copy() } + add
         let found = raw.map { $0.copy() }
         YingCun.prune(found)
         let j2 = YCJob(up: job.up, items: found, raw: raw, angle: job.angle)
         let before = cells(job.table, fullKeys) + cells(job.limits, limKeys), after = cells(j2.table, fullKeys) + cells(j2.limits, limKeys)
-        notes.append(tag + " +\(add.count) 框，格 \(before)→\(after)")
+        notes.append(tag + " +\(add.count) 框" + (replaced > 0 ? "（换掉 \(replaced)）" : "") + "，格 \(before)→\(after)")
         return after > before ? j2 : job
     }
 

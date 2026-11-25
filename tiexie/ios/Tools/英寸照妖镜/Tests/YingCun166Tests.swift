@@ -236,6 +236,18 @@ final class YingCun166Tests: XCTestCase {
                     allGood += hit; allTotal += cnt
                     note += " 全要对上\(hit)/\(cnt)" + (miss.isEmpty ? "" : " " + miss.joined(separator: " "))
                     if !miss.isEmpty { note += " ‖ " + dump(job, A) }
+                    // 第一格没对上的：那个位置原来是什么字
+                    if let m = miss.first, let ri = Int(m.dropFirst().prefix { $0.isNumber }), ri - 1 < A.rows.count {
+                        let k = String(m.dropFirst().drop { $0.isNumber }.prefix(while: { $0 != ":" }))
+                        let r = A.rows[ri - 1]
+                        let y = r.keys.map { r[$0]!.cy }.reduce(0, +) / Double(max(1, r.count))
+                        if let l = A.lines[k] {
+                            let x = l.0 + l.1 * y
+                            let at = job.raw.filter { abs($0.cy - y) < A.th && abs($0.cx - x) < 3 * A.th }
+                                .map { "「\($0.text)」\(Int($0.x0))-\(Int($0.x1))\($0.num == nil ? "非数" : "")" }.joined(separator: " ")
+                            note += " ‖ r\(ri)\(k) 那儿原来是[\(at)] 列线@\(Int(x))"
+                        }
+                    }
                 } else {
                     fails.append("\(n) 全要没读出表")
                 }
