@@ -305,9 +305,9 @@ final class DianChaoTests: XCTestCase {
         let first = try JSONSerialization.data(withJSONObject: ["id": "\(id)-1", "re": id, "stage": "first"])
         XCTAssertEqual(Butler.replyTo(first), id, "第一封的 id 带 -1，按 re 交回去")
         // 145：partial 带 for、不带 re。新版按 for 交回去；旧版（只看 re / id）拿到的是 <id>-p1，没有工具在等，放过去
-        let o: [String: Any] = ["id": "\(id)-p1", "for": id, "stage": "partial"]
-        XCTAssertEqual(Butler.replyTo(try JSONSerialization.data(withJSONObject: o)), id)
-        XCTAssertEqual((o["re"] as? String) ?? (o["id"] as? String), "\(id)-p1", "旧版手机的找法找不到点钞机")
+        let part: [String: Any] = ["id": "\(id)-p1", "for": id, "stage": "partial"]
+        XCTAssertEqual(Butler.replyTo(try JSONSerialization.data(withJSONObject: part)), id)
+        XCTAssertEqual((part["re"] as? String) ?? (part["id"] as? String), "\(id)-p1", "旧版手机的找法找不到点钞机")
     }
 
     // ------------------------------------------------------------ 145 边数边出点
@@ -354,8 +354,13 @@ final class DianChaoTests: XCTestCase {
         var r = DCRun(id: "abcdef12-x", sentAt: Date())
         func L(_ n: Int, stage: String = "partial", ok: Bool = true) -> DianChao.Letter {
             var l = DianChao.Letter(stage: stage, ok: ok, why: "", total: n, trays: [])
-            l.trays = [DCTray(box: [100, 100, 900, 600], complete: true, main: true, on: true,
-                              pts: (0..<n).map { DCPoint(y: Double(200 + ($0 / 3) * 200), x: Double(200 + ($0 % 3) * 100)) })]
+            var pts: [DCPoint] = []
+            for i in 0..<n {
+                let y = Double(200 + (i / 3) * 200)
+                let x = Double(200 + (i % 3) * 100)
+                pts.append(DCPoint(y: y, x: x))
+            }
+            l.trays = [DCTray(box: [100, 100, 900, 600], complete: true, main: true, on: true, pts: pts)]
             return l
         }
         XCTAssertTrue(r.receive(L(5)))
