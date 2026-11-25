@@ -36,6 +36,13 @@ final class YingCun166Tests: XCTestCase {
         YCRaster(width: Int((items.map(\.x1).max() ?? 100) + 200), height: Int((items.map(\.y1).max() ?? 100) + 200))
     }
 
+    /// 留给 CI 的话：写到 tiexie/ios/notes-166.txt，ci/shots.sh 转成 Actions 注释（XCTSkip 的字在注释里看不见）
+    static func note(_ lines: [String]) {
+        let url = dir.appendingPathComponent("../../../../notes-166.txt").standardizedFileURL
+        let old = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+        try? (old + lines.map { $0.replacingOccurrences(of: "\n", with: " ") + "\n" }.joined()).write(to: url, atomically: true, encoding: .utf8)
+    }
+
     static func overlaps(_ labels: [YCLabel]) -> Int {
         var n = 0
         for i in 0..<labels.count {
@@ -72,7 +79,7 @@ final class YingCun166Tests: XCTestCase {
             let d = try XCTUnwrap(YingCunRender.draw(job, .in2mm, .limits), n)
             XCTAssertFalse(d.missing, n)
             XCTAssertEqual(Set(d.labels.compactMap(\.key)), ["LCL", "UCL"], n)
-            let want = rows.reduce(0) { $0 + ["LCL", "UCL"].filter { k in $1.conv[k] != nil }.count }
+            let want = rows.reduce(0) { acc, w in acc + ["LCL", "UCL"].filter { w.conv[$0] != nil }.count }
             XCTAssertEqual(d.labels.count, want, n)
             for c in d.checks { XCTAssertTrue(c.flag.isSubset(of: YingCun.limitKeys), n) }
             for L in d.labels { XCTAssertEqual(YingCun.convert(L.item.num!, .in2mm), rows[L.row].conv[L.key!], "\(n) 第 \(L.row + 1) 行 \(L.key!)") }
@@ -218,6 +225,7 @@ final class YingCun166Tests: XCTestCase {
         }
         let summary = "166 Vision 对上 \(good)/\(total) 格｜" + lines.joined(separator: "｜")
         print("166-VISION " + summary)
+        note(["166 Vision 对上 \(good)/\(total) 格" + (fails.isEmpty ? "" : "；毛病：" + fails.joined(separator: "；"))] + lines)
         visionResult = (good, total, fails, summary)
         return (good, total, fails, summary)
     }
@@ -244,6 +252,7 @@ final class YingCun166Tests: XCTestCase {
         for (i, w) in t.rows.enumerated() where i < A.rows.count {
             for k in ["LCL", "UCL"] where A.rows[i][k]?.num.map({ YingCun.convert($0, .in2mm) }) == Self.conv(w[k]?.str) { hit += 1 }
         }
+        note(["s12 原图大小认：管控线对上 \(hit)/\(2 * t.rows.count) 行\(A.rows.count) [\(job.notes.joined(separator: "；"))]"])
         XCTAssertEqual(hit, 2 * t.rows.count, "原图大小认 管控线对上 \(hit)/\(2 * t.rows.count) [\(job.notes.joined(separator: "；"))]")
     }
 }

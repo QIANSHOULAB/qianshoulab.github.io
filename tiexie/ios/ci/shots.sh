@@ -3,6 +3,10 @@
 # 用法：shots.sh <模拟器 UDID> <TieXie.app> <输出目录>
 set -uo pipefail
 SIM="$1"; APP="$2"; OUT="$3"
+# 166：单测往 tiexie/ios 下写 notes-*.txt（读出了什么、对上几格），这里转成 Actions 注释（工作流文件推不动，放这儿）
+find tiexie/ios -name 'notes-*.txt' 2>/dev/null | while read -r f; do
+  while IFS= read -r l; do echo "::notice title=$(basename "$f")::$l"; done < "$f"
+done
 BID=lab.qianshou.tiexie
 # 134：tool-zhaoyao.idle = 照妖镜还没拍照的样子（跟网页首屏比）；点后面的只管文件名，进哪个界面看点前面的
 # 150：tool-dianchao.first = 第一遍刚到（已经是「完成」）；tool-dianchao.fixed = 复查改了一件
