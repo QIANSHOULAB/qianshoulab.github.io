@@ -179,60 +179,51 @@ enum YingCunVision {
 
     static func deg(_ r: Double?) -> String { r.map { String(format: "%.1f", $0 * 180 / .pi) } ?? "-" }
 
-    /// 一行字按大空隙拆开（空隙比 0.9 个字高宽就拆），每段一个字框
+    /// 一行字按大空隙拆开（空隙比 0.9 个字高宽就拆），每段一个字框。
+    /// 166：Vision 有时给不出某个词的框（boundingBox(for:) 回 nil），以前这个词就丢了（s9 一整列 UCL 没了）；
+    ///      现在按左右两个有框的词把它摆在中间，宽度按这行字的平均字宽估
     static func items(_ lines: [Line]) -> [YCItem] {
         var out: [YCItem] = []
         for l in lines {
             let s = l.text
-            var tokens: [(Range<String.Index>, CGRect)] = []
-            var i = s.startIndex
-            while i < s.endIndex {
-                while i < s.endIndex, s[i].isWhitespace { i = s.index(after: i) }
-                if i >= s.endIndex { break }
-                var j = i
-                while j < s.endIndex, !s[j].isWhitespace { j = s.index(after: j) }
-                let r = i..<j
-                if let bb = try? l.cand.boundingBox(for: r)?.boundingBox {
-                    tokens.append((r, CGRect(x: bb.minX, y: 1 - bb.maxY, width: bb.width, height: bb.height)))
-                }
-                i = j
+            let words = wordRanges(s)
+            let boxes: [CGRect?] = words.map { r in
+                guard let bb = try? l.cand.boundingBox(for: r)?.boundingBox else { return nil }
+                return CGRect(x: bb.minX, y: 1 - bb.maxY, width: bb.width, height: bb.height)
             }
             // 字框按整张图的像素算（l.box 是像素，bb 是 0~1）
             let W = l.box.width > 0 ? Double(l.box.maxX) / Double(max(1e-9, l.obs.boundingBox.maxX)) : 0
             let H = l.box.height > 0 ? Double(l.box.height) / Double(max(1e-9, l.obs.boundingBox.height)) : 0
-            var groups: [(String.Index, String.Index, CGRect, [(Range<String.Index>, CGRect)])] = []
-            if tokens.count <= 1 || W <= 0 || H <= 0 {
-                // 166：Vision 给不出每个词的框时，整行一个框；里面夹着数、整串又不是一个数，就按字数把词摊开
-                let whole = s.trimmingCharacters(in: .whitespaces)
-                let words = wordRanges(s)
-                if words.count >= 2, YingCun.parseNum(whole) == nil, words.contains(where: { YingCun.parseNum(String(s[$0])) != nil }) {
-                    let n = Double(s.count)
-                    for r in words {
-                        let a = Double(s.distance(from: s.startIndex, to: r.lowerBound)) / n, b = Double(s.distance(from: s.startIndex, to: r.upperBound)) / n
-                        let box = CGRect(x: l.box.minX + l.box.width * a, y: l.box.minY, width: l.box.width * (b - a), height: l.box.height)
-                        out.append(item(box, String(s[r]), l.conf))
-                    }
-                } else {
-                    out.append(item(l.box, whole, l.conf))
-                }
+            let known = boxes.compactMap { $0 }.count
+            if known <= 1 || W <= 0 || H <= 0 {
+                out.append(item(l.box, s.trimmingCharacters(in: .whitespaces), l.conf))
                 continue
             }
-            for (r, nb) in tokens {
-                let px = CGRect(x: nb.minX * W, y: nb.minY * H, width: nb.width * W, height: nb.height * H)
-                if let last = groups.last, Double(px.minX - last.2.maxX) < 0.9 * Double(l.box.height) {
-                    groups[groups.count - 1] = (last.0, r.upperBound, last.2.union(px), last.3 + [(r, px)])
+            var px: [CGRect?] = boxes.map { $0.map { CGRect(x: $0.minX * W, y: $0.minY * H, width: $0.width * W, height: $0.height * H) } }
+            if known < words.count {
+                var cw: [Double] = []
+                for (k, r) in words.enumerated() { if let b = px[k] { cw.append(Double(b.width) / Double(max(1, s[r].count))) } }
+                let charW = YingCun.median(cw)
+                for k in words.indices where px[k] == nil {
+                    let w = charW * Double(s[words[k]].count)
+                    let left = px[..<k].compactMap { $0 }.last, right = px[(k + 1)...].compactMap { $0 }.first
+                    let a = Double(left?.maxX ?? l.box.minX), b = Double(right?.minX ?? l.box.maxX)
+                    let x0: Double
+                    if left == nil { x0 = a } else if right == nil { x0 = b - w } else { x0 = (a + b) / 2 - w / 2 }
+                    px[k] = CGRect(x: x0, y: Double(l.box.minY), width: w, height: Double(l.box.height))
+                }
+            }
+            var groups: [(String.Index, String.Index, CGRect)] = []
+            for (k, r) in words.enumerated() {
+                guard let p = px[k] else { continue }
+                if let last = groups.last, Double(p.minX - last.2.maxX) < 0.9 * Double(l.box.height) {
+                    groups[groups.count - 1] = (last.0, r.upperBound, last.2.union(p))
                 } else {
-                    groups.append((r.lowerBound, r.upperBound, px, [(r, px)]))
+                    groups.append((r.lowerBound, r.upperBound, p))
                 }
             }
             for g in groups {
-                let text = String(s[g.0..<g.1])
-                // 166：挨得近被并成一块的（「0.6457 BG」这种：数跟隔壁的字粘在一起），整块又不是一个数，就一个词一个框拆开
-                if g.3.count >= 2, YingCun.parseNum(text) == nil, g.3.contains(where: { YingCun.parseNum(String(s[$0.0])) != nil }) {
-                    for (r, px) in g.3 { out.append(item(px, String(s[r]), l.conf)) }
-                } else {
-                    out.append(item(g.2, text, l.conf))
-                }
+                out.append(item(g.2, String(s[g.0..<g.1]), l.conf))
             }
         }
         return out
