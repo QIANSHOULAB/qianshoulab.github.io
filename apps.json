@@ -32,6 +32,15 @@
       },
       "versions": [
         {
+          "version": "0.3.6",
+          "buildVersion": "10",
+          "date": "2026-11-25",
+          "localizedDescription": "0.3.6：铁件点钞机不用等复查了：第一遍数完就是「完成」，叮一声、数码管跑一下，存图和重数马上能点。复查在后头悄悄跑，跟第一遍一样就什么都不动；不一样才改：叮叮两声、震一下，数码管上方写「复查改了：45 → 46」，补上的点套绿圈、去掉的点打红叉，各闪几下。大管家两个大脑数得一样时，手机上一点不动。复查没回来就用第一遍的数。手机拨了静音就只震不响。别的工具不变。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.6/TieXie-0.3.6.ipa",
+          "size": 22305015,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.3.5",
           "buildVersion": "9",
           "date": "2026-11-25",
@@ -113,11 +122,11 @@
           "minOSVersion": "26.0"
         }
       ],
-      "version": "0.3.5",
+      "version": "0.3.6",
       "versionDate": "2026-11-25",
-      "versionDescription": "0.3.5：铁件点钞机不用等复查了：第一遍数完就是「完成」，叮一声、数码管跑一下，存图和重数马上能点。复查在后头悄悄跑，跟第一遍一样就什么都不动；不一样才改：叮叮两声、震一下，数码管上方写「复查改了：45 → 46」，补上的点套绿圈、去掉的点打红叉，各闪几下。复查的点只是位置挪了一点不算改。复查没回来就用第一遍的数。手机拨了静音就只震不响。别的工具不变。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.5/TieXie-0.3.5.ipa",
-      "size": 22303490
+      "versionDescription": "0.3.6：铁件点钞机不用等复查了：第一遍数完就是「完成」，叮一声、数码管跑一下，存图和重数马上能点。复查在后头悄悄跑，跟第一遍一样就什么都不动；不一样才改：叮叮两声、震一下，数码管上方写「复查改了：45 → 46」，补上的点套绿圈、去掉的点打红叉，各闪几下。大管家两个大脑数得一样时，手机上一点不动。复查没回来就用第一遍的数。手机拨了静音就只震不响。别的工具不变。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.6/TieXie-0.3.6.ipa",
+      "size": 22305015
     }
   ]
 }
