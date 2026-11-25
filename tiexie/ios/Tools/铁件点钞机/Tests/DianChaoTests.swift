@@ -541,6 +541,37 @@ final class DianChaoTests: XCTestCase {
         XCTAssertEqual(r.fix?.removed, [DCMark(tray: 0, y: 200, x: 200)])
     }
 
+    /// 件数一样、每个点只是挪了一点（151：final 换成另一个大脑的点）：算一样，点原地不动
+    func testFinalDotsNudgedIsSame() {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        r.receive(Self.letter("first", Self.firstTrays))
+        let before = r.trays
+        let nudged: [[Int]] = Self.nine.enumerated().map { (i: Int, p: [Int]) -> [Int] in
+            let dy = i % 2 == 0 ? 14 : -11
+            let dx = i % 3 == 0 ? -17 : 12
+            return [p[0] + dy, p[1] + dx]
+        }
+        XCTAssertTrue(r.receive(Self.letter("final", Self.checked(nudged, added: [], removed: []))))
+        XCTAssertNil(r.fix)
+        XCTAssertEqual(r.trays, before)
+        // 挪了一点、外加真多一件：只报多的那件
+        var s = DCRun(id: "abcdef12-y", sentAt: Date())
+        s.receive(Self.letter("first", Self.firstTrays))
+        s.receive(Self.letter("final", Self.checked(nudged + [[800, 300]], added: [], removed: [])))
+        XCTAssertEqual(s.fix?.line, "复查改了：9 → 10")
+        XCTAssertEqual(s.fix?.added, [DCMark(tray: 0, y: 800, x: 300)])
+        XCTAssertEqual(s.fix?.removed, [])
+    }
+
+    /// 紧挨着的两颗点复查去掉一颗（一件点了两下）：报去掉一件
+    func testDiffPairsOneToOne() {
+        let a: [DCPoint] = [DCPoint(y: 100, x: 100), DCPoint(y: 100, x: 118), DCPoint(y: 100, x: 300)]
+        let b: [DCPoint] = [DCPoint(y: 100, x: 101), DCPoint(y: 102, x: 300)]
+        let d = DianChao.diff(a, b, near: 50)
+        XCTAssertEqual(d.gone, [DCPoint(y: 100, x: 118)])
+        XCTAssertEqual(d.new, [])
+    }
+
     /// 复查没回来（出错、额度）：就用第一遍的数，不卡钞、不提示、不响
     func testReviewFailsQuietly() async throws {
         let (m, rid) = try await firstArrived()

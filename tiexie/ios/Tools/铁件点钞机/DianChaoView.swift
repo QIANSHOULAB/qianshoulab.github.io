@@ -449,7 +449,7 @@ private struct FixMarks: View {
                     Path(ellipseIn: CGRect(x: m.x * W / 1000 - r, y: m.y * H / 1000 - r, width: 2 * r, height: 2 * r))
                 }
                 for m in fix.added {
-                    ctx.fill(ring(m, R * 2.5), with: .color(DCColor.lime.opacity(0.28)))
+                    ctx.stroke(ring(m, R * 1.95), with: .color(DCColor.lime.opacity(0.3)), lineWidth: R * 1.1)
                     ctx.stroke(ring(m, R * 2.5), with: .color(DCColor.lime), lineWidth: line)
                 }
                 for m in fix.removed {

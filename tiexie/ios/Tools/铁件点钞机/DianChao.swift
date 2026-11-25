@@ -174,7 +174,7 @@ enum DianChao {
     // ------------------------------------------------------------ 复查
     static func same(_ a: DCPoint, _ b: DCPoint) -> Bool { abs(a.y - b.y) < 0.5 && abs(a.x - b.x) < 0.5 }
 
-    /// 手补的点离复查补的点多近算同一件：第一遍相邻件距离中位数的六成，至少 15
+    /// 两个点多近算指着同一件（0~1000）：第一遍相邻件距离中位数的一半，至少 12
     static func sameNear(_ trays: [DCTray]) -> Double {
         let P: [DCPoint] = trays.flatMap(\.pts)
         if P.count < 2 { return 25 }
@@ -185,41 +185,62 @@ enum DianChao {
             nn.append(m)
         }
         nn.sort()
-        return max(15, nn[nn.count / 2] * 0.6)
+        return max(12, nn[nn.count / 2] * 0.5)
+    }
+
+    /// 两份点按位置一一配对（先配最近的，差不到 near 算同一件）。回没配上的：gone = a 有 b 没有，new = b 有 a 没有
+    static func diff(_ a: [DCPoint], _ b: [DCPoint], near: Double) -> (gone: [DCPoint], new: [DCPoint]) {
+        var pairs: [(d: Double, i: Int, j: Int)] = []
+        for (i, p) in a.enumerated() {
+            for (j, q) in b.enumerated() {
+                let d = hypot(p.x - q.x, p.y - q.y)
+                if d < near { pairs.append((d: d, i: i, j: j)) }
+            }
+        }
+        pairs.sort { $0.d < $1.d }
+        var usedA = Set<Int>(), usedB = Set<Int>()
+        for pair in pairs where !usedA.contains(pair.i) && !usedB.contains(pair.j) {
+            usedA.insert(pair.i)
+            usedB.insert(pair.j)
+        }
+        return (a.indices.filter { !usedA.contains($0) }.map { a[$0] }, b.indices.filter { !usedB.contains($0) }.map { b[$0] })
     }
 
     /// 复查（final）盖到手上这份盘子上：只搬复查比第一遍改了的（补的、去的），手改和「不算 / 也算上」都留着。
-    /// 手上已经删掉的不用再删，手上已经补过的那件不再补一颗。回新盘子和看得见的改动（算着的盒子里的）。
+    /// 点按位置配（坐标挪了一点不算改，手上的点原地不动）；手上已经删掉的不用再删，手上已经补过的那件不再补一颗。
+    /// 回新盘子和看得见的改动（算着的盒子里的）。
     static func review(_ now: [DCTray], first: [DCTray], final: [DCTray]) -> (trays: [DCTray], added: [DCMark], removed: [DCMark]) {
         var added: [DCMark] = []
         var removed: [DCMark] = []
+        let near = sameNear(first)
         // 盒子数对不上（大管家那头现在不会）：整盘换成复查的
         guard first.count == final.count, now.count == first.count else {
             let new: [DCTray] = final.map { var t = $0; t.pts = rowSorted(t.pts); return t }
-            for (i, t) in new.enumerated() where t.on {
-                for q in t.pts where !now.contains(where: { o in o.on && o.pts.contains { same($0, q) } }) {
-                    added.append(DCMark(tray: i, y: q.y, x: q.x))
-                }
+            let seenNow: [DCPoint] = now.filter(\.on).flatMap(\.pts)
+            let seenNew: [DCPoint] = new.filter(\.on).flatMap(\.pts)
+            let d = diff(seenNow, seenNew, near: near)
+            for q in d.new {
+                let i = new.firstIndex(where: { t in t.on && t.pts.contains(q) }) ?? 0
+                added.append(DCMark(tray: i, y: q.y, x: q.x))
             }
-            for (i, t) in now.enumerated() where t.on {
-                for p in t.pts where !new.contains(where: { n in n.on && n.pts.contains { same($0, p) } }) {
-                    removed.append(DCMark(tray: i, y: p.y, x: p.x))
-                }
+            for q in d.gone {
+                let i = now.firstIndex(where: { t in t.on && t.pts.contains(q) }) ?? 0
+                removed.append(DCMark(tray: i, y: q.y, x: q.x))
             }
             return (new, added, removed)
         }
         var out = now
-        let near = sameNear(first)
         var mine: [DCPoint] = now.flatMap { t in t.pts.filter(\.man) }
         for i in out.indices {
             var touched = false
-            for p in first[i].pts where !final[i].pts.contains(where: { same($0, p) }) {
+            let d = diff(first[i].pts, final[i].pts, near: near)
+            for p in d.gone {
                 guard let j = out[i].pts.firstIndex(where: { !$0.man && same($0, p) }) else { continue }
                 out[i].pts.remove(at: j)
                 touched = true
                 if out[i].on { removed.append(DCMark(tray: i, y: p.y, x: p.x)) }
             }
-            for q in final[i].pts where !first[i].pts.contains(where: { same($0, q) }) {
+            for q in d.new {
                 if let k = mine.firstIndex(where: { hypot($0.x - q.x, $0.y - q.y) < near }) {
                     mine.remove(at: k)
                     continue
