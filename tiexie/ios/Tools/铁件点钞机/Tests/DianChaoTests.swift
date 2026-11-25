@@ -5,6 +5,7 @@ import UIKit
 // 铁件点钞机：假大管家走一遍。信封、加密照接口（tiexie/ios/大管家接口.md + 一叶笺 v2），信箱是假的（存在内存里），
 // 大管家那头照 121（pc-butler handheld/tiexie/count.py、service.py）回两封信：stage first、stage final。
 // 走的路：出数、补点（第二眼柠檬绿圈）、手改、不算 / 也算上、90 秒超时、没配对、大管家不在、大管家说没数成。
+// 150：第一封到了就是「完成」；复查一样就什么都不动，多一件、少一件才改、叮叮、写「复查改了」；复查没回来就用第一遍的数。
 @MainActor
 final class DianChaoTests: XCTestCase {
 
@@ -184,10 +185,13 @@ final class DianChaoTests: XCTestCase {
 
         try await butler.first(rid, trays: Self.firstTrays, total: 9)
         try await post.pump()
-        XCTAssertEqual(m.run?.phase, .first)
+        XCTAssertEqual(m.run?.phase, .done, "150：第一遍数完就算完成")
+        XCTAssertEqual(m.run?.reviewing, true)
         XCTAssertEqual(m.run?.total, 9)
-        XCTAssertEqual(m.run?.statusLine, DianChaoStrings.auditing)
+        XCTAssertEqual(m.run?.statusLine, DianChaoStrings.fixHint, "界面上不写「复查中」")
+        XCTAssertEqual(m.busy, false, "重数、快门马上能点")
         XCTAssertNotNil(m.countFrom)
+        XCTAssertNotNil(post.waiters[rid], "复查还要等")
 
         try await butler.final(rid, trays: Self.finalTrays, total: 10)
         try await post.pump()
@@ -198,8 +202,13 @@ final class DianChaoTests: XCTestCase {
         XCTAssertEqual(r.trays[0].pts.filter(\.aud).count, 1, "第二眼补的那颗是柠檬绿圈")
         XCTAssertEqual(r.trays[0].pts.last?.y, 800)
         XCTAssertTrue(r.statusLine.hasPrefix("复查揪出 1 个漏网的"), r.statusLine)
+        XCTAssertEqual(r.reviewing, false)
+        XCTAssertEqual(r.fix?.line, "复查改了：9 → 10")
         XCTAssertNil(post.waiters[rid], "两封都到了就不等了")
         XCTAssertTrue(relay.letters.isEmpty, "信都 ack 了")
+        // 复查回来时数码管还在跑：先把头一声叮补上，再叮叮
+        try await waitChime(m, 2)
+        XCTAssertEqual(m.chime?.kind, .fixed)
         // 存图：照片下面接一块面板
         let poster = DCDraw.poster(photo: try XCTUnwrap(m.photo), run: r)
         XCTAssertEqual(poster.size.width, 2212)
@@ -244,13 +253,20 @@ final class DianChaoTests: XCTestCase {
         XCTAssertTrue(r.tick(now: t0.addingTimeInterval(90)))
         XCTAssertEqual(r.phase, .jam("大管家没回，再拍一次？"))
         XCTAssertEqual(r.statusLine, "大管家没回，再拍一次？")
-        // 第一封到了、第二眼迟迟不来：照第一遍的数
+        // 第一封到了、第二眼迟迟不来：照第一遍的数，不提示
         var s = DCRun(id: "abcdef12-w", sentAt: t0)
         s.receive(DianChao.parse(try! JSONSerialization.data(withJSONObject: ["ok": true, "stage": "first", "trays": Self.firstTrays]))!)
-        XCTAssertEqual(s.phase, .first)
+        XCTAssertEqual(s.phase, .done)
+        XCTAssertTrue(s.reviewing)
         XCTAssertFalse(s.tick(now: Date().addingTimeInterval(DianChao.finalTimeout - 5)))
         XCTAssertTrue(s.tick(now: Date().addingTimeInterval(DianChao.finalTimeout + 1)))
         XCTAssertEqual(s.phase, .done)
+        XCTAssertFalse(s.reviewing)
+        XCTAssertTrue(s.settled)
+        XCTAssertEqual(s.total, 9)
+        XCTAssertNil(s.fix)
+        XCTAssertEqual(s.statusLine, DianChaoStrings.fixHint)
+        XCTAssertFalse(s.receive(Self.letter("final", Self.moreTrays)), "不等了以后迟到的复查不认")
         XCTAssertEqual(s.total, 9)
         // 超时以后迟到的信不认
         XCTAssertFalse(r.receive(DianChao.parse(try! JSONSerialization.data(withJSONObject: ["ok": true, "stage": "final", "trays": Self.finalTrays]))!))
@@ -338,9 +354,9 @@ final class DianChaoTests: XCTestCase {
         XCTAssertEqual(m.run?.liveShown(at: a.addingTimeInterval(1)), 7)
         try await butler.first(rid, trays: Self.firstTrays, total: 9)
         try await post.pump()
-        XCTAssertEqual(m.run?.phase, .first)
+        XCTAssertEqual(m.run?.phase, .done)
         XCTAssertEqual(m.run?.total, 9)
-        XCTAssertNil(m.countFrom, "点已经一个个亮过了，第一封不再从 0 跑")
+        XCTAssertNotNil(m.countFrom, "150：数码管跑一下、叮一下挪到第一封到的时候")
         try await butler.partial(rid, n: 3, trays: Self.trays(8), total: 8)
         try await post.pump()
         XCTAssertEqual(m.run?.total, 9, "第一封以后来的 partial 不要")
@@ -404,7 +420,222 @@ final class DianChaoTests: XCTestCase {
         XCTAssertEqual(m.run?.liveTotal, 0, "旧版没交给点钞机")
         try await butler.first(rid, trays: Self.firstTrays, total: 9)
         try await post.pump()
-        XCTAssertEqual(m.run?.phase, .first)
+        XCTAssertEqual(m.run?.phase, .done)
         XCTAssertEqual(m.run?.total, 9)
+    }
+
+    // ------------------------------------------------------------ 150 第一遍数完就算完成
+    /// 第一遍那两盒，复查回来的几种样子
+    static func checked(_ pts: [[Int]], added: [[Int]], removed: [[Int]]) -> [[String: Any]] {
+        let main: [String: Any] = ["box": [100, 100, 900, 600], "complete": true, "main": true, "counted": true, "count": pts.count,
+                                   "pts": pts, "audit": ["added": added, "removed": removed]]
+        let cut: [String: Any] = ["box": [100, 650, 1000, 1000], "complete": false, "main": false, "counted": false, "count": 2,
+                                  "pts": [[300, 800], [500, 800]], "audit": NSNull()]
+        return [main, cut]
+    }
+    static let nine: [[Int]] = [[200, 200], [200, 300], [200, 400], [400, 200], [400, 300], [400, 400], [600, 200], [600, 300], [600, 400]]
+    static let sameTrays = checked(nine, added: [], removed: [])
+    static let moreTrays = checked(nine + [[800, 300]], added: [[800, 300]], removed: [])
+    static let lessTrays = checked(Array(nine.dropFirst()), added: [], removed: [[200, 200]])
+    static let swapTrays = checked(Array(nine.dropFirst()) + [[800, 300]], added: [[800, 300]], removed: [[200, 200]])
+
+    static func letter(_ stage: String, _ trays: [[String: Any]], ok: Bool = true) -> DianChao.Letter {
+        let o: [String: Any] = ["ok": ok, "stage": stage, "trays": trays]
+        let d = try! JSONSerialization.data(withJSONObject: o)
+        return DianChao.parse(d)!
+    }
+
+    /// 等响到第 n 下（最多 5 秒）
+    func waitChime(_ m: DianChaoModel, _ n: Int) async throws {
+        for _ in 0..<500 {
+            if (m.chime?.n ?? 0) >= n { return }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTFail("一直没响到第 \(n) 下，现在 \(String(describing: m.chime))")
+    }
+
+    /// 拍一张、寄到、第一封（9 件）到了、头一声叮响过了
+    func firstArrived() async throws -> (DianChaoModel, String) {
+        let m = DianChaoModel()
+        m.post = post
+        m.take(Self.photo(4032, 3024))
+        try await waitLetter(to: "pc")
+        let got = try await butler.takeLetter()
+        let (rid, _) = try XCTUnwrap(got)
+        try await butler.first(rid, trays: Self.firstTrays, total: 9)
+        try await post.pump()
+        XCTAssertNil(m.chime, "数码管跑到了才叮")
+        try await waitChime(m, 1)
+        XCTAssertEqual(m.chime?.kind, .done)
+        return (m, rid)
+    }
+
+    func testFinalSameChangesNothing() async throws {
+        // 复查看过、一处没改；复查没看成（audit 是 null）：都一样
+        let noAudit: [[String: Any]] = Self.firstTrays.map { (t: [String: Any]) -> [String: Any] in
+            var u = t
+            u["audit"] = NSNull()
+            return u
+        }
+        for trays in [Self.sameTrays, noAudit] {
+            let (m, rid) = try await firstArrived()
+            let before = try XCTUnwrap(m.run)
+            let from = m.countFrom
+            try await butler.final(rid, trays: trays, total: 9)
+            try await post.pump()
+            try await Task.sleep(nanoseconds: 900_000_000)
+            XCTAssertEqual(m.run?.phase, .done)
+            XCTAssertEqual(m.run?.reviewing, false)
+            XCTAssertEqual(m.run?.trays, before.trays, "点一颗不动")
+            XCTAssertEqual(m.run?.total, 9)
+            XCTAssertNil(m.run?.fix, "不写、不闪")
+            XCTAssertEqual(m.run?.statusLine, before.statusLine)
+            XCTAssertEqual(m.countFrom, from, "数码管不重跑")
+            XCTAssertEqual(m.chime?.n, 1, "不叮")
+            XCTAssertNil(post.waiters[rid])
+        }
+    }
+
+    func testFinalOneMore() async throws {
+        let (m, rid) = try await firstArrived()
+        try await butler.final(rid, trays: Self.moreTrays, total: 10)
+        try await post.pump()
+        let r = try XCTUnwrap(m.run)
+        XCTAssertEqual(r.total, 10)
+        XCTAssertEqual(r.fix?.before, 9)
+        XCTAssertEqual(r.fix?.after, 10)
+        XCTAssertEqual(r.fix?.line, "复查改了：9 → 10")
+        XCTAssertEqual(r.fix?.added, [DCMark(tray: 0, y: 800, x: 300)])
+        XCTAssertEqual(r.fix?.removed, [])
+        XCTAssertEqual(r.trays[0].pts.filter(\.aud).count, 1)
+        XCTAssertTrue(r.statusLine.hasPrefix("复查揪出 1 个漏网的"), r.statusLine)
+        XCTAssertEqual(m.countFrom, .distantPast, "数直接换过去")
+        XCTAssertEqual(m.chime, DCChime(n: 2, kind: .fixed), "叮叮")
+        XCTAssertNil(post.waiters[rid])
+    }
+
+    func testFinalOneLess() async throws {
+        let (m, rid) = try await firstArrived()
+        try await butler.final(rid, trays: Self.lessTrays, total: 8)
+        try await post.pump()
+        let r = try XCTUnwrap(m.run)
+        XCTAssertEqual(r.total, 8)
+        XCTAssertEqual(r.fix?.line, "复查改了：9 → 8")
+        XCTAssertEqual(r.fix?.added, [])
+        XCTAssertEqual(r.fix?.removed, [DCMark(tray: 0, y: 200, x: 200)])
+        XCTAssertTrue(r.statusLine.hasPrefix("删了 1 个点错的"), r.statusLine)
+        XCTAssertEqual(m.chime, DCChime(n: 2, kind: .fixed))
+        // 改完照样能手改，那一行留着
+        m.tap(y: 200, x: 200, hitX: 30, aspect: 0.75)
+        XCTAssertEqual(m.run?.total, 9)
+        XCTAssertEqual(m.run?.fix?.line, "复查改了：9 → 8")
+    }
+
+    func testFinalSameCountOtherDots() {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        r.receive(Self.letter("first", Self.firstTrays))
+        XCTAssertTrue(r.receive(Self.letter("final", Self.swapTrays)))
+        XCTAssertEqual(r.total, 9)
+        XCTAssertEqual(r.fix?.line, "复查改了：9 → 9（补 1 个、去 1 个）")
+        XCTAssertEqual(r.fix?.added, [DCMark(tray: 0, y: 800, x: 300)])
+        XCTAssertEqual(r.fix?.removed, [DCMark(tray: 0, y: 200, x: 200)])
+    }
+
+    /// 复查没回来（出错、额度）：就用第一遍的数，不卡钞、不提示、不响
+    func testReviewFailsQuietly() async throws {
+        let (m, rid) = try await firstArrived()
+        let before = try XCTUnwrap(m.run)
+        try await butler.fail(rid, why: "额度用完了")
+        try await post.pump()
+        try await Task.sleep(nanoseconds: 900_000_000)
+        XCTAssertEqual(m.run?.phase, .done)
+        XCTAssertEqual(m.run?.reviewing, false)
+        XCTAssertEqual(m.run?.trays, before.trays)
+        XCTAssertNil(m.run?.fix)
+        XCTAssertEqual(m.run?.statusLine, before.statusLine)
+        XCTAssertEqual(m.chime?.n, 1)
+        XCTAssertNil(post.waiters[rid])
+    }
+
+    func testRecountWhileReviewing() async throws {
+        let (m, rid) = try await firstArrived()
+        m.send()
+        XCTAssertEqual(m.run?.phase, .waiting)
+        XCTAssertNotEqual(m.run?.id, rid)
+        XCTAssertNil(post.waiters[rid], "上一盘的复查不等了")
+        try await butler.final(rid, trays: Self.moreTrays, total: 10)
+        try await post.pump()
+        XCTAssertEqual(m.run?.phase, .waiting)
+        XCTAssertNil(m.run?.fix)
+        XCTAssertEqual(m.chime?.n, 1)
+        m.leave()
+    }
+
+    /// 复查回来之前已经手改过、点过「也算上」：都留着，复查只搬它改的那几处
+    func testEditsBeforeReviewStay() {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        r.receive(Self.letter("first", Self.firstTrays))
+        r.tap(y: 400, x: 300, hitX: 30, aspect: 0.75)
+        r.toggle(1)
+        XCTAssertEqual(r.total, 10)
+        r.receive(Self.letter("final", Self.moreTrays))
+        XCTAssertEqual(r.total, 11)
+        XCTAssertEqual(r.fix?.line, "复查改了：10 → 11")
+        XCTAssertEqual(r.editedText, "手改 −1")
+        XCTAssertTrue(r.trays[1].on)
+        XCTAssertFalse(r.trays[0].pts.contains { $0.y == 400 && $0.x == 300 }, "手删的不长回来")
+    }
+
+    /// 复查要补 / 要删的，手上已经改过了：看得见的没变，不提示
+    func testReviewAgreesWithHand() {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        r.receive(Self.letter("first", Self.firstTrays))
+        r.tap(y: 805, x: 310, hitX: 30, aspect: 0.75)
+        XCTAssertEqual(r.total, 10)
+        r.receive(Self.letter("final", Self.moreTrays))
+        XCTAssertEqual(r.total, 10, "同一件不补两颗")
+        XCTAssertNil(r.fix)
+        var s = DCRun(id: "abcdef12-y", sentAt: Date())
+        s.receive(Self.letter("first", Self.firstTrays))
+        s.tap(y: 200, x: 200, hitX: 30, aspect: 0.75)
+        s.receive(Self.letter("final", Self.lessTrays))
+        XCTAssertEqual(s.total, 8)
+        XCTAssertNil(s.fix)
+    }
+
+    /// 那盒点了「不算」：复查改的看不见，不提示；再「也算上」就是复查改过的
+    func testReviewInExcludedTray() {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        r.receive(Self.letter("first", Self.firstTrays))
+        r.toggle(0)
+        r.receive(Self.letter("final", Self.moreTrays))
+        XCTAssertNil(r.fix)
+        XCTAssertEqual(r.total, 0)
+        r.toggle(0)
+        XCTAssertEqual(r.total, 10)
+    }
+
+    func testFlashAndSounds() {
+        XCTAssertEqual(DianChao.flash(-100), 1, "截图定格")
+        XCTAssertEqual(DianChao.flash(0), 1)
+        XCTAssertEqual(DianChao.flash(0.45), 0.15)
+        XCTAssertEqual(DianChao.flash(0.65), 1)
+        XCTAssertEqual(DianChao.flash(DianChao.flashDur), 0)
+        XCTAssertNotNil(DCSound.url(DCSound.ding), "叮在包里")
+        XCTAssertNotNil(DCSound.url(DCSound.dingDing), "叮叮在包里")
+    }
+
+    /// 截图那两张摆得对不对
+    func testDemoStages() {
+        let a = DianChaoModel()
+        a.showDemo(Self.photo(1200, 900), stage: "first")
+        XCTAssertEqual(a.run?.phase, .done)
+        XCTAssertEqual(a.run?.total, 9)
+        XCTAssertNil(a.run?.fix)
+        let b = DianChaoModel()
+        b.showDemo(Self.photo(1200, 900), stage: "fixed")
+        XCTAssertEqual(b.run?.total, 10)
+        XCTAssertEqual(b.run?.fix?.line, "复查改了：9 → 10")
+        XCTAssertEqual(b.run?.fix?.added.count, 1)
     }
 }

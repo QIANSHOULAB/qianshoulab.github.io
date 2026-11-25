@@ -47,7 +47,9 @@ struct DianChaoView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
             vm.post = butler
-            if Demo.on, vm.photo == nil, let path = UserDefaults.standard.string(forKey: "TXSample"), let img = UIImage(contentsOfFile: path) { vm.showDemo(img) }
+            if Demo.on, vm.photo == nil, let path = UserDefaults.standard.string(forKey: "TXSample"), let img = UIImage(contentsOfFile: path) {
+                vm.showDemo(img, stage: UserDefaults.standard.string(forKey: "TXStage") ?? "")
+            }
         }
         .onDisappear { vm.leave() }
         .fullScreenCover(isPresented: $camera) {
@@ -70,7 +72,7 @@ struct DianChaoView: View {
     private var state: (String, Color, Bool) {
         if vm.refused != nil { return (DianChaoStrings.stJam, DCColor.red, false) }
         switch vm.run?.phase {
-        case .waiting?, .first?: return (DianChaoStrings.stBusy, DCColor.pink, true)
+        case .waiting?: return (DianChaoStrings.stBusy, DCColor.pink, true)
         case .done?: return (DianChaoStrings.stDone, DCColor.lime, false)
         case .jam?: return (DianChaoStrings.stJam, DCColor.red, false)
         default: return (DianChaoStrings.stIdle, DCColor.lime, false)
@@ -106,6 +108,7 @@ struct DianChaoView: View {
             if vm.run == nil && vm.refused == nil {
                 Text(DianChaoStrings.sub).font(.system(size: 14, weight: .semibold)).foregroundStyle(DCColor.muted).lineSpacing(3).padding(.horizontal, 4)
             }
+            if let f = vm.run?.fix { FixLine(text: f.line) }
             lcd
             if let r = vm.run, r.phase == .done, r.total > 0, !counting {
                 HStack(spacing: 7) {
@@ -131,10 +134,8 @@ struct DianChaoView: View {
     /// 数完从 0 跑到总数的那一下还没跑完
     private var counting: Bool {
         guard let s = vm.countFrom, let r = vm.run else { return false }
-        return Date().timeIntervalSince(s) < Self.countDur(r.total) && !reduce
+        return Date().timeIntervalSince(s) < DianChao.countDur(r.total) && !reduce
     }
-
-    static func countDur(_ n: Int) -> Double { min(1.9, max(0.7, Double(n) * 0.046)) }
 
     private var lcd: some View {
         HStack(spacing: 14) {
@@ -164,15 +165,14 @@ struct DianChaoView: View {
                 .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.white.opacity(0.05)))
                 .shadow(color: .black.opacity(0.6), radius: 6, y: 3)
         )
-        .onChange(of: vm.countFrom) { _, s in
-            guard let s, let r = vm.run, !reduce else { return }
-            let d = Self.countDur(r.total)
-            DispatchQueue.main.asyncAfter(deadline: .now() + d) {
-                guard vm.countFrom == s else { return }
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.45)) { pop = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { withAnimation(.easeOut(duration: 0.2)) { pop = false } }
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            }
+        .onChange(of: vm.chime) { _, c in
+            // 叮（数码管跑到了）/ 叮叮（复查改了，DCSound 里顺手震一下）
+            guard let c else { return }
+            DCSound.play(c.kind)
+            if c.kind == .done { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+            guard !reduce else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.45)) { pop = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { withAnimation(.easeOut(duration: 0.2)) { pop = false } }
         }
     }
 
@@ -202,7 +202,7 @@ struct DianChaoView: View {
     private func shownCount(at now: Date) -> Int {
         guard let r = vm.run else { return 0 }
         guard let s = vm.countFrom, !reduce else { return r.total }
-        let d = Self.countDur(r.total)
+        let d = DianChao.countDur(r.total)
         let k = min(1, now.timeIntervalSince(s) / d)
         let e = 1 - pow(1 - k, 1.8)
         return Int((e * Double(r.total)).rounded())
@@ -298,7 +298,7 @@ struct DianChaoView: View {
                     .background(LinearGradient(colors: [DCColor.blue2, DCColor.blue], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 15))
                     .shadow(color: DCColor.blue.opacity(0.55), radius: 11, y: 8)
             }
-            .disabled(!(vm.run?.phase == .done) || counting)
+            .disabled(!(vm.run?.phase == .done))
             .opacity(vm.run?.phase == .done ? 1 : 0.42)
             Button { vm.send() } label: {
                 Text(DianChaoStrings.recount).font(.system(size: 15.5, weight: .heavy)).frame(maxWidth: .infinity, minHeight: 52)
@@ -387,6 +387,7 @@ private struct PhotoDots: View {
                     }
                     .allowsHitTesting(false)
                 }
+                if let r = run, let f = r.fix { FixMarks(fix: f, trays: r.trays) }
                 if busy { Scan() }
             }
             .contentShape(Rectangle())
@@ -406,10 +407,65 @@ private struct PhotoDots: View {
     private func upto(_ r: DCRun, at now: Date) -> Int {
         if r.phase == .waiting { return reduce ? .max : r.liveShown(at: now) }      // 145 partial：新来的一个个亮
         guard let s = countFrom, !reduce else { return .max }
-        let d = min(1.9, max(0.7, Double(r.total) * 0.046))
+        let d = DianChao.countDur(r.total)
         let k = min(1, now.timeIntervalSince(s) / d)
         if k >= 1 { return .max }
         return Int(((1 - pow(1 - k, 1.8)) * Double(r.total)).rounded())
+    }
+}
+
+/// 复查改了：数码管上方那一行，留到下次拍
+private struct FixLine: View {
+    var text: String
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.circle.fill").font(.system(size: 18, weight: .bold))
+            Text(text).font(.system(size: 18, weight: .black))
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(Color(hex: 0x1a1060))
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .background(DCColor.lime, in: RoundedRectangle(cornerRadius: 13))
+        .shadow(color: DCColor.lime.opacity(0.5), radius: 8)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// 复查补的点（外头套一个绿圈）、去掉的点（原地红圈红叉）各闪几下
+private struct FixMarks: View {
+    var fix: DCFix
+    var trays: [DCTray]
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 30)) { t in
+            Canvas { ctx, size in
+                let a = DianChao.flash(t.date.timeIntervalSince(fix.at))
+                guard a > 0 else { return }
+                let W = Double(size.width), H = Double(size.height)
+                let R = DianChao.radius(trays, w: W, h: H)
+                let line = max(3, R * 0.4)
+                ctx.opacity = a
+                func ring(_ m: DCMark, _ r: Double) -> Path {
+                    Path(ellipseIn: CGRect(x: m.x * W / 1000 - r, y: m.y * H / 1000 - r, width: 2 * r, height: 2 * r))
+                }
+                for m in fix.added {
+                    ctx.fill(ring(m, R * 2.5), with: .color(DCColor.lime.opacity(0.28)))
+                    ctx.stroke(ring(m, R * 2.5), with: .color(DCColor.lime), lineWidth: line)
+                }
+                for m in fix.removed {
+                    let x = m.x * W / 1000, y = m.y * H / 1000, d = R * 1.2
+                    ctx.fill(ring(m, R * 2.5), with: .color(DCColor.red.opacity(0.3)))
+                    ctx.stroke(ring(m, R * 2.5), with: .color(DCColor.red), lineWidth: line)
+                    var cross = Path()
+                    cross.move(to: CGPoint(x: x - d, y: y - d))
+                    cross.addLine(to: CGPoint(x: x + d, y: y + d))
+                    cross.move(to: CGPoint(x: x + d, y: y - d))
+                    cross.addLine(to: CGPoint(x: x - d, y: y + d))
+                    ctx.stroke(cross, with: .color(DCColor.red), style: StrokeStyle(lineWidth: line, lineCap: .round))
+                }
+            }
+        }
+        .allowsHitTesting(false)
     }
 }
 

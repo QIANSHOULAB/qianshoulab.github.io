@@ -3,8 +3,9 @@ import CoreGraphics
 
 // 铁件点钞机的算法：照 QIANSHOULAB/gongshi draft-count 分支 count/index.html（0.5.0）搬界面那头的规矩，大脑换成大管家（121 的 tx-count）。
 // 拍完缩到大管家看图的尺寸（pc-butler handheld/luru.py 的 resized_size：长边 2576、28 像素一格、最多 4784 格），寄 tx-count；
-// 回两封信：stage first 先出数和圆点；stage final 补上第二眼（补的点柠檬绿圈）。两封都没到之前数码管一直转，90 秒没第一封就说大管家没回。
-// 145 起第一封之前还有几封 stage partial（大管家边写边寄，带到目前的全部点）：圆点一个个亮、数字跟着跳；最后的数只认 first / final。
+// 回两封信：stage first 出数和圆点，到了就算数完（150）；stage final 是第二眼（复查），在后头悄悄跑，跟第一遍一样就什么都不动，
+// 不一样才改数和点（补的点柠檬绿圈）、数码管上方写「复查改了」。90 秒没第一封就说大管家没回；复查没回来就用第一遍的数，不提示。
+// 145 起第一封之前还有几封 stage partial（大管家边写边寄，带到目前的全部点）：圆点一个个亮、数字跟着跳；数只认 first / final。
 // 圆点能手改：点圆点删掉，点漏掉的件补一个；每盒「不算 / 也算上」能翻。坐标都是 0~1000（y, x），跟大管家一样。
 
 struct DCPoint: Equatable {
@@ -28,12 +29,29 @@ struct DCTray: Equatable {
 
 enum DCPhase: Equatable {
     case idle
-    /// 寄出去了，两封都还没到（数码管转）
+    /// 寄出去了，第一封还没到（数码管转）
     case waiting
-    /// 第一封到了，等第二眼
-    case first
+    /// 第一封到了就是数完了（复查还在不在后头跑看 DCRun.reviewing）
     case done
     case jam(String)
+}
+
+/// 复查改的一处：第几盒、在哪（0~1000）
+struct DCMark: Equatable {
+    var tray: Int
+    var y: Double
+    var x: Double
+}
+
+/// 复查改了什么（只记看得见的：算着的盒子里补的点、去的点）
+struct DCFix: Equatable {
+    var before: Int
+    var after: Int
+    var added: [DCMark]
+    var removed: [DCMark]
+    /// 改的那一刻：补的、去的从这儿起闪几下
+    var at: Date
+    var line: String { DianChaoStrings.fixed(before, after, add: added.count, del: removed.count) }
 }
 
 enum DianChao {
@@ -41,6 +59,19 @@ enum DianChao {
     static let firstTimeout: TimeInterval = 90
     /// 第一封到了以后，第二眼最多再等这么久（大管家那头一遍 90 秒）；过了就照第一遍的数
     static let finalTimeout: TimeInterval = 200
+    /// 复查改了：补的、去的各闪几下（一下 0.6 秒，共 4 下）
+    static let flashBeat: TimeInterval = 0.6
+    static let flashDur: TimeInterval = 2.4
+
+    /// 改了以后过了 t 秒，记号亮几成。t < 0（截图用的定格）一直亮着
+    static func flash(_ t: TimeInterval) -> Double {
+        if t < 0 { return 1 }
+        if t >= flashDur { return 0 }
+        return t.truncatingRemainder(dividingBy: flashBeat) < flashBeat * 0.6 ? 1 : 0.15
+    }
+
+    /// 数码管从 0 跑到总数要多久
+    static func countDur(_ n: Int) -> Double { min(1.9, max(0.7, Double(n) * 0.046)) }
 
     // ------------------------------------------------------------ 缩图：照 luru.resized_size
     static let edge = 2576, tokens = 4784, patch = 28
@@ -140,6 +171,68 @@ enum DianChao {
         return max(w / 150, min(w / 55, med * 0.24))
     }
 
+    // ------------------------------------------------------------ 复查
+    static func same(_ a: DCPoint, _ b: DCPoint) -> Bool { abs(a.y - b.y) < 0.5 && abs(a.x - b.x) < 0.5 }
+
+    /// 手补的点离复查补的点多近算同一件：第一遍相邻件距离中位数的六成，至少 15
+    static func sameNear(_ trays: [DCTray]) -> Double {
+        let P: [DCPoint] = trays.flatMap(\.pts)
+        if P.count < 2 { return 25 }
+        var nn: [Double] = []
+        for (i, a) in P.enumerated() {
+            var m = Double.infinity
+            for (j, b) in P.enumerated() where i != j { m = min(m, hypot(a.x - b.x, a.y - b.y)) }
+            nn.append(m)
+        }
+        nn.sort()
+        return max(15, nn[nn.count / 2] * 0.6)
+    }
+
+    /// 复查（final）盖到手上这份盘子上：只搬复查比第一遍改了的（补的、去的），手改和「不算 / 也算上」都留着。
+    /// 手上已经删掉的不用再删，手上已经补过的那件不再补一颗。回新盘子和看得见的改动（算着的盒子里的）。
+    static func review(_ now: [DCTray], first: [DCTray], final: [DCTray]) -> (trays: [DCTray], added: [DCMark], removed: [DCMark]) {
+        var added: [DCMark] = []
+        var removed: [DCMark] = []
+        // 盒子数对不上（大管家那头现在不会）：整盘换成复查的
+        guard first.count == final.count, now.count == first.count else {
+            let new: [DCTray] = final.map { var t = $0; t.pts = rowSorted(t.pts); return t }
+            for (i, t) in new.enumerated() where t.on {
+                for q in t.pts where !now.contains(where: { o in o.on && o.pts.contains { same($0, q) } }) {
+                    added.append(DCMark(tray: i, y: q.y, x: q.x))
+                }
+            }
+            for (i, t) in now.enumerated() where t.on {
+                for p in t.pts where !new.contains(where: { n in n.on && n.pts.contains { same($0, p) } }) {
+                    removed.append(DCMark(tray: i, y: p.y, x: p.x))
+                }
+            }
+            return (new, added, removed)
+        }
+        var out = now
+        let near = sameNear(first)
+        var mine: [DCPoint] = now.flatMap { t in t.pts.filter(\.man) }
+        for i in out.indices {
+            var touched = false
+            for p in first[i].pts where !final[i].pts.contains(where: { same($0, p) }) {
+                guard let j = out[i].pts.firstIndex(where: { !$0.man && same($0, p) }) else { continue }
+                out[i].pts.remove(at: j)
+                touched = true
+                if out[i].on { removed.append(DCMark(tray: i, y: p.y, x: p.x)) }
+            }
+            for q in final[i].pts where !first[i].pts.contains(where: { same($0, q) }) {
+                if let k = mine.firstIndex(where: { hypot($0.x - q.x, $0.y - q.y) < near }) {
+                    mine.remove(at: k)
+                    continue
+                }
+                out[i].pts.append(DCPoint(y: q.y, x: q.x, aud: true))
+                touched = true
+                if out[i].on { added.append(DCMark(tray: i, y: q.y, x: q.x)) }
+            }
+            if touched { out[i].pts = rowSorted(out[i].pts) }
+        }
+        return (out, added, removed)
+    }
+
     // ------------------------------------------------------------ 说人话
     static func notPaired() -> String { DianChaoStrings.notPaired }
 
@@ -164,6 +257,12 @@ struct DCRun: Equatable {
     var audited = false
     var firstAt: Date?
     var why = ""
+    /// 150：第一封到了、数完了，复查还在后头跑（界面上不说）
+    var reviewing = false
+    /// 150：第一遍原样（复查回来拿它比）
+    var firstTrays: [DCTray] = []
+    /// 150：复查改了什么；nil = 没改（或还没回来）
+    var fix: DCFix?
     /// 145 边数边出点：大管家边写边寄来的点（stage partial）到了几个；0 = 还没有
     var liveTotal = 0
     /// 上一封 partial 时已经亮着的点数（新来的从这儿往上一个个亮）
@@ -184,23 +283,26 @@ struct DCRun: Equatable {
         let k = min(1, max(0, now.timeIntervalSince(a) / 0.6))
         return liveFrom + Int((Double(liveTotal - liveFrom) * k).rounded())
     }
-    var settled: Bool { phase == .done }
+    /// 数完了、复查也收场了：不用再等信
+    var settled: Bool { phase == .done && !reviewing }
 
     /// 收到一封回信。回 true：这一封有用（界面要刷新）
     @discardableResult
-    mutating func receive(_ L: DianChao.Letter) -> Bool {
+    mutating func receive(_ L: DianChao.Letter, now: Date = Date()) -> Bool {
         switch phase {
-        case .done, .jam, .idle:
+        case .done:
+            return reviewing ? recheck(L, now: now) : false
+        case .jam, .idle:
             return false
-        default:
+        case .waiting:
             break
         }
-        // 145：边数边出点。只在第一封之前收；乱序、重复来的（点没比现在多）不要；最后的数只认 first / final
+        // 145：边数边出点。只在第一封之前收；乱序、重复来的（点没比现在多）不要；数只认 first / final
         if L.stage == "partial" {
-            guard phase == .waiting, L.ok, L.total > liveTotal else { return false }
+            guard L.ok, L.total > liveTotal else { return false }
             liveFrom = liveTotal
             liveTotal = L.total
-            liveAt = Date()
+            liveAt = now
             trays = L.trays.map { var t = $0; t.pts = DianChao.rowSorted(t.pts); return t }
             return true
         }
@@ -208,32 +310,50 @@ struct DCRun: Equatable {
             phase = .jam(L.why.isEmpty ? DianChaoStrings.jamDefault : L.why)
             return true
         }
-        if L.stage == "first" {
-            guard phase == .waiting else { return false }
-            trays = L.trays.map { var t = $0; t.pts = DianChao.rowSorted(t.pts); return t }
-            phase = .first
-            firstAt = Date()
-            return true
-        }
         trays = L.trays.map { var t = $0; t.pts = DianChao.rowSorted(t.pts); return t }
-        added = L.added
-        removed = L.removed
-        audited = L.audited
         add = 0
         del = 0
         phase = .done
+        firstAt = now
+        if L.stage == "first" {
+            // 150：第一遍数完就算数完，复查在后头
+            firstTrays = trays
+            reviewing = true
+        } else {
+            // 第一封没收到、直接来了 final
+            added = L.added
+            removed = L.removed
+            audited = L.audited
+        }
         return true
     }
 
-    /// 时间到了没：90 秒没第一封 → 卡钞；第一封到了第二眼迟迟不来 → 照第一遍的数
+    /// 150：数完以后复查回来了。一样就什么都不动；不一样改数和点、记下改了哪几处；复查出错就用第一遍的数，不提示
+    private mutating func recheck(_ L: DianChao.Letter, now: Date) -> Bool {
+        guard L.stage == "final" else { return false }        // 迟到的 partial、重复的 first 不要
+        reviewing = false
+        guard L.ok, !L.trays.isEmpty || firstTrays.isEmpty else { return true }
+        audited = L.audited
+        let before = total
+        let r = DianChao.review(trays, first: firstTrays, final: L.trays)
+        trays = r.trays
+        if !r.added.isEmpty || !r.removed.isEmpty {
+            added = r.added.count
+            removed = r.removed.count
+            fix = DCFix(before: before, after: total, added: r.added, removed: r.removed, at: now)
+        }
+        return true
+    }
+
+    /// 时间到了没：90 秒没第一封 → 卡钞；复查迟迟不来 → 不等了，照第一遍的数
     @discardableResult
     mutating func tick(now: Date) -> Bool {
         if phase == .waiting && now.timeIntervalSince(sentAt) >= DianChao.firstTimeout {
             phase = .jam(DianChaoStrings.noReply)
             return true
         }
-        if phase == .first, let f = firstAt, now.timeIntervalSince(f) >= DianChao.finalTimeout {
-            phase = .done
+        if phase == .done, reviewing, let f = firstAt, now.timeIntervalSince(f) >= DianChao.finalTimeout {
+            reviewing = false
             return true
         }
         return false
@@ -284,7 +404,6 @@ struct DCRun: Equatable {
         switch phase {
         case .idle: return ""
         case .waiting: return ""
-        case .first: return DianChaoStrings.auditing
         case .jam(let w): return w
         case .done:
             if total == 0 && trays.allSatisfy({ $0.pts.isEmpty }) { return DianChaoStrings.none }

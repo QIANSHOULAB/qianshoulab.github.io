@@ -18,7 +18,10 @@ enum DianChaoStrings {
     static let include = "也算上"
     static let exclude = "不算"
     static let fixHint = "点圆点删掉，点漏掉的件补上。"
-    static let auditing = "复查一遍，专抓躲在后面的"
+    /// 150：复查改了数（件数一样、只是换了点时，后头说清补了几个、去了几个）
+    static func fixed(_ before: Int, _ after: Int, add: Int, del: Int) -> String {
+        "复查改了：\(before) → \(after)" + (before == after ? "（补 \(add) 个、去 \(del) 个）" : "")
+    }
     static func auditAdd(_ n: Int) -> String { "复查揪出 \(n) 个漏网的（绿圈）" }
     static func auditDel(_ n: Int) -> String { "删了 \(n) 个点错的" }
     static func edited(_ d: String) -> String { "手改 \(d)" }

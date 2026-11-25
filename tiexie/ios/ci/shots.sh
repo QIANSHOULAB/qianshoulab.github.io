@@ -5,7 +5,8 @@ set -uo pipefail
 SIM="$1"; APP="$2"; OUT="$3"
 BID=lab.qianshou.tiexie
 # 134：tool-zhaoyao.idle = 照妖镜还没拍照的样子（跟网页首屏比）；点后面的只管文件名，进哪个界面看点前面的
-SCREENS="home book buzhen edit toolbox jiaodu gongshi tool-zhaoyao.idle tool-zhaoyao tool-dianchao settings"
+# 150：tool-dianchao.first = 第一遍刚到（已经是「完成」）；tool-dianchao.fixed = 复查改了一件
+SCREENS="home book buzhen edit toolbox jiaodu gongshi tool-zhaoyao.idle tool-zhaoyao tool-dianchao settings tool-dianchao.first tool-dianchao.fixed"
 xcrun simctl boot "$SIM" 2>/dev/null || true
 xcrun simctl bootstatus "$SIM" -b >/dev/null
 xcrun simctl status_bar "$SIM" override --time "9:41" --dataNetwork wifi --wifiMode active --wifiBars 3 \
@@ -20,7 +21,8 @@ for s in $SCREENS; do
   EXTRA=(); WAIT=5
   case "$s" in
     tool-zhaoyao) EXTRA=(-TXSample "$PWD/tiexie/ios/Tools/英寸照妖镜/Tests/Fixtures/s6_persp_tilt_shadow.jpg"); WAIT=40 ;;
-    tool-dianchao) EXTRA=(-TXSample "$PWD/tiexie/ios/Tools/铁件点钞机/Tests/Fixtures/demo-tray.jpg"); WAIT=8 ;;
+    tool-dianchao*) EXTRA=(-TXSample "$PWD/tiexie/ios/Tools/铁件点钞机/Tests/Fixtures/demo-tray.jpg"); WAIT=8
+      case "$s" in *.*) EXTRA+=(-TXStage "${s##*.}") ;; esac ;;
   esac
   xcrun simctl launch "$SIM" "$BID" -TXDemo YES -TXScreen "${s%%.*}" ${EXTRA[@]+"${EXTRA[@]}"} -AppleLanguages "(zh-Hans)" -AppleLocale zh_CN >/dev/null
   sleep $WAIT

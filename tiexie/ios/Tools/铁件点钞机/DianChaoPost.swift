@@ -28,6 +28,13 @@ extension Butler: DianChaoPost {
     func dcForget(_ id: String) { forgetToolLetter(id) }
 }
 
+/// 响一下：数完了叮一声；复查改了叮叮两声、震一下。n 每响一次加一，界面看着它放声音、弹一下
+struct DCChime: Equatable {
+    enum Kind: Equatable { case done, fixed }
+    var n: Int
+    var kind: Kind
+}
+
 /// 一盘照片从拍到出数
 @MainActor
 final class DianChaoModel: ObservableObject {
@@ -38,10 +45,14 @@ final class DianChaoModel: ObservableObject {
     @Published private(set) var refused: String?
     /// 数码管从 0 跑到总数的起点
     @Published private(set) var countFrom: Date?
+    @Published private(set) var chime: DCChime?
     @Published var ticker = 0
 
     private var jpeg: Data?
     private var clock: Task<Void, Never>?
+    private var ringing: Task<Void, Never>?
+    /// 数码管还在跑，那一声叮还没响
+    private var dingDue = false
     weak var post: DianChaoPost?
 
     var busy: Bool { run?.phase == .waiting }
@@ -75,6 +86,7 @@ final class DianChaoModel: ObservableObject {
         if let old = run { post.dcForget(old.id) }
         refused = nil
         countFrom = nil
+        hush()
         guard post.dcPaired else {
             run = nil
             refused = DianChao.notPaired()
@@ -96,7 +108,8 @@ final class DianChaoModel: ObservableObject {
                 }
             } catch {
                 guard self.run?.id == id else { return }
-                self.run?.phase = .jam(DianChaoStrings.sendFail)
+                if self.run?.phase == .waiting { self.run?.phase = .jam(DianChaoStrings.sendFail) }
+                self.run?.reviewing = false
                 self.finish()
             }
         }
@@ -104,14 +117,47 @@ final class DianChaoModel: ObservableObject {
 
     func got(_ data: Data, id: String) {
         guard var r = run, r.id == id, let L = DianChao.parse(data) else { return }
-        let before = r.phase
-        if r.receive(L) {
-            run = r
-            if case .jam = r.phase { finish(); return }
-            if r.phase == .waiting { return }             // 145 partial：点边来边亮，数码管跟着跳（界面看 liveAt）
-            if r.phase == .done { countFrom = Date() } else if before == .waiting { countFrom = r.liveTotal > 0 ? nil : Date() }
-            if r.phase == .done { finish() }
+        let was = r.phase, fixed = r.fix != nil
+        guard r.receive(L) else { return }
+        run = r
+        if case .jam = r.phase { finish(); return }
+        if r.phase == .waiting { return }             // 145 partial：点边来边亮，数码管跟着跳（界面看 liveAt）
+        if was == .waiting { counted(r.total) } else if !fixed && r.fix != nil { corrected() }
+        if !r.reviewing { finish() }                  // 150：第一封以后还等着复查
+    }
+
+    // ------------------------------------------------------------ 响
+    /// 数完了：数码管从 0 跑上去，跑到了叮一下
+    private func counted(_ total: Int) {
+        countFrom = Date()
+        dingDue = true
+        ringing = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(DianChao.countDur(total) * 1_000_000_000))
+            guard !Task.isCancelled, let self else { return }
+            self.dingDue = false
+            self.ring(.done)
         }
+    }
+
+    /// 复查改了：数直接换过去，叮叮两声。头一声叮还没响就先响它，隔一口气再叮叮
+    private func corrected() {
+        countFrom = .distantPast
+        guard dingDue else { ring(.fixed); return }
+        hush()
+        ring(.done)
+        ringing = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.ring(.fixed)
+        }
+    }
+
+    private func ring(_ k: DCChime.Kind) { chime = DCChime(n: (chime?.n ?? 0) + 1, kind: k) }
+
+    private func hush() {
+        ringing?.cancel()
+        ringing = nil
+        dingDue = false
     }
 
     private func startClock() {
@@ -123,12 +169,11 @@ final class DianChaoModel: ObservableObject {
                 self.ticker += 1
                 guard var r = self.run else { return }
                 if r.tick(now: Date()) {
-                    self.run = r
-                    if r.phase == .done { self.countFrom = Date() }
+                    self.run = r                      // 复查等不来：不响、不提示
                     self.finish()
                     return
                 }
-                if r.phase == .done { return }
+                if r.settled { return }
                 if case .jam = r.phase { return }
             }
         }
@@ -153,22 +198,35 @@ final class DianChaoModel: ObservableObject {
         run = r
     }
 
-    /// 截图用（-TXDemo YES -TXSample <托盘照片>）：不寄，摆一盘数好的（Tests/Fixtures/demo-tray.jpg 的十件，第二眼补了一件）
-    func showDemo(_ img: UIImage) {
+    /// 截图用（-TXDemo YES -TXSample <托盘照片>）：不寄，摆一盘数好的（Tests/Fixtures/demo-tray.jpg 的十件，第二眼补了一件）。
+    /// -TXStage first：第一遍刚到（9 件，已经是「完成」）；fixed：复查补了一件（记号定住不闪完）
+    func showDemo(_ img: UIImage, stage: String = "") {
         guard let s = Self.shrink(img) else { return }
         photo = s.0
         let raw: [[Double]] = [[235, 330], [345, 330], [455, 330], [565, 330], [785, 330], [235, 690], [455, 690], [565, 690], [675, 690], [785, 690]]
         let pts: [DCPoint] = raw.enumerated().map { i, p in DCPoint(y: p[0], x: p[1], aud: i == 8) }
+        func tray(_ p: [DCPoint]) -> DCTray { DCTray(box: [150, 120, 880, 900], complete: true, main: true, on: true, pts: p) }
         var r = DCRun(id: "demo-tray", sentAt: Date())
-        r.trays = [DCTray(box: [150, 120, 880, 900], complete: true, main: true, on: true, pts: DianChao.rowSorted(pts))]
-        r.added = 1
-        r.audited = true
-        r.phase = .done
+        if stage == "first" || stage == "fixed" {
+            let one = pts.filter { !$0.aud }
+            r.receive(DianChao.Letter(stage: "first", ok: true, why: "", total: one.count, trays: [tray(one)]))
+            if stage == "fixed" {
+                r.receive(DianChao.Letter(stage: "final", ok: true, why: "", total: pts.count, trays: [tray(pts)]))
+                r.fix?.at = .distantFuture
+            }
+        } else {
+            r.trays = [tray(DianChao.rowSorted(pts))]
+            r.added = 1
+            r.audited = true
+            r.phase = .done
+        }
         run = r
     }
 
     func leave() {
         finish()
+        hush()
+        run?.reviewing = false
         photo = nil
         jpeg = nil
     }
