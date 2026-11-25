@@ -3,6 +3,9 @@
 # 用法：shots.sh <模拟器 UDID> <TieXie.app> <输出目录>
 set -uo pipefail
 SIM="$1"; APP="$2"; OUT="$3"
+# 166：半路退出（比如 set -u 碰上没设的变量）也留一句在 Actions 注释里：停在哪一屏、退出码多少
+CUR="开头"
+trap 'rc=$?; if [ $rc -ne 0 ]; then echo "::error title=shots.sh::退出码 $rc，停在 $CUR"; fi; exit $rc' EXIT
 BID=lab.qianshou.tiexie
 # 134：tool-zhaoyao.idle = 照妖镜还没拍照的样子（跟网页首屏比）；点后面的只管文件名，进哪个界面看点前面的
 # 150：tool-dianchao.first = 第一遍刚到（已经是「完成」）；tool-dianchao.fixed = 复查改了一件
@@ -23,6 +26,7 @@ xcrun simctl install "$SIM" "$APP"
 rm -rf "$OUT"; mkdir -p "$OUT"
 fail=0; i=1
 for s in $SCREENS; do
+  CUR="$s"
   xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
   # 122：两个拍照的工具拿测试用的照片演示（照妖镜真跑一遍 Vision，要多等一会儿）
   EXTRA=(); WAIT=5; SAVE=0
