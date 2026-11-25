@@ -252,7 +252,7 @@ final class YingCun166Tests: XCTestCase {
         for (i, w) in t.rows.enumerated() where i < A.rows.count {
             for k in ["LCL", "UCL"] where A.rows[i][k]?.num.map({ YingCun.convert($0, .in2mm) }) == Self.conv(w[k]?.str) { hit += 1 }
         }
-        note(["s12 原图大小认：管控线对上 \(hit)/\(2 * t.rows.count) 行\(A.rows.count) [\(job.notes.joined(separator: "；"))]"])
+        Self.note(["s12 原图大小认：管控线对上 \(hit)/\(2 * t.rows.count) 行\(A.rows.count) [\(job.notes.joined(separator: "；"))]"])
         XCTAssertEqual(hit, 2 * t.rows.count, "原图大小认 管控线对上 \(hit)/\(2 * t.rows.count) [\(job.notes.joined(separator: "；"))]")
     }
 }
