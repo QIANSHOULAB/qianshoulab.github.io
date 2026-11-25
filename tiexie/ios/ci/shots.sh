@@ -3,10 +3,6 @@
 # 用法：shots.sh <模拟器 UDID> <TieXie.app> <输出目录>
 set -uo pipefail
 SIM="$1"; APP="$2"; OUT="$3"
-# 166：单测往 tiexie/ios 下写 notes-*.txt（读出了什么、对上几格），这里转成 Actions 注释（工作流文件推不动，放这儿）
-find tiexie/ios -name 'notes-*.txt' 2>/dev/null | while read -r f; do
-  while IFS= read -r l; do echo "::notice title=$(basename "$f")::$l"; done < "$f"
-done
 BID=lab.qianshou.tiexie
 # 134：tool-zhaoyao.idle = 照妖镜还没拍照的样子（跟网页首屏比）；点后面的只管文件名，进哪个界面看点前面的
 # 150：tool-dianchao.first = 第一遍刚到（已经是「完成」）；tool-dianchao.fixed = 复查改了一件
@@ -53,17 +49,21 @@ for s in $SCREENS; do
   if xcrun simctl io "$SIM" screenshot --type=png "$png" >/dev/null 2>&1; then
     sips --resampleWidth 780 -s format jpeg -s formatOptions 84 "$png" --out "${png%.png}.jpg" >/dev/null && rm "$png"
   else
-    echo "截图失败：$s"; fail=1
+    echo "::error::截图失败：$s"; fail=1
   fi
   if [ "$SAVE" = 1 ]; then
     AFTER=$(photos)
     NEW=$(find "$DCIM" -type f -newer "$SAMPLE" 2>/dev/null | tail -1)
     DIM=""; [ -n "$NEW" ] && DIM=$(sips -g pixelWidth -g pixelHeight "$NEW" 2>/dev/null | awk '/pixel/{printf "%s ", $2}')
     SRC=$(sips -g pixelWidth -g pixelHeight "$SAMPLE" | awk '/pixel/{printf "%s ", $2}')
-    echo "::notice::166 存原图：相册 $BEFORE → $AFTER 张；新的那张 ${DIM:-没有}（原图 $SRC）"
-    [ "$AFTER" -gt "$BEFORE" ] || echo "::warning::166 存原图：相册没多"
+    echo "::warning title=166 存原图::相册 $BEFORE → $AFTER 张；新的那张 ${DIM:-没有}（原图 $SRC）"
   fi
   i=$((i+1))
 done
 ls -la "$OUT"
+# 166：单测往 tiexie/ios 下写 notes-*.txt（读出了什么、对上几格），这里转成 Actions 注释（工作流文件推不动，放这儿；
+#      一步最多 10 条 notice，只发每个文件前 6 行）
+find tiexie/ios -name 'notes-*.txt' 2>/dev/null | while read -r f; do
+  head -6 "$f" | while IFS= read -r l; do echo "::notice title=$(basename "$f")::$l"; done
+done
 exit $fail
