@@ -2,7 +2,7 @@ import XCTest
 import UIKit
 @testable import TieXie
 
-// 166：管控线模式（默认只换 LCL / UCL）、「全要」不变、斜 45° 和整张横拍、红字不叠。
+// 166：管控线模式（默认只换 LCL / UCL）、「全要」不变、斜 45° 和整张横拍、红字不叠、存原图（存相册在 ci/shots.sh 里验）。
 // Fixtures/s9–s13 是 166 用 PIL 画的假单子（内容全是编的），truth166.json 是表上印的真值：
 //   s9_two_level   两层表头：TOLERANCE 底下 LSL/USL，CONTROL LIMIT 底下 LCL/UCL，右边 M.I. 和五列实测值
 //   s10_limits_only 只有「CONTROL LIMIT 控制范围」，底下两格只写「下」「上」（没有 DIMENSION / LSL / USL）
