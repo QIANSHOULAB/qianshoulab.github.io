@@ -260,26 +260,6 @@ final class YingCun166Tests: XCTestCase {
         XCTAssertGreaterThanOrEqual(Double(Self.allGood), 0.97 * Double(Self.allTotal), summary)
     }
 
-    /// 排查 s9：UCL 那列 2~9 行 Vision 一个字都没给（干净的图）。把那一片 Vision 原样给的行（字、框、每个词的框）写出来
-    func testS9RawLines() async throws {
-        let img = try XCTUnwrap(UIImage(contentsOfFile: Self.dir.appendingPathComponent("s9_two_level.jpg").path))
-        let job = try await YingCunVision.read(img)
-        let src = try XCTUnwrap(YingCunVision.upright(img, maxSide: YingCunVision.work))
-        let up = try XCTUnwrap(YingCunVision.rotate(src, deg: job.angle))
-        let lines = try YingCunVision.recognize(up, accurate: true)
-        let zone = CGRect(x: 980, y: 540, width: 560, height: 500)
-        var out: [String] = ["s9 原样 \(lines.count) 行，那一片："]
-        for l in lines where l.box.intersects(zone) {
-            let words = YingCunVision.wordRanges(l.text).map { r -> String in
-                let bb = try? l.cand.boundingBox(for: r)?.boundingBox
-                return "\(l.text[r])" + (bb.map { "[\(Int($0.minX * Double(up.width)))-\(Int($0.maxX * Double(up.width)))]" } ?? "[无框]")
-            }
-            out.append("「\(l.text)」 框\(Int(l.box.minX))-\(Int(l.box.maxX)),\(Int(l.box.minY))-\(Int(l.box.maxY)) 词 " + words.joined(separator: " "))
-        }
-        Self.note([out.joined(separator: " ¦ ")])
-        XCTFail("166 临时排查（看完就删）：" + out.joined(separator: " ¦ "))
-    }
-
     func testVision166Report() async throws {
         let (_, _, _, summary) = try await Self.runVision()
         throw XCTSkip(summary)

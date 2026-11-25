@@ -400,6 +400,62 @@ enum YingCunVision {
         let raw = found.map { $0.copy() }
         YingCun.prune(found)
         guard let raster = YCRaster(up) else { throw YCError.badImage }
-        return YCJob(up: raster, items: found, raw: raw, angle: angle)
+        let job = YCJob(up: raster, items: found, raw: raw, angle: angle)
+        return fillGaps(job, up, notes: &notes)
+    }
+
+    /// 表里要换的那几列有几格读出了数
+    static func cells(_ A: YCTable?, _ keys: [String]) -> Int {
+        guard let A else { return 0 }
+        return A.rows.reduce(0) { n, r in n + keys.filter { r[$0]?.num != nil }.count }
+    }
+
+    /// 166：整张图一次认，Vision 偶尔整片不给（s9：干净的图，UCL 那列 2~9 行一个字都没有）。
+    /// 表头找到了、要换的列里有空格，就把表格那块裁出来放大再认一遍，原来没有的字框补进去；补完格数多了才用
+    static func fillGaps(_ job: YCJob, _ up: CGImage, notes: inout [String]) -> YCJob {
+        let fullKeys = ["DIM", "LSL", "USL", "LCL", "UCL"]
+        let limKeys = ["LCL", "UCL"]
+        func holes(_ A: YCTable?, _ keys: [String]) -> Bool {
+            guard let A else { return false }
+            let ks = keys.filter { A.lines.has($0) }
+            return A.rows.contains { r in ks.contains { r[$0]?.num == nil } }
+        }
+        guard holes(job.table, fullKeys) || holes(job.limits, limKeys), let A = job.table ?? job.limits else { return job }
+        let th = A.th
+        let xs = A.lines.keys.map { k -> Double in let l = A.lines[k]!; return l.0 + l.1 * A.hy }
+        let lastY = A.rows.last.map { r in r.keys.map { r[$0]!.cy }.max() ?? A.hy } ?? A.hy
+        let W = Double(up.width), H = Double(up.height)
+        let x0 = max(0, (xs.min() ?? 0) - 4 * th), x1 = min(W, (xs.max() ?? W) + 4 * th)
+        let y0 = max(0, A.hy - 2 * th), y1 = min(H, lastY + 2 * A.pitch)
+        let rect = CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0).integral
+        guard x1 - x0 > 4 * th, y1 - y0 > 2 * th, let crop = up.cropping(to: rect) else { return job }
+        let ox = Double(rect.minX), oy = Double(rect.minY)
+        let k = max(1.2, min(2.5, Double(work) / Double(max(crop.width, crop.height))))
+        guard let big = scaled(crop, k), let lines = try? recognize(big, accurate: true) else { return job }
+        let fresh = items(lines).map { i in
+            YCItem(x0: i.x0 / k + ox, y0: i.y0 / k + oy, x1: i.x1 / k + ox, y1: i.y1 / k + oy, text: i.text, conf: i.conf)
+        }
+        // 原来那片已经有字的不要（中心落在原有字框里）
+        let old = job.raw.filter { !$0.text.isEmpty }
+        let add = fresh.filter { f in !f.text.isEmpty && !old.contains { o in f.cx > o.x0 - 2 && f.cx < o.x1 + 2 && f.cy > o.y0 && f.cy < o.y1 } }
+        if add.isEmpty { notes.append("补认 0"); return job }
+        YingCun.splitHeaderWords(add)
+        let raw = job.raw.map { $0.copy() } + add
+        let found = raw.map { $0.copy() }
+        YingCun.prune(found)
+        let j2 = YCJob(up: job.up, items: found, raw: raw, angle: job.angle)
+        let before = cells(job.table, fullKeys) + cells(job.limits, limKeys), after = cells(j2.table, fullKeys) + cells(j2.limits, limKeys)
+        notes.append("补认 +\(add.count) 框，格 \(before)→\(after)")
+        return after > before ? j2 : job
+    }
+
+    /// 放大 k 倍
+    static func scaled(_ src: CGImage, _ k: Double) -> CGImage? {
+        let w = Int((Double(src.width) * k).rounded()), h = Int((Double(src.height) * k).rounded())
+        guard w > 0, h > 0, let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        ctx.interpolationQuality = .high
+        ctx.draw(src, in: CGRect(x: 0, y: 0, width: w, height: h))
+        return ctx.makeImage()
     }
 }
