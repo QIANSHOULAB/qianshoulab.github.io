@@ -43,6 +43,18 @@ final class YingCun166Tests: XCTestCase {
         try? (old + lines.map { $0.replacingOccurrences(of: "\n", with: " ") + "\n" }.joined()).write(to: url, atomically: true, encoding: .utf8)
     }
 
+    /// 排查：表头每格在哪、每列线在哪、第 2 行附近的字框
+    static func dump(_ job: YCJob, _ A: YCTable) -> String {
+        let hs = A.hs.keys.map { k in "\(k)=\(A.hs[k]!.text)@\(Int(A.hx[k] ?? -1)),\(Int(A.hs[k]!.cy))" }.joined(separator: " ")
+        let y = A.rows.count > 1 ? A.rows[1].keys.map { A.rows[1][$0]!.cy }.reduce(0, +) / Double(A.rows[1].count) : A.hy + 3 * A.th
+        let ls = A.lines.keys.map { k in "\(k)@\(Int(A.lines[k]!.0 + A.lines[k]!.1 * y))" }.joined(separator: " ")
+        let r1 = A.rows.count > 1 ? A.rows[1].keys.map { "\($0)=\(A.rows[1][$0]!.text)" }.joined(separator: ",") : "-"
+        let near = job.items.filter { abs($0.cy - y) < 1.2 * A.th && !$0.text.isEmpty }.sorted { $0.cx < $1.cx }
+            .map { "\($0.text)@\(Int($0.cx))\($0.col.map { ":" + $0 } ?? "")" }.joined(separator: " ")
+        let hdr = job.raw.filter { abs($0.cy - A.hy) < 2.5 * A.th }.sorted { $0.cx < $1.cx }.map { "\($0.text)@\(Int($0.cx)),\(Int($0.cy))" }.joined(separator: " ")
+        return "th\(Int(A.th)) hy\(Int(A.hy)) 表头[\(hs)] 线[\(ls)] 第2行[\(r1)] 那行字框[\(near)] 表头那排[\(hdr)]"
+    }
+
     static func overlaps(_ labels: [YCLabel]) -> Int {
         var n = 0
         for i in 0..<labels.count {
@@ -191,6 +203,7 @@ final class YingCun166Tests: XCTestCase {
                 }
                 good += hit; total += cnt
                 note += " 管控线对上\(hit)/\(cnt) 行\(A.rows.count)/\(t.rows.count)" + (miss.isEmpty ? "" : " " + miss.joined(separator: " "))
+                if !miss.isEmpty { note += " ‖ 管控线表 " + dump(job, A) + (job.table.map { " ‖ 全要表 " + dump(job, $0) } ?? "") }
                 if !Set(dl.labels.compactMap(\.key)).isSubset(of: YingCun.limitKeys) { fails.append("\(n) 管控线模式落了别的列") }
                 if overlaps(dl.labels) > 0 { fails.append("\(n) 管控线红字叠了") }
             } else {
@@ -206,15 +219,19 @@ final class YingCun166Tests: XCTestCase {
                     if job.kind != .loose { fails.append("\(n) 全要该是没表头全换") }
                 } else if let A = job.table {
                     var hit = 0, cnt = 0
+                    var miss: [String] = []
+                    let printed = t.layout == "no_limits" ? ["DIM", "LSL", "USL", "STOCK"] : YingCun.keys6
                     for (i, w) in t.rows.enumerated() {
-                        for k in YingCun.keys6 {
+                        for k in printed {
                             guard let v = w[k]?.str, !(k == "STOCK" && v == "0") else { continue }
                             cnt += 1
-                            if i < A.rows.count, A.rows[i][k]?.num.map({ YingCun.convert($0, .in2mm) }) == conv(v) { hit += 1 }
+                            let got = i < A.rows.count ? A.rows[i][k]?.num.map { YingCun.convert($0, .in2mm) } : nil
+                            if got == conv(v) { hit += 1 } else if miss.count < 6 { miss.append("r\(i + 1)\(k):\(got ?? "无")≠\(conv(v) ?? "?")") }
                         }
                     }
                     good += hit; total += cnt
-                    note += " 全要对上\(hit)/\(cnt)"
+                    note += " 全要对上\(hit)/\(cnt)" + (miss.isEmpty ? "" : " " + miss.joined(separator: " "))
+                    if !miss.isEmpty { note += " ‖ " + dump(job, A) }
                 } else {
                     fails.append("\(n) 全要没读出表")
                 }

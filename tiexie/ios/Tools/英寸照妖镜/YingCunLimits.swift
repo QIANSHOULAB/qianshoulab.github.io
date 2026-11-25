@@ -216,12 +216,17 @@ extension YingCun {
         return YCTable(hs: hd.hs, hx: hd.hx, lines: lines, rows: rows, pitch: pitch, th: th, hy: hd.hy)
     }
 
-    /// 管控线模式用哪张表：「全要」读出的表里 LCL、UCL 都有数就用它（对账照旧），不然单找管控线
+    /// 这张表的 LCL、UCL 一共读出几格
+    static func limitCells(_ A: YCTable?) -> Int {
+        guard let A else { return 0 }
+        return A.rows.reduce(0) { n, r in n + (r["LCL"]?.num != nil ? 1 : 0) + (r["UCL"]?.num != nil ? 1 : 0) }
+    }
+
+    /// 管控线模式用哪张表：「全要」读出的表（对账照旧）和单找管控线的表，谁的 LCL、UCL 格多用谁，一样多用「全要」那张
     static func limitsTable(full: YCTable?, raw: [YCItem]) -> YCTable? {
-        if let A = full, A.lines.has("LCL"), A.lines.has("UCL"),
-           A.rows.contains(where: { $0["LCL"]?.num != nil }), A.rows.contains(where: { $0["UCL"]?.num != nil }) {
-            return A
-        }
-        return analyzeLimits(raw)
+        let solo = analyzeLimits(raw)
+        let a = limitCells(full), b = limitCells(solo)
+        if a > 0, a >= b, let full, full.lines.has("LCL"), full.lines.has("UCL") { return full }
+        return b > 0 ? solo : nil
     }
 }

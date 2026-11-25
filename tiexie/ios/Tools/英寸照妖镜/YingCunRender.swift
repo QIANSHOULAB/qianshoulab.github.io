@@ -360,6 +360,13 @@ enum YingCunRender {
                         f = font(fs)
                         tw = width(txt, f)
                     }
+                    // 166：连边（pad）一起不超过这一列宽，隔壁两列的红字框碰不上
+                    let box = 0.96 * colW(key)
+                    if tw + 0.7 * fs > box {
+                        fs *= box / (tw + 0.7 * fs)
+                        f = font(fs)
+                        tw = width(txt, f)
+                    }
                     let u = mp(it).0 - X0 - Double(cL)
                     let top = Double(sa - cT)
                     let base = top + Double(S) / 2 + 0.36 * fs
