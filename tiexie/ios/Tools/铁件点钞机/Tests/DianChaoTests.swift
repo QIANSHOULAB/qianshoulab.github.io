@@ -439,8 +439,9 @@ final class DianChaoTests: XCTestCase {
     static let lessTrays = checked(Array(nine.dropFirst()), added: [], removed: [[200, 200]])
     static let swapTrays = checked(Array(nine.dropFirst()) + [[800, 300]], added: [[800, 300]], removed: [[200, 200]])
 
-    static func letter(_ stage: String, _ trays: [[String: Any]], ok: Bool = true) -> DianChao.Letter {
-        let o: [String: Any] = ["ok": ok, "stage": stage, "trays": trays]
+    static func letter(_ stage: String, _ trays: [[String: Any]], ok: Bool = true, same: Bool? = nil) -> DianChao.Letter {
+        var o: [String: Any] = ["ok": ok, "stage": stage, "trays": trays]
+        if let s = same { o["same"] = s }
         let d = try! JSONSerialization.data(withJSONObject: o)
         return DianChao.parse(d)!
     }
@@ -561,6 +562,55 @@ final class DianChaoTests: XCTestCase {
         XCTAssertEqual(s.fix?.line, "复查改了：9 → 10")
         XCTAssertEqual(s.fix?.added, [DCMark(tray: 0, y: 800, x: 300)])
         XCTAssertEqual(s.fix?.removed, [])
+    }
+
+    /// 151：大管家说一样（same），点挪得再远也什么都不动
+    func testSameFlagWins() throws {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        r.receive(Self.letter("first", Self.firstTrays))
+        let before = r.trays
+        let far: [[Int]] = Self.nine.map { (p: [Int]) -> [Int] in [p[0] + 70, p[1] + 45] }
+        let L = Self.letter("final", Self.checked(far, added: [], removed: []), same: true)
+        XCTAssertEqual(L.same, true)
+        XCTAssertTrue(r.receive(L))
+        XCTAssertNil(r.fix)
+        XCTAssertEqual(r.trays, before)
+        XCTAssertFalse(r.reviewing)
+    }
+
+    /// 151：两个大脑不一样，final 的盒子顺序、算哪盒、坐标都可能变了：照清单报改动，换成复查的盘子
+    func testDifferentTraysFromTheOtherBrain() {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        r.receive(Self.letter("first", Self.firstTrays))
+        let moved: [[Int]] = Self.nine.map { (p: [Int]) -> [Int] in [p[0] + 6, p[1] - 5] }
+        let second: [String: Any] = ["box": [100, 640, 990, 990], "complete": true, "main": false, "counted": true, "count": 2,
+                                     "pts": [[302, 803], [497, 796]], "audit": ["added": [[302, 803], [497, 796]], "removed": []]]
+        let none: [[Int]] = []
+        let main: [String: Any] = ["box": [105, 95, 905, 598], "complete": true, "main": true, "counted": true, "count": 9,
+                                   "pts": moved, "audit": ["added": none, "removed": none]]
+        let trays: [[String: Any]] = [second, main]
+        XCTAssertTrue(r.receive(Self.letter("final", trays, same: false)))
+        XCTAssertEqual(r.total, 11)
+        XCTAssertEqual(r.fix?.line, "复查改了：9 → 11")
+        XCTAssertEqual(r.fix?.added.count, 2)
+        XCTAssertEqual(r.fix?.removed, [])
+        XCTAssertEqual(r.trays.map(\.on), [true, true])
+        XCTAssertEqual(r.trays.flatMap(\.pts).filter(\.aud).count, 2)
+    }
+
+    /// 第二盒手点过「也算上」，复查换了盘子：照样算上
+    func testToggleFollowsTheTray() {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        r.receive(Self.letter("first", Self.firstTrays))
+        r.toggle(1)
+        XCTAssertEqual(r.total, 11)
+        let cut: [String: Any] = ["box": [100, 650, 1000, 1000], "complete": false, "main": false, "counted": false, "count": 2,
+                                  "pts": [[300, 800], [500, 800]], "audit": NSNull()]
+        let main: [String: Any] = Self.moreTrays[0]
+        let trays: [[String: Any]] = [cut, main]
+        XCTAssertTrue(r.receive(Self.letter("final", trays, same: false)))
+        XCTAssertEqual(r.total, 12)
+        XCTAssertEqual(r.fix?.line, "复查改了：11 → 12")
     }
 
     /// 紧挨着的两颗点复查去掉一颗（一件点了两下）：报去掉一件

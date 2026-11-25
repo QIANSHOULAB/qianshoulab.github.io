@@ -116,6 +116,11 @@ enum DianChao {
         var added = 0
         var removed = 0
         var audited = false
+        /// 151：大管家说 final 跟 first 一样（件数一样、点没加没减），旧大管家不带这一项
+        var same: Bool? = nil
+        /// 第二眼清单：跟 first 比补了哪些点、去了哪些点（各盒的合在一起）
+        var addedPts: [DCPoint] = []
+        var removedPts: [DCPoint] = []
     }
 
     static func parse(_ data: Data) -> Letter? {
@@ -123,6 +128,7 @@ enum DianChao {
         let ok = o["ok"] as? Bool ?? false
         let stage = o["stage"] as? String ?? (ok ? "final" : "final")
         var L = Letter(stage: stage, ok: ok, why: o["why"] as? String ?? "", total: (o["total"] as? NSNumber)?.intValue ?? 0, trays: [])
+        L.same = o["same"] as? Bool
         for t in o["trays"] as? [[String: Any]] ?? [] {
             let box = (t["box"] as? [NSNumber] ?? []).map(\.doubleValue)
             guard box.count == 4 else { continue }
@@ -132,8 +138,11 @@ enum DianChao {
             if let a = t["audit"] as? [String: Any] {
                 L.audited = true
                 let added = (a["added"] as? [[NSNumber]] ?? []).compactMap { $0.count >= 2 ? ($0[0].doubleValue, $0[1].doubleValue) : nil }
+                let gone: [DCPoint] = (a["removed"] as? [[NSNumber]] ?? []).compactMap { q in q.count >= 2 ? DCPoint(y: q[0].doubleValue, x: q[1].doubleValue) : nil }
                 L.added += added.count
                 L.removed += (a["removed"] as? [Any] ?? []).count
+                L.addedPts += added.map { DCPoint(y: $0.0, x: $0.1) }
+                L.removedPts += gone
                 for (y, x) in added {
                     if let i = tray.pts.firstIndex(where: { abs($0.y - y) < 0.5 && abs($0.x - x) < 0.5 }) { tray.pts[i].aud = true }
                 }
@@ -206,50 +215,83 @@ enum DianChao {
         return (a.indices.filter { !usedA.contains($0) }.map { a[$0] }, b.indices.filter { !usedB.contains($0) }.map { b[$0] })
     }
 
-    /// 复查（final）盖到手上这份盘子上：只搬复查比第一遍改了的（补的、去的），手改和「不算 / 也算上」都留着。
-    /// 点按位置配（坐标挪了一点不算改，手上的点原地不动）；手上已经删掉的不用再删，手上已经补过的那件不再补一颗。
-    /// 回新盘子和看得见的改动（算着的盒子里的）。
-    static func review(_ now: [DCTray], first: [DCTray], final: [DCTray]) -> (trays: [DCTray], added: [DCMark], removed: [DCMark]) {
-        var added: [DCMark] = []
-        var removed: [DCMark] = []
+    /// 复查比第一遍改了哪些（算着的盒子里的点）。大管家说一样（same）就是没改；信里带清单就照清单（盒子顺序、坐标变了都不怕）；
+    /// 没有清单就按位置配。回 gone = 第一遍有、复查去掉的，new = 复查补上的
+    static func changes(_ L: Letter, first: [DCTray]) -> (gone: [DCPoint], new: [DCPoint]) {
+        if L.same == true { return ([], []) }
+        if !L.removedPts.isEmpty || !L.addedPts.isEmpty { return (L.removedPts, L.addedPts) }
+        if L.same == nil && L.trays.isEmpty { return ([], []) }       // 空信、又没说改了：当没回来
+        let a: [DCPoint] = first.filter(\.on).flatMap(\.pts)
+        let b: [DCPoint] = L.trays.filter(\.on).flatMap(\.pts)
+        return diff(a, b, near: sameNear(first))
+    }
+
+    /// 两个框（[y0, x0, y1, x1]）叠着多少
+    static func overlap(_ a: [Double], _ b: [Double]) -> Double {
+        max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(0, min(a[3], b[3]) - max(a[1], b[1]))
+    }
+
+    /// 改了：换成复查的盘子。手改和「不算 / 也算上」照样留着：手上删掉的不长回来，手上补过的那件不再补一颗。
+    /// 回新盘子和看得见的改动（算着的盒子里补的、去的）。now 是手上这份（盒子顺序跟 first 一样）。
+    static func merge(_ now: [DCTray], first: [DCTray], final: [DCTray], gone: [DCPoint], new: [DCPoint])
+        -> (trays: [DCTray], added: [DCMark], removed: [DCMark]) {
         let near = sameNear(first)
-        // 盒子数对不上（大管家那头现在不会）：整盘换成复查的
-        guard first.count == final.count, now.count == first.count else {
-            let new: [DCTray] = final.map { var t = $0; t.pts = rowSorted(t.pts); return t }
-            let seenNow: [DCPoint] = now.filter(\.on).flatMap(\.pts)
-            let seenNew: [DCPoint] = new.filter(\.on).flatMap(\.pts)
-            let d = diff(seenNow, seenNew, near: near)
-            for q in d.new {
-                let i = new.firstIndex(where: { t in t.on && t.pts.contains(q) }) ?? 0
-                added.append(DCMark(tray: i, y: q.y, x: q.x))
-            }
-            for q in d.gone {
-                let i = now.firstIndex(where: { t in t.on && t.pts.contains(q) }) ?? 0
-                removed.append(DCMark(tray: i, y: q.y, x: q.x))
-            }
-            return (new, added, removed)
-        }
-        var out = now
-        var mine: [DCPoint] = now.flatMap { t in t.pts.filter(\.man) }
+        var out = final
         for i in out.indices {
-            var touched = false
-            let d = diff(first[i].pts, final[i].pts, near: near)
-            for p in d.gone {
-                guard let j = out[i].pts.firstIndex(where: { !$0.man && same($0, p) }) else { continue }
-                out[i].pts.remove(at: j)
-                touched = true
-                if out[i].on { removed.append(DCMark(tray: i, y: p.y, x: p.x)) }
+            for j in out[i].pts.indices {
+                let p = out[i].pts[j]
+                out[i].pts[j].aud = new.contains { same($0, p) }
             }
-            for q in d.new {
-                if let k = mine.firstIndex(where: { hypot($0.x - q.x, $0.y - q.y) < near }) {
-                    mine.remove(at: k)
-                    continue
+        }
+        // 翻过「不算 / 也算上」的盒子：给叠得最多的那个新盒子照样翻
+        for (i, t) in now.enumerated() where i < first.count && t.on != first[i].on {
+            guard let k = out.indices.max(by: { overlap(out[$0].box, t.box) < overlap(out[$1].box, t.box) }),
+                  overlap(out[k].box, t.box) > 0 else { continue }
+            out[k].on = t.on
+        }
+        // 手删过的
+        let kept: [DCPoint] = now.flatMap { t in t.pts.filter { !$0.man } }
+        for p in first.flatMap(\.pts) where !kept.contains(where: { same($0, p) }) {
+            var best: (Int, Int)?
+            var bd = near
+            for (k, t) in out.enumerated() {
+                for (j, q) in t.pts.enumerated() {
+                    let d = hypot(p.x - q.x, p.y - q.y)
+                    if d < bd { bd = d; best = (k, j) }
                 }
-                out[i].pts.append(DCPoint(y: q.y, x: q.x, aud: true))
-                touched = true
-                if out[i].on { added.append(DCMark(tray: i, y: q.y, x: q.x)) }
             }
-            if touched { out[i].pts = rowSorted(out[i].pts) }
+            if let (k, j) = best { out[k].pts.remove(at: j) }
+        }
+        // 手补的：复查也补了这件就用手上那颗，不然照样放回盒子里
+        for m in now.flatMap({ t in t.pts.filter(\.man) }) {
+            var best: (Int, Int)?
+            var bd = near
+            for (k, t) in out.enumerated() {
+                for (j, q) in t.pts.enumerated() where q.aud && !q.man {
+                    let d = hypot(m.x - q.x, m.y - q.y)
+                    if d < bd { bd = d; best = (k, j) }
+                }
+            }
+            if let (k, j) = best {
+                out[k].pts[j] = m
+                continue
+            }
+            var home: Int? = out.firstIndex(where: { (t: DCTray) -> Bool in
+                m.y >= t.box[0] && m.y <= t.box[2] && m.x >= t.box[1] && m.x <= t.box[3]
+            })
+            if home == nil { home = out.firstIndex(where: { $0.main }) }
+            if let k = home ?? out.indices.first { out[k].pts.append(m) }
+        }
+        for i in out.indices { out[i].pts = rowSorted(out[i].pts) }
+        var added: [DCMark] = []
+        for (k, t) in out.enumerated() where t.on {
+            for q in t.pts where q.aud && !q.man { added.append(DCMark(tray: k, y: q.y, x: q.x)) }
+        }
+        var removed: [DCMark] = []
+        let left: [DCPoint] = out.filter(\.on).flatMap(\.pts)
+        for p in gone where !left.contains(where: { same($0, p) }) {
+            guard let i = now.firstIndex(where: { t in t.on && t.pts.contains(where: { same($0, p) }) }) else { continue }
+            removed.append(DCMark(tray: i, y: p.y, x: p.x))
         }
         return (out, added, removed)
     }
@@ -353,10 +395,12 @@ struct DCRun: Equatable {
     private mutating func recheck(_ L: DianChao.Letter, now: Date) -> Bool {
         guard L.stage == "final" else { return false }        // 迟到的 partial、重复的 first 不要
         reviewing = false
-        guard L.ok, !L.trays.isEmpty || firstTrays.isEmpty else { return true }
+        guard L.ok else { return true }
         audited = L.audited
+        let c = DianChao.changes(L, first: firstTrays)
+        if c.gone.isEmpty && c.new.isEmpty { return true }    // 一样：手上的点原地不动
         let before = total
-        let r = DianChao.review(trays, first: firstTrays, final: L.trays)
+        let r = DianChao.merge(trays, first: firstTrays, final: L.trays, gone: c.gone, new: c.new)
         trays = r.trays
         if !r.added.isEmpty || !r.removed.isEmpty {
             added = r.added.count
