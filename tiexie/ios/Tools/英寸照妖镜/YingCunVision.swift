@@ -411,41 +411,79 @@ enum YingCunVision {
     }
 
     /// 166：整张图一次认，Vision 偶尔整片不给（s9：干净的图，UCL 那列 2~9 行一个字都没有）。
-    /// 表头找到了、要换的列里有空格，就把表格那块裁出来放大再认一遍，原来没有的字框补进去；补完格数多了才用
-    static func fillGaps(_ job: YCJob, _ up: CGImage, notes: inout [String]) -> YCJob {
-        let fullKeys = ["DIM", "LSL", "USL", "LCL", "UCL"]
-        let limKeys = ["LCL", "UCL"]
-        func holes(_ A: YCTable?, _ keys: [String]) -> Bool {
-            guard let A else { return false }
-            let ks = keys.filter { A.lines.has($0) }
-            return A.rows.contains { r in ks.contains { r[$0]?.num == nil } }
+    /// 表头找到了、要换的列里有空格：先把表格那块裁出来放大再认；还有空格，再把有空格的那几列各裁一窄条放大认。
+    /// 原来没有的字框补进去，补完格数多了才用
+    static let fullKeys = ["DIM", "LSL", "USL", "LCL", "UCL"]
+    static let limKeys = ["LCL", "UCL"]
+
+    /// 哪几列有空格：(表, 列)
+    static func holed(_ job: YCJob) -> [(YCTable, String)] {
+        var out: [(YCTable, String)] = []
+        for (A, keys) in [(job.table, fullKeys), (job.limits, limKeys)] {
+            guard let A else { continue }
+            for k in keys where A.lines.has(k) && A.rows.contains(where: { $0[k]?.num == nil }) { out.append((A, k)) }
         }
-        guard holes(job.table, fullKeys) || holes(job.limits, limKeys), let A = job.table ?? job.limits else { return job }
-        let th = A.th
-        let xs = A.lines.keys.map { k -> Double in let l = A.lines[k]!; return l.0 + l.1 * A.hy }
-        let lastY = A.rows.last.map { r in r.keys.map { r[$0]!.cy }.max() ?? A.hy } ?? A.hy
+        return out
+    }
+
+    static func fillGaps(_ job0: YCJob, _ up: CGImage, notes: inout [String]) -> YCJob {
+        var job = job0
+        guard !holed(job).isEmpty, let A = job.table ?? job.limits else { return job }
         let W = Double(up.width), H = Double(up.height)
-        let x0 = max(0, (xs.min() ?? 0) - 4 * th), x1 = min(W, (xs.max() ?? W) + 4 * th)
-        let y0 = max(0, A.hy - 2 * th), y1 = min(H, lastY + 2 * A.pitch)
-        let rect = CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0).integral
-        guard x1 - x0 > 4 * th, y1 - y0 > 2 * th, let crop = up.cropping(to: rect) else { return job }
-        let ox = Double(rect.minX), oy = Double(rect.minY)
-        let k = max(1.2, min(2.5, Double(work) / Double(max(crop.width, crop.height))))
-        guard let big = scaled(crop, k), let lines = try? recognize(big, accurate: true) else { return job }
-        let fresh = items(lines).map { i in
-            YCItem(x0: i.x0 / k + ox, y0: i.y0 / k + oy, x1: i.x1 / k + ox, y1: i.y1 / k + oy, text: i.text, conf: i.conf)
+        func yRange(_ A: YCTable) -> (Double, Double) {
+            let lastY = A.rows.last.map { r in r.keys.map { r[$0]!.cy }.max() ?? A.hy } ?? A.hy
+            return (max(0, A.hy - 2 * A.th), min(H, lastY + 2 * A.pitch))
         }
-        // 原来那片已经有字的不要（中心落在原有字框里）
-        let old = job.raw.filter { !$0.text.isEmpty }
-        let add = fresh.filter { f in !f.text.isEmpty && !old.contains { o in f.cx > o.x0 - 2 && f.cx < o.x1 + 2 && f.cy > o.y0 && f.cy < o.y1 } }
-        if add.isEmpty { notes.append("补认 0"); return job }
+        func colX(_ A: YCTable, _ k: String, _ y: Double) -> Double { let l = A.lines[k]!; return l.0 + l.1 * y }
+        // 1) 整个表格
+        let (y0, y1) = yRange(A)
+        let xs = A.lines.keys.flatMap { [colX(A, $0, y0), colX(A, $0, y1)] }
+        let x0 = max(0, (xs.min() ?? 0) - 4 * A.th), x1 = min(W, (xs.max() ?? W) + 4 * A.th)
+        job = refill(job, up, [CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0)], maxK: 2.5, tag: "补认表格", notes: &notes)
+        // 2) 还有空格的列，一列一窄条
+        var strips: [CGRect] = []
+        for (T, k) in holed(job) {
+            let (a, b) = yRange(T)
+            let c0 = colX(T, k, a), c1 = colX(T, k, b)
+            let r = CGRect(x: max(0, min(c0, c1) - 3 * T.th), y: a, width: abs(c1 - c0) + 6 * T.th, height: b - a)
+            if !strips.contains(where: { $0.intersects(r) && abs($0.midX - r.midX) < T.th }) { strips.append(r) }
+        }
+        if !strips.isEmpty { job = refill(job, up, strips, maxK: 3, tag: "补认窄条×\(strips.count)", notes: &notes) }
+        return job
+    }
+
+    /// 把这几块各裁出来放大认一遍，原来没有的字框补进去；格数多了才用
+    static func refill(_ job: YCJob, _ up: CGImage, _ rects: [CGRect], maxK: Double, tag: String, notes: inout [String]) -> YCJob {
+        let th = YingCun.median(job.raw.map(\.h))
+        var fresh: [YCItem] = []
+        for r0 in rects {
+            let rect = r0.integral.intersection(CGRect(x: 0, y: 0, width: up.width, height: up.height))
+            guard rect.width > 2 * th, rect.height > 2 * th, let crop = up.cropping(to: rect) else { continue }
+            let k = max(1.2, min(maxK, Double(work) / Double(max(crop.width, crop.height))))
+            guard let big = scaled(crop, k), let lines = try? recognize(big, accurate: true) else { continue }
+            let ox = Double(rect.minX), oy = Double(rect.minY)
+            for i in items(lines) where !i.text.isEmpty {
+                let f = YCItem(x0: i.x0 / k + ox, y0: i.y0 / k + oy, x1: i.x1 / k + ox, y1: i.y1 / k + oy, text: i.text, conf: i.conf)
+                // 窄条边上被切了一半的字不要
+                if f.x0 < ox + 2 || f.x1 > ox + Double(rect.width) - 2 { if rects.count > 1 { continue } }
+                fresh.append(f)
+            }
+        }
+        // 原来那片已经有字的不要（中心落在原有字框里），几块之间重的也只要一个
+        var have = job.raw.filter { !$0.text.isEmpty }
+        var add: [YCItem] = []
+        for f in fresh where !have.contains(where: { o in f.cx > o.x0 - 2 && f.cx < o.x1 + 2 && f.cy > o.y0 && f.cy < o.y1 }) {
+            add.append(f)
+            have.append(f)
+        }
+        if add.isEmpty { notes.append(tag + " 0"); return job }
         YingCun.splitHeaderWords(add)
         let raw = job.raw.map { $0.copy() } + add
         let found = raw.map { $0.copy() }
         YingCun.prune(found)
         let j2 = YCJob(up: job.up, items: found, raw: raw, angle: job.angle)
         let before = cells(job.table, fullKeys) + cells(job.limits, limKeys), after = cells(j2.table, fullKeys) + cells(j2.limits, limKeys)
-        notes.append("补认 +\(add.count) 框，格 \(before)→\(after)")
+        notes.append(tag + " +\(add.count) 框，格 \(before)→\(after)")
         return after > before ? j2 : job
     }
 
