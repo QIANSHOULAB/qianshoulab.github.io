@@ -108,7 +108,8 @@ final class DianChaoModel: ObservableObject {
         if r.receive(L) {
             run = r
             if case .jam = r.phase { finish(); return }
-            if before == .waiting || r.phase == .done { countFrom = Date() }
+            if r.phase == .waiting { return }             // 145 partial：点边来边亮，数码管跟着跳（界面看 liveAt）
+            if r.phase == .done { countFrom = Date() } else if before == .waiting { countFrom = r.liveTotal > 0 ? nil : Date() }
             if r.phase == .done { finish() }
         }
     }

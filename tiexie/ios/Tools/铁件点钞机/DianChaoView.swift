@@ -184,6 +184,8 @@ struct DianChaoView: View {
         }
         switch r.phase {
         case .waiting:
+            // 145：大管家边数边寄点，数字跟着跳
+            if r.liveTotal > 0 { return SevenSeg.text(String(reduce ? r.liveTotal : r.liveShown(at: now))) }
             // 点钞中：每一位一段一段转圈
             if reduce { return SevenSeg.text("----") }
             let k = Int(now.timeIntervalSinceReferenceDate / 0.085)
@@ -376,8 +378,8 @@ private struct PhotoDots: View {
                     .saturation(busy ? 0.5 : 1)
                     .brightness(busy ? -0.3 : 0)
                     .animation(.easeOut(duration: 0.3), value: busy)
-                if let r = run, !r.trays.isEmpty, r.phase != .waiting {
-                    TimelineView(.animation(minimumInterval: 1 / 30, paused: reduce || countFrom == nil)) { t in
+                if let r = run, !r.trays.isEmpty, r.phase != .waiting || r.liveTotal > 0 {
+                    TimelineView(.animation(minimumInterval: 1 / 30, paused: reduce || (countFrom == nil && r.phase != .waiting))) { t in
                         Canvas { ctx, size in
                             let n = self.upto(r, at: t.date)
                             ctx.withCGContext { cg in DCDraw.dots(cg, trays: r.trays, W: Double(size.width), H: Double(size.height), upto: n) }
@@ -402,6 +404,7 @@ private struct PhotoDots: View {
 
     /// 圆点一排一排亮：跟数码管一起从 0 跑到总数
     private func upto(_ r: DCRun, at now: Date) -> Int {
+        if r.phase == .waiting { return reduce ? .max : r.liveShown(at: now) }      // 145 partial：新来的一个个亮
         guard let s = countFrom, !reduce else { return .max }
         let d = min(1.9, max(0.7, Double(r.total) * 0.046))
         let k = min(1, now.timeIntervalSince(s) / d)

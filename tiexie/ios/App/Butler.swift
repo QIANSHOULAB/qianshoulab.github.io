@@ -332,10 +332,11 @@ final class Butler: ObservableObject {
         toolWaiters[id] = nil
     }
 
-    /// 回信回的是哪个请求（data 里的 re，没有就 id）
+    /// 回信回的是哪个请求（data 里的 re，没有就 id）。145：点钞机边数边寄的点（stage partial）不带 re、带 for，
+    /// 旧版手机按 re / id 找不到等着的工具就放过去；新版先看 for
     nonisolated static func replyTo(_ data: Data) -> String? {
         guard let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
-        return (o["re"] as? String) ?? (o["id"] as? String)
+        return (o["for"] as? String) ?? (o["re"] as? String) ?? (o["id"] as? String)
     }
 
     private func json(_ obj: [String: Any]) -> Data {

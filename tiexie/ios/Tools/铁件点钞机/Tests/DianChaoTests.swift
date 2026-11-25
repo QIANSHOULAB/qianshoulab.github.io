@@ -112,6 +112,12 @@ final class DianChaoTests: XCTestCase {
                              "secs": 30.1, "audit_secs": 17.8, "total": total, "trays": trays], mid: rid)
         }
 
+        /// 145 照 service.Partials：id = <请求>-p<n>、for = 请求、不带 re
+        func partial(_ rid: String, n: Int, trays: [[String: Any]], total: Int) async throws {
+            try await reply(["v": 1, "id": "\(rid)-p\(n)", "for": rid, "ok": true, "host": "电脑", "at": ISOTime.string(), "stage": "partial",
+                             "secs": 3.1, "total": total, "trays": trays], mid: "\(rid)-p\(n)")
+        }
+
         func fail(_ rid: String, why: String) async throws {
             try await reply(["v": 1, "id": rid, "re": rid, "ok": false, "host": "电脑", "at": ISOTime.string(), "stage": "final", "why": why], mid: rid)
         }
@@ -298,5 +304,102 @@ final class DianChaoTests: XCTestCase {
         XCTAssertEqual(o["images"] as? [String], ["点钞/9F1C2D4E.jpg"])
         let first = try JSONSerialization.data(withJSONObject: ["id": "\(id)-1", "re": id, "stage": "first"])
         XCTAssertEqual(Butler.replyTo(first), id, "第一封的 id 带 -1，按 re 交回去")
+        // 145：partial 带 for、不带 re。新版按 for 交回去；旧版（只看 re / id）拿到的是 <id>-p1，没有工具在等，放过去
+        let o: [String: Any] = ["id": "\(id)-p1", "for": id, "stage": "partial"]
+        XCTAssertEqual(Butler.replyTo(try JSONSerialization.data(withJSONObject: o)), id)
+        XCTAssertEqual((o["re"] as? String) ?? (o["id"] as? String), "\(id)-p1", "旧版手机的找法找不到点钞机")
+    }
+
+    // ------------------------------------------------------------ 145 边数边出点
+    static func trays(_ n: Int) -> [[String: Any]] {
+        let all: [[Int]] = (0..<10).map { [200 + ($0 / 3) * 200, 200 + ($0 % 3) * 100] }
+        return [["box": [100, 100, 900, 600], "complete": true, "main": true, "counted": true, "count": n, "pts": Array(all.prefix(n))]]
+    }
+
+    func testPartialInOrderThenFirstFinal() async throws {
+        let m = DianChaoModel()
+        m.post = post
+        m.take(Self.photo(4032, 3024))
+        try await waitLetter(to: "pc")
+        let got = try await butler.takeLetter()
+        let (rid, _) = try XCTUnwrap(got)
+        try await butler.partial(rid, n: 1, trays: Self.trays(3), total: 3)
+        try await post.pump()
+        XCTAssertEqual(m.run?.phase, .waiting, "partial 不算出数")
+        XCTAssertEqual(m.run?.liveTotal, 3)
+        XCTAssertEqual(m.run?.total, 3)
+        XCTAssertNil(m.countFrom)
+        try await butler.partial(rid, n: 2, trays: Self.trays(7), total: 7)
+        try await post.pump()
+        XCTAssertEqual(m.run?.liveTotal, 7)
+        XCTAssertEqual(m.run?.liveFrom, 3, "新来的从 3 往上亮")
+        let a = try XCTUnwrap(m.run?.liveAt)
+        XCTAssertEqual(m.run?.liveShown(at: a), 3)
+        XCTAssertEqual(m.run?.liveShown(at: a.addingTimeInterval(1)), 7)
+        try await butler.first(rid, trays: Self.firstTrays, total: 9)
+        try await post.pump()
+        XCTAssertEqual(m.run?.phase, .first)
+        XCTAssertEqual(m.run?.total, 9)
+        XCTAssertNil(m.countFrom, "点已经一个个亮过了，第一封不再从 0 跑")
+        try await butler.partial(rid, n: 3, trays: Self.trays(8), total: 8)
+        try await post.pump()
+        XCTAssertEqual(m.run?.total, 9, "第一封以后来的 partial 不要")
+        try await butler.final(rid, trays: Self.finalTrays, total: 10)
+        try await post.pump()
+        XCTAssertEqual(m.run?.phase, .done)
+        XCTAssertEqual(m.run?.total, 10, "最后的数只认 final")
+    }
+
+    func testPartialOutOfOrderAndRepeated() throws {
+        var r = DCRun(id: "abcdef12-x", sentAt: Date())
+        func L(_ n: Int, stage: String = "partial", ok: Bool = true) -> DianChao.Letter {
+            var l = DianChao.Letter(stage: stage, ok: ok, why: "", total: n, trays: [])
+            l.trays = [DCTray(box: [100, 100, 900, 600], complete: true, main: true, on: true,
+                              pts: (0..<n).map { DCPoint(y: Double(200 + ($0 / 3) * 200), x: Double(200 + ($0 % 3) * 100)) })]
+            return l
+        }
+        XCTAssertTrue(r.receive(L(5)))
+        XCTAssertFalse(r.receive(L(5)), "重复来的不要")
+        XCTAssertFalse(r.receive(L(2)), "晚到的旧的不要")
+        XCTAssertEqual(r.total, 5)
+        XCTAssertTrue(r.receive(L(8)))
+        XCTAssertFalse(r.receive(L(9, ok: false)), "坏的 partial 不卡钞")
+        XCTAssertEqual(r.phase, .waiting)
+        XCTAssertEqual(r.total, 8)
+        XCTAssertTrue(r.receive(L(6, stage: "final")), "final 比 partial 少也认 final")
+        XCTAssertEqual(r.phase, .done)
+        XCTAssertEqual(r.total, 6)
+        XCTAssertFalse(r.receive(L(9)))
+        XCTAssertEqual(r.total, 6)
+        // 只有 partial、第一封一直不来：照样 90 秒卡钞
+        var r2 = DCRun(id: "abcdef12-y", sentAt: Date(timeIntervalSinceNow: -91))
+        XCTAssertTrue(r2.receive(L(4)))
+        XCTAssertTrue(r2.tick(now: Date()))
+        XCTAssertEqual(r2.phase, .jam(DianChaoStrings.noReply))
+    }
+
+    /// 旧版手机（0.3.2 的 Butler：按 re / id 找等着的）收到 partial：没人在等，不交给点钞机，后面的 first / final 照旧
+    func testOldPhoneIgnoresPartial() async throws {
+        let m = DianChaoModel()
+        m.post = post
+        m.take(Self.photo(4032, 3024))
+        try await waitLetter(to: "pc")
+        let got = try await butler.takeLetter()
+        let (rid, _) = try XCTUnwrap(got)
+        try await butler.partial(rid, n: 1, trays: Self.trays(3), total: 3)
+        for it in relay.waiting(for: "phone") {           // 旧的找法
+            let env = try await post.client.receive(it)
+            let o = try XCTUnwrap(JSONSerialization.jsonObject(with: env.data) as? [String: Any])
+            let key = (o["re"] as? String) ?? (o["id"] as? String)
+            XCTAssertNotEqual(key, rid)
+            if let k = key, let w = post.waiters[k] { w(env.data) }
+            try await post.client.ack(it.seq)
+        }
+        XCTAssertEqual(m.run?.phase, .waiting)
+        XCTAssertEqual(m.run?.liveTotal, 0, "旧版没交给点钞机")
+        try await butler.first(rid, trays: Self.firstTrays, total: 9)
+        try await post.pump()
+        XCTAssertEqual(m.run?.phase, .first)
+        XCTAssertEqual(m.run?.total, 9)
     }
 }

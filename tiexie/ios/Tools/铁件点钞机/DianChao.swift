@@ -4,6 +4,7 @@ import CoreGraphics
 // 铁件点钞机的算法：照 QIANSHOULAB/gongshi draft-count 分支 count/index.html（0.5.0）搬界面那头的规矩，大脑换成大管家（121 的 tx-count）。
 // 拍完缩到大管家看图的尺寸（pc-butler handheld/luru.py 的 resized_size：长边 2576、28 像素一格、最多 4784 格），寄 tx-count；
 // 回两封信：stage first 先出数和圆点；stage final 补上第二眼（补的点柠檬绿圈）。两封都没到之前数码管一直转，90 秒没第一封就说大管家没回。
+// 145 起第一封之前还有几封 stage partial（大管家边写边寄，带到目前的全部点）：圆点一个个亮、数字跟着跳；最后的数只认 first / final。
 // 圆点能手改：点圆点删掉，点漏掉的件补一个；每盒「不算 / 也算上」能翻。坐标都是 0~1000（y, x），跟大管家一样。
 
 struct DCPoint: Equatable {
@@ -163,6 +164,11 @@ struct DCRun: Equatable {
     var audited = false
     var firstAt: Date?
     var why = ""
+    /// 145 边数边出点：大管家边写边寄来的点（stage partial）到了几个；0 = 还没有
+    var liveTotal = 0
+    /// 上一封 partial 时已经亮着的点数（新来的从这儿往上一个个亮）
+    var liveFrom = 0
+    var liveAt: Date?
 
     init(id: String, sentAt: Date) {
         self.id = id
@@ -170,6 +176,14 @@ struct DCRun: Equatable {
     }
 
     var total: Int { DianChao.total(trays) }
+
+    /// 145：边数边出点时此刻亮着几个（新来的 0.6 秒里一个个亮上去）
+    func liveShown(at now: Date) -> Int {
+        guard liveTotal > 0 else { return 0 }
+        guard let a = liveAt else { return liveTotal }
+        let k = min(1, max(0, now.timeIntervalSince(a) / 0.6))
+        return liveFrom + Int((Double(liveTotal - liveFrom) * k).rounded())
+    }
     var settled: Bool { phase == .done }
 
     /// 收到一封回信。回 true：这一封有用（界面要刷新）
@@ -180,6 +194,15 @@ struct DCRun: Equatable {
             return false
         default:
             break
+        }
+        // 145：边数边出点。只在第一封之前收；乱序、重复来的（点没比现在多）不要；最后的数只认 first / final
+        if L.stage == "partial" {
+            guard phase == .waiting, L.ok, L.total > liveTotal else { return false }
+            liveFrom = liveTotal
+            liveTotal = L.total
+            liveAt = Date()
+            trays = L.trays.map { var t = $0; t.pts = DianChao.rowSorted(t.pts); return t }
+            return true
         }
         if !L.ok {
             phase = .jam(L.why.isEmpty ? DianChaoStrings.jamDefault : L.why)
