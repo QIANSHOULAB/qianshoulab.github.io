@@ -5,7 +5,11 @@ set -uo pipefail
 SIM="$1"; APP="$2"; OUT="$3"
 # 166：半路退出（比如 set -u 碰上没设的变量）也留一句在 Actions 注释里：停在哪一屏、退出码多少
 CUR="开头"
-trap 'rc=$?; if [ $rc -ne 0 ]; then echo "::error title=shots.sh::退出码 $rc，停在 $CUR"; fi; exit $rc' EXIT
+ERRLOG="${RUNNER_TEMP:-/tmp}/shots-stderr.txt"
+: > "$ERRLOG"
+exec 2> >(tee -a "$ERRLOG" >&2)
+trap 'rc=$?; if [ $rc -ne 0 ]; then echo "::error title=shots.sh::退出码 $rc，停在 $CUR"; tail -5 "$ERRLOG" | while IFS= read -r l; do echo "::warning title=shots.sh stderr::$l"; done; fi; exit $rc' EXIT
+echo "::notice title=shots.sh::开跑（bash $BASH_VERSION）"
 BID=lab.qianshou.tiexie
 # 134：tool-zhaoyao.idle = 照妖镜还没拍照的样子（跟网页首屏比）；点后面的只管文件名，进哪个界面看点前面的
 # 150：tool-dianchao.first = 第一遍刚到（已经是「完成」）；tool-dianchao.fixed = 复查改了一件
@@ -23,6 +27,7 @@ xcrun simctl status_bar "$SIM" override --time "9:41" --dataNetwork wifi --wifiM
   --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100 || true
 xcrun simctl ui "$SIM" appearance light
 xcrun simctl install "$SIM" "$APP"
+echo "::notice title=shots.sh::装好了，开始截"
 rm -rf "$OUT"; mkdir -p "$OUT"
 fail=0; i=1
 for s in $SCREENS; do
@@ -65,9 +70,10 @@ for s in $SCREENS; do
   i=$((i+1))
 done
 ls -la "$OUT"
+echo "::notice title=shots.sh::截完 $((i - 1)) 张，失败 $fail"
 # 166：单测往 tiexie/ios 下写 notes-*.txt（读出了什么、对上几格），这里转成 Actions 注释（工作流文件推不动，放这儿；
-#      一步最多 10 条 notice，只发每个文件前 6 行）
+#      一步最多 10 条 notice，只发每个文件前 2 行）
 find tiexie/ios -name 'notes-*.txt' 2>/dev/null | while read -r f; do
-  head -6 "$f" | while IFS= read -r l; do echo "::notice title=$(basename "$f")::$l"; done
+  head -2 "$f" | while IFS= read -r l; do echo "::notice title=$(basename "$f")::$l"; done
 done
 exit $fail
