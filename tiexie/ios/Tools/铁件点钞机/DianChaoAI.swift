@@ -73,7 +73,7 @@ enum DCCount {
     static func partsOf(_ tr: [String: Any]) -> [Any?] {
         if let parts = tr["parts"] as? [Any] { return parts.map { ($0 as? [String: Any])?["point"] } }
         if let pts = tr["pts"] as? [Any] { return pts }
-        if let rows = tr["rows"] as? [Any] { return rows.compactMap { $0 as? [Any] }.flatMap { $0 } }
+        if let rows = tr["rows"] as? [Any] { return Array(rows.compactMap { $0 as? [Any] }.joined()) }
         return []
     }
 

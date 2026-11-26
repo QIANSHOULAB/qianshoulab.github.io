@@ -144,7 +144,7 @@ final class DianChaoAITests: XCTestCase {
         return try XCTUnwrap(DianChaoModel.shrink(img))
     }
 
-    func until(_ ok: () -> Bool, _ secs: Double = 6) async -> Bool {
+    func until(_ ok: @escaping () -> Bool, _ secs: Double = 6) async -> Bool {
         let end = Date().addingTimeInterval(secs)
         while Date() < end {
             if ok() { return true }
