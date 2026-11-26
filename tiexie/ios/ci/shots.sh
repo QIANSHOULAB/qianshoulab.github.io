@@ -68,7 +68,7 @@ for s in $SCREENS; do
   i=$((i+1))
 done
 ls -la "$OUT"
-echo "::warning title=shots.sh 166::H 截完 $((i - 1)) 张，失败 $fail"
+echo "::notice title=shots.sh 166::截完 $((i - 1)) 张，失败 $fail"
 # 166：单测往 tiexie/ios 下写 notes-*.txt（读出了什么、对上几格），这里转成 Actions 注释（工作流文件推不动，放这儿；
 #      一步最多 10 条 notice，只发每个文件前 2 行）
 find tiexie/ios -name 'notes-*.txt' 2>/dev/null | while read -r f; do

@@ -27,7 +27,8 @@
         "entitlements": [],
         "privacy": {
           "NSCameraUsageDescription": "给秘籍拍封面、拍布阵图纸。",
-          "NSPhotoLibraryUsageDescription": "从相册挑封面和布阵图纸。"
+          "NSPhotoLibraryUsageDescription": "从相册挑封面和布阵图纸。",
+          "NSPhotoLibraryAddUsageDescription": "照妖镜「存原图」：把没盖红字的原照片存进相册。"
         }
       },
       "versions": [
