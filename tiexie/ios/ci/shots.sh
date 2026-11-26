@@ -1,14 +1,12 @@
 #!/bin/bash
-echo "::warning title=shots.sh 166::A 进来了 args=$# bash=$BASH_VERSION"
 # 模拟器截图（390 宽那台 iPhone）：宝典目录、一本书、布阵图空着、改的时候、工具箱、四个工具、设置。
 # 用法：shots.sh <模拟器 UDID> <TieXie.app> <输出目录>
-set -uo pipefail
+# 166：macOS 自带 bash 3.2 在 set -u 下截到第一张 166 屏就悄悄退出了（EXIT trap 都没走），这里不开 -u
+set -o pipefail
 SIM="$1"; APP="$2"; OUT="$3"
 # 166：半路退出（比如 set -u 碰上没设的变量）也留一句在 Actions 注释里：停在哪一屏、退出码多少
-echo "::warning title=shots.sh 166::B 参数读完"
 CUR="开头"
 trap 'rc=$?; if [ $rc -ne 0 ]; then echo "::error title=shots.sh::退出码 $rc，停在 $CUR"; fi; exit $rc' EXIT
-echo "::warning title=shots.sh 166::C trap 设好"
 BID=lab.qianshou.tiexie
 # 134：tool-zhaoyao.idle = 照妖镜还没拍照的样子（跟网页首屏比）；点后面的只管文件名，进哪个界面看点前面的
 # 150：tool-dianchao.first = 第一遍刚到（已经是「完成」）；tool-dianchao.fixed = 复查改了一件
@@ -20,20 +18,16 @@ SCREENS="$SCREENS tool-zhaoyao.limits-dark tool-zhaoyao.all-dark tool-zhaoyao.no
 FIX="$PWD/tiexie/ios/Tools/英寸照妖镜/Tests/Fixtures"
 DCIM="$HOME/Library/Developer/CoreSimulator/Devices/$SIM/data/Media/DCIM"
 photos() { find "$DCIM" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.heic' -o -iname '*.png' \) 2>/dev/null | wc -l | tr -d ' '; }
-echo "::warning title=shots.sh 166::D 变量、函数好了"
 xcrun simctl boot "$SIM" 2>/dev/null || true
 xcrun simctl bootstatus "$SIM" -b >/dev/null
 xcrun simctl status_bar "$SIM" override --time "9:41" --dataNetwork wifi --wifiMode active --wifiBars 3 \
   --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100 || true
-echo "::warning title=shots.sh 166::E 模拟器起来了"
 xcrun simctl ui "$SIM" appearance light
 xcrun simctl install "$SIM" "$APP"
-echo "::warning title=shots.sh 166::F 装好了，开始截"
 rm -rf "$OUT"; mkdir -p "$OUT"
 fail=0; i=1
 for s in $SCREENS; do
   CUR="$s"
-  [ "$s" = tool-zhaoyao.limits ] && echo "::warning title=shots.sh 166::G 截到 166 的屏"
   xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
   # 122：两个拍照的工具拿测试用的照片演示（照妖镜真跑一遍 Vision，要多等一会儿）
   EXTRA=(); WAIT=5; SAVE=0
@@ -54,7 +48,9 @@ for s in $SCREENS; do
     tool-dianchao*) EXTRA=(-TXSample "$PWD/tiexie/ios/Tools/铁件点钞机/Tests/Fixtures/demo-tray.jpg"); WAIT=8
       case "$s" in *.*) EXTRA+=(-TXStage "${s##*.}") ;; esac ;;
   esac
-  xcrun simctl launch "$SIM" "$BID" -TXDemo YES -TXScreen "${s%%.*}" ${EXTRA[@]+"${EXTRA[@]}"} -AppleLanguages "(zh-Hans)" -AppleLocale zh_CN >/dev/null
+  LOUT=$(xcrun simctl launch "$SIM" "$BID" -TXDemo YES -TXScreen "${s%%.*}" ${EXTRA[@]+"${EXTRA[@]}"} -AppleLanguages "(zh-Hans)" -AppleLocale zh_CN 2>&1)
+  LRC=$?
+  case "$s" in tool-zhaoyao.*) [ $LRC -ne 0 ] && echo "::warning title=shots.sh 166::$s 启动不了（$LRC）：$(echo "$LOUT" | tr '\n' ' ' | cut -c1-300)" ;; esac
   sleep $WAIT
   png="$OUT/$(printf %02d $i)-$s.png"
   if xcrun simctl io "$SIM" screenshot --type=png "$png" >/dev/null 2>&1; then
