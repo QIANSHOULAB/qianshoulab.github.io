@@ -4,7 +4,7 @@
 # 166：macOS 自带 bash 3.2 在 set -u 下截到第一张 166 屏就悄悄退出了（EXIT trap 都没走），这里不开 -u
 set -o pipefail
 SIM="$1"; APP="$2"; OUT="$3"
-# 166：半路退出（比如 set -u 碰上没设的变量）也留一句在 Actions 注释里：停在哪一屏、退出码多少
+# 166：半路退出也留一句在 Actions 注释里：停在哪一屏、退出码多少
 CUR="开头"
 trap 'rc=$?; if [ $rc -ne 0 ]; then echo "::error title=shots.sh::退出码 $rc，停在 $CUR"; fi; exit $rc' EXIT
 BID=lab.qianshou.tiexie
