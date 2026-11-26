@@ -97,7 +97,11 @@ final class DianChaoAITests: XCTestCase {
         let k = c("crop")
         let b = DCCount.cropBox((k["trays"] as! [[String: Any]]).map(tray))!
         XCTAssertEqual([b.y0, b.x0, b.y1, b.x1].map(Double.init), (k["box"] as! [Any]).map { num($0) })
-        XCTAssertNil(DCCount.cropBox((c("crop_small")["trays"] as! [[String: Any]]).map(tray)))
+        // 一盘很小的（框正好 60 宽）：count.py 照样裁（不到 60 才不裁），夹具里 box 不是 null
+        let small = DCCount.cropBox((c("crop_small")["trays"] as! [[String: Any]]).map(tray))
+        XCTAssertEqual(small == nil, c("crop_small")["box"] is NSNull, "小盘子裁不裁跟大管家一样")
+        XCTAssertNil(DCCount.cropBox([DCCount.Tray(box: [500, 500, 510, 510], complete: true, reason: "", pts: [DCCount.P(y: 505, x: 505)],
+                                                   area: 100, on: true, main: true)]), "不到 60 不裁")
         let im = DianChaoTests.photo(2000, 1500)
         let made = DCCount.cropForAudit(im, (k["trays"] as! [[String: Any]]).map(tray))
         XCTAssertNotNil(made)
