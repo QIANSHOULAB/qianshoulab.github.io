@@ -33,6 +33,15 @@
       },
       "versions": [
         {
+          "version": "0.3.7",
+          "buildVersion": "11",
+          "date": "2026-11-26",
+          "localizedDescription": "0.3.8：铁件点钞机先用 Claude 直接数：拍完不用等电脑上的大管家，手机经中转站问 Claude，数法跟大管家一模一样（两个大脑一起数，对不上再看第二眼）。Claude 的额度用完、超时、出错，这一盘自动交给大管家照老样数。存图下面写着是谁数的。别的工具不变。\n0.3.7：英寸照妖镜默认只换管控线：结果顶上「管控线 / 全要」，默认只把控制下限、控制上限（LCL / UCL）两列变红，别的数一个不碰；点「全要」照以前那样全换，选过就记住。表头只写 CONTROL LIMIT / 控制范围、底下分两格的也认。整张单子横着拍，不会再被转成斜的；红字不再一行压一行，挤不下的不硬塞。结果页多一个「存原图」，点一下把没盖红字的原照片存进相册，不点不存。别的工具不变。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.7/TieXie-0.3.7.ipa",
+          "size": 22356778,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.3.6",
           "buildVersion": "10",
           "date": "2026-11-25",
@@ -123,11 +132,11 @@
           "minOSVersion": "26.0"
         }
       ],
-      "version": "0.3.6",
-      "versionDate": "2026-11-25",
-      "versionDescription": "0.3.6：铁件点钞机不用等复查了：第一遍数完就是「完成」，叮一声、数码管跑一下，存图和重数马上能点。复查在后头悄悄跑，跟第一遍一样就什么都不动；不一样才改：叮叮两声、震一下，数码管上方写「复查改了：45 → 46」，补上的点套绿圈、去掉的点打红叉，各闪几下。大管家两个大脑数得一样时，手机上一点不动。复查没回来就用第一遍的数。手机拨了静音就只震不响。别的工具不变。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.6/TieXie-0.3.6.ipa",
-      "size": 22305015
+      "version": "0.3.7",
+      "versionDate": "2026-11-26",
+      "versionDescription": "0.3.8：铁件点钞机先用 Claude 直接数：拍完不用等电脑上的大管家，手机经中转站问 Claude，数法跟大管家一模一样（两个大脑一起数，对不上再看第二眼）。Claude 的额度用完、超时、出错，这一盘自动交给大管家照老样数。存图下面写着是谁数的。别的工具不变。\n0.3.7：英寸照妖镜默认只换管控线：结果顶上「管控线 / 全要」，默认只把控制下限、控制上限（LCL / UCL）两列变红，别的数一个不碰；点「全要」照以前那样全换，选过就记住。表头只写 CONTROL LIMIT / 控制范围、底下分两格的也认。整张单子横着拍，不会再被转成斜的；红字不再一行压一行，挤不下的不硬塞。结果页多一个「存原图」，点一下把没盖红字的原照片存进相册，不点不存。别的工具不变。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianshoulab.github.io/releases/download/tiexie-v0.3.7/TieXie-0.3.7.ipa",
+      "size": 22356778
     }
   ]
 }
