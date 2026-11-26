@@ -4,8 +4,10 @@ import UIKit
 
 // 168 点钞机先用 Claude API：
 // - 搬过来的 count.py 规矩，跟大管家数出一样的数：夹具 Fixtures/count-cases.json 是 pc-butler 的 count.py 原样跑出来的
-//   （C:/Claude/170/kit/gen168.py）：挑盒子、第二眼、两遍对点、裁大的框、两个大脑一起数（一样 / 不一样）；
-// - 走 API 的四条：成了（不寄大管家）、额度用完回大管家（30 分钟不再问）、超时回大管家、Opus 跟 Sonnet 不一样走第二眼。
+//   （C:/Claude/170/kit/gen168.py，189 的 solo_more 是 C:/Claude/189/kit/gen189.py）：挑盒子、第二眼、两遍对点、裁大的框、
+//   只让 Opus 数（189）、两个大脑一起数（一样 / 不一样）；
+// - 189 不抢先（默认）：只发一封 first（Opus）再一封 final，第二眼改了数出「复查改了」；模型表没写 race 就是不抢先；
+// - 走 API 的几条：成了（不寄大管家）、额度用完回大管家（30 分钟不再问）、超时回大管家、race 开着时 Opus 跟 Sonnet 不一样走第二眼。
 @MainActor
 final class DianChaoAITests: XCTestCase {
 
@@ -125,9 +127,11 @@ final class DianChaoAITests: XCTestCase {
         var fail: [String: DCAIError] = [:]
         var delay: [String: UInt64] = ["opus": 300_000_000]
         var asked: [(model: String, words: String)] = []
+        var race = false
 
-        func models() async throws -> (fast: DCModel, sure: DCModel, audit: DCModel) {
-            (DCModel(model: "sonnet", effort: "medium"), DCModel(model: "opus", effort: "medium"), DCModel(model: "opus-audit", effort: "medium"))
+        func models() async throws -> DCPlan {
+            DCPlan(fast: DCModel(model: "sonnet", effort: "medium"), sure: DCModel(model: "opus", effort: "medium"),
+                   audit: DCModel(model: "opus-audit", effort: "medium"), race: race)
         }
 
         func ask(_ m: DCModel, system: String, words: String, image: Data, timeout: TimeInterval) async throws -> Any {
@@ -163,6 +167,7 @@ final class DianChaoAITests: XCTestCase {
         let (photo, jpeg) = try demoPhoto()
         XCTAssertEqual([Double(photo.cgImage!.width), Double(photo.cgImage!.height)], (k["size"] as! [Any]).map { num($0) }, "缩图跟大管家一样大")
         let ai = FakeAI()
+        ai.race = true
         ai.answers = ["sonnet": k["son"]!, "opus": k["opus"]!]
         ai.audit = k["audit"]!
         var first: [String: Any]?
@@ -189,7 +194,71 @@ final class DianChaoAITests: XCTestCase {
     func testRaceAgreeSameAsButler() async throws { try await raceSameAsButler("race_same") }
     func testRaceDisagreeSameAsButler() async throws { try await raceSameAsButler("race_more") }
 
-    // ------------------------------------------------------------ 点钞机走 API 的四条
+    // ------------------------------------------------------------ 189 不抢先
+    /// 只问 Opus：一封 first（10 件）、再一封 final（第二眼补 1 件 → 11），跟 count.py 一样；Sonnet 一次都不问
+    func testSoloOneFirstThenFinalSameAsButler() async throws {
+        let k = c("solo_more")
+        let (photo, jpeg) = try demoPhoto()
+        let ai = FakeAI()
+        ai.answers = ["opus": k["opus"]!]
+        ai.audit = k["audit"]!
+        var firsts: [[String: Any]] = []
+        let final = try await DCAICounter(ai: ai).count(photo: photo, jpeg: jpeg) { firsts.append($0) }
+        XCTAssertEqual(ai.asked.map { $0.model }, ["opus", "opus-audit"], "只问 Opus 两遍：数一遍、第二眼一遍")
+        XCTAssertEqual(firsts.count, 1, "first 只发一封")
+        let wf = k["first"] as! [String: Any], wl = k["final"] as! [String: Any]
+        XCTAssertEqual(firsts.first?["stage"] as? String, "first")
+        XCTAssertEqual(firsts.first?["total"] as? Int, Int(num(wf["total"])))
+        XCTAssertEqual(firsts.first?["part"] as? String, wf["part"] as? String)
+        XCTAssertEqual(pts((firsts.first?["trays"] as? [[String: Any]])?.first?["pts"]), pts((wf["trays"] as! [[String: Any]]).first?["pts"]))
+        XCTAssertEqual(final["stage"] as? String, "final")
+        XCTAssertEqual(final["total"] as? Int, Int(num(wl["total"])))
+        XCTAssertNil(final["same"])
+        XCTAssertNil(final["race"])
+        let g = (final["trays"] as! [[String: Any]])[0], w = (wl["trays"] as! [[String: Any]])[0]
+        XCTAssertEqual(pts(g["pts"]), pts(w["pts"]))
+        XCTAssertEqual(pts((g["audit"] as? [String: Any])?["added"]), pts((w["audit"] as? [String: Any])?["added"]))
+        XCTAssertEqual(pts((g["audit"] as? [String: Any])?["removed"]), pts((w["audit"] as? [String: Any])?["removed"]))
+    }
+
+    /// 点钞机上走一遍：Opus 数完先出数（Claude 数的、复查还在后头），假的第二眼改了数 → 「复查改了：10 → 11」
+    func testSoloSecondLookShowsFixed() async throws {
+        let k = c("solo_more")
+        let ai = FakeAI()
+        ai.answers = ["opus": k["opus"]!]
+        ai.audit = k["audit"]!
+        ai.delay = ["opus-audit": 1_000_000_000]
+        let vm = model(ai)
+        vm.take(try demoPhoto().0)
+        let counted = await until { vm.run?.phase == .done }
+        XCTAssertTrue(counted)
+        XCTAssertEqual(vm.run?.total, 10, "第一个出来的数就是 Opus 的")
+        XCTAssertEqual(vm.run?.reviewing, true, "第二眼还在后头")
+        XCTAssertNil(vm.run?.fix)
+        let done = await until { vm.run?.reviewing == false }
+        XCTAssertTrue(done)
+        XCTAssertEqual(vm.run?.total, 11)
+        XCTAssertEqual(vm.run?.fix?.line, DianChaoStrings.fixed(10, 11, add: 1, del: 0))
+        XCTAssertEqual(vm.run?.byAI, true)
+        XCTAssertFalse(ai.asked.contains { $0.model == "sonnet" })
+        XCTAssertTrue(relay.waiting(for: "pc").isEmpty)
+    }
+
+    /// 中转站模型表：没写 race、写 false 都不抢先；只有 true 才抢先
+    func testPlanNoRaceUnlessSaid() {
+        let old: [String: Any] = ["fast": ["model": "claude-sonnet-5-5", "effort": "medium"],
+                                  "sure": ["model": "claude-opus-5-5", "effort": "medium"]]
+        XCTAssertFalse(DCAI.plan(old).race, "读不到开关也照不抢先走")
+        XCTAssertFalse(DCAI.plan([:]).race)
+        XCTAssertEqual(DCAI.plan([:]).sure, DCModel(model: "claude-opus-5-5", effort: "medium"))
+        XCTAssertEqual(DCAI.plan([:]).audit.model, "claude-opus-5-5")
+        func parsed(_ s: String) -> [String: Any] { (DCCount.extractJSON(s) as? [String: Any]) ?? [:] }
+        XCTAssertFalse(DCAI.plan(parsed(#"{"race": false}"#)).race)
+        XCTAssertFalse(DCAI.plan(parsed(#"{"race": "true"}"#)).race)
+        XCTAssertTrue(DCAI.plan(parsed(#"{"race": true}"#)).race)
+    }
+
+    // ------------------------------------------------------------ 点钞机走 API
     var relay: DianChaoTests.FakeRelay!
     var post: DianChaoTests.FakePost!
 
@@ -205,19 +274,19 @@ final class DianChaoAITests: XCTestCase {
         return vm
     }
 
-    /// API 成了：两封都出、写「Claude 数的」、不寄大管家
+    /// API 成了：两封都出、写「Claude 数的」、不寄大管家；第二眼没挑出毛病就什么都不动
     func testAPICountsWithoutButler() async throws {
         let ai = FakeAI()
-        ai.answers = ["sonnet": c("race_same")["son"]!, "opus": c("race_same")["opus"]!]
+        ai.answers = ["opus": c("race_same")["opus"]!]
         let vm = model(ai)
         vm.take(try demoPhoto().0)
         let done = await until { vm.run?.phase == .done && vm.run?.reviewing == false }
         XCTAssertTrue(done, "该数完")
         XCTAssertEqual(vm.run?.total, 9)
         XCTAssertEqual(vm.run?.byAI, true)
-        XCTAssertNil(vm.run?.fix, "Opus 跟 Sonnet 一样：复查什么都不动")
+        XCTAssertNil(vm.run?.fix, "第二眼没补没去：复查什么都不动")
         XCTAssertTrue(relay.waiting(for: "pc").isEmpty, "API 数成了不该寄大管家")
-        XCTAssertFalse(ai.asked.contains { $0.words == DCPrompt.auditWords }, "一样就不看第二眼")
+        XCTAssertEqual(ai.asked.map { $0.model }, ["opus", "opus-audit"])
     }
 
     /// 额度用完：这一盘寄大管家，记着 30 分钟不问
@@ -244,9 +313,10 @@ final class DianChaoAITests: XCTestCase {
         XCTAssertEqual(ai.restedN, 0)
     }
 
-    /// Opus 跟 Sonnet 不一样：Opus 的过第二眼，复查改了（9 → 11）
+    /// race 开着：Opus 跟 Sonnet 不一样，Opus 的过第二眼，复查改了（9 → 11）
     func testDisagreeGoesToSecondLook() async throws {
         let ai = FakeAI()
+        ai.race = true
         let k = c("race_more")
         ai.answers = ["sonnet": k["son"]!, "opus": k["opus"]!]
         ai.audit = k["audit"]!

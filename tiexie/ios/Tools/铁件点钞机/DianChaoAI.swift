@@ -2,10 +2,12 @@ import UIKit
 
 // 168（Song 11-25 21:54）：点钞机先用 Claude API 数，API 没额度了再回大管家。
 // 走中转站的 /ai/messages（167）：带大管家给的 cid，站里补上钥匙转给 Claude；app 里只有 cid，没有 Anthropic 的钥匙。
-// 数法整套照搬大管家 pc-butler `handheld/tiexie/count.py`（121 / 145 / 151）：
-// - 第一遍 fast（Sonnet）和 sure（Opus）一起问，先回来的就是 first（数码管跑、叮一声）；
-// - final 站在 Opus 上：Opus 跟 Sonnet 一样（件数一样、每个点附近都有搭档，race_near）→ final 就是 Opus 的，不看第二眼；
-//   不一样 → Opus 的数过第二眼（裁大、画品红点、问哪些没点、哪些点错，apply_audit 改）；
+// 数法整套照搬大管家 pc-butler `handheld/tiexie/count.py`（121 / 145 / 151 / 189）：
+// - 189（Song 11-26 15:19「第一个离谱」，准 > 快）：不抢先，只让 sure（Opus）数。它数完就是 first（数码管跑、叮一声），
+//   再过第二眼（audit，也是 Opus：裁大、画品红点、问哪些没点、哪些点错，apply_audit 改）就是 final。
+// - 151 的抢先还留着，中转站模型表 tiexie.race = true 才走（读不到当 false）：fast（Sonnet）和 sure 一起问，先回来的就是 first；
+//   final 站在 Opus 上：Opus 跟 Sonnet 一样（件数一样、每个点附近都有搭档，race_near）→ final 就是 Opus 的，不看第二眼；
+//   不一样 → Opus 的数过第二眼；
 // - pick_trays（边上没拍全、去重、只数完整的或者最大那盒）、crop_for_audit、apply_audit、pair_up、diff_counts 一条一条照搬，
 //   连 Python 的「一半往双数走」和稳定排序都照着来；单测拿 count.py 原样跑出来的夹具对（Tests/Fixtures/count-cases.json）。
 // 拼出来的两封跟大管家寄来的 first / final 一模一样，交给原来的 got()：收信、复查、手改那套界面一点不动。
@@ -367,12 +369,20 @@ struct DCModel: Equatable {
     var effort: String
 }
 
+/// /ai/conf 的 tiexie 那段：三个模型，和抢不抢先（189：默认不抢先，只问 sure）
+struct DCPlan: Equatable {
+    var fast: DCModel
+    var sure: DCModel
+    var audit: DCModel
+    var race = false
+}
+
 /// 问一遍：系统提示、一句话、一张图 → 回答（JSON）。真的走中转站，单测换成假的
 @MainActor
 protocol DCAIAsk: AnyObject {
     /// 有 cid、没在歇（30 分钟里回过 quota 就不问）
     var ready: Bool { get }
-    func models() async throws -> (fast: DCModel, sure: DCModel, audit: DCModel)
+    func models() async throws -> DCPlan
     func ask(_ m: DCModel, system: String, words: String, image: Data, timeout: TimeInterval) async throws -> Any
     /// 回过 quota：记着
     func rested()
@@ -400,7 +410,7 @@ final class DCAI: DCAIAsk {
         return (h?.statusCode ?? 0, hs, d)
     }
     var clock: () -> Date = { Date() }
-    private var conf: (at: Date, m: (fast: DCModel, sure: DCModel, audit: DCModel))?
+    private var conf: (at: Date, m: DCPlan)?
 
     var cid: String? {
         get { Keychain.read(account: Self.cidAccount).flatMap { String(data: $0, encoding: .utf8) } }
@@ -448,7 +458,7 @@ final class DCAI: DCAIAsk {
     }
 
     /// 模型表：缓存 10 分钟。没钥匙、歇着 = quota
-    func models() async throws -> (fast: DCModel, sure: DCModel, audit: DCModel) {
+    func models() async throws -> DCPlan {
         if let c = conf, clock().timeIntervalSince(c.at) < 600 { return c.m }
         let (st, _, d) = try await call(try request("ai/conf", timeout: 20))
         try checkCid(st, d)
@@ -457,16 +467,21 @@ final class DCAI: DCAIAsk {
         }
         if !((j["key"] as? Bool) ?? false) { throw DCAIError.quota }
         if let rest = DCCount.num(j["rest"]), rest / 1000 > clock().timeIntervalSince1970 { throw DCAIError.quota }
-        let t = ((j["conf"] as? [String: Any])?["tiexie"] as? [String: Any]) ?? [:]
+        let got = Self.plan(((j["conf"] as? [String: Any])?["tiexie"] as? [String: Any]) ?? [:])
+        conf = (clock(), got)
+        return got
+    }
+
+    /// 模型表的 tiexie 那段 → 用谁数。没写的模型、档位用默认；race 没写、写得不对都当不抢先（189）
+    static func plan(_ t: [String: Any]) -> DCPlan {
         func m(_ k: String, _ dm: String) -> DCModel {
             let o = t[k] as? [String: Any] ?? [:]
             let model = (o["model"] as? String) ?? ""
             let effort = (o["effort"] as? String) ?? ""
             return DCModel(model: model.isEmpty ? dm : model, effort: effort.isEmpty ? "medium" : effort)
         }
-        let got = (fast: m("fast", "claude-sonnet-5-5"), sure: m("sure", "claude-opus-5-5"), audit: m("audit", "claude-opus-5-5"))
-        conf = (clock(), got)
-        return got
+        return DCPlan(fast: m("fast", "claude-sonnet-5-5"), sure: m("sure", "claude-opus-5-5"),
+                      audit: m("audit", "claude-opus-5-5"), race: (t["race"] as? Bool) ?? false)
     }
 
     /// Claude Messages 的正文：提示当 system（加缓存），照片跟着那句话（跟大管家 claude -p 那一封一样的三段）
@@ -508,7 +523,7 @@ final class DCAI: DCAIAsk {
     }
 }
 
-// ================================================================ 一盘：两个一起数、再第二眼（照 count.py 的 Counter）
+// ================================================================ 一盘：Opus 数、再第二眼（照 count.py 的 Counter；race 开着是两个一起数）
 /// 两个大脑一起数：谁先回来、回来的是什么。都在主线程上记
 @MainActor
 final class DCRace {
@@ -538,11 +553,17 @@ final class DCAICounter {
     init(ai: DCAIAsk) { self.ai = ai }
 
     /// photo：缩好的照片（大管家看图的尺寸），jpeg 是它的 JPEG 90。first：拼好的第一封（跟大管家寄来的一样）；回 final 那封。
-    /// 两个都没数成（第一封还没出）抛错：这一盘回大管家
+    /// 没数成（第一封还没出）抛错：这一盘回大管家
     func count(photo: UIImage, jpeg: Data, first: @escaping ([String: Any]) -> Void) async throws -> [String: Any] {
         let ms = try await ai.models()
         let w = Double(photo.cgImage?.width ?? 1), h = Double(photo.cgImage?.height ?? 1)
         let aspect = h / max(1, w)
+        if !ms.race {                               // 189 不抢先：只问 sure（Opus）一遍，它的数就是 first，再过第二眼
+            let r = try await ai.ask(ms.sure, system: DCPrompt.count, words: DCPrompt.countWords, image: jpeg, timeout: timeout)
+            let trays = DCCount.pickTrays(r)
+            first(Self.firstLetter(r, trays))
+            return await look(photo: photo, trays: trays, model: ms.audit, aspect: aspect)
+        }
         let race = DCRace()
         for (who, m) in [("fast", ms.fast), ("sure", ms.sure)] {
             Task { @MainActor in
@@ -567,9 +588,7 @@ final class DCAICounter {
             await race.next()
         }
         let firstTrays = DCCount.pickTrays(race.res[firstWho]?.r)
-        let partAny = (race.res[firstWho]?.r as? [String: Any])?["part"]
-        let part = DCCount.truthy(partAny) ? String(((partAny as? String) ?? "\(partAny!)").prefix(40)) : ""
-        first(["stage": "first", "ok": true, "total": DCCount.total(firstTrays), "trays": firstTrays.map { DCCount.trayJSON($0) }, "part": part])
+        first(Self.firstLetter(race.res[firstWho]?.r, firstTrays))
 
         // final：站在 Opus 上
         if firstWho == "fast" {
@@ -603,6 +622,13 @@ final class DCAICounter {
         body["same"] = same
         body["race"] = info
         return body
+    }
+
+    /// 第一封：大脑第一遍的回答和挑出来的盒子 → 跟大管家寄来的 first 一样
+    static func firstLetter(_ r: Any?, _ trays: [DCCount.Tray]) -> [String: Any] {
+        let partAny = (r as? [String: Any])?["part"]
+        let part = DCCount.truthy(partAny) ? String(((partAny as? String) ?? "\(partAny!)").prefix(40)) : ""
+        return ["stage": "first", "ok": true, "total": DCCount.total(trays), "trays": trays.map { DCCount.trayJSON($0) }, "part": part]
     }
 
     /// 第二眼（count.py 的 _look）：裁大画点问 Opus；没看成（出错、回的不对）就是第一遍的数，audit 是 null
