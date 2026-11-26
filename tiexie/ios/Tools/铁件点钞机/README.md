@@ -11,6 +11,7 @@
   - 复查没回来（200 秒超时、额度、出错）：就用第一遍的数，不提示。
   - 大管家不在、没配对：直说（「大管家不在（上次在线 HH:MM）」「还没跟大管家配对：设置 › 粘贴配对码」），不寄、不排队，照片不留。
   - 信走 app 本体的信箱（`App/Butler.swift` 的「工具箱的一次性的信」：寄一封、按请求 id 收回信，不进发件箱、不重寄、不存盘）。照片只寄给自己的大管家，不进日志。
+- 168（铁屑江湖 0.3.8 起）先走 Claude API：中转站 `/ai/messages`，app 里只有大管家给的 cid（`tx-ai` 要来、存钥匙串）。数法照搬 count.py（`DianChaoAI.swift`：pick_trays、crop_for_audit、apply_audit、pair_up、diff_counts，两个大脑一起数、final 站在 Opus 上、不一样过第二眼），提示词原文是常量 `DCPrompt`。拼出来的 first / final 跟大管家寄来的一样，交给原来的 `got()`。`/ai` 额度用完、超时、出错（第一封没出）就照上面寄大管家；回过额度用完 30 分钟不再问。存图那行写「Claude 数的」。单测 `Tests/DianChaoAITests.swift`：夹具 `Tests/Fixtures/count-cases.json` 是 count.py 原样跑出来的，两边数出一样的数。
 - 手改：点圆点删掉，点漏掉的件补一个（落在算的盒子里，不在就给主盒），数字跟着变，旁边写「手改 +n −n」；每盒「不算 / 也算上」；主盒没拍全标黄提醒看边上。
 - 数完数码管从 0 跑到总数、圆点一排一排亮、叮一声（减少动态效果时直接出数）。两声是 `dianchao-ding.wav`、`dianchao-dingding.wav`（自己合成的），走系统提示音，跟静音拨片。
 - 存图：照片 + 圆点 + 底下一块数码管面板（总数、件、手改、铭牌、时间、大管家数的），弹系统分享面板（能存相册）。

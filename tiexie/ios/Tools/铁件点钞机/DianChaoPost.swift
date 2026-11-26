@@ -15,6 +15,22 @@ protocol DianChaoPost: AnyObject {
     func dcForget(_ id: String)
 }
 
+/// 168：问大管家要 Claude API 的通行证（cid）用的那一下；回信 {ok, cid}
+enum DCCid {
+    static let ask = "tx-ai"
+
+    static func request(id: String, app: String, at: String) -> [String: Any] {
+        ["v": 1, "id": id, "ask": ask, "at": at, "app": app]
+    }
+
+    /// 回信里的 cid（不对的、没给的：nil）
+    static func parse(_ d: Data) -> String? {
+        guard let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any], (o["ok"] as? Bool) == true,
+              let c = o["cid"] as? String, c.range(of: #"^[A-Za-z0-9_-]{16,64}$"#, options: .regularExpression) != nil else { return nil }
+        return c
+    }
+}
+
 extension Butler: DianChaoPost {
     var dcPaired: Bool { pairing != nil }
     var dcOnline: Bool { online && connected }
@@ -54,8 +70,31 @@ final class DianChaoModel: ObservableObject {
     /// 数码管还在跑，那一声叮还没响
     private var dingDue = false
     weak var post: DianChaoPost?
+    /// 168：先问 Claude API（中转站 /ai）；nil = 只走大管家（截图、老单测）
+    var ai: DCAIAsk?
+    private var asking: String?
 
     var busy: Bool { run?.phase == .waiting }
+
+    /// 168：手里没有 cid、大管家在线：问它要一个（存钥匙串，下一盘起用）。不等它，这一盘照旧
+    func fetchCid() {
+        guard let ai, ai.needsCid, asking == nil, let post, post.dcPaired, post.dcOnline else { return }
+        let id = UUID().uuidString
+        asking = id
+        let data = DCCid.request(id: id, app: post.dcApp, at: ISOTime.string())
+        Task {
+            do {
+                try await post.dcSend(id: id, data: data, files: [:]) { [weak self] d in
+                    if let c = DCCid.parse(d) { self?.ai?.adopt(cid: c) }
+                    self?.asking = nil
+                    self?.post?.dcForget(id)
+                }
+            } catch {
+                self.asking = nil
+                post.dcForget(id)
+            }
+        }
+    }
 
     // ------------------------------------------------------------ 拍好了
     func take(_ img: UIImage) {
@@ -87,6 +126,35 @@ final class DianChaoModel: ObservableObject {
         refused = nil
         countFrom = nil
         hush()
+        if let ai, ai.ready, let photo {                // 168：先走 Claude API；第一封没出就出事了：这一盘回大管家
+            let id = UUID().uuidString
+            var r = DCRun(id: id, sentAt: Date())
+            r.byAI = true
+            run = r
+            startClock()
+            let counter = DCAICounter(ai: ai)
+            Task {
+                do {
+                    let final = try await counter.count(photo: photo, jpeg: jpeg) { [weak self] b in
+                        self?.got(DianChao.data(b), id: id)
+                    }
+                    self.got(DianChao.data(final), id: id)
+                } catch {
+                    if (error as? DCAIError) == .quota { ai.rested() }
+                    guard self.run?.id == id, self.run?.firstAt == nil else { return }
+                    self.sendButler()
+                }
+            }
+            fetchCid()
+            return
+        }
+        fetchCid()
+        sendButler()
+    }
+
+    /// 寄给大管家（121 的老路）
+    private func sendButler() {
+        guard let jpeg, let post else { return }
         guard post.dcPaired else {
             run = nil
             refused = DianChao.notPaired()

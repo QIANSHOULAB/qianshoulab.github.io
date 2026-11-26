@@ -42,6 +42,8 @@ enum DianChaoStrings {
     static let sendFail = "没寄出去，看看网，再拍一次？"
     static let jamDefault = "大管家没数成，再拍一张试试"
     static let byButler = "大管家数的"
+    /// 168：先走 Claude API 数的那一盘
+    static let byAI = "Claude 数的"
     static let settings = "设置"
     static let settingsGo = "去设置里配对"
 }

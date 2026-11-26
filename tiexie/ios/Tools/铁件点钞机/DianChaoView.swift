@@ -47,6 +47,11 @@ struct DianChaoView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
             vm.post = butler
+            if !Demo.on {                                       // 168：先问 Claude API（中转站 /ai），走的是配对里的那个中转站
+                DCAI.shared.relay = { [weak b = butler] in b?.pairing?.relayURL }
+                vm.ai = DCAI.shared
+                vm.fetchCid()
+            }
             if Demo.on, vm.photo == nil, let path = UserDefaults.standard.string(forKey: "TXSample"), let img = UIImage(contentsOfFile: path) {
                 vm.showDemo(img, stage: UserDefaults.standard.string(forKey: "TXStage") ?? "")
             }
@@ -116,7 +121,7 @@ struct DianChaoView: View {
                     Text(DianChaoStrings.certified).font(.system(size: 13.5, weight: .heavy))
                     Image(systemName: "laurel.trailing").foregroundStyle(DCColor.lime)
                     Spacer()
-                    Text(DianChaoStrings.byButler + " · " + Self.hhmm(r.sentAt)).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(DCColor.faint)
+                    Text((r.byAI ? DianChaoStrings.byAI : DianChaoStrings.byButler) + " · " + Self.hhmm(r.sentAt)).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(DCColor.faint)
                 }
                 .padding(.horizontal, 4)
             }

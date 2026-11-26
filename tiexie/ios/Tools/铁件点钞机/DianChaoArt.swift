@@ -221,7 +221,7 @@ enum DCDraw {
             right(DianChaoStrings.imgBrand, ly + lh * 0.1, UIFont.systemFont(ofSize: (fz * 0.95).rounded(), weight: .heavy), UIColor(red: 0xf7 / 255, green: 0xf5 / 255, blue: 1, alpha: 1))
             let soft = UIColor(red: 0xf7 / 255, green: 0xf5 / 255, blue: 1, alpha: 0.7)
             right(df.string(from: at), ly + lh * 0.44, UIFont.monospacedDigitSystemFont(ofSize: (fz * 0.78).rounded(), weight: .semibold), soft)
-            right(DianChaoStrings.byButler, ly + lh * 0.68, UIFont.systemFont(ofSize: (fz * 0.72).rounded(), weight: .semibold), soft)
+            right(run.byAI ? DianChaoStrings.byAI : DianChaoStrings.byButler, ly + lh * 0.68, UIFont.systemFont(ofSize: (fz * 0.72).rounded(), weight: .semibold), soft)
         }
     }
 }

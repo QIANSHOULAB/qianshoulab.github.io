@@ -101,6 +101,11 @@ enum DianChao {
     // ------------------------------------------------------------ 请求
     static func photoName(_ id: String) -> String { "点钞/\(id.prefix(8)).jpg" }
 
+    /// 168：API 那条路拼好的一封 → 跟信里来的一样的 Data（交给 got）
+    static func data(_ body: [String: Any]) -> Data {
+        (try? JSONSerialization.data(withJSONObject: body)) ?? Data()
+    }
+
     static func request(id: String, app: String, at: String) -> [String: Any] {
         ["v": 1, "id": id, "ask": tag, "images": [photoName(id)], "at": at, "app": app]
     }
@@ -331,6 +336,8 @@ struct DCRun: Equatable {
     /// 上一封 partial 时已经亮着的点数（新来的从这儿往上一个个亮）
     var liveFrom = 0
     var liveAt: Date?
+    /// 168：这一盘是 Claude API 直接数的（存图、数码管下面那行写「Claude 数的」）；false = 大管家数的
+    var byAI = false
 
     init(id: String, sentAt: Date) {
         self.id = id
