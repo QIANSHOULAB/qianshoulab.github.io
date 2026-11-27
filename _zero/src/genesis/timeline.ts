@@ -90,3 +90,10 @@ export function tanHalfAt(P: number, aspect: number, hz: number): number {
   // 第七幕：走到门槛前，视角放开一些（站在门洞跟前），门越走越高、顶到天外
   return need(6) * (1 + 0.62 * sstep(6.3, 7, P));
 }
+
+/** 第三幕：第 j 颗小月（共 n 颗）转到正面时，幕内进度走到哪了 */
+export function moonAt(j: number, n: number): number {
+  const TH0 = Math.PI / 12, STEP = (Math.PI * 2) / n;
+  const TH_MAX = TH0 + (n - 1) * STEP + TH0;
+  return 0.46 + 0.49 * ((TH0 + j * STEP) / TH_MAX);
+}

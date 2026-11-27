@@ -52,6 +52,11 @@ vec3 moved(vec3 p) {
   q = rotY(uMoveYaw) * q * uMoveS;
   return uPivot + uMoveT + q;
 }
+// 星和线往镜头那边挪出鲸的身子（石头身子挡不住星座；门照样挡得住）
+vec3 outFront(vec3 p) {
+  vec3 cam = uMirror < 0. ? vec3(uCamPos.x, -uCamPos.y, uCamPos.z) : uCamPos;
+  return p + normalize(cam - p) * .14 * uWL * uMoveS;
+}
 
 // 身子上第 s 截（0 头 … 1 尾）的位置和朝向
 void bodyFrame(float s, out vec3 pos, out vec3 F, out vec3 U, out vec3 Sd) {
@@ -144,7 +149,7 @@ bool place(inout vec3 c, inout vec3 s, inout mat3 R, inout vec4 m, inout vec3 ti
   ex = vec2(-1., aSeed.z);
   tint = uLifeCol;
   float fresh = 1. - sat((arc - 133.5) / 90.);
-  m = vec4((.2 + 1.2 * fresh) * (1. - .8 * uGhost), .002 + .25 * fresh, 1.5 * (1. - .6 * uGhost), uBright * (1. - .5 * uGhost));
+  m = vec4((.2 + 1.2 * fresh) * (1. - .55 * uGhost), .002 + .25 * fresh + .03 * uGhost, 1.5 * (1. - .5 * uGhost), uBright);
   vBev = .5;
   return true;
 }
@@ -161,7 +166,7 @@ bool placePt(inout vec3 p, inout float size, inout vec3 col, inout float soft) {
   float on = sat((uStar - aIdx) * 14.);
   if (on <= 0.) return false;
   vec3 nrm;
-  p = moved(whalePoint(aJ.x, aJ.y, aJ.z, aJ.w, uSwimT, nrm));
+  p = outFront(moved(whalePoint(aJ.x, aJ.y, aJ.z, aJ.w, uSwimT, nrm)));
   float pop = 1. + 1.6 * (1. - on) * on * 4.;
   size = 10. * pop * uMoveS;
   col = glowCol(3.2 * on * uBright, mix(uLifeCol, vec3(1.), .5));
@@ -172,15 +177,15 @@ bool placePt(inout vec3 p, inout float size, inout vec3 col, inout float soft) {
 
 /** 星座的线：星点之间拉出细线（每段两头是第几颗星：uJ 里查它长在鲸身上哪儿） */
 export const WHALE_LINE = /* glsl */ `
-uniform vec4 uJ[16];
+uniform vec4 uJ[24];
 uniform float uLines;     // 线拉到哪了（0..1）
 void placeLine(inout vec3 a, inout vec3 b, inout float sa, inout float sb) {
   int i = int(a.x + .5), j = int(b.x + .5);
   float order = sa;
   vec4 A = uJ[i], B = uJ[j];
   vec3 n1, n2;
-  vec3 pa = moved(whalePoint(A.x, A.y, A.z, A.w, uSwimT, n1));
-  vec3 pb = moved(whalePoint(B.x, B.y, B.z, B.w, uSwimT, n2));
+  vec3 pa = outFront(moved(whalePoint(A.x, A.y, A.z, A.w, uSwimT, n1)));
+  vec3 pb = outFront(moved(whalePoint(B.x, B.y, B.z, B.w, uSwimT, n2)));
   float k = sat((uLines - order * .6) / .4);
   a = pa;
   b = mix(pa, pb, max(k, 1e-3));

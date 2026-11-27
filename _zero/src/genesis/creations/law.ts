@@ -59,7 +59,7 @@ export function portraitPos(i: number, P: number, portrait: boolean, cur: Vector
   const z = GATE.Z + 12;
   const spots = portrait
     ? [new Vector3(-19, 90, z), new Vector3(0, 68, z), new Vector3(0, 114, z), new Vector3(19, 90, z)]
-    : [new Vector3(-27, 45, z), new Vector3(0, 22, z), new Vector3(0, 70, z), new Vector3(27, 45, z)];
+    : [new Vector3(-23, 51, z), new Vector3(0, 33, z), new Vector3(0, 73, z), new Vector3(23, 51, z)];
   // 先往上、往门洞那边收，再落到自己的位置（不从镜头前面横穿过去）
   const p = spots[i];
   const mid = new Vector3().lerpVectors(cur, p, 0.5);

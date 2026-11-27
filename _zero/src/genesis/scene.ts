@@ -82,6 +82,7 @@ export function createGenesis(opts: GenesisOpts) {
     uGridCol: { value: new Vector3(...ACT_COLS[5]) },
     uShock: { value: new Vector4() },
     uSrcBack: { value: SRC_BACK },
+    uSrcI: { value: 1 },
   };
   const worldMat = new ShaderMaterial({
     uniforms: { ...U, ...S, ...W },
@@ -181,6 +182,11 @@ export function createGenesis(opts: GenesisOpts) {
     const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
     W.uRes.value = [bw, bh];
     px.uView.value = [bw, bh];
+    // 细线按屏幕像素算宽：系统缩放 125–175% 时也是同样粗细，不断
+    scene.traverse((o) => {
+      const m = (o as Mesh).material as ShaderMaterial | undefined;
+      if (m && m.uniforms && m.uniforms.uWidth) m.uniforms.uWidth.value = (m.userData.w ?? (m.userData.w = m.uniforms.uWidth.value)) * Math.max(1, dpr * 0.85);
+    });
     const rs = tier === 'high' ? 0.5 : 0.4;
     rt.setSize(Math.max(2, Math.round(bw * rs)), Math.max(2, Math.round(bh * rs)));
     U.uPortrait.value = portrait ? 1 : 0;
@@ -326,6 +332,7 @@ export function createGenesis(opts: GenesisOpts) {
     // —— Ⅶ 收工：两扇门完全推开，五种颜色收回来合成白光；日、环、鲸、器全成了白光里的剪影；白光再慢慢收暗 ——
     U.uWhite.value = sstep(6.6, 6.82, P) * (1 - sstep(6.86, 7, P));
     U.uSil.value = sstep(6.56, 6.8, P);
+    W.uSrcI.value = 1 - 0.86 * sstep(6.86, 7, P);
 
     // —— 门上的五撮：哪一幕开始，哪一撮松动、离开，留下一个透光的缺口（缺口里是那一幕的颜色） ——
     const rects = windowRects(door);

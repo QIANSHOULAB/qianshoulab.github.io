@@ -1,7 +1,7 @@
 // Ⅲ 布环：环和六颗小月。小月从 src/data/tools.ts 的 shop 读，有几样工具就有几颗。
 import { Vector3 } from 'three';
 import { COUNTS, GATE, SECTION_HEX, TIERS, hexToLinear, type Tier } from '../config';
-import { sstep, seg, lerp } from '../timeline';
+import { sstep, seg, lerp, moonAt as moonAtTL } from '../timeline';
 import { RING_FN, RING_PLACE, MOON_PLACE } from '../glsl/ring';
 import { blockMesh, stoneMaterial, type Creation, type Frame, type U } from '../kit';
 import { rng, shuffle } from '../layout';
@@ -17,7 +17,7 @@ const TH0 = Math.PI / 12;
 const STEP = (Math.PI * 2) / n;
 const TH_MAX = TH0 + (n - 1) * STEP + TH0;
 /** 第 j 颗小月转到正面时，第三幕走到哪了 */
-export const moonAt = (j: number) => 0.46 + 0.49 * ((TH0 + j * STEP) / TH_MAX);
+export const moonAt = (j: number) => moonAtTL(j, n);
 const moonPh = (j: number) => FRONT - TH0 - j * STEP;
 
 function norm(c: [number, number, number]) { const m = Math.max(...c); return c.map((v) => v / m) as [number, number, number]; }
@@ -46,6 +46,7 @@ export function buildRing(shared: U, stone: U) {
     uTilt: { value: RING.tilt },
     uRingYaw: { value: 0 },
     uRingScale: { value: [1, 1] },
+    uRingS: { value: 1 },
     uMoonR: { value: RING.moonR },
     uFlash: { value: new Array(MAXM).fill(0) },
     uMoonPh: { value: Array.from({ length: MAXM }, (_, j) => moonPh(j)) },
@@ -77,6 +78,7 @@ export function buildRing(shared: U, stone: U) {
   /** 环上一点（跟着色器里 ringPoint 一样算） */
   function ringPoint(ph: number, rho: number, h: number, out: Vector3) {
     const sc = u.uRingScale.value as number[];
+    const S = u.uRingS.value as number;
     let x = Math.cos(ph) * rho, y = h, z = Math.sin(ph) * rho;
     // rotX(tilt)：前低后高
     const ct = Math.cos(RING.tilt), st = Math.sin(RING.tilt);
@@ -86,7 +88,7 @@ export function buildRing(shared: U, stone: U) {
     const yaw = u.uRingYaw.value as number;
     const cy = Math.cos(yaw), sy = Math.sin(yaw);
     const x3 = x * cy + z * sy, z3 = -x * sy + z * cy;
-    out.set(x3 * sc[0], y, z3 * sc[1]).add(u.uRingC.value as Vector3);
+    out.set(x3 * sc[0] * S, y * S, z3 * sc[1] * S).add(u.uRingC.value as Vector3);
     return out;
   }
 
@@ -119,9 +121,8 @@ export function buildRing(shared: U, stone: U) {
       if (pw > 0) {
         portraitPos(1, P, f.portrait, RING.c, tmp);
         (u.uRingC.value as Vector3).copy(tmp);
-        const sc = lerp(1, PORTRAIT_SCALE[1], pw) * (f.portrait ? 0.8 : 1);
-        u.uRingScale.value = [sc, sc];
       } else (u.uRingC.value as Vector3).copy(RING.c);
+      u.uRingS.value = lerp(1, PORTRAIT_SCALE[1], pw);
       const dim = lerp(1, 0.32, sstep(1.02, 1.22, uu));
       const bright = lerp(dim, 1, sstep(5.38, 5.52, P));
       u.uBright.value = bright;

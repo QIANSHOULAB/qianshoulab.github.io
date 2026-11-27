@@ -21,12 +21,20 @@ function spot(portrait: boolean, halfW: number) {
   return { K: new Vector3(-Math.min(400, Math.max(300, halfW * 0.8)), 330, ZG + 40), dir: new Vector3(-0.88, 0.47, 0).normalize() };
 }
 
-// 关节（亮成星点的地方）：part、a、b、c（跟着色器里 whalePoint 的参数一样）
+// 关节（亮成星点的地方）：沿着鲸的轮廓（背一条、肚子一条、尾鳍、胸鳍、眼睛），从头到尾一颗一颗亮
+// 每颗：part、a、b、c（跟着色器里 whalePoint 的参数一样）
 const J: [number, number, number, number][] = [
-  [0, 0.0, 0, 1], [0, 0.14, 0, 0], [0, 0.42, 0, 0], [5, 0.64, 1, 0], [0, 0.9, 0, 0], [3, 0, 0, 0], [3, 1, 0, 0], [4, 1, 0, 0],
-  [0, 0.07, Math.PI, 0], [0, 0.42, Math.PI, 0], [1, 0, 0, 0], [1, 1, 0, 0], [2, 0, 0, 0], [2, 1, 0, 0], [0, 0.1, Math.PI / 2 + 0.35, 0],
+  [0, 0.0, 0, 1], [0, 0.12, 0.2, 0], [0, 0.32, 0, 0], [0, 0.52, 0, 0], [5, 0.64, 1, 0], [0, 0.82, 0, 0], [0, 0.93, 0, 0],
+  [3, 0, 0, 0], [3, 1, 0, 0], [4, 1, 0, 0],
+  [0, 0.07, Math.PI, 0], [0, 0.22, Math.PI, 0], [0, 0.45, Math.PI, 0], [0, 0.68, Math.PI, 0], [0, 0.88, Math.PI, 0],
+  [2, 0, 0, 0], [2, 1, 0, 0], [1, 0, 0, 0], [1, 1, 0, 0], [0, 0.1, Math.PI / 2 + 0.35, 0],
 ];
-const LINES: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [5, 7], [0, 8], [8, 9], [9, 4], [10, 11], [12, 13], [8, 10], [8, 12]];
+const ORDER = [0, 1, 10, 19, 2, 11, 15, 17, 16, 18, 3, 12, 4, 13, 5, 14, 6, 7, 8, 9];
+const LINES: [number, number][] = [
+  [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7],
+  [0, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 6],
+  [7, 8], [7, 9], [15, 16], [17, 18], [11, 15], [11, 17],
+];
 
 function bez(a: Vector3, b: Vector3, c: Vector3, d: Vector3, t: number, out = new Vector3()) {
   const s = 1 - t;
@@ -81,21 +89,21 @@ export function buildWhale(shared: U, stone: U) {
     uFront: { value: GATE.Z },
     uStar: { value: 0 },
     uLines: { value: 0 },
-    uJ: { value: Array.from({ length: 16 }, (_, i) => new Vector4(...(J[i] ?? [0, 0, 0, 0]))) },
+    uJ: { value: Array.from({ length: 24 }, (_, i) => new Vector4(...(J[i] ?? [0, 0, 0, 0]))) },
   };
   const mat = stoneMaterial(shared, stone, WHALE_FN + WHALE_PLACE, u);
   const body = blockMesh(mat, { aW: { data: W, size: 4 }, aSeed: { data: S, size: 4 } }, N);
 
   // 星点
   const sj = new Float32Array(J.length * 4), si = new Float32Array(J.length);
-  J.forEach((j, i) => { sj.set(j, i * 4); si[i] = i / J.length; });
+  J.forEach((j, i) => { sj.set(j, i * 4); si[i] = ORDER.indexOf(i) / J.length; });
   const smat = pointMaterial(shared, WHALE_FN + WHALE_STARS, { ...u, uPxScale: shared.uPxScale });
   const stars = pointCloud(smat, { aJ: { data: sj, size: 4 }, aIdx: { data: si, size: 1 } }, J.length);
-  stars.renderOrder = 6;
+  stars.renderOrder = 8;
   // 星座的线
   const lmat = lineMaterial(shared, WHALE_FN + WHALE_LINE, WHALE_LINE_COL, { ...u, uWidth: { value: 1.2 } });
   const lines = lineMesh(lmat, LINES.map(([a, b], i) => [a, 0, 0, i / LINES.length, b, 0, 0, 0]));
-  lines.renderOrder = 6;
+  lines.renderOrder = 8;
 
   const K = new Vector3(), dir = new Vector3(), B1 = new Vector3(), B2 = new Vector3(), F = new Vector3();
   const pivot = new Vector3(), moved = new Vector3(), tmp = new Vector3();
@@ -149,7 +157,7 @@ export function buildWhale(shared: U, stone: U) {
       u.uRoll.value = -0.5 * pin;
       u.uSwimT.value = f.reduced ? 0 : f.time;
       u.uGhost.value = sstep(0.86, 0.95, uu);
-      u.uStar.value = seg(uu, 0.85, 0.94);
+      u.uStar.value = seg(uu, 0.85, 0.93) * 1.12;
       u.uLines.value = seg(uu, 0.9, 0.98);
       // 造好以后退到半暗；第六幕被轨道接住时一起亮
       const dim = lerp(1, 0.38, sstep(1.02, 1.2, uu));

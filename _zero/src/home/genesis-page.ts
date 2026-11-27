@@ -5,7 +5,7 @@ import * as snd from './sound';
 import type { Genesis } from '../genesis/scene';
 import type { Tier } from '../genesis/config';
 import { FF_MS, INTRO_MS, SECTION_HEX, SMOOTH, ACT_HEX, NAME_AT } from '../genesis/config';
-import { clamp, easeInOut, horizonAt, pOfScroll, scrollOfP, seg, sstep, tanHalfAt, camDist } from '../genesis/timeline';
+import { clamp, easeInOut, horizonAt, pOfScroll, scrollOfP, seg, sstep, tanHalfAt, camDist, moonAt } from '../genesis/timeline';
 
 const root = document.documentElement;
 const gx = document.querySelector<HTMLElement>('[data-gx]')!;
@@ -120,7 +120,7 @@ function updateDom(p: number, s: number, pi: number) {
   const heroOut = 1 - sstep(0.02, 0.2, freeze != null ? (p > 1 ? 1 : 0) : s);
   const ho = heroIn * heroOut;
   setv(hero, '--hero', ho);
-  setv(hero, '--hero-v', ho > 0.002 ? 'visible' : 'hidden');
+  setv(hero, '--hero-pe', ho > 0.5 ? 'auto' : 'none');
   // 开场那两行代码
   setv(intro, "--intro-o", p < 1 ? sstep(0, 0.02, p) * (1 - sstep(0.34, 0.46, p)) : 0);
   setv(intro, '--c1', seg(p, 0.02, 0.12));
@@ -131,7 +131,6 @@ function updateDom(p: number, s: number, pi: number) {
     const k = i + 2, u = p - (k - 1);
     const o = sstep(0.04, 0.07, u) * (1 - sstep(1.0, 1.05, u));
     setv(el, '--o', o);
-    setv(el, '--v', o > 0.002 ? 'visible' : 'hidden');
     setv(el, '--cw', seg(u, 0.06, 0.18));
     setv(el, '--caret', u > 0.05 && u < 0.32 ? 1 : 0);
     const na = NAME_AT[k];
@@ -144,7 +143,6 @@ function updateDom(p: number, s: number, pi: number) {
   const u7 = p - 6;
   const fo = sstep(0.04, 0.08, u7);
   setv(fin, '--fo', fo);
-  setv(fin, '--fv', fo > 0.002 ? 'visible' : 'hidden');
   setv(fin, '--fc', seg(u7, 0.06, 0.1));
   setv(fin, '--fw', seg(u7, 0.86, 0.95));
   const fm = sstep(0.93, 1, u7);
@@ -209,7 +207,11 @@ goLinks.forEach((a) => {
   // 键盘：Tab 到这一幕的「进去」，页面跟着滚到这一幕
   a.addEventListener('focus', () => { if (currentAct(P) !== k) jump(k, false); });
 });
-moons.forEach((m) => m.addEventListener('focus', () => { if (currentAct(P) !== 3) jump(3, false); }));
+// Tab 到第 j 颗小月的名字：滚到它转到正面的那一刻（名字正好亮着）
+moons.forEach((m, j) => m.addEventListener('focus', () => {
+  const target = 2 + moonAt(j, moons.length);
+  if (Math.abs(P - target) > 0.02) window.scrollTo({ top: Math.round(scrollOfP(target) * vh), behavior: 'auto' });
+}));
 fin.querySelectorAll('a').forEach((a) => a.addEventListener('focus', () => { if (currentAct(P) !== 7) jump(7, false); }));
 entries.forEach((a) => a.addEventListener('focus', () => { if (P > 1.2) jump(1, false); }));
 
@@ -310,6 +312,14 @@ async function boot() {
   dpr: () => scene?.dpr ?? 0,
   setP: (x: number | null) => { freeze = x; },
   act: () => currentAct(P),
+  // 验收截图：「进去」的镜头停在半路（不跳转）
+  fly: (kind: 'gate' | 'creation', k: number, hold = 0.6) => {
+    const sc = scene as unknown as { enter?: (kind: string, k: number, onP: (s: number) => void, hold: number) => Promise<void> } | null;
+    gx.classList.add('entering');
+    const hex = kind === 'gate' ? SECTION_HEX[k] : SECTION_HEX[k - 2];
+    flood.style.setProperty('--flood', hex);
+    sc?.enter?.(kind, k, (s) => { flood.style.opacity = String(sstep(0.7, 1, s)); }, hold);
+  },
 };
 
 root.style.setProperty('--act-col', ACT_HEX[0]);

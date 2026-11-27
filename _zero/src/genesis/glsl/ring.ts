@@ -6,14 +6,15 @@ export const RING_FN = /* glsl */ `
 uniform vec3 uRingC;      // 环心
 uniform float uTilt;      // 环面倾角（前低后高）
 uniform float uRingYaw;   // 第六幕：环被接住以后慢慢偏转
-uniform vec2 uRingScale;  // 竖屏：环收窄一点（x 方向）
+uniform vec2 uRingScale;  // 竖屏：环收窄一点（x、z 方向）
+uniform float uRingS;     // 第七幕全家福：整个环缩小
 vec3 ringPoint(float ph, float rho, float h) {
   vec3 p = vec3(cos(ph) * rho, h, sin(ph) * rho);
   p = rotX(uTilt) * p;
   p = rotY(uRingYaw) * p;
   p.x *= uRingScale.x;
   p.z *= uRingScale.y;
-  return uRingC + p;
+  return uRingC + p * uRingS;
 }
 vec3 ringTangent(float ph) {
   vec3 t = vec3(-sin(ph), 0., cos(ph));
@@ -43,7 +44,7 @@ bool place(inout vec3 c, inout vec3 s, inout mat3 R, inout vec4 m, inout vec3 ti
   if (u < e - FALL) return false;
   float rho = aRing.y, hh = aRing.z;
   vec3 tang;
-  float sz = uSize * mix(.55, 1.25, aSeed.x * aSeed.x) * uRingScale.x;
+  float sz = uSize * mix(.55, 1.25, aSeed.x * aSeed.x) * uRingS;
   s = vec3(sz * mix(.8, 1.6, aSeed.y), sz * mix(.5, .9, aSeed.z), sz);
   float moving = 0.;
   if (u < e) {
@@ -100,10 +101,10 @@ bool place(inout vec3 c, inout vec3 s, inout mat3 R, inout vec4 m, inout vec3 ti
   float k = sstep(arrive, arrive + .08, u);
   vec3 cen = ringPoint(FRONT + min(V_FLOW * max(u - (arrive - .05), 0.), D) + uRot, 193., 0.);
   vec3 dir = normalize(aMoon.yzw);
-  float r = uMoonR * mix(2.2, 1., k) * uRingScale.x;
+  float r = uMoonR * mix(2.2, 1., k) * uRingS;
   c = cen + dir * r * mix(.6 + .8 * aSeed.x, 1., k);
   R = lookDir(dir) * rotZ(aSeed.y * 6.);
-  float sz = uMoonR * .42 * mix(.7, 1.1, aSeed.z) * uRingScale.x;
+  float sz = uMoonR * .42 * mix(.7, 1.1, aSeed.z) * uRingS;
   s = vec3(sz);
   ex = vec2(-1., aSeed.w);
   tint = mix(uRingCol, vec3(1.), .15);

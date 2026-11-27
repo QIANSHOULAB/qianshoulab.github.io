@@ -31,6 +31,7 @@ uniform float uGrid;         // 第六幕：水上浮出的光格网
 uniform vec3 uGridCol;
 uniform vec4 uShock;         // 第五幕冲击波：中心 x、中心 z、半径、强度
 uniform float uSrcBack;
+uniform float uSrcI;         // 门后光源本身多亮（第七幕最后白光收暗时一起暗）
 varying vec2 vNdc;
 
 // 方向决定的天：头顶几乎全黑，地平线那一圈略亮，正前方（门那边）再亮一点
@@ -88,7 +89,7 @@ vec3 gateLight(vec3 ro, vec3 rd, out float inside) {
     }
     vec3 c = mix(uActCol, wc, wmask);
     float L = mix(core, wl, wmask);
-    vec3 src = glowCol(L * uLight, c) + uWhite * vec3(6.);
+    vec3 src = (glowCol(L * uLight, c) + uWhite * vec3(6.)) * uSrcI;
     // 贴着轮廓那一两个像素别给它（多重采样时会从边上漏出一条亮线）
     return mix(outside, src, smoothstep(.5, 1.8, -d0));
   }
