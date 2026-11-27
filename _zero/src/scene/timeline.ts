@@ -1,0 +1,347 @@
+// 时间线：画面只认一个 0..7 的进度数 P（平滑后的滚动位置）和一个时钟（秒）。
+// 同一个 P 永远是同一个画面（时钟只管呼吸、自转、绕行这些「活着」的小动作），倒着滑就是倒放。
+// P 0..1 第一幕（开场自己放），1..2 第二幕……6..7 第七幕。这里只算数，不碰 three.js，也不碰 DOM。
+import { H, W, T, Z_FRONT } from './layout';
+import { ACT_HEX, CAM_D, DOOR_DEG, HZF, hexToLinear } from './tune';
+
+export type V3 = [number, number, number];
+export type Q = [number, number, number, number];
+
+export const EYE = 1.7;
+export const DC: V3 = [0, H / 2, Z_FRONT - T / 2];          // 门的正中（绕行的圆心）
+const Z0 = Z_FRONT;
+
+// —— 小工具 ——
+export const cl = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+export const ss = (a: number, b: number, x: number) => { const t = cl((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+export const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+export const mix3 = (a: V3, b: V3, t: number): V3 => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
+const add3 = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const mul3 = (a: V3, s: number): V3 => [a[0] * s, a[1] * s, a[2] * s];
+const norm3 = (a: V3): V3 => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+export const qAxis = (ax: V3, ang: number): Q => { const s = Math.sin(ang / 2); return [ax[0] * s, ax[1] * s, ax[2] * s, Math.cos(ang / 2)]; };
+export const qMul = (a: Q, b: Q): Q => [
+  a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+  a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+  a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+  a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2],
+];
+export function qSlerp(a: Q, b: Q, t: number): Q {
+  let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+  const bb = d < 0 ? (d = -d, b.map((v) => -v) as Q) : b;
+  if (d > 0.9995) { const r = a.map((v, i) => v + (bb[i] - v) * t) as Q; const l = Math.hypot(...r); return r.map((v) => v / l) as Q; }
+  const th = Math.acos(d), s = Math.sin(th);
+  const wa = Math.sin((1 - t) * th) / s, wb = Math.sin(t * th) / s;
+  return a.map((v, i) => v * wa + bb[i] * wb) as Q;
+}
+/** 四元数 → 3×3 矩阵（按列排，给 three 的 Matrix3.fromArray） */
+export function qMat(q: Q): number[] {
+  const [x, y, z, w] = q;
+  return [1 - 2 * (y * y + z * z), 2 * (x * y + z * w), 2 * (x * z - y * w),
+    2 * (x * y - z * w), 1 - 2 * (x * x + z * z), 2 * (y * z + x * w),
+    2 * (x * z + y * w), 2 * (y * z - x * w), 1 - 2 * (x * x + y * y)];
+}
+export function qRot(q: Q, v: V3): V3 {
+  const m = qMat(q);
+  return [m[0] * v[0] + m[3] * v[1] + m[6] * v[2], m[1] * v[0] + m[4] * v[1] + m[7] * v[2], m[2] * v[0] + m[5] * v[1] + m[8] * v[2]];
+}
+const X: V3 = [1, 0, 0], Y: V3 = [0, 1, 0], Z: V3 = [0, 0, 1];
+
+function keyed(P: number, keys: [number, number][]) {
+  if (P <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    if (P <= keys[i][0]) return mix(keys[i - 1][1], keys[i][1], ss(keys[i - 1][0], keys[i][0], P));
+  }
+  return keys[keys.length - 1][1];
+}
+
+/** 版面：竖屏有多「竖」（0 = 横屏电脑，1 = 手机竖着）、宽高比、竖直半视角的正切 */
+export interface View { narrow: number; aspect: number; tanV: number }
+
+// —— 五样造物的颜色（线性）——
+export const COL = {
+  white: [1, 1, 1] as V3,
+  sun: hexToLinear(ACT_HEX.sun), ring: hexToLinear(ACT_HEX.ring), life: hexToLinear(ACT_HEX.life),
+  fire: hexToLinear(ACT_HEX.fire), law: hexToLinear(ACT_HEX.law),
+};
+const ACT_COL: V3[] = [COL.white, COL.white, COL.sun, COL.ring, COL.life, COL.fire, COL.law, COL.white];
+
+// —— 第六幕的轨道：半径、倾角、升交点、周期（秒）、哪一段幕内进度把它画出来 ——
+export interface Orbit { R: number; incl: number; node: number; period: number; from: number; to: number; ph0: number }
+export const ORBITS: Orbit[] = [
+  // 镜头贴着水面往上看：轨道前半圈要往下压（倾角为正），不然经过镜头前面时会冲出屏幕顶
+  { R: 150, incl: 0.3, node: 0.55, period: 28, from: 0.05, to: 0.25, ph0: 0.8 },     // 器
+  { R: 240, incl: 0.36, node: -0.5, period: 46, from: 0.2, to: 0.42, ph0: 2.6 },     // 鲸座
+  { R: 265, incl: 0.32, node: 0.2, period: 66, from: 0.36, to: 0.58, ph0: 0.9 },     // 日
+];
+export const orbitQ = (o: Orbit): Q => qMul(qAxis(Y, o.node), qAxis(X, o.incl));
+export function orbitPos(o: Orbit, ph: number, rScale = 1): V3 {
+  return add3(DC, qRot(orbitQ(o), [o.R * rScale * Math.cos(ph), 0, o.R * rScale * Math.sin(ph)]));
+}
+
+// —— 鲸游的路：从门缝正中出来，绕门一周（左 → 门后 → 右 → 回到前面），再往上升。着色器里有一模一样的一份 ——
+export const WHALE_L = 300;
+export const WHALE_R = 240;
+export function wPath(ph: number, R = WHALE_R): V3 {
+  const k = 1.5;
+  const y = 118 + 22 * Math.sin(ph * 0.8) * ss(0, 1, ph) + Math.max(ph - 6.2, 0) * 60;
+  if (ph < 0) return [0, y, DC[2] + ph * R * k];
+  const r = R * (1 - Math.exp(-ph * k));
+  return [-r * Math.sin(ph), y, DC[2] + r * Math.cos(ph)];
+}
+function wSpeed(ph: number, R = WHALE_R) {
+  const k = 1.5;
+  if (ph < 0) return R * k;
+  const r = R * (1 - Math.exp(-ph * k)), dr = R * k * Math.exp(-ph * k);
+  return Math.hypot(r, dr) + 1;
+}
+
+/** 第三幕的小月：环上第 m 颗（共 n 颗）现在转到哪、出没出来 */
+export const RING_R = 175;
+const RING_ENTRY = Math.PI / 2, RING_TRAV = 0.18;
+export function moonAngle(form: number, m: number, n: number, spin: number) {
+  const age = form - (m / n) * 0.8;
+  return { ang: RING_ENTRY + ((age - RING_TRAV) / (1 - RING_TRAV)) * Math.PI * 2 + spin, out: ss(RING_TRAV, RING_TRAV + 0.05, age) };
+}
+
+export interface State {
+  P: number;
+  a: number[];                      // a[1..7]：各幕的幕内进度
+  camD: number; camY: number; hzf: number; shake: number;
+  open: number;                     // 门开的角度（弧度）
+  light: number; lightCol: V3;      // 门后那盏光
+  slit: number; slitGlow: number;   // 开场：门缝从下往上亮到哪；那条缝的光晕
+  horizon: number; reach: number; dawn: number;
+  flood: number; floodB: number; dark: number;      // 第七幕：门里的白光、整屏的白、造物成剪影
+  out: number[]; hole: number[]; holeWhite: number;
+  sun: { vis: number; form: number; c: V3; scale: number; shape: V3; spin: number; heat: number; flare: number; ignite: number };
+  ring: { vis: number; form: number; c: V3; scale: number; rot: Q; spin: number; glow: number };
+  moons: { p: V3; s: number; hi: number }[];
+  whale: { vis: number; swim: number; settle: number; c: V3; rot: Q; scale: number; dark: number; glow: number; stars: number; lines: number; mid: V3 };
+  arm: { vis: number; form: number; blast: number; c: V3; scale: number; heat: number; rots: Q[]; point: V3; pointI: number; flash: number };
+  orbits: { c: V3; R: number; q: Q; draw: number; I: number }[];
+  grid: number; gridR: number; starOn: number; starFree: number;
+  shock: { c: V3; r: number; i: number };
+  lights: { p: V3; c: V3; r: number; path: number }[];
+}
+
+/** 第七幕「全家福」：每样造物在最后那个镜头里站哪（屏幕坐标 x、y，离镜头多远，占屏多大） */
+function slots(v: View) {
+  const n = v.narrow;
+  const hz = mix(HZF.end, HZF.endPhone, n);
+  const shift = 2 * hz - 1;
+  const camZ = Z0 + CAM_D[7];
+  const at = (nx: number, ny: number, d: number): V3 => {
+    const dir = norm3([nx * v.tanV * v.aspect, (ny - shift) * v.tanV, -1]);
+    return add3([0, EYE, camZ], mul3(dir, d));
+  };
+  const hW = (d: number) => 2 * d * v.tanV;   // 那个距离上，一屏高是多少世界单位
+  const wW = (d: number) => 2 * d * v.tanV * v.aspect;
+  if (n < 0.5) {
+    return {
+      sun: { p: at(0.0, 0.62, 250), s: (0.105 * hW(250)) / 46 },
+      whale: { p: at(-0.56, 0.36, 262), s: (0.3 * wW(262)) / WHALE_L },
+      arm: { p: at(0.57, 0.36, 250), s: (0.1 * hW(250)) / 52 },
+      ring: { p: at(0.0, 0.12, 215), s: (0.16 * wW(215)) / RING_R },
+    };
+  }
+  return {
+    sun: { p: at(0.0, 0.64, 250), s: (0.07 * hW(250)) / 46 },
+    whale: { p: at(0.0, 0.47, 262), s: (0.78 * wW(262)) / WHALE_L },
+    arm: { p: at(-0.5, 0.2, 250), s: (0.06 * hW(250)) / 52 },
+    ring: { p: at(0.5, 0.2, 230), s: (0.28 * wW(230)) / RING_R },
+  };
+}
+
+export function computeState(P: number, clock: number, v: View, nMoons: number): State {
+  const a = [0, 0, 0, 0, 0, 0, 0, 0].map((_, k) => (k === 0 ? 0 : cl(P - (k - 1))));
+  const n = v.narrow;
+  const fam = slots(v);
+  const toFam = ss(6.15, 6.62, P);
+
+  // —— 镜头 ——
+  let camD = CAM_D[0];
+  for (let k = 2; k <= 7; k++) {
+    if (P > k - 1) camD = mix(CAM_D[k - 1], CAM_D[k], k === 7 ? ss(0.05, 0.75, a[7]) : ss(0.0, 1.0, a[k]));
+  }
+  camD *= 1 + 0.16 * n * ss(1, 1.4, P) * (1 - ss(6.2, 6.8, P));
+  const hzHero = mix(HZF.hero, HZF.heroPhone, n), hzAct = mix(HZF.act, HZF.actPhone, n), hzEnd = mix(HZF.end, HZF.endPhone, n);
+  const hzf = mix(mix(hzHero, hzAct, ss(1.0, 1.32, P)), hzEnd, ss(6.1, 6.8, P));
+  // 第六幕：镜头升起来往下看（律要从上面看才看得清），第七幕再贴回水面
+  const camY = EYE + 64 * ss(5.04, 5.42, P) * (1 - ss(6.0, 6.38, P));
+
+  // —— 门、光 ——
+  const open = (keyed(P, DOOR_DEG) * Math.PI) / 180;
+  const o = a[1];
+  let light = 0.012 + 0.988 * Math.pow(ss(0.38, 0.72, o), 1.3);
+  for (let k = 2; k <= 6; k++) light += 0.22 * ss(0.02, 0.12, a[k]) * (1 - ss(0.18, 0.45, a[k]));
+  light *= mix(1, 0.5, ss(0.84, 1, a[7]));
+  let lightCol: V3 = [1, 1, 1];
+  for (let k = 2; k <= 6; k++) {
+    const s = ss(k - 1 + 0.01, k - 1 + 0.13, P) * (1 - ss(k - 0.08, k + 0.02, P));
+    if (s > 0) lightCol = mix3([1, 1, 1], ACT_COL[k], s * 0.86);
+  }
+  const slit = ss(0.14, 0.4, o);
+  const slitGlow = ss(0.13, 0.2, o) * mix(1, 0.55, ss(0.5, 0.8, o));
+  const horizon = ss(0.48, 0.76, o), reach = ss(0.58, 0.9, o), dawn = ss(0.4, 0.92, o);
+  const flood = ss(0.42, 0.62, a[7]) * mix(1, 0.4, ss(0.78, 1, a[7]));
+  const floodB = ss(0.44, 0.6, a[7]) * (1 - ss(0.68, 0.9, a[7]));
+  const dark = ss(0.4, 0.6, a[7]);
+
+  const out = [0, 1, 2, 3, 4].map((k) => ss(k + 1.0, k + 1.16, P));
+  const hole = [0, 1, 2, 3, 4].map((k) => ss(k + 1.05, k + 1.22, P));
+  const holeWhite = ss(6.2, 6.55, P);
+
+  // —— Ⅱ 燃日 ——
+  const a2 = a[2];
+  // 升起来以后偏到左上：日正压在门顶的中轴上，会让人想到「门上一只眼」那种符号
+  const S1: V3 = [mix(-105, -34, n), mix(312, 345, n), Z0 + 25];
+  const SP: V3 = [mix(-215, -62, n), mix(282, 430, n), Z0 - 60];
+  const park2 = ss(2.02, 2.32, P);
+  const sunCatch = ss(ORBITS[2].to - 0.08, ORBITS[2].to + 0.04, a[6]);
+  const phSun = ORBITS[2].ph0 + (clock / ORBITS[2].period) * Math.PI * 2;
+  const rS = mix(1, 0.62, n);
+  let sunC = mix3([0, 120, Z0 + 4], S1, ss(0.1, 0.5, a2));
+  sunC = mix3(sunC, SP, park2);
+  sunC = mix3(sunC, orbitPos(ORBITS[2], phSun, rS), sunCatch);
+  sunC = mix3(sunC, fam.sun.p, toFam);
+  let sunScale = mix(0.42, 1, ss(0.06, 0.42, a2)) * mix(1, 0.78, park2);
+  sunScale = mix(sunScale, 0.6, sunCatch);
+  sunScale = mix(sunScale, fam.sun.s, toFam);
+  let sunHeat = mix(1, 0.3, park2);
+  sunHeat = mix(sunHeat, 0.8, ss(0.3, 0.55, a[6]));
+  const sun = {
+    vis: ss(0.015, 0.04, a2), form: cl(a2 / 0.56), c: sunC, scale: sunScale,
+    shape: mix3([0.13, 2.1, 0.13], [1, 1, 1], ss(0.07, 0.34, a2)),
+    spin: clock * 0.045 + a2 * 0.9, heat: sunHeat, flare: sunHeat * sunHeat * (1 - toFam), ignite: ss(0.44, 0.96, a2),
+  };
+
+  // —— Ⅲ 布环 ——
+  const a3 = a[3];
+  const ringForm = a3 * 1.9;
+  const ringSpin = clock * 0.025;
+  let ringQ = qMul(qAxis(X, 0.24), qAxis(Z, 0.06));
+  ringQ = qSlerp(ringQ, qMul(qAxis(X, 0.44), qAxis(Z, -0.12)), ss(5.3, 5.52, P));
+  ringQ = qSlerp(ringQ, qMul(qAxis(Z, -0.32), qAxis(X, 1.22)), toFam);
+  const ringScale = mix(mix(1, 0.86, n), fam.ring.s, toFam);
+  const ringC = mix3(DC, fam.ring.p, toFam);
+  const ring = {
+    vis: ss(0.005, 0.03, a3), form: ringForm, c: ringC, scale: ringScale, rot: ringQ, spin: ringSpin,
+    glow: mix(mix(1, 0.32, ss(3.02, 3.3, P)), 0.85, ss(5.3, 5.5, P)),
+  };
+  const moons: State['moons'] = [];
+  const rq = ringQ;
+  for (let m = 0; m < nMoons; m++) {
+    const { ang, out: mo } = moonAngle(ringForm, m, nMoons, ringSpin);
+    const rr = RING_R * ringScale;
+    const p = add3(ringC, qRot(rq, [rr * Math.cos(ang), 0, rr * Math.sin(ang)]));
+    let d = ((ang - Math.PI / 2) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+    const hi = Math.exp(-(d * d) / (2 * 0.2 * 0.2)) * ss(0.45, 0.55, a3) * (1 - ss(0.97, 1.0, a3));
+    moons.push({ p, s: mo * ringScale, hi });
+  }
+
+  // —— Ⅳ 赋生 ——
+  const a4 = a[4];
+  const swim = mix(-1.1, Math.PI * 2 + 0.55, ss(0.03, 0.74, a4));
+  const settle = ss(0.66, 0.86, a4);
+  const WF: V3 = [mix(46, 0, n), mix(368, 470, n), Z0 - 230];
+  const whaleCatch = ss(ORBITS[1].to - 0.08, ORBITS[1].to + 0.04, a[6]);
+  const phW = ORBITS[1].ph0 + (clock / ORBITS[1].period) * Math.PI * 2;
+  let wC = mix3(WF, orbitPos(ORBITS[1], phW, mix(1, 0.6, n)), whaleCatch);
+  wC = mix3(wC, fam.whale.p, toFam);
+  let wQ = qAxis(Y, Math.PI);
+  wQ = qSlerp(wQ, qAxis(Y, Math.PI - (phW - ORBITS[1].ph0) * 0.0 + 0.35), whaleCatch);
+  wQ = qSlerp(wQ, qAxis(Y, Math.PI), toFam);
+  const wScale = mix(mix(1, 0.72, n), fam.whale.s, toFam);
+  const sp = wSpeed(swim);
+  const midPath = wPath(swim - (0.4 * WHALE_L) / sp);
+  const mid = mix3(midPath, wC, settle);
+  const whale = {
+    vis: ss(0.005, 0.03, a4), swim, settle, c: wC, rot: wQ, scale: wScale,
+    dark: ss(0.84, 0.95, a4) * 0.8, glow: mix(1, 0.3, ss(0.86, 1, a4)),
+    stars: ss(0.84, 0.96, a4), lines: ss(0.88, 1.0, a4), mid,
+  };
+
+  // —— Ⅴ 铸器（滑到一半那一拍定住：幕内 0.45..0.5 画面不动）——
+  const a5 = a[5];
+  const F = a5 < 0.45 ? a5 : a5 < 0.5 ? 0.45 : a5 - 0.05;
+  const bt = Math.max(F - 0.45, 0);
+  const CA: V3 = [0, 128, Z0 + 75];
+  const armCatch = ss(ORBITS[0].to - 0.08, ORBITS[0].to + 0.04, a[6]);
+  const phA = ORBITS[0].ph0 + (clock / ORBITS[0].period) * Math.PI * 2;
+  let aC = mix3(CA, orbitPos(ORBITS[0], phA, mix(1, 0.62, n)), armCatch);
+  aC = mix3(aC, fam.arm.p, toFam);
+  const armScale = mix(mix(1, 0.9, n) * mix(1, 0.78, armCatch), fam.arm.s, toFam);
+  // 浑天仪：赤道、子午、黄道三道环；整架往镜头倾一点、绕极轴慢慢转，三道环永远是三个不同的椭圆
+  const q0 = qMul(qAxis(Y, 0.65 + clock * 0.06), qAxis(X, 0.6));
+  const rots: Q[] = [
+    q0,
+    qMul(q0, qMul(qAxis(Y, 0.9 + clock * 0.13), qAxis(X, Math.PI / 2))),
+    qMul(q0, qAxis(Z, 0.41)),
+  ];
+  let armHeat = mix(1.7, 0.4, ss(0.12, 0.5, bt));
+  armHeat = mix(armHeat, 0.28, ss(5.02, 5.3, P));
+  armHeat = mix(armHeat, 0.55, ss(5.05, 5.25, P));
+  const arm = {
+    vis: ss(0.05, 0.1, F), form: cl((F - 0.06) / 0.39), blast: bt, c: aC, scale: armScale, heat: armHeat, rots,
+    point: mix3([0, 120, Z0 + 2], CA, ss(0.0, 0.13, F)),
+    pointI: (bt > 0 ? 0 : ss(0.0, 0.05, F) * (0.6 + 5 * ss(0.2, 0.45, F))),
+    flash: bt > 0 ? Math.exp(-bt * 26) : 0,
+  };
+  const shake = bt > 0 ? Math.exp(-bt * 16) : 0;
+  const shock = { c: [CA[0], 0, CA[2]] as V3, r: 1700 * Math.pow(cl(bt / 0.38), 0.72), i: bt > 0 ? 1 - ss(0.04, 0.38, bt) : 0 };
+
+  // —— Ⅵ 立法：器的三道环放大成轨道 ——
+  const a6 = a[6];
+  const orbits = ORBITS.map((ob, j) => {
+    const g = ss(ob.from, ob.to, a6);
+    const ringR = (66 - j * 7) * armScale;
+    const q = qSlerp(rots[j], orbitQ(ob), g);
+    return {
+      c: mix3(aC, DC, g), R: mix(ringR, ob.R * mix(1, 0.62, n), g), q,
+      draw: ss(ob.from, ob.from + (ob.to - ob.from) * 0.85, a6), I: (1 - ss(6.22, 6.5, P)),
+    };
+  });
+  const grid = ss(0.08, 0.36, a6) * (1 - ss(6.25, 6.6, P));
+  const gridR = mix(0, 2800, ss(0.08, 0.55, a6));
+  const starOn = ss(0.62, 0.8, a6), starFree = ss(0.8, 0.985, a6);
+
+  // —— 光：门后一盏 + 每样造物一盏（水面上的光路最多六条）——
+  const lights: State['lights'] = [
+    { p: [0, H * 0.46, Z0 - 40], c: mul3(lightCol, light), r: 400, path: 1 },
+    { p: sun.c, c: mul3(COL.sun, 2.6 * sun.heat * sun.vis * (1 - dark)), r: 150 * sun.scale, path: 0.55 * sun.vis },
+    { p: moons.length ? moons.reduce((b, m) => (m.hi > b.hi ? m : b), moons[0]).p : DC, c: mul3(COL.ring, 1.2 * ring.glow * ring.vis * (1 - dark)), r: 200, path: 0.4 * ring.vis },
+    { p: mid, c: mul3(COL.life, 0.9 * whale.glow * whale.vis * (1 - dark)), r: 260, path: 0.35 * whale.vis },
+    { p: arm.vis > 0 ? aC : arm.point, c: mul3(COL.fire, (1.4 * arm.heat * arm.vis + 2 * arm.pointI + 18 * arm.flash) * (1 - dark)), r: 150, path: 0.6 * Math.max(arm.vis, ss(0, 0.05, F)) },
+    { p: [0, 40, Z0 + 60], c: mul3(COL.law, 1.1 * grid), r: 150, path: 0.5 * grid },
+  ];
+
+  return {
+    P, a, camD, camY, hzf, shake, open, light, lightCol, slit, slitGlow, horizon, reach, dawn, flood, floodB, dark,
+    out, hole, holeWhite, sun, ring, moons, whale, arm, orbits, grid, gridR, starOn, starFree, shock, lights,
+  };
+}
+
+/** 滚动位置（屏）→ P：首屏停一小段，然后每幕一段，均匀 */
+export function scrollToP(u: number, hold: number, acts: number[]) {
+  if (u <= hold) return 1;
+  let x = u - hold;
+  for (let k = 0; k < acts.length; k++) {
+    if (x <= acts[k]) return 1 + k + x / acts[k];
+    x -= acts[k];
+  }
+  return 7;
+}
+/** P → 滚动位置（屏）：点刻度、Tab 到某一幕时用 */
+export function pToScroll(P: number, hold: number, acts: number[]) {
+  if (P <= 1) return 0;
+  let u = hold;
+  for (let k = 0; k < acts.length; k++) {
+    const f = cl(P - 1 - k);
+    u += f * acts[k];
+    if (f < 1) break;
+  }
+  return u;
+}
+
+export { W, H, T };

@@ -1,290 +1,321 @@
-// 首页的手：铭文、引线、一个字一个字写出来、指哪撮那撮出来、点了冲进光里、声音。
-// 画面在 ../scene/monolith.ts，跟 three.js 一起异步加载；加载不了（没有 WebGL）就换成一张天亮时的静态图 + 文字链接。
-import * as snd from './sound';
-import type { ZeroScene } from '../scene/monolith';
+// 首页的手：滚动 → 进度、字跟着画面走、右边七个刻度、第三幕小月的名字、第四幕标本签、首屏五条铭文和引线、
+// 声音、「进去」、没有 WebGL 时的静态图。画面本身在 ../scene/genesis.ts（three.js 跟它一起异步加载）。
+import * as sound from './sound';
+import { SCROLL, DIVE_MS, HITSTOP_MS, SECTION_HEX, type Tier } from '../scene/tune';
+import { scrollToP, pToScroll, qRot, ss, cl, type State, type V3 } from '../scene/timeline';
+import type { Genesis } from '../scene/genesis';
 
 const root = document.documentElement;
 const stage = document.querySelector<HTMLElement>('[data-stage]')!;
 const host = document.querySelector<HTMLElement>('[data-gl-host]')!;
-const entries = Array.from(document.querySelectorAll<HTMLAnchorElement>('.entry'));
-const caption = document.querySelector<HTMLElement>('[data-caption]')!;
-const capBox = caption.parentElement as HTMLElement;
+const uiLayer = document.querySelector<HTMLElement>('[data-ui]')!;
 const flood = document.querySelector<HTMLElement>('[data-flood]')!;
-const svg = document.querySelector<SVGSVGElement>('[data-leaders]')!;
-const rest = Array.from(svg.querySelectorAll<SVGLineElement>('.ld'));
-const onLine = svg.querySelector<SVGLineElement>('.ld-on')!;
-const dot = svg.querySelector<SVGRectElement>('.ld-dot')!;
-const grad = svg.querySelector<SVGLinearGradientElement>('#ld-fade')!;
+const opener = document.querySelector<HTMLElement>('[data-opener]')!;
+const hero = document.querySelector<HTMLElement>('[data-hero]')!;
+const acts = [...document.querySelectorAll<HTMLElement>('.act[data-act]')];
+const entries = [...document.querySelectorAll<HTMLAnchorElement>('.entry')];
+const leaders = [...document.querySelectorAll<SVGLineElement>('[data-leaders] .ld')];
+const ticks = [...document.querySelectorAll<HTMLButtonElement>('[data-tick]')];
+const moonTag = document.querySelector<HTMLAnchorElement>('[data-moon-tag]')!;
+const moonName = document.querySelector<HTMLElement>('[data-mt-nm]')!;
+const specTag = document.querySelector<HTMLElement>('[data-spec-tag]')!;
 const still = document.querySelector<HTMLImageElement>('.still')!;
+const moonsData: { href: string; en: string; zh: string }[] = JSON.parse(moonTag.dataset.moons || '[]');
+const stills: { l: string[]; p: string[] } = JSON.parse(still.dataset.stills || '{"l":[],"p":[]}');
 
-const params = new URLSearchParams(location.search);
+const q = new URLSearchParams(location.search);
+const num = (k: string) => (q.has(k) && Number.isFinite(parseFloat(q.get(k)!)) ? parseFloat(q.get(k)!) : null);
+const freezeP = num('act');
+const freezeT = num('t');
+const tierQ = q.get('tier') as Tier | null;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
-const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
-const sstep = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+if (q.has('still')) root.setAttribute('data-still', '');
 let seen = false;
-try { seen = sessionStorage.getItem('zero.dawn') === '1'; } catch { /* 无痕 */ }
-const freeze = params.has('dawn') ? clamp(parseFloat(params.get('dawn') || '1') || 0) : params.has('still') ? 1 : null;
-if (params.has('still')) root.dataset.still = '';
+try { seen = sessionStorage.getItem('zero.opener') === '1'; } catch { /* 无痕 */ }
 
-let scene: ZeroScene | null = null;
-let active = -1;
-let activeFrom: 'entry' | 'gl' | 'focus' | 'tap' | null = null;
-let going = false;
-let lastPointer = 'mouse';
-let lastDownAt = -1e9;
-let drawT0 = 0;
-
-// —— 一个字一个字写出来 ——
-function write(el: HTMLElement, text: string, step: number) {
-  el.textContent = '';
-  const f = document.createDocumentFragment();
-  Array.from(text).forEach((ch, i) => {
-    const s = document.createElement('span');
-    s.className = 'lt';
-    s.textContent = ch;
-    s.style.animationDelay = `${Math.round(i * step)}ms`;
-    f.appendChild(s);
-  });
-  el.appendChild(f);
+// —— 滚动 → 进度 ——
+const vh = () => Math.max(1, stage.clientHeight);
+const scrollP = () => scrollToP(window.scrollY / vh(), SCROLL.hold, SCROLL.acts);
+const restP = (k: number) => (k <= 1 ? 1 : k === 7 ? 7 : k - 0.12);
+function scrollToAct(k: number, smooth = !reduced) {
+  window.scrollTo({ top: pToScroll(restP(k), SCROLL.hold, SCROLL.acts) * vh(), behavior: smooth ? 'smooth' : 'auto' });
 }
+
+let g: Genesis | null = null;
+let P = freezeP ?? (reduced ? 1 : 0);
+let st: State | null = null;
 const lang = () => (root.getAttribute('data-lang') === 'zh' ? 'zh' : 'en');
-function writeEntry(k: number) {
-  const el = entries[k];
-  el.querySelectorAll<HTMLElement>('.nm').forEach((nm) => {
-    if (nm.dataset.l !== lang()) { nm.textContent = nm.dataset.text || ''; return; }
-    write(nm, nm.dataset.text || '', lang() === 'zh' ? 90 : 42);
-  });
-  const line = el.dataset[lang() === 'zh' ? 'lineZh' : 'lineEn'] || '';
-  capBox.classList.remove('out');
-  write(caption, line, lang() === 'zh' ? 60 : 24);
-}
-function restEntry(k: number) {
-  entries[k].querySelectorAll<HTMLElement>('.nm').forEach((nm) => { nm.textContent = nm.dataset.text || ''; });
+
+// —— 字：开着的才亮，换了才动 DOM ——
+const on = (el: Element, v: boolean) => { if (el.classList.contains('on') !== v) el.classList.toggle('on', v); };
+function textFor(p: number) {
+  const a = (k: number) => cl(p - (k - 1));
+  on(opener, p < 1 && p > 0.02 && p < 0.5);
+  on(hero, p >= 0.86 && p < 1.1);
+  root.toggleAttribute('data-opening', p < 0.86);
+  root.toggleAttribute('data-scrolled', p > 1.1);
+  for (const el of acts) {
+    const k = Number(el.dataset.act);
+    const ak = a(k);
+    if (k === 7) {
+      el.classList.toggle('coded', ak > 0.66);
+      on(el, ak > 0.78);
+      continue;
+    }
+    on(el.querySelector('.code')!, ak > 0.004 && ak < 0.42);
+    on(el, ak > 0.52 && ak < 0.975);
+  }
+  const cur = p < 1.12 ? 1 : Math.min(7, Math.floor(p - 0.12) + 2);
+  ticks.forEach((b) => on(b, Number(b.dataset.tick) === cur));
 }
 
-// —— 指哪道门 ——
-function setActive(k: number, from: typeof activeFrom = null) {
-  if (k === active) { if (k >= 0) activeFrom = from ?? activeFrom; return; }
-  const prev = active;
-  active = k;
-  activeFrom = k >= 0 ? from : null;
-  if (prev >= 0) { entries[prev].classList.remove('on'); restEntry(prev); }
-  scene?.activate(k);
-  svg.classList.toggle('has-on', k >= 0);
-  if (k >= 0) {
-    entries[k].classList.add('on');
-    writeEntry(k);
-    drawT0 = performance.now();
-    snd.thud();
-  } else {
-    capBox.classList.add('out');
+// —— 首屏：五条铭文的引线 ——
+let hoverK = -1;
+function setHover(k: number) {
+  hoverK = k;
+  entries.forEach((e, i) => on(e, i === k));
+  leaders.forEach((l, i) => on(l, i === k));
+  g?.setHover(k);
+}
+function drawLeaders() {
+  if (!g || !hero.classList.contains('on')) return;
+  entries.forEach((e, i) => {
+    const t = e.querySelector('.tick')!.getBoundingClientRect();
+    const c = g!.project(g!.clusterPoint(i));
+    const l = leaders[i];
+    l.setAttribute('x1', String(t.left + t.width / 2));
+    l.setAttribute('y1', String(t.top - 4));
+    l.setAttribute('x2', String(c.x));
+    l.setAttribute('y2', String(c.y));
+  });
+}
+
+// —— 第三幕的小月、第四幕的标本签 ——
+let moonShown = -1;
+function placeTags(s: State, p: number) {
+  if (!g) return;
+  let best = -1, hi = 0;
+  s.moons.forEach((m, i) => { if (m.hi > hi) { hi = m.hi; best = i; } });
+  const showMoon = best >= 0 && hi > 0.45 && p > 2.4 && p < 2.98 && best < moonsData.length;
+  on(moonTag, showMoon);
+  moonTag.tabIndex = showMoon ? 0 : -1;
+  if (showMoon) {
+    const sp = g.project(s.moons[best].p);
+    const x = Math.max(8, Math.min(sp.x + 18, g.size.w - 230));
+    moonTag.style.transform = `translate(${x}px, ${sp.y - 16}px)`;
+    if (moonShown !== best || moonTag.dataset.l !== lang()) {
+      moonShown = best;
+      moonTag.dataset.l = lang();
+      moonName.textContent = moonsData[best][lang()];
+      moonTag.href = moonsData[best].href;
+    }
+  }
+  const showSpec = s.whale.stars > 0.6 && p < 4.25;
+  on(specTag, showSpec);
+  if (showSpec) {
+    const sp = g.project(s.whale.c);
+    const w = g.size.w;
+    const x = w < 600 ? 22 : Math.min(sp.x + 0.18 * w, w - 250);
+    const y = w < 600 ? sp.y + 64 : sp.y - 24;
+    specTag.style.transform = `translate(${x}px, ${y}px)`;
   }
 }
-document.addEventListener('zero:lang', () => { if (active >= 0) writeEntry(active); });
+function fillStats() {
+  const el = document.querySelector<HTMLElement>('[data-spec-stats]');
+  if (!el) return;
+  const n = (3200).toLocaleString(lang() === 'zh' ? 'zh-CN' : 'en-US');
+  el.textContent = (el.dataset[lang()] || '').replace('{n}', n);
+}
+fillStats();
+document.addEventListener('zero:lang', () => { fillStats(); moonShown = -1; });
 
-// —— 进门：贴着水面冲向那道光，白光吞屏，再走 ——
+// —— 声音：门动一下响一声；第五幕炸开；进去 ——
+let lastP = P;
+function soundFor(p: number) {
+  sound.setLevel(p);
+  for (const m of [1.03, 2.03, 3.03, 4.03, 5.03, 6.36]) if ((lastP < m && p >= m) || (lastP > m && p <= m)) sound.thud();
+  lastP = p;
+}
+
+// —— 进去：镜头扎进那样造物本身，满屏变成它的颜色，再落到栏目页 ——
+let going = false;
 function prefetch(href: string) {
+  if (document.querySelector(`link[rel="prefetch"][href="${href}"]`)) return;
   const l = document.createElement('link');
-  l.rel = 'prefetch'; l.href = href;
+  l.rel = 'prefetch';
+  l.href = href;
   document.head.appendChild(l);
 }
-function go(k: number) {
+function targetFor(k: number): V3 | null {
+  if (!g || !st || k <= 1) return null;
+  const s = st;
+  if (k === 2) return s.sun.c;
+  if (k === 3) {
+    let best = 0;
+    s.moons.forEach((m, i) => { if (m.hi > s.moons[best].hi) best = i; });
+    return s.moons.length ? s.moons[best].p : s.ring.c;
+  }
+  if (k === 4) return s.whale.c;
+  if (k === 5) return s.arm.c;
+  const o = s.orbits[2];
+  const f = qRot(o.q, [0, 0, o.R]);
+  return [o.c[0] + f[0], o.c[1] + f[1], o.c[2] + f[2]];
+}
+async function go(href: string, color: string, target: V3 | null) {
   if (going) return;
   going = true;
-  const href = entries[k].href;
+  sound.swell();
   prefetch(href);
-  setActive(k, activeFrom ?? 'entry');
-  snd.swell();
-  try { sessionStorage.setItem('zero.arrive', '1'); } catch { /* 无痕 */ }
-  const leave = () => location.assign(href);
-  if (!scene || reduced) {
-    flood.style.transition = 'opacity .32s linear';
+  try { sessionStorage.setItem('zero.arrive', color); } catch { /* 存不了就不淡出 */ }
+  flood.style.background = color;
+  root.setAttribute('data-diving', '');
+  if (!g || reduced || !target) {
+    flood.style.transition = 'opacity .5s ease';
     flood.style.opacity = '1';
-    setTimeout(leave, 340);
+    setTimeout(() => { location.href = href; }, 520);
     return;
   }
-  stage.classList.add('entering');
-  scene.enter(k, (s) => { flood.style.opacity = String(sstep(0.72, 1, s)); }).then(() => {
-    flood.style.opacity = '1';
-    setTimeout(leave, 40);
-  });
+  await g.enter(target, DIVE_MS, (s) => { flood.style.opacity = String(ss(0.5, 0.96, s)); });
+  location.href = href;
 }
 window.addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
   going = false;
-  stage.classList.remove('entering');
-  flood.style.transition = '';
   flood.style.opacity = '0';
-  scene?.reset();
-  setActive(-1);
+  flood.style.transition = '';
+  root.removeAttribute('data-diving');
+  g?.reset();
 });
-
-// —— 铭文：鼠标指上去 / Tab 到它 = 那撮出来；点 / 回车 = 进门；手机第一下出来、第二下进门 ——
-let leaveTimer = 0;
-entries.forEach((el, k) => {
-  el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { clearTimeout(leaveTimer); setActive(k, 'entry'); } });
-  el.addEventListener('pointerleave', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    clearTimeout(leaveTimer);
-    leaveTimer = window.setTimeout(() => { if (active === k && activeFrom === 'entry' && document.activeElement !== el) setActive(-1); }, 160);
-  });
-  el.addEventListener('focus', () => {
-    // 手机上点一下会先聚焦再 click：这时交给 click 去判断「第一下出来、第二下进门」
-    if (lastPointer !== 'mouse' && performance.now() - lastDownAt < 800) return;
-    setActive(k, 'focus');
-  });
-  el.addEventListener('blur', () => {
-    setTimeout(() => {
-      if (going) return;
-      const f = document.activeElement;
-      if (active === k && !entries.includes(f as HTMLAnchorElement) && activeFrom === 'focus') setActive(-1);
-    }, 0);
-  });
-  el.addEventListener('click', (e) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;     // 新标签页打开之类：交给浏览器
-    if (!scene) return;                                                                    // 没有画面：直接走
+const plain = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+entries.forEach((a, i) => {
+  a.addEventListener('pointerenter', () => setHover(i));
+  a.addEventListener('pointerleave', () => setHover(-1));
+  a.addEventListener('focus', () => setHover(i));
+  a.addEventListener('blur', () => setHover(-1));
+  a.addEventListener('click', (e) => {
+    if (plain(e)) return;
     e.preventDefault();
-    if (lastPointer !== 'mouse' && e.detail > 0 && active !== k) { setActive(k, 'tap'); return; }
-    go(k);
+    const p = g ? g.clusterPoint(i) : null;
+    go(a.href, SECTION_HEX[i], p ? [p[0], p[1], p[2] + 2] : null);
   });
 });
-window.addEventListener('pointerdown', (e) => { lastPointer = e.pointerType || 'mouse'; lastDownAt = performance.now(); }, true);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && active >= 0) setActive(-1); });
-
-// —— 引线：五根细线从小桩升到碑上那撮；平时到地平线就淡没了（碑看着还是一整块），指到的那根一直连上去 ——
-let anchors: { x: number; y: number }[] = [];
-let hzY = 0;
-function measure() {
-  const sr = stage.getBoundingClientRect();
-  anchors = entries.map((el) => {
-    const r = (el.querySelector('.tick') as HTMLElement).getBoundingClientRect();
-    return { x: r.left + r.width / 2 - sr.left, y: r.top - sr.top };
+document.querySelectorAll<HTMLAnchorElement>('[data-go]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    if (plain(e)) return;
+    e.preventDefault();
+    const k = Number(a.dataset.go);
+    go(a.href, SECTION_HEX[k - 2], targetFor(k));
   });
-  const hzf = parseFloat(getComputedStyle(stage).getPropertyValue('--hzf')) || 0.4;
-  hzY = (1 - hzf) * sr.height;
-  svg.setAttribute('viewBox', `0 0 ${sr.width} ${sr.height}`);
-  const y0 = anchors.length ? anchors[0].y : hzY + 100;
-  grad.setAttribute('y1', String(y0));
-  grad.setAttribute('y2', String(hzY - 2));
-}
-function drawLines() {
-  if (!scene || !anchors.length) return;
-  for (let k = 0; k < rest.length; k++) {
-    const c = scene.screenOf(k), a = anchors[k];
-    rest[k].setAttribute('x1', a.x.toFixed(1)); rest[k].setAttribute('y1', a.y.toFixed(1));
-    rest[k].setAttribute('x2', c.x.toFixed(1)); rest[k].setAttribute('y2', c.y.toFixed(1));
-  }
-  if (active >= 0) {
-    const c = scene.screenOf(active), a = anchors[active];
-    const len = Math.hypot(c.x - a.x, c.y - a.y);
-    const p = reduced ? 1 : sstep(0, 1, (performance.now() - drawT0) / 750);
-    onLine.setAttribute('x1', a.x.toFixed(1)); onLine.setAttribute('y1', a.y.toFixed(1));
-    onLine.setAttribute('x2', c.x.toFixed(1)); onLine.setAttribute('y2', c.y.toFixed(1));
-    onLine.setAttribute('stroke-dasharray', `${len.toFixed(1)} ${len.toFixed(1)}`);
-    onLine.setAttribute('stroke-dashoffset', (len * (1 - p)).toFixed(1));
-    dot.setAttribute('x', (c.x - 3.5).toFixed(1)); dot.setAttribute('y', (c.y - 3.5).toFixed(1));
-    dot.style.opacity = p > 0.98 ? '' : '0';
-  }
+});
+
+// —— 刻度、键盘：Tab 到哪一幕的「进去」，页面跟着滚到那一幕 ——
+ticks.forEach((b) => b.addEventListener('click', () => scrollToAct(Number(b.dataset.tick))));
+acts.forEach((el) => el.addEventListener('focusin', () => {
+  const k = Number(el.dataset.act);
+  const p = g ? g.P : scrollP();
+  if (Math.abs(p - restP(k)) > 0.3) scrollToAct(k, false);
+}));
+hero.addEventListener('focusin', () => { if (window.scrollY > 4) window.scrollTo({ top: 0 }); });
+
+// —— 声音开关 ——
+document.addEventListener('zero:sound', (e) => sound.setOn(Boolean((e as CustomEvent).detail)));
+sound.armOnGesture();
+
+function frameText(s: State | null, p: number) {
+  textFor(p);
+  if (s) placeTags(s, p);
+  drawLeaders();
+  soundFor(p);
 }
 
-// —— 碑上那几撮也能直接指、直接点 ——
-function onGlMove(e: PointerEvent) {
-  if (!scene || going) return;
-  const r = stage.getBoundingClientRect();
-  if (e.pointerType === 'mouse') {
-    scene.setParallax(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1));
-    const k = scene.pick(e.clientX, e.clientY);
-    (scene.canvas as HTMLCanvasElement).style.cursor = k >= 0 ? 'pointer' : '';
-    if (k >= 0) setActive(k, 'gl');
-    else if (activeFrom === 'gl') setActive(-1);
-  }
+// —— 没有 WebGL：每幕一张静态图，字和链接照常 ——
+function fallback() {
+  root.setAttribute('data-gl', 'no');
+  const pick = () => {
+    const p = freezeP ?? scrollP();
+    const k = Math.max(0, Math.min(6, p < 1.3 ? 0 : Math.round(p) - 1));
+    const src = (innerWidth / innerHeight < 0.8 ? stills.p : stills.l)[k];
+    if (src && still.getAttribute('src') !== src) still.src = src;
+    P = Math.max(1, p);
+    frameText(null, P);
+  };
+  pick();
+  window.addEventListener('scroll', pick, { passive: true });
+  window.addEventListener('resize', pick);
 }
-let drag: { x: number; px: number } | null = null;
-function onGlDown(e: PointerEvent) {
-  if (e.pointerType !== 'mouse') drag = { x: e.clientX, px: 0 };
-}
-function onGlDrag(e: PointerEvent) {
-  if (!drag || !scene || e.pointerType === 'mouse') return;
-  const dx = (e.clientX - drag.x) / (stage.clientWidth * 0.5);
-  scene.setParallax(clamp(dx, -1, 1), 0);
-}
-function onGlUp() { if (drag && scene) { scene.setParallax(0, 0); } drag = null; }
-function onGlClick(e: MouseEvent) {
-  if (!scene || going) return;
-  const k = scene.pick(e.clientX, e.clientY);
-  if (lastPointer === 'mouse') { if (k >= 0) go(k); return; }
-  if (k < 0) { setActive(-1); return; }
-  if (active === k) go(k); else setActive(k, 'tap');
-}
-
-// —— 碰一下（点、滑、按键）黎明就快进到天亮 ——
-function hurry() { scene?.fastForward(); }
-['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((t) => window.addEventListener(t, hurry, { passive: true, capture: true }));
-
-// —— 声音 ——
-document.addEventListener('zero:sound', (e) => snd.setOn(Boolean((e as CustomEvent).detail)));
-snd.armOnGesture();
-
-// —— 没有 WebGL：一张天亮时的静态图 + 文字链接 ——
-function fallback(why: string) {
-  root.dataset.gl = 'no';
-  stage.style.setProperty('--dawn', '1');
-  const portrait = stage.clientWidth / Math.max(1, stage.clientHeight) < 1;
-  still.src = (portrait ? still.dataset.stillP : still.dataset.stillL) || '';
-  if (why) console.info('零肉身造物：换成静态图（' + why + '）');
-}
-function hasGL2() {
+function hasWebGL2() {
   try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; }
 }
 
 async function boot() {
-  if (!hasGL2()) { fallback('这台浏览器没有 WebGL 2'); return; }
+  if (q.has('nogl') || !hasWebGL2()) { fallback(); return; }
+  let mod: typeof import('../scene/genesis');
+  try { mod = await import('../scene/genesis'); } catch { fallback(); return; }
   try {
-    const { createScene } = await import('../scene/monolith');
-    scene = createScene({ stage: host, reduced, seen, freeze, fixedQuality: navigator.webdriver || params.has('hq') });
-  } catch (err) {
-    fallback(String(err));
-    return;
-  }
-  root.dataset.gl = 'yes';
-  const canvas = scene.canvas as HTMLCanvasElement;
-  canvas.addEventListener('pointermove', onGlMove);
-  canvas.addEventListener('pointerdown', onGlDown);
-  canvas.addEventListener('pointermove', onGlDrag);
-  window.addEventListener('pointerup', onGlUp);
-  window.addEventListener('pointercancel', onGlUp);
-  canvas.addEventListener('click', onGlClick);
-  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); canvas.remove(); fallback('WebGL 上下文丢了'); scene = null; });
-  canvas.addEventListener('mouseleave', () => { scene?.setParallax(0, 0); if (activeFrom === 'gl') setActive(-1); });
-  let lastDawn = -1;
-  let marked = seen;
-  scene.onFrame = (f) => {
-    const d = Math.round(sstep(0.05, 0.75, f.p) * 50) / 50;
-    if (d !== lastDawn) { lastDawn = d; stage.style.setProperty('--dawn', String(d)); }
-    if (f.done && !marked) { marked = true; try { sessionStorage.setItem('zero.dawn', '1'); } catch { /* 无痕 */ } }
-    snd.setLevel(f.light);
-    drawLines();
+    g = mod.createGenesis({
+      host, reduced, seen, freezeP, freezeT, tier: tierQ, nMoons: moonsData.length,
+      onLost: () => { g?.canvas.remove(); g = null; fallback(); },
+    });
+  } catch (e) { console.warn(e); fallback(); return; }
+  root.setAttribute('data-gl', 'yes');
+  g.onHitstop = () => setTimeout(() => sound.blast(), HITSTOP_MS);
+  g.onFrame = (s, p) => {
+    st = s;
+    P = p;
+    if (p >= 1 && !seen) { seen = true; try { sessionStorage.setItem('zero.opener', '1'); } catch { /* 无痕 */ } }
+    frameText(s, p);
   };
-  measure();
-  new ResizeObserver(() => measure()).observe(stage);
-  document.addEventListener('zero:lang', () => requestAnimationFrame(measure));   // 中英文字宽不一样，小桩的位置跟着变
-  if (document.fonts) document.fonts.ready.then(measure);
-  // 给线上验收留的口子：量帧数、点哪撮
+  const feed = () => g?.setTarget(scrollP());
+  feed();
+  window.addEventListener('scroll', feed, { passive: true });
+  window.addEventListener('resize', feed);
+  // 开场的时候点一下、按个键、滚一下：快进
+  const hurry = () => g?.fastForward();
+  for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const) window.addEventListener(ev, hurry, { passive: true });
+  // 首屏：指着门上那撮
+  g.canvas.addEventListener('pointermove', (e) => {
+    if (!g || e.pointerType === 'touch') return;
+    const k = g.pick(e.clientX, e.clientY);
+    if (k !== hoverK) setHover(k);
+    g.canvas.style.cursor = k >= 0 ? 'pointer' : '';
+    g.setParallax((e.clientX / innerWidth) * 2 - 1, -((e.clientY / innerHeight) * 2 - 1));
+  });
+  g.canvas.addEventListener('pointerleave', () => { setHover(-1); g?.setParallax(0, 0); });
+  g.canvas.addEventListener('click', (e) => {
+    if (!g) return;
+    const k = g.pick(e.clientX, e.clientY);
+    if (k < 0) return;
+    if ((e as PointerEvent).pointerType === 'touch' && hoverK !== k) { setHover(k); return; }
+    entries[k]?.click();
+  });
+  // iPhone：画布跟着可见视口对齐（带灵动岛的机型，滑动以后视口会往上窜）
+  const vv = window.visualViewport;
+  if (vv) {
+    const align = () => {
+      const dy = vv.scale > 1.01 ? 0 : Math.round(vv.offsetTop);
+      const tf = dy ? `translateY(${dy}px)` : '';
+      stage.style.transform = tf;
+      uiLayer.style.transform = tf;
+    };
+    vv.addEventListener('resize', align);
+    vv.addEventListener('scroll', align);
+  }
+  document.addEventListener('zero:lang', () => drawLeaders());
+  // 截图、调试用
   (window as unknown as { __zero: unknown }).__zero = {
-    frames: () => scene?.frames ?? 0,
-    dpr: () => scene?.dpr ?? 0,
-    p: () => scene?.p ?? 0,
-    activate: (k: number) => setActive(k, 'entry'),
-    go,
-    // 验收截图：冲向第 k 撮的那道光，停在半路（不跳转）
-    hold: (k: number, s = 0.55) => {
-      setActive(k, 'entry');
-      stage.classList.add('entering');
-      scene?.enter(k, (x) => { flood.style.opacity = String(sstep(0.72, 1, x)); }, s);
+    frames: () => g?.frames ?? 0,
+    dpr: () => g?.dpr ?? 0,
+    tier: () => g?.tier ?? '',
+    P: () => g?.P ?? P,
+    state: () => g?.state,
+    go: (k: number) => (k <= 1 ? entries[0]?.click() : document.querySelector<HTMLAnchorElement>(`[data-go="${k}"]`)?.click()),
+    hold: (k: number, s: number) => {
+      const target = k <= 1 && g ? g.clusterPoint(0) : targetFor(k);
+      if (!g || !target) return;
+      root.setAttribute('data-diving', '');
+      flood.style.background = SECTION_HEX[Math.max(0, k - 2)];
+      void g.enter(target, DIVE_MS, (x) => { flood.style.opacity = String(ss(0.5, 0.96, x)); }, s);
     },
   };
 }
-if (fine) stage.classList.add('fine');
-stage.style.setProperty('--dawn', reduced || seen ? '1' : '0');
-boot();
+void boot();

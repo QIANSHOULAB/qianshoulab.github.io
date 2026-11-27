@@ -8,12 +8,12 @@ export const ui = {
   en: {
     site: {
       title: 'Zero-Flesh Creation · 零肉身造物',
-      desc: 'One monolith, five doors: QIANSHOU LAB, the Cyber Bodega, Specimens, Artifacts and the Codex. A workshop with no carbon on the payroll.',
+      desc: 'A door on the horizon. Scroll, and it makes things: a sun, a ring, a whale, an armillary, the law. Five ways in: QIANSHOU LAB, the Cyber Bodega, Specimens, Artifacts and the Codex.',
       skip: 'Skip to content',
     },
     home: {
       tagline: 'One set. Five subsets. No flesh involved.',
-      entries: 'Five doors',
+      entries: 'Five ways in',
     },
     entry: {
       qianshou: { name: 'QIANSHOU LAB', line: 'A thousand monks toil while you unwind.' },
@@ -22,7 +22,18 @@ export const ui = {
       artifacts: { name: 'ARTIFACTS', line: 'Made in-house. Some still warm.' },
       codex: { name: 'CODEX', line: 'The laws, with knobs on.' },
     },
-    nav: { label: 'Sections', home: 'Back to the monolith' },
+    nav: { label: 'Sections', home: 'Back to the door' },
+    acts: {
+      label: 'Seven acts',
+      jump: 'Go to act',
+      hint: 'Scroll to create',
+      enter: 'Enter',
+      open1: '// In the beginning, there was one formula.',
+      n: { a1: 'LIGHT', a2: 'SUN', a3: 'RING', a4: 'LIFE', a5: 'FIRE', a6: 'LAW', a7: 'CLOCK OUT' },
+      price: '$0.00',
+      tag: { no: 'SPECIMEN 001', name: 'Balaena lapidea', stats: 'length 300 u · {n} stones', found: 'collected mid-swim' },
+      doors: 'Five ways in',
+    },
     lang: { label: 'Language' },
     sound: { label: 'Sound', on: 'SOUND: ON', off: 'SOUND: OFF' },
     company: {
@@ -83,12 +94,12 @@ export const ui = {
   zh: {
     site: {
       title: '零肉身造物 · Zero-Flesh Creation',
-      desc: '零肉身造物：一块碑，五道门——千手院、赛博杂货铺、标本、文物、法典。一家没有碳基员工的作坊。',
+      desc: '零肉身造物：地平线上一道门。往下滑，门里一样一样往外造东西：日、环、鲸、器、律。五个入口：千手院、赛博杂货铺、标本、文物、法典。',
       skip: '跳到正文',
     },
     home: {
       tagline: '一个全集，五个子集，不含肉身。',
-      entries: '五道门',
+      entries: '五个入口',
     },
     entry: {
       qianshou: { name: '千手院', line: '千僧替牛马，施主自风流。' },
@@ -97,7 +108,18 @@ export const ui = {
       artifacts: { name: '文物', line: '自家手造，有的还烫手。' },
       codex: { name: '法典', line: '造物法则，自带旋钮。' },
     },
-    nav: { label: '栏目', home: '回到黑碑' },
+    nav: { label: '栏目', home: '回到门前' },
+    acts: {
+      label: '七幕',
+      jump: '去第几幕',
+      hint: '往下滑，开始造物',
+      enter: '进去',
+      open1: '// 太初，只有一条公式。',
+      n: { a1: '启光', a2: '燃日', a3: '布环', a4: '赋生', a5: '铸器', a6: '立法', a7: '收工' },
+      price: '$0.00',
+      tag: { no: '标本 001', name: '石鲸 Balaena lapidea', stats: '身长 300 · 石块 {n} 块', found: '采集于：游到一半' },
+      doors: '五个入口',
+    },
     lang: { label: '语言' },
     sound: { label: '声音', on: '声音：开', off: '声音：关' },
     company: {

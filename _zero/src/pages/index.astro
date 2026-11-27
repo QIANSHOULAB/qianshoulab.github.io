@@ -1,60 +1,122 @@
 ---
-// 首页：黑碑。发到 /zero/（根目录换不换看 _zero/home.mjs 那一行）。
-// 一望无际的黑水，地平线正中一块碑；光从碑后面慢慢亮起来。碑下半截五撮砖 = 五道门，水上五条铭文各拉一根细线连上去。
-// 首屏只有：wordmark、一句话、五条铭文、声音开关（和语言开关）、页脚。three.js 异步加载，黑底和 wordmark 先出来。
+// 首页：造物之门。发到 /zero/（根目录换不换看 _zero/home.mjs 那一行）。
+// 画布固定铺满，往下滑是在创世：七幕，全程跟手，倒着滑会倒放。字都在这页的 DOM 里（读屏软件读到七段正常的文字和链接），
+// 画面跟着滚动走，字跟着画面走。three.js 异步加载，黑底和 wordmark 先出来，3D 后到。
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Footer from '../components/core/Footer.astro';
 import T from '../components/core/T.astro';
 import { t, ENTRIES } from '../i18n/ui';
+import { shop } from '../data/tools';
+import { SCROLL, SECTION_HEX } from '../scene/tune';
 import stillL from '../assets/still-landscape.jpg?url';
 import stillP from '../assets/still-portrait.jpg?url';
+
+const ROMAN = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ'];
+const CODE = ['', 'let sun = hands(1000);', `let ring = shelf(${shop.length});`, 'let life = specimen("001");', 'let artifact = forge(1200);', 'let law = orbit(everything);'];
+const ACTS = ENTRIES.map((e, i) => ({ ...e, k: i + 2, code: CODE[i + 1], hex: SECTION_HEX[i] }));
+const units = SCROLL.hold + SCROLL.acts.reduce((a, b) => a + b, 0) + SCROLL.tail + 1;
+const chars = (s: string) => [...s].map((c, i) => ({ c, i }));
+const mail = ['oilsongchengmin', 'gmail.com'].join('@');
+const moons = shop.map((x) => ({ href: x.href, en: x.name.en, zh: x.name.zh }));
+// 每幕一张静态图（没有 WebGL 时用），做出来之前先都用开场那张
+const stills = { l: ROMAN.map(() => stillL), p: ROMAN.map(() => stillP) };
 ---
 <BaseLayout home>
-  <section class="stage" data-stage>
+  <div class="stage" data-stage aria-hidden="true">
     <div class="gl-host" data-gl-host></div>
-    <img class="still" alt="" aria-hidden="true" data-still-l={stillL} data-still-p={stillP} decoding="async" />
+    <img class="still" alt="" data-stills={JSON.stringify(stills)} decoding="async" />
     <noscript><img class="still on" src={stillL} alt="" /></noscript>
+  </div>
 
-    <div class="title">
-      <h1 class="wm">
-        <span class="wm-a" data-l="en" lang="en">ZERO-FLESH CREATION</span><span class="wm-b" data-l="en" lang="zh-CN">零肉身造物</span>
-        <span class="wm-a" data-l="zh" lang="zh-CN">零肉身造物</span><span class="wm-b" data-l="zh" lang="en">ZERO-FLESH CREATION</span>
-      </h1>
-      <T as="p" class="tag" k="home.tagline" />
+  <div class="ui" data-ui>
+    <p class="opener" aria-hidden="true" data-opener>
+      <span class="ln chs"><span data-l="en">{chars(t('en', 'acts.open1')).map(({ c, i }) => <span class="ch" style={`--i:${i}`}>{c}</span>)}</span><span data-l="zh">{chars(t('zh', 'acts.open1')).map(({ c, i }) => <span class="ch" style={`--i:${i}`}>{c}</span>)}</span></span>
+      <span class="ln ln2 chs">{chars('let light;').map(({ c, i }) => <span class="ch" style={`--i:${i + 28}`}>{c}</span>)}</span>
+    </p>
+
+    <section class="hero" data-hero aria-labelledby="h-hero">
+      <div class="title">
+        <h1 class="wm" id="h-hero">
+          <span class="wm-a" data-l="en" lang="en">ZERO-FLESH CREATION</span><span class="wm-b" data-l="en" lang="zh-CN">零肉身造物</span>
+          <span class="wm-a" data-l="zh" lang="zh-CN">零肉身造物</span><span class="wm-b" data-l="zh" lang="en">ZERO-FLESH CREATION</span>
+        </h1>
+        <T as="p" class="tag" k="home.tagline" />
+      </div>
+      <svg class="leaders" aria-hidden="true" data-leaders>
+        {ENTRIES.map(() => <line class="ld" x1="0" y1="0" x2="0" y2="0" />)}
+      </svg>
+      <nav class="entries" aria-label={t('en', 'home.entries')} data-aria-en={t('en', 'home.entries')} data-aria-zh={t('zh', 'home.entries')}>
+        <ol>
+          {ENTRIES.map((e, i) => (
+            <li>
+              <a class="entry" href={e.href} data-k={i} style={`--c:${SECTION_HEX[i]}`}>
+                <span class="tick" aria-hidden="true"></span>
+                <span class="no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                <span class="nm" data-l="en" lang="en">{t('en', `entry.${e.key}.name`)}</span>
+                <span class="nm" data-l="zh" lang="zh-CN">{t('zh', `entry.${e.key}.name`)}</span>
+                <span class="sr"><span data-l="en"> — {t('en', `entry.${e.key}.line`)}</span><span data-l="zh">：{t('zh', `entry.${e.key}.line`)}</span></span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+      <p class="hint" aria-hidden="true"><T k="acts.hint" /><span class="hint-line"></span></p>
+    </section>
+
+    {ACTS.map((a) => (
+      <section class="act" data-act={a.k} style={`--c:${a.hex}`} aria-labelledby={`h-act${a.k}`}>
+        <p class="code chs" aria-hidden="true">{chars(a.code).map(({ c, i }) => <span class="ch" style={`--i:${i}`}>{c}</span>)}</p>
+        <div class="card">
+          <h2 class="act-name" id={`h-act${a.k}`}>
+            <span class="num">{ROMAN[a.k - 1]}</span>
+            <span class="chs" data-l="en" lang="en" aria-label={t('en', `acts.n.a${a.k}`)}>{chars(t('en', `acts.n.a${a.k}`)).map(({ c, i }) => <span class="ch" aria-hidden="true" style={`--i:${i}`}>{c}</span>)}</span>
+            <span class="chs" data-l="zh" lang="zh-CN" aria-label={t('zh', `acts.n.a${a.k}`)}>{chars(t('zh', `acts.n.a${a.k}`)).map(({ c, i }) => <span class="ch" aria-hidden="true" style={`--i:${i}`}>{c}</span>)}</span>
+          </h2>
+          <p class="sec"><span class="rule" aria-hidden="true"></span><span class="no">{String(a.k - 1).padStart(2, '0')}</span> <T k={`entry.${a.key}.name`} /></p>
+          <T as="p" class="line" k={`entry.${a.key}.line`} />
+          <a class="go" href={a.href} data-go={a.k}><T k="acts.enter" /><span class="arr" aria-hidden="true">→</span></a>
+        </div>
+      </section>
+    ))}
+
+    <a class="moon-tag" href={moons[0]?.href ?? '/zahuopu/'} data-moon-tag data-moons={JSON.stringify(moons)} tabindex="-1">
+      <span class="mt-line" aria-hidden="true"></span><span class="mt-nm" data-mt-nm></span><span class="mt-pr"><T k="acts.price" /></span>
+    </a>
+    <div class="spec-tag" data-spec-tag aria-hidden="true">
+      <span class="st-no"><T k="acts.tag.no" /></span>
+      <span class="st-nm"><T k="acts.tag.name" /></span>
+      <span class="st-l" data-spec-stats data-en={t('en', 'acts.tag.stats')} data-zh={t('zh', 'acts.tag.stats')}></span>
+      <span class="st-l"><T k="acts.tag.found" /></span>
     </div>
 
-    <svg class="leaders" aria-hidden="true" data-leaders>
-      <defs>
-        <linearGradient id="ld-fade" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fff" stop-opacity=".42" />
-          <stop offset="1" stop-color="#fff" stop-opacity="0" />
-        </linearGradient>
-      </defs>
-      <g class="ld-rest">{ENTRIES.map(() => <line class="ld" x1="0" y1="0" x2="0" y2="0" />)}</g>
-      <line class="ld-on" x1="0" y1="0" x2="0" y2="0" />
-      <rect class="ld-dot" x="0" y="0" width="7" height="7" />
-    </svg>
+    <section class="act act7" data-act="7" aria-labelledby="h-act7">
+      <div class="end">
+        <p class="code" aria-hidden="true">return;</p>
+        <h2 class="sr" id="h-act7">{ROMAN[6]} <T k="acts.n.a7" /></h2>
+        <p class="motto">
+          <span data-l="en" lang="en">{t('en', 'company.motto').replace(/^—\s*/, '')}</span>
+          <span data-l="zh" lang="zh-CN">{t('zh', 'company.motto').replace(/^——/, '')}</span>
+        </p>
+        <p class="co"><span class="co-nm" lang="zh-CN">零肉身造物 | Zero-Flesh Creation</span> <T k="company.p1" /></p>
+        <T as="p" class="addr" k="company.addr" />
+        <nav class="links" aria-label={t('en', 'acts.doors')} data-aria-en={t('en', 'acts.doors')} data-aria-zh={t('zh', 'acts.doors')}>
+          {ENTRIES.map((e, i) => (
+            <a href={e.href} data-end-go={i} style={`--c:${SECTION_HEX[i]}`}><span class="no">{String(i + 1).padStart(2, '0')}</span> <T k={`entry.${e.key}.name`} /></a>
+          ))}
+        </nav>
+        <p class="mail"><a href={`mailto:${mail}?subject=${encodeURIComponent('零肉身造物 · Zero-Flesh Creation')}`} title={mail}><T k="foot.mail" /></a></p>
+      </div>
+    </section>
+  </div>
 
-    <nav class="entries" aria-label={t('en', 'home.entries')} data-aria-en={t('en', 'home.entries')} data-aria-zh={t('zh', 'home.entries')}>
-      <ol>
-        {ENTRIES.map((e, i) => (
-          <li>
-            <a class="entry" href={e.href} data-k={i} data-line-en={t('en', `entry.${e.key}.line`)} data-line-zh={t('zh', `entry.${e.key}.line`)}>
-              <span class="tick" aria-hidden="true"></span>
-              <span class="no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-              <span class="nm" data-l="en" lang="en" data-text={t('en', `entry.${e.key}.name`)}>{t('en', `entry.${e.key}.name`)}</span>
-              <span class="nm" data-l="zh" lang="zh-CN" data-text={t('zh', `entry.${e.key}.name`)}>{t('zh', `entry.${e.key}.name`)}</span>
-              <span class="sr"><span data-l="en"> — {t('en', `entry.${e.key}.line`)}</span><span data-l="zh">：{t('zh', `entry.${e.key}.line`)}</span></span>
-            </a>
-          </li>
-        ))}
-      </ol>
-      <p class="caption" aria-hidden="true"><span class="cap-ink" data-caption></span></p>
-    </nav>
+  <nav class="ticks" aria-label={t('en', 'acts.label')} data-aria-en={t('en', 'acts.label')} data-aria-zh={t('zh', 'acts.label')} data-ticks>
+    {ROMAN.map((r, i) => (
+      <button type="button" data-tick={i + 1} aria-label={`${r} ${t('en', `acts.n.a${i + 1}`)}`} data-aria-en={`${r} ${t('en', `acts.n.a${i + 1}`)}`} data-aria-zh={`${r} ${t('zh', `acts.n.a${i + 1}`)}`}>
+        <span class="tk-l" aria-hidden="true">{r}</span><span class="tk-m" aria-hidden="true"></span>
+      </button>
+    ))}
+  </nav>
 
-    <div class="foot-in"><Footer compact /></div>
-  </section>
-  <div class="foot-out"><Footer compact /></div>
+  <div class="track" aria-hidden="true" style={`--units:${units}`}></div>
   <div class="flood" aria-hidden="true" data-flood></div>
 </BaseLayout>
 
@@ -63,20 +125,40 @@ import stillP from '../assets/still-portrait.jpg?url';
 </script>
 
 <style>
-  /* 地平线离底边多高（--hzf）、碑占屏高多少（--monof）：画面和文字都按这两个数排，JS 也从这里读 */
-  .stage { position: relative; height: 100vh; height: 100svh; min-height: 540px; overflow: hidden; background: #000; --hzf: .40; --monof: .38; --dawn: 0; }
-  @media (max-aspect-ratio: 1/1) { .stage { --hzf: .37; --monof: .34; } }
-  @media (max-aspect-ratio: 3/4) { .stage { --hzf: .355; --monof: .31; } }
+  /* 画布和字都固定铺满一屏（用最大视口高：iPhone 地址栏收放时不跳）；往下滑的长度由 .track 撑出来 */
+  .stage, .ui { position: fixed; left: 0; top: 0; width: 100%; height: 100vh; height: 100lvh; --hzf: .40; --monof: .38; }
+  @media (max-aspect-ratio: 1/1) { .stage, .ui { --hzf: .37; --monof: .34; } }
+  @media (max-aspect-ratio: 3/4) { .stage, .ui { --hzf: .355; --monof: .31; } }
+  .stage { z-index: 0; background: #000; overflow: hidden; }
   .gl-host { position: absolute; inset: 0; }
-  .gl-host :global(canvas.gl) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
-  .still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+  .gl-host :global(canvas.gl) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; transition: opacity .6s var(--ease); }
   :global(html[data-gl="no"]) .still, .still:global(.on) { display: block; }
+  .gl-host::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: var(--grain); background-size: 160px 160px; opacity: .045; mix-blend-mode: screen; }
+  .ui { z-index: 5; pointer-events: none; }
+  .track { position: relative; height: calc(var(--units) * 100vh); height: calc(var(--units) * 100lvh); }
+  :global(.is-home) :global(.hd) { position: fixed; top: 0; left: 0; right: 0; z-index: 30; transition: opacity .5s var(--ease); }
+  :global(html[data-scrolled]) :global(.is-home) :global(.hd) { opacity: .72; }
 
-  :global(.is-home) :global(.hd) { position: absolute; top: 0; left: 0; right: 0; }
+  /* —— 一个字一个字写出来：.on 的时候按 --i 依次亮；退的时候一起退 —— */
+  .chs :global(.ch) { opacity: 0; transition: opacity .18s var(--ease); }
+  .act:global(.on) .card .chs :global(.ch) { opacity: 1; transition: opacity .45s var(--ease) calc(var(--i) * 34ms); }
+  .code.chs :global(.ch), .opener .chs :global(.ch) { transition-duration: .05s; }
+  .code:global(.on) :global(.ch), .opener:global(.on) .chs :global(.ch) { opacity: 1; transition: opacity .05s linear calc(var(--i) * 26ms); }
+  .chs { white-space: pre; }
 
-  /* —— 碑顶上那块天：wordmark + 一句话，正中 —— */
+  /* —— 开场两行小字 —— */
+  .opener { position: absolute; left: 0; right: 0; top: 17%; margin: 0; text-align: center; display: flex; flex-direction: column; gap: 10px;
+    font: 400 12.5px/1.4 var(--mono); letter-spacing: .06em; color: #cfcfcf; transition: opacity .8s var(--ease); }
+  .opener .ln2 { color: #fff; }
+  .opener:not(:global(.on)) { opacity: 0; }
+
+  /* —— 首屏：wordmark + 一句话（门顶上那块天）；水上五条铭文 —— */
+  .hero { position: absolute; inset: 0; transition: opacity .7s var(--ease); }
+  .hero:not(:global(.on)) { opacity: 0; }
+  .hero:not(:global(.on)) .entries { pointer-events: none; }
   .title { position: absolute; left: 0; right: 0; top: 0; height: calc((1 - var(--hzf) - var(--monof)) * 100%); padding: 44px 16px 0; box-sizing: border-box;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; z-index: 2; }
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
   .wm { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; font-weight: 500; }
   .wm-a { font: 500 clamp(21px, 2.1vw, 30px)/1 var(--serif); letter-spacing: .46em; padding-left: .46em; color: #f2f2f2; white-space: nowrap; }
   .wm-b { font: 500 12px/1 var(--serif-zh); letter-spacing: 1.1em; padding-left: 1.1em; color: #b9b9b9; }
@@ -84,88 +166,151 @@ import stillP from '../assets/still-portrait.jpg?url';
   :global(html[data-lang="zh"]) .wm-b { font: 500 11px/1 var(--serif); letter-spacing: .5em; padding-left: .5em; }
   .title :global(.tag) { margin: 18px 0 0; font: 400 11.5px/1.4 var(--mono); letter-spacing: .14em; color: #d2d2d2; text-shadow: 0 0 18px rgba(0, 0, 0, .55); }
   :global(html[data-lang="zh"]) .title :global(.tag) { font: 500 13px/1.4 var(--serif-zh); letter-spacing: .36em; padding-left: .36em; }
-
-  /* —— 水上那五条铭文：一排，左右对称；每条头上一根小桩，细线从这里升到碑上那撮 —— */
-  .leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: visible; opacity: calc(.1 + var(--dawn) * .9); transition: opacity .6s linear; }
-  .ld { stroke: url(#ld-fade); stroke-width: 1; vector-effect: non-scaling-stroke; transition: opacity .5s var(--ease); }
-  .leaders:global(.has-on) .ld { opacity: .35; }
-  .ld-on { stroke: #fff; stroke-width: 1; stroke-opacity: .85; opacity: 0; transition: opacity .3s var(--ease); }
-  .ld-dot { fill: none; stroke: #fff; stroke-width: 1; opacity: 0; transition: opacity .4s var(--ease); }
-  .leaders:global(.has-on) .ld-on, .leaders:global(.has-on) .ld-dot { opacity: 1; }
-
-  .entries { position: absolute; left: 0; right: 0; top: calc((1 - var(--hzf)) * 100% + var(--egap)); z-index: 3; --egap: clamp(52px, 12vh, 132px);
-    opacity: calc(.18 + var(--dawn) * .82); transition: opacity .6s linear; }
-  /* 五列一样宽：正中那条正好在中轴上，左右镜像 */
+  .leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .ld { stroke: #fff; stroke-opacity: .2; stroke-width: 1; vector-effect: non-scaling-stroke; transition: stroke-opacity .35s var(--ease); }
+  .ld:global(.on) { stroke-opacity: .8; }
+  .entries { position: absolute; left: 0; right: 0; top: calc((1 - var(--hzf)) * 100% + var(--egap)); --egap: clamp(52px, 12vh, 132px); pointer-events: auto; }
   .entries ol { list-style: none; margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); justify-items: center; align-items: start; max-width: min(1080px, 100%); box-sizing: border-box; }
   .entries li { display: flex; justify-content: center; min-width: 0; }
   .entry { position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 0 2px 6px; color: #b4b4b4; text-shadow: 0 0 14px rgba(0, 0, 0, .8), 0 0 3px rgba(0, 0, 0, .7); transition: color .35s var(--ease); }
-  /* 字底下一小团暗：水上的字不被光路冲掉 */
-  .entry::before { content: ""; position: absolute; left: -22px; right: -22px; top: 14px; bottom: -14px; z-index: -1; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(0, 0, 0, .5), rgba(0, 0, 0, 0)); }
-  /* 正中那条踩在光路上：底下的暗再重一点 */
+  .entry::before { content: ""; position: absolute; left: -22px; right: -22px; top: 14px; bottom: -14px; z-index: -1; pointer-events: none; background: radial-gradient(closest-side, rgba(0, 0, 0, .5), rgba(0, 0, 0, 0)); }
   .entries li:nth-child(3) .entry::before { left: -30px; right: -30px; top: 0; background: radial-gradient(closest-side, rgba(0, 0, 0, .72), rgba(0, 0, 0, 0)); }
-  .tick { width: 1px; height: 18px; background: currentColor; opacity: .55; transform-origin: 50% 100%; transition: opacity .35s var(--ease), transform .5s var(--ease); }
+  .tick { width: 1px; height: 18px; background: currentColor; opacity: .55; transform-origin: 50% 100%; transition: opacity .35s var(--ease), transform .5s var(--ease), background-color .35s var(--ease), box-shadow .35s var(--ease); }
   .no { font: 400 10.5px/1 var(--mono); letter-spacing: .16em; padding-left: .16em; color: #9a9a9a; transition: color .35s var(--ease); }
   .nm { font: 500 15px/1.2 var(--serif); letter-spacing: .28em; padding-left: .28em; white-space: nowrap; }
   :global(html[data-lang="zh"]) .nm { font: 500 15px/1.2 var(--serif-zh); letter-spacing: .4em; padding-left: .4em; }
   .entry:global(.on), .entry:hover, .entry:focus-visible { color: #fff; }
-  .entry:global(.on) .tick { opacity: 1; transform: scaleY(1.5); }
+  .entry:global(.on) .tick { opacity: 1; transform: scaleY(1.5); background: #fff; box-shadow: 0 0 6px var(--c), 0 0 14px var(--c); }
   .entry:global(.on) .no { color: #d0d0d0; }
   .entry:focus-visible { outline: none; }
   .entry:focus-visible .nm { outline: 1px solid #fff; outline-offset: 6px; }
-  /* 一个字一个字写出来 */
-  .nm :global(.lt) { opacity: 0; animation: ink .42s var(--ease) forwards; }
-  .caption { margin: 26px 0 0; min-height: 20px; text-align: center; font: 400 12px/20px var(--mono); letter-spacing: .08em; color: #c9c9c9; padding: 0 16px; text-shadow: 0 0 12px rgba(0, 0, 0, .8); }
-  :global(html[data-lang="zh"]) .caption { font: 500 14px/20px var(--serif-zh); letter-spacing: .3em; }
-  .caption :global(.lt) { opacity: 0; animation: ink .5s var(--ease) forwards; }
-  .caption:global(.out) { opacity: 0; transition: opacity .3s var(--ease); }
-  @keyframes ink { from { opacity: 0; } to { opacity: 1; } }
+  .hint { position: absolute; left: 0; right: 0; bottom: 30px; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px;
+    font: 400 10.5px/1 var(--mono); letter-spacing: .26em; padding-left: .26em; text-transform: uppercase; color: #8d8d8d; }
+  :global(html[data-lang="zh"]) .hint { font: 500 12px/1 var(--serif-zh); letter-spacing: .4em; padding-left: .4em; }
+  .hint::before { content: ""; position: absolute; left: 50%; top: -18px; width: 240px; height: 80px; transform: translateX(-50%); z-index: -1;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .7), rgba(0, 0, 0, 0)); }
+  .hint-line { width: 1px; height: 34px; background: linear-gradient(#fff, rgba(255, 255, 255, 0)); opacity: .5; transform-origin: 50% 0; animation: drip 2.6s var(--slow) infinite; }
+  @keyframes drip { 0% { transform: scaleY(0); opacity: 0; } 30% { opacity: .6; } 100% { transform: scaleY(1); opacity: 0; } }
 
-  /* —— 页脚：电脑上压在首屏底边；手机放在首屏下面，往下滑才看到 —— */
-  .foot-in { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding-top: 48px; background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, .62)); }
-  .foot-in :global(.ft) { padding: 0 24px 20px; }
-  .foot-in :global(.ft-co) { font-size: 12px; color: #8a8a8a; }
-  .foot-in :global(.ft-co .ft-name) { font-size: 12px; color: #bdbdbd; }
-  .foot-in :global(.ft-addr) { font-size: 10.5px; color: #626262; margin-top: 4px !important; }
-  .foot-out { display: none; }
+  /* —— 第二到第六幕：先出一行代码（法先到），造好了才出名字 —— */
+  .act { position: absolute; inset: 0; }
+  .act .code { position: absolute; left: max(24px, 6.5vw); right: 16px; bottom: calc(max(9vh, 60px) + 40px); margin: 0; font: 400 13px/1.5 var(--mono); letter-spacing: .05em; color: #e6e6e6;
+    text-shadow: 0 0 12px rgba(0, 0, 0, .9); }
+  .card { position: absolute; left: max(24px, 6.5vw); bottom: max(9vh, 60px); width: min(440px, calc(100% - 48px)); padding: 0; transition: opacity .5s var(--ease); }
+  .card::before { content: ""; position: absolute; left: -60px; right: -40px; top: -40px; bottom: -36px; z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .62), rgba(0, 0, 0, 0)); }
+  .act:not(:global(.on)) .card { opacity: 0; }
+  .act:not(:global(.on)) .card .go { pointer-events: none; }
+  .act-name { margin: 0 0 18px; display: flex; align-items: baseline; gap: .7em; font: 500 clamp(30px, 3.4vw, 44px)/1 var(--serif); letter-spacing: .3em; color: #f4f4f4; text-shadow: 0 0 24px rgba(0, 0, 0, .7); }
+  :global(html[data-lang="zh"]) .act-name { font-family: var(--serif-zh); letter-spacing: .5em; }
+  .act-name .num { font: 400 .48em/1 var(--serif-zh); letter-spacing: 0; color: #cfcfcf; }
+  .sec { margin: 0 0 10px; display: flex; align-items: center; gap: 10px; font: 500 15px/1.3 var(--serif); letter-spacing: .2em; color: #e4e4e4; }
+  :global(html[data-lang="zh"]) .sec { font-family: var(--serif-zh); letter-spacing: .3em; }
+  .sec .no { font: 400 11px/1 var(--mono); letter-spacing: .14em; color: #a9a9a9; }
+  .rule { width: 26px; height: 1px; background: #fff; box-shadow: 0 0 4px var(--c), 0 0 10px var(--c), 0 0 22px var(--c); }
+  .card :global(.line) { margin: 0 0 22px; font: 400 15px/1.6 var(--serif); letter-spacing: .04em; color: #bdbdbd; text-shadow: 0 0 14px rgba(0, 0, 0, .8); }
+  :global(html[data-lang="zh"]) .card :global(.line) { font: 500 15px/1.7 var(--serif-zh); letter-spacing: .16em; }
+  .go { pointer-events: auto; display: inline-flex; align-items: center; gap: 12px; padding: 10px 0; font: 400 11.5px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, .35); transition: border-color .3s var(--ease), gap .3s var(--ease); }
+  :global(html[data-lang="zh"]) .go { font: 500 14px/1 var(--serif-zh); letter-spacing: .4em; }
+  .go:hover, .go:focus-visible { border-color: #fff; gap: 18px; }
+  .go .arr { font-family: var(--mono); letter-spacing: 0; }
+
+  /* —— 第三幕：转到正面那颗小月的名字；第四幕：标本签 —— */
+  .moon-tag, .spec-tag { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity .35s var(--ease); will-change: transform; }
+  .moon-tag:global(.on) { opacity: 1; pointer-events: auto; }
+  .moon-tag { display: flex; align-items: center; gap: 10px; font: 400 11px/1 var(--mono); letter-spacing: .14em; color: #f1f1f1; white-space: nowrap; padding: 8px 0; text-shadow: 0 0 10px rgba(0, 0, 0, .9); }
+  .mt-line { width: 30px; height: 1px; background: rgba(255, 255, 255, .7); box-shadow: 0 0 6px #ff4fa3; }
+  .mt-nm { font: 500 14px/1 var(--serif); letter-spacing: .12em; }
+  :global(html[data-lang="zh"]) .mt-nm { font-family: var(--serif-zh); letter-spacing: .24em; }
+  .mt-pr { color: #bdbdbd; }
+  .spec-tag { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 2px 14px; border-left: 1px solid rgba(255, 255, 255, .55); font: 400 10.5px/1.25 var(--mono); letter-spacing: .1em; color: #cfcfcf; box-shadow: -6px 0 14px -10px #6fe7ff; }
+  .spec-tag:global(.on) { opacity: 1; }
+  .st-no { color: #fff; letter-spacing: .2em; }
+  .st-nm { font: italic 500 14px/1.2 var(--serif); letter-spacing: .04em; color: #eaeaea; }
+  :global(html[data-lang="zh"]) .st-nm { font-style: normal; font-family: var(--serif-zh); letter-spacing: .12em; }
+
+  /* —— 第七幕：收工 —— */
+  .act7 .end { position: absolute; left: 50%; bottom: max(7vh, 48px); transform: translateX(-50%); width: min(820px, calc(100% - 40px)); text-align: center; transition: opacity .9s var(--ease); }
+  .act7 .end::before { content: ""; position: absolute; left: -12%; right: -12%; top: -30%; bottom: -20%; z-index: -1; pointer-events: none; background: radial-gradient(closest-side, rgba(0, 0, 0, .78), rgba(0, 0, 0, .35) 70%, rgba(0, 0, 0, 0)); }
+  .act7:not(:global(.on)) .end { opacity: 0; }
+  .act7:not(:global(.on)) .end a { pointer-events: none; }
+  .act7 .code { position: static; margin: 0 0 18px; color: #fff; }
+  .act7:not(:global(.coded)) .code { opacity: 0; }
+  .act7 .code { transition: opacity .6s var(--ease); }
+  .motto { margin: 0 0 22px; font: 500 clamp(19px, 2.1vw, 27px)/1.45 var(--serif); letter-spacing: .08em; color: #fff; text-shadow: 0 0 30px rgba(0, 0, 0, .8); }
+  :global(html[data-lang="zh"]) .motto { font-family: var(--serif-zh); letter-spacing: .22em; }
+  .co { margin: 0 0 6px; font-size: 13px; line-height: 1.6; color: #b7b7b7; }
+  .co-nm { font: 500 13px/1 var(--serif); letter-spacing: .16em; color: #ececec; margin-right: 8px; white-space: nowrap; }
+  .act7 :global(.addr) { margin: 0 auto 22px; max-width: 760px; font: 400 10.5px/1.75 var(--mono); letter-spacing: .02em; color: #8d8d8d; }
+  .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; margin: 0 0 16px; }
+  .links a { pointer-events: auto; font: 500 13px/1 var(--serif); letter-spacing: .18em; color: #dcdcdc; padding: 8px 0; border-bottom: 1px solid transparent; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  :global(html[data-lang="zh"]) .links a { font-family: var(--serif-zh); letter-spacing: .28em; }
+  .links a:hover, .links a:focus-visible { color: #fff; border-color: var(--c); }
+  .links .no { font: 400 10px/1 var(--mono); color: #8d8d8d; letter-spacing: .12em; }
+  .mail { margin: 0; font: 400 11px/1 var(--mono); letter-spacing: .12em; }
+  .mail a { pointer-events: auto; color: #bdbdbd; border-bottom: 1px solid rgba(255, 255, 255, .3); padding-bottom: 3px; }
+
+  /* —— 右边一列七个小刻度 —— */
+  .ticks { position: fixed; right: max(12px, 1.5vw); top: 50%; transform: translateY(-50%); z-index: 20; display: flex; flex-direction: column; gap: 4px; transition: opacity .6s var(--ease); }
+  .ticks button { all: unset; cursor: pointer; display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 6px 2px; color: #8a8a8a; }
+  .tk-l { font: 400 11px/1 var(--serif-zh); opacity: 0; transform: translateX(4px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+  .tk-m { width: 12px; height: 1px; background: currentColor; transition: width .35s var(--ease), background-color .35s var(--ease); }
+  .ticks button:global(.on) { color: #fff; }
+  .ticks button:global(.on) .tk-m { width: 26px; }
+  .ticks button:global(.on) .tk-l, .ticks button:hover .tk-l, .ticks button:focus-visible .tk-l { opacity: 1; transform: none; }
+  .ticks button:focus-visible { outline: 1px solid #fff; outline-offset: 2px; }
+  :global(html[data-opening]) .ticks { opacity: 0; pointer-events: none; }
 
   .flood { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 90; }
-  /* 进门：字和线先退下，只剩画面 */
-  .title, .foot-in, .leaders { transition: opacity .5s var(--ease); }
-  .stage:global(.entering) .title, .stage:global(.entering) .entries, .stage:global(.entering) .leaders, .stage:global(.entering) .foot-in { opacity: 0 !important; transition: opacity .45s var(--ease); }
-  :global(.is-home):has(.stage.entering) :global(.hd) { opacity: 0; transition: opacity .45s var(--ease); }
+  :global(html[data-diving]) .ui, :global(html[data-diving]) .ticks, :global(html[data-diving]) :global(.hd) { opacity: 0 !important; transition: opacity .4s var(--ease); }
 
-  @media (max-width: 760px), (max-height: 620px) {
-    .foot-in { display: none; }
-    .foot-out { display: block; background: #000; }
-    .foot-out :global(.ft) { padding: 32px 20px 40px; }
-  }
+  /* —— 手机竖着：字在下三分之一；最底下 90 像素不放要点的东西（iOS 26 浮动工具栏会盖住）—— */
   @media (max-width: 760px) {
     .wm { gap: 10px; }
     .wm-a { font-size: 18px; letter-spacing: .34em; padding-left: .34em; }
     :global(html[data-lang="zh"]) .wm-a { font-size: 24px; letter-spacing: .6em; padding-left: .6em; }
     .title :global(.tag) { font-size: 11px; letter-spacing: .08em; margin-top: 14px; }
-    .entries { --egap: clamp(30px, 6.5vh, 64px); }
-    /* 手机：一排放不下五条，错成两排——01 03 05 在上，02 04 往下错半格（之字形，还是左右对称，线也不交叉） */
+    .entries { --egap: clamp(30px, 6.5vh, 64px); --zig: 50px; }
+    :global(html[data-lang="zh"]) .entries { --zig: 40px; }
     .entries ol { padding: 0 6px; max-width: 460px; }
     .entries li:nth-child(odd) { transform: translateY(var(--zig)); }
-    .entries { --zig: 50px; }
     .entry { gap: 7px; }
     .tick { height: 14px; }
     .nm { font-size: 11.5px; letter-spacing: .12em; padding-left: .12em; white-space: normal; width: min-content; text-align: center; line-height: 1.4; }
     :global(html[data-lang="zh"]) .nm { font-size: 14px; letter-spacing: .24em; padding-left: .24em; width: auto; white-space: nowrap; }
-    :global(html[data-lang="zh"]) .entries { --zig: 40px; }
-    .caption { margin-top: calc(var(--zig) + 14px); font-size: 11px; letter-spacing: .04em; }
-    :global(html[data-lang="zh"]) .caption { font-size: 13px; letter-spacing: .16em; }
+    .hint { display: none; }
+    .act .code { left: 22px; bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); font-size: 12px; }
+    .card { left: 22px; right: 22px; width: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 100px); }
+    .act-name { font-size: 30px; margin-bottom: 14px; }
+    .sec { font-size: 14px; }
+    .card :global(.line) { font-size: 14px; margin-bottom: 16px; }
+    .act7 .end { bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); }
+    .motto { font-size: 18px; }
+    .co { font-size: 12px; }
+    .act7 :global(.addr) { font-size: 9.5px; line-height: 1.6; margin-bottom: 14px; }
+    .links { gap: 2px 16px; }
+    .links a { font-size: 12px; padding: 7px 0; }
+    .ticks { right: 6px; gap: 0; }
+    .ticks button { padding: 5px 2px; }
+    .tk-l { display: none; }
+    .tk-m { width: 8px; }
+    .ticks button:global(.on) .tk-m { width: 16px; }
+  }
+  @media (max-height: 560px) and (min-aspect-ratio: 3/2) {
+    /* 手机横着：造物缩小，字只留名字和「进去」 */
+    .card :global(.line), .sec { display: none; }
+    .act-name { font-size: 24px; margin-bottom: 8px; }
+    .card { bottom: 20px; }
+    .act7 :global(.addr), .co { display: none; }
+    .act7 .end { bottom: 16px; }
+    .hint { display: none; }
   }
 
   /* 截静态图用：?still 只留画面 */
-  :global(html[data-still]) .title, :global(html[data-still]) .entries, :global(html[data-still]) .leaders, :global(html[data-still]) .foot-in,
-  :global(html[data-still]) :global(.hd) { visibility: hidden; }
+  :global(html[data-still]) .ui, :global(html[data-still]) .ticks, :global(html[data-still]) :global(.hd) { visibility: hidden; }
   :global(html[data-gl="no"]) .leaders { display: none; }
-  /* 一层极淡的胶片颗粒，压在画面上，字下面 */
-  .gl-host::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: var(--grain); background-size: 160px 160px; opacity: .045; mix-blend-mode: screen; }
-  /* 底边压暗一点：倒影的尽头、页脚都落在暗处 */
-  .stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 22%; pointer-events: none; z-index: 1;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, .55)); }
+  @media (prefers-reduced-motion: reduce) {
+    .chs :global(.ch) { transition: none !important; }
+    .hint-line { animation: none; opacity: .4; }
+  }
 </style>
