@@ -1,0 +1,23 @@
+---
+id: "Codex-01"
+lang: en
+slug: web-audio-formulas
+title: "Web Audio Formula Board"
+date: "2026-11-27"
+status: live
+category: sound
+summary: "Three sound formulas you can play: swing, thud, chant. Turn the frequency, filter and decay knobs, watch the scope, copy the code when it sounds right."
+---
+import SynthBench from '../../components/labs/SynthBench.astro';
+
+Sound has no body. It is air pressure changing over time, nothing more. The three formulas below are synthesized in your browser the instant you press them. No .wav, no .mp3, no sample library.
+
+<SynthBench />
+
+## The three formulas
+
+- **Blade swing** = white noise → a high-pass filter sweeping upward → a steep exponential decay. Faster blade, steeper decay, higher sweep.
+- **Blunt hit** = a sine wave sliding from 150 Hz to 30 Hz in a few dozen milliseconds, plus a pinch of low-passed noise for the meat.
+- **Spell chant** = a carrier and a modulator (FM) with a slowly breathing modulation depth, sent through a reverb computed on the spot. Even the impulse response is just white noise times an exponential decay.
+
+Happy with a sound? Hit Copy code. You get one dependency-free function you can paste into a project, with your knob settings baked in.

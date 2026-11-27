@@ -1,0 +1,17 @@
+---
+import SpecimenLayout from '../../layouts/SpecimenLayout.astro';
+import { render } from 'astro:content';
+import { pairs } from '../../utils/archive';
+
+export async function getStaticPaths() {
+  const list = await pairs('specimens');
+  return list.map((pair) => ({ params: { slug: pair.slug }, props: { pair } }));
+}
+const { pair } = Astro.props;
+const { Content: En } = await render(pair.en);
+const { Content: Zh } = await render(pair.zh);
+---
+<SpecimenLayout pair={pair}>
+  <div class="prose" data-l="en" lang="en"><En /></div>
+  <div class="prose" data-l="zh" lang="zh-CN"><Zh /></div>
+</SpecimenLayout>

@@ -2,17 +2,19 @@
 
 *English below first · 中文在下面*
 
-Homepage of QIANSHOU LAB: https://qianshoulab.github.io/
+Since 2026-11-27 the site root https://qianshoulab.github.io/ is **Assetless Genesis (零肉身造物)**, a pure-code lab with two doors: QIANSHOU LAB and the Cyber Fry Shop. Its source lives in `_zero/` (Astro, built by `.github/workflows/zero.yml`); see `_zero/README.md`.
+
+Homepage of QIANSHOU LAB: https://qianshoulab.github.io/qianshou/
 
 Cyber Zen · Hardcore Tools.
 “Step in, let go of the grind; a thousand monks toil while you unwind.”
 
 - English by default; Chinese is one click away (top right, **EN / 中文**). Your pick is remembered. Add `?lang=zh` or `?lang=en` to the URL to force one for a single visit.
-- Two skins, picked at random on each visit: A “Thousand Hands” (a halo of hands and eyes) or B “Cyber Gate” (neon gate and pagoda). Add `?a` or `?b` to the URL to pick one.
-- The 3D is drawn live with three.js, no images: `scene-a.js`, `scene-b.js`.
-- Tools sit on two tabs, **Office Tools** and **Odd Jobs**; cards swipe sideways (arrows on desktop). The last tab you picked is remembered.
+- Two skins, picked at random on each visit: A “Thousand Hands” (a halo of hands and eyes) or B “Cyber Gate” (neon gate and pagoda). Add `?a` or `?b` to the URL (`/qianshou/?a`) to pick one.
+- The 3D is drawn live with three.js, no images: `qianshou/scene-a.js`, `qianshou/scene-b.js`.
+- The office monks sit on one shelf; cards swipe sideways (arrows on desktop). The small tools with plain names moved to the **Cyber Fry Shop** next door (https://qianshoulab.github.io/zhahuopu/); the second tab links there.
 - Swipe to a tool and the whole temple follows it: the thousand hands turn, every eye looks at that card and the page takes on its color (skin B: the camera walks around the pagoda). Each card's color is its `data-tint`.
-- All homepage copy, both languages, lives in one place: `QS_STRINGS` near the top of `index.html`.
+- All copy on that page, both languages, lives in one place: `QS_STRINGS` near the top of `qianshou/index.html`.
 - Served by GitHub Pages from the root of `main`.
 
 House rules: no sign-up, just open it. Your files never leave your device. Everything is free. Something off? Hit Feedback and we’ll fix it.
@@ -30,25 +32,30 @@ Office tools:
 - [Zhike · Inbox Sorter](https://qianshoulab.github.io/zhike/): Orders, invoices and tracking numbers file themselves into Excel. (Windows app)
 - [Jiechi · File Sweeper](https://qianshoulab.github.io/saodi/): Your files, disciplined. (Batch file chores, Windows app)
 
-Odd jobs:
+Cyber Fry Shop (https://qianshoulab.github.io/zhahuopu/):
 
 - [Gongshi · Net Hours](https://qianshoulab.github.io/gongshi/): Squeeze out the breaks. Keep the real hours. (Changeover time minus breaks and meals)
-- [Yiye · Pretty Notes](https://qianshoulab.github.io/qianye/): Messy notes in. Pretty picture out. (Handwriting photo or pasted text into a shareable image)
+- [Yingcun · Inch Converter](https://qianshoulab.github.io/gongshi/inch/): Point it at the sheet. Inches confess in millimeters.
+- [Jiaodu · Degrees to mm](https://qianshoulab.github.io/gongshi/tp/): Off by 0.4°? Sounds harmless. In millimeters, it isn’t.
+- [one](https://qianshoulab.github.io/qianye/): Messy notes in. Pretty picture out. (Handwriting photo or pasted text into a shareable image)
 - [Rent Splitter](https://qianshoulab.github.io/baozuseng/): Power bill, split to the cent. Drama not included. (Sublet bookkeeping, phone web app, data stays on the phone)
+- [Tiexie · CNC Kung Fu](https://qianshoulab.github.io/tiexie/): Ancient scrolls. Real G-code.
 
 ---
 
 # 千手院 · QIANSHOU LAB
 
-千手院总舵主页，网址：https://qianshoulab.github.io/ （仓库得叫 qianshoulab.github.io 才挂在根上）
+2026-11-27 起，站点根目录 https://qianshoulab.github.io/ 是**零肉身造物（Assetless Genesis）**：纯代码实验室，里面两扇门，千手院和赛博炸货铺。源码在 `_zero/`（Astro，工作流 `.github/workflows/zero.yml` 构建），写法见 `_zero/README.md`。
+
+千手院总舵主页，网址：https://qianshoulab.github.io/qianshou/ （仓库得叫 qianshoulab.github.io 才挂在根上）
 
 - 默认英文，第二语言中文：右上角 **EN / 中文** 切换，选过就记住。网址后面加 `?lang=zh` 或 `?lang=en` 只管这一次。
 - 每次打开随机换一套皮：A「千手法相」（千手千眼的光环）或 B「赛博山门」（霓虹牌坊和五层宝塔）。
-  想指定就在网址后面加 `?a` 或 `?b`。
-- 3D 是网页自己用 three.js 现画的，没有图片：`scene-a.js`、`scene-b.js`。
-- 工具分两页：**办公工具**、**小工具**；卡片左右滑（电脑上右上角有箭头）。上次看哪页，下次打开还是那页。
+  想指定就在网址后面加 `?a` 或 `?b`（`/qianshou/?a`）。
+- 3D 是网页自己用 three.js 现画的，没有图片：`qianshou/scene-a.js`、`qianshou/scene-b.js`。
+- 千手院只放「X 僧」那些办公罗汉，卡片左右滑（电脑上右上角有箭头）。大白话名字的小工具 11-27 搬进了隔壁**赛博炸货铺**（https://qianshoulab.github.io/zhahuopu/），第二个分页就是去那儿的入口。
 - 千手指路：滑到哪尊，背后跟着它——千手往那边转、九百六十只眼睛一起盯着那张卡、整页染成它的颜色（赛博山门那套是镜头绕着宝塔走）。每张卡的颜色写在它的 `data-tint`，新加一尊记得写。
-- 首页中英两套字全在一处：`index.html` 顶上的 `QS_STRINGS`。
+- 这页中英两套字全在一处：`qianshou/index.html` 顶上的 `QS_STRINGS`。
 - GitHub Pages 从 `main` 分支根目录发布。
 
 本院规矩：不用注册，推门就用。你的文件，不出你的电脑。全部免费。有意见点「提意见」，贫僧照改。
@@ -66,9 +73,11 @@ Odd jobs:
 - [知客僧](https://qianshoulab.github.io/zhike/)：收发室那点活，贫僧包了（邮件分拣，Windows 电脑版）
 - [戒尺僧](https://qianshoulab.github.io/saodi/)：凡尘乱档，统统归位（文件批处理，Windows 电脑版）
 
-小工具：
+赛博炸货铺（https://qianshoulab.github.io/zhahuopu/）：
 
 - [工时榨汁机](https://qianshoulab.github.io/gongshi/)：水分榨干，只剩真工时（换型实际用时，自动扣茶歇饭点）
-- [一叶笺](https://qianshoulab.github.io/qianye/)：随手成画（手写拍照、打字粘贴，一键排成好看的图分享）
+- [英寸照妖镜](https://qianshoulab.github.io/gongshi/inch/)：八分之三算断魂，二五点四乘进坟（拍检查表，英寸换毫米）
+- [角度算距离](https://qianshoulab.github.io/gongshi/tp/)：报告说只歪了零点几度，换成毫米当场露馅
+- [one](https://qianshoulab.github.io/qianye/)：随手成画（手写拍照、打字粘贴，一键排成好看的图分享；原名一叶笺，11-27 改名 one）
 - [二房东算账](https://qianshoulab.github.io/baozuseng/)：电费掰到分，狮子吼都省了（二房东记账，手机网页，账只存手机）
 - [铁屑江湖](https://qianshoulab.github.io/tiexie/)：刀光剑影，铁屑横飞（CNC 机床边的武功秘籍，只读；11-22 从 Grok 搬进 `tiexie/`，怎么加秘籍见 `tiexie/README.md`；Grok 时代的源码备份在私有库 QIANSHOULAB/tiexie-jianghu）

@@ -1,0 +1,1 @@
+import{t as e}from"./emblems.BaxVAzUW.js";e();

@@ -1,0 +1,124 @@
+name: 零肉身造物
+# 零肉身造物（Assetless Genesis）：首页 / 和 /zhahuopu、/specimens、/artifacts、/codex 的源码在 _zero/（Astro + MDX + Tailwind）。
+# 改了 _zero/ 就在这里构建，零肉身自检（产物里不许有图片、音频、字体、3D 网格）过了，
+# 再把产物提交到仓库根目录：只动 _zero/scripts/publish.mjs 里 OWNED 那几样，千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。
+# GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
+# 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，零肉身页面 0 图 0 音 0 字体，千手院两套皮的链接都通。
+# 拉最新 main 再放产物，推不上再拉再推，最多 5 次，不许 --force。提交作者沿用触发这次构建的那个提交的作者。
+on:
+  push:
+    branches: [main]
+    paths:
+      - '_zero/**'
+      - '.github/workflows/zero.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: zero
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: _zero/package-lock.json
+
+      - name: 装依赖
+        working-directory: _zero
+        run: npm ci
+
+      - name: 构建 + 零肉身自检
+        working-directory: _zero
+        env:
+          ZERO_BUILD: ${{ github.sha }}
+        run: npm run build
+
+      - name: 产物提交到根目录
+        id: publish
+        run: |
+          NAME="$(git log -1 --format=%an)"; MAIL="$(git log -1 --format=%ae)"
+          git config user.name "$NAME"
+          git config user.email "$MAIL"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main
+            git reset -q --hard origin/main          # _zero/dist、node_modules 被 .gitignore 管着，不受影响
+            node _zero/scripts/publish.mjs
+            git add -A -- $(node _zero/scripts/publish.mjs --list)
+            if git diff --cached --quiet; then
+              echo "产物跟线上一样，不用提交"
+              echo "published=same" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git commit -q -m "零肉身造物：构建产物（源码 ${GITHUB_SHA::7}）"
+            if git push -q origin HEAD:main; then
+              echo "published=yes" >> "$GITHUB_OUTPUT"
+              git log -1 --stat --format='%h %s' | head -30
+              exit 0
+            fi
+            echo "推不上（别人先推了），第 $i 次重来"
+            sleep 8
+          done
+          exit 1
+
+      - name: 请 Pages 重新发一次（保险：机器人提交一般会自己触发）
+        if: steps.publish.outputs.published == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent || echo "没请动也没关系，推送本身会触发"
+
+  live:
+    needs: build
+    if: ${{ needs.build.outputs.published == 'yes' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 等 Pages 发到这一版
+        run: |
+          for i in $(seq 1 60); do
+            got=$(curl -s "https://qianshoulab.github.io/?v=$RANDOM$i" | grep -o 'name="zero:build" content="[^"]*"' | sed 's/.*content="//; s/"//')
+            if [ "$got" = "$GITHUB_SHA" ]; then echo "线上已经是 ${GITHUB_SHA::7}"; exit 0; fi
+            echo "线上还是 ${got:-（没读到）}，等 15 秒（第 $i 次）"
+            sleep 15
+          done
+          echo "::error::等了 15 分钟 Pages 还没发到这一版"
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: _zero/package-lock.json
+
+      - name: 装 Playwright
+        working-directory: _zero
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: 线上验收
+        working-directory: _zero
+        env:
+          SHOTS: ${{ github.workspace }}/live-shots
+        run: node scripts/live-check.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zero-live-shots
+          path: live-shots
+          if-no-files-found: ignore

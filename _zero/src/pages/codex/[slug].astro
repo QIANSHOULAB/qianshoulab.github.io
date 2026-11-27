@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import T from '../../components/core/T.astro';
+import { render } from 'astro:content';
+import { pairs, ymd } from '../../utils/archive';
+
+export async function getStaticPaths() {
+  const list = await pairs('codex');
+  return list.filter((p) => p.en.data.status === 'live').map((pair) => ({ params: { slug: pair.slug }, props: { pair } }));
+}
+const { pair } = Astro.props;
+const en = pair.en.data, zh = pair.zh.data;
+const { Content: En } = await render(pair.en);
+const { Content: Zh } = await render(pair.zh);
+---
+<BaseLayout current="codex" title={{ en: `${en.id} · ${en.title}`, zh: `${zh.id} · ${zh.title}` }} desc={{ en: en.summary, zh: zh.summary }}>
+  <article class="wrap cx">
+    <p class="crumb mono"><a href="/codex/" data-sfx="tick">/codex</a> / {en.id.toLowerCase()}</p>
+    <p class="meta mono"><span class="chip live">{en.id}</span> <span>{en.category}</span>{en.date && <> · <time datetime={ymd(en.date)}>{ymd(en.date)}</time></>}</p>
+    <h1 class="cx-t"><T en={en.title} zh={zh.title} /></h1>
+    <div class="prose" data-l="en" lang="en"><En /></div>
+    <div class="prose" data-l="zh" lang="zh-CN"><Zh /></div>
+    <p class="back"><a href="/codex/" data-sfx="tick">← <T k="codex.back" /></a></p>
+  </article>
+</BaseLayout>
+<style>
+  .cx { padding-top: 48px; }
+  .cx > * { max-width: 880px; }
+  .crumb { font-size: 13px; color: var(--faint); margin: 0 0 16px; }
+  .crumb a { color: var(--signal); }
+  .meta { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--dim); margin: 0 0 12px; }
+  .cx-t { font-size: clamp(32px, 4.4vw, 48px); line-height: 1.12; letter-spacing: -.02em; margin: 0 0 24px; }
+  :global(html[data-lang="zh"]) .cx-t { letter-spacing: 0; }
+  .back { margin: 48px 0 0; }
+  .back a { color: var(--signal); }
+  @media (max-width: 720px) { .cx { padding-top: 28px; } }
+</style>

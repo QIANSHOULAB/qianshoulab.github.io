@@ -1,0 +1,71 @@
+---
+// 每一页的骨架：头（不闪的语言 / 模式脚本）、顶栏、正文、纯洁度页脚。
+import '../styles/global.css';
+import Header from '../components/core/Header.astro';
+import PurityFooter from '../components/core/PurityFooter.astro';
+import { t } from '../i18n/ui';
+
+interface Props {
+  title?: { en: string; zh: string };
+  desc?: { en: string; zh: string };
+  current?: 'home' | 'specimens' | 'artifacts' | 'codex' | 'zhahuopu';
+}
+const site = { en: t('en', 'site.title'), zh: t('zh', 'site.title') };
+const { current = 'home' } = Astro.props;
+const title = Astro.props.title
+  ? { en: `${Astro.props.title.en} · Assetless Genesis`, zh: `${Astro.props.title.zh} · 零肉身造物` }
+  : site;
+const desc = Astro.props.desc ?? { en: t('en', 'site.desc'), zh: t('zh', 'site.desc') };
+const url = new URL(Astro.url.pathname, Astro.site).href;
+// 构建记号：工作流里是源码那次提交的 SHA，线上验收靠它认「Pages 已经发到这一版了」；本地构建写 local
+const build = process.env.ZERO_BUILD || 'local';
+// 浏览器标签上的小图标也是代码：一段内联 SVG（不发请求），菱形 + 一个亮点，跟顶栏的牌子一样
+const icon = "data:image/svg+xml," + encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='#0A0B0D'/><rect x='19' y='19' width='26' height='26' rx='3' transform='rotate(45 32 32)' fill='none' stroke='#00FF9D' stroke-width='4'/><circle cx='32' cy='32' r='4.5' fill='#00FF9D'/></svg>");
+---
+<!doctype html>
+<html lang="en" data-lang="en" data-mode="render">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{title.en}</title>
+  <meta name="zero:title-en" content={title.en} />
+  <meta name="zero:title-zh" content={title.zh} />
+  <meta name="description" content={desc.en} />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0A0B0D" />
+  <meta name="zero:build" content={build} />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Assetless Genesis · 零肉身造物" />
+  <meta property="og:title" content={title.en} />
+  <meta property="og:description" content={desc.en} />
+  <meta property="og:url" content={url} />
+  <link rel="canonical" href={url} />
+  <link rel="icon" href={icon} />
+  <script is:inline>
+    // 第一帧之前定语言和模式，不闪：网址 ?lang= / ?mode= 只管这一次 > 上次选的（语言跟千手院总舵共用一个记忆）> 英文、肉身
+    (function () {
+      var d = document.documentElement, s = location.search, L = null, M = null;
+      var q = /[?&]lang=(zh|en)(?:&|$)/.exec(s), m = /[?&]mode=(render|headless)(?:&|$)/.exec(s);
+      try { L = localStorage.getItem('qianshou.lang'); M = localStorage.getItem('zero.mode'); } catch (e) {}
+      var l = q ? q[1] : (L === 'zh' || L === 'en' ? L : 'en');
+      d.setAttribute('data-lang', l);
+      d.lang = l === 'zh' ? 'zh-CN' : 'en';
+      d.setAttribute('data-mode', m ? m[1] : (M === 'headless' ? 'headless' : 'render'));
+      var t = document.querySelector('meta[name="zero:title-' + l + '"]');
+      if (t) document.title = t.content;
+    })();
+  </script>
+</head>
+<body>
+  <div class="paper" aria-hidden="true"></div>
+  <Header current={current} />
+  <main id="main">
+    <slot />
+  </main>
+  <PurityFooter />
+  <script>
+    import '../utils/site';
+  </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+---
+// 页脚纯洁度实时检疫仪（策划书 §3.2-2）：PerformanceObserver 盯每一个资源请求 + 扫一遍 DOM，
+// 实时打印 IMG / AUDIO / FONT / 3D-MESH / DOM NODES / TRANSFER。数是真数，不是写死的。
+import T from './T.astro';
+const mail = ['oilsongchengmin', 'gmail.com'].join('@');
+---
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-row">
+      <span><span lang="zh-CN">零肉身造物</span> · Assetless Genesis</span>
+      <div class="foot-links">
+        <a href="/qianshou/" data-sfx="tick"><T k="foot.qianshou" /></a>
+        <a href="/zhahuopu/" data-sfx="tick"><T k="foot.zhahuopu" /></a>
+        <a href={`mailto:${mail}?subject=${encodeURIComponent('零肉身造物 · Assetless Genesis')}`} title={mail}><T k="foot.mail" /></a>
+      </div>
+    </div>
+    <div class="purity" id="purity" data-state="scan" data-noscan role="status" aria-live="off">
+      <span class="lamp" aria-hidden="true"></span>
+      <span class="k">PURITY CHECK</span>
+      <span><span class="k">IMG</span> <span class="v" data-p="img">–</span></span><span class="sep">|</span>
+      <span><span class="k">AUDIO</span> <span class="v" data-p="audio">–</span></span><span class="sep">|</span>
+      <span><span class="k">FONT</span> <span class="v" data-p="font">–</span></span><span class="sep">|</span>
+      <span><span class="k">3D-MESH</span> <span class="v" data-p="mesh">–</span></span><span class="sep">|</span>
+      <span><span class="k">DOM NODES</span> <span class="v" data-p="dom">–</span></span><span class="sep">|</span>
+      <span><span class="k">TRANSFER</span> <span class="v" data-p="kb">–</span></span>
+      <span class="verdict" data-p="verdict"><T k="foot.scanning" /></span>
+    </div>
+  </div>
+</footer>
+<template id="purity-words">
+  <T k="foot.pass" class="w-pass" />
+  <T k="foot.fail" class="w-fail" />
+</template>
