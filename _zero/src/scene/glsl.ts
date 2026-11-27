@@ -322,11 +322,12 @@ void main() {
     float rim = (1. - smoothstep(0., rw, dO)) * 2.2 * (.32 + .68 * near) * uLight * min(1., .55 / rw);
     col += rim;
   }
-  // 出碑的那撮：背后的光从缝里涌出来，把它的轮廓勾亮
-  if (me > .001) {
+  // 出碑的那撮：背后的光从缝里涌出来，把它的轮廓勾亮（只给开得最大的那撮：uClMin/uClMax 量的是它的盒子）
+  float meA = abs(vInfo.x - uActive) < .5 ? uAct : 0.;
+  if (meA > .001) {
     float dC = rectSD(vWorld.xy, uClMin.xy, uClMax.xy);
     float cw = max(.5, pw * 1.2);
-    col += exp(min(dC, 0.) / cw) * 1.8 * me * uLight * (front ? 1. : .4);
+    col += exp(min(dC, 0.) / cw) * 1.8 * meA * uLight * (front ? 1. : .4);
   }
 
   // 远：薄薄一层被背光照亮的空气；碑脚那截泡在雾里

@@ -238,11 +238,14 @@ export function createScene(opts: SceneOpts) {
     const w0 = 5.4, z = 0.88;
     for (let k = 0; k < amt.length; k++) {
       if (opts.reduced) { if (amt[k] !== goal[k]) { amt[k] = goal[k]; dirty[k] = true; } continue; }
-      const x = amt[k], v = vel[k];
-      if (Math.abs(x - goal[k]) < 1e-4 && Math.abs(v) < 1e-4) { if (x !== goal[k]) { amt[k] = goal[k]; dirty[k] = true; } continue; }
-      const a = -w0 * w0 * (x - goal[k]) - 2 * z * w0 * v;
-      vel[k] = v + a * dt;
-      amt[k] = x + vel[k] * dt;
+      if (Math.abs(amt[k] - goal[k]) < 1e-4 && Math.abs(vel[k]) < 1e-4) { if (amt[k] !== goal[k]) { amt[k] = goal[k]; dirty[k] = true; } continue; }
+      // 按真实时间走：一帧拖得再长（慢机器），也切成 1/120 秒的小步算，弹簧不会走慢、也不会炸
+      const n = Math.max(1, Math.ceil(dt * 120)), h = dt / n;
+      for (let i = 0; i < n; i++) {
+        const a = -w0 * w0 * (amt[k] - goal[k]) - 2 * z * w0 * vel[k];
+        vel[k] += a * h;
+        amt[k] += vel[k] * h;
+      }
       dirty[k] = true;
     }
     for (let k = 0; k < amt.length; k++) {
@@ -338,7 +341,7 @@ export function createScene(opts: SceneOpts) {
     if (!running) return;
     requestAnimationFrame(frame);
     if (clock0 < 0) { clock0 = now; if (opts.seen) ff = { from: 0, t0: now }; perf.t0 = now; }
-    const dt = last < 0 ? 1 / 60 : clamp((now - last) / 1000, 0, 1 / 15);
+    const dt = last < 0 ? 1 / 60 : clamp((now - last) / 1000, 0, 0.5);
     last = now;
     const tSec = now / 1000;
 

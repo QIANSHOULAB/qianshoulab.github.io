@@ -268,6 +268,7 @@ async function boot() {
   };
   measure();
   new ResizeObserver(() => measure()).observe(stage);
+  document.addEventListener('zero:lang', () => requestAnimationFrame(measure));   // 中英文字宽不一样，小桩的位置跟着变
   if (document.fonts) document.fonts.ready.then(measure);
   // 给线上验收留的口子：量帧数、点哪撮
   (window as unknown as { __zero: unknown }).__zero = {
