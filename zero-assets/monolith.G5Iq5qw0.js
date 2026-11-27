@@ -4520,11 +4520,11 @@ void main() {
     seam *= 1. + 3. * me;
     col += seam;
     // 碑的外沿：一圈细亮边，跟天上那圈日冕接上
-    float e = vInfo.y;
+    // 外沿标记：1 左 2 右 4 顶。先四舍五入（插值出来可能是 5.9999，直接 floor 会把「右」丢掉）
+    float e = floor(vInfo.y + .5);
     float dO = 1e3;
-    if (mod(e, 2.) > .5) dO = min(dO, vWorld.x + uMono.x);
-    if (mod(floor(e / 2.), 2.) > .5) dO = min(dO, uMono.x - vWorld.x);
-    if (mod(floor(e / 4.), 2.) > .5) dO = min(dO, uMono.y - vWorld.y);
+    if (e > .5 && e != 4.) dO = min(dO, uMono.x - abs(vWorld.x));     // 左右两边对称地量
+    if (e > 3.5) dO = min(dO, uMono.y - vWorld.y);
     float rw = max(.45, pw * 1.1);
     float near = exp(-abs(vWorld.y - uCenterY) / 170.);
     float rim = (1. - smoothstep(0., rw, dO)) * 2.2 * (.32 + .68 * near) * uLight * min(1., .55 / rw);
