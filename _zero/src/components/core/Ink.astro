@@ -1,0 +1,10 @@
+---
+// 一个字一个字写出来的字：每个字一个小 span，带着它在整句里的位置 --i（0..1）。
+// 父元素的 --w（0..1）走到哪，字就写到哪（纯 CSS，倒着滑就倒着擦掉）。读屏软件读的是旁边那份完整的字。
+// mode="type"：打字（一下一个，硬切，像代码）；默认是墨（一个字慢慢显出来）。
+interface Props { text: string; mode?: 'type' | 'ink'; lang?: string; l?: 'en' | 'zh' }
+const { text, mode = 'ink', lang, l } = Astro.props;
+const cs = Array.from(text);
+const n = Math.max(1, cs.length);
+---
+<span class={`ink ink-${mode}`} data-l={l} lang={lang}><span class="ink-v" aria-hidden="true">{cs.map((c, i) => <span style={`--i:${(i / n).toFixed(4)}`}>{c}</span>)}</span><span class="sr">{text}</span></span>

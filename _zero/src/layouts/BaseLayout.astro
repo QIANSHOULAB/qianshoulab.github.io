@@ -1,9 +1,10 @@
 ---
-// 每一页的骨架：头（第一帧之前定好语言、声音开关、是不是从黑碑那道光里进来的）、顶栏、正文、页脚。
+// 每一页的骨架：头（第一帧之前定好语言、声音开关、是不是从首页那一幕的光里进来的）、顶栏、正文、页脚。
 import '../styles/global.css';
 import Header from '../components/core/Header.astro';
 import Footer from '../components/core/Footer.astro';
-import { t, type EntryKey } from '../i18n/ui';
+import { t, ENTRIES, type EntryKey } from '../i18n/ui';
+import { SECTION_HEX } from '../genesis/config';
 import { HOME_PATH } from '../../home.mjs';
 import corUrl from '../fonts/cormorant-garamond-500.woff2?url';
 import monoUrl from '../fonts/ibm-plex-mono-400.woff2?url';
@@ -23,11 +24,14 @@ const title = Astro.props.title
 const desc = Astro.props.desc ?? { en: t('en', 'site.desc'), zh: t('zh', 'site.desc') };
 const path = home ? HOME_PATH : Astro.url.pathname;
 const url = new URL(path, Astro.site).href;
+// 栏目页顶上那束光：换成这个栏目自己的颜色（首页那一幕的光）
+const beamHex = current ? SECTION_HEX[ENTRIES.findIndex((e) => e.key === current)] : null;
+const beam = beamHex ? [1, 3, 5].map((i) => parseInt(beamHex.slice(i, i + 2), 16)).join(', ') : '255, 255, 255';
 // 构建记号：工作流里是源码那次提交的 SHA，线上验收靠它认「Pages 已经发到这一版了」；本地构建写 local
 const build = process.env.ZERO_BUILD || 'local';
-// 标签页小图标：黑底、一条地平线、一块碑，轮廓一圈亮边
+// 标签页小图标：黑底、一条地平线、一道门（两扇，正中一条亮缝）
 const icon = 'data:image/svg+xml,' + encodeURIComponent(
-  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='#000'/><rect x='6' y='48' width='52' height='1.5' fill='#8a8a8a'/><rect x='23' y='9' width='18' height='40' fill='#fff'/><rect x='24.6' y='10.6' width='14.8' height='38.4' fill='#000'/></svg>");
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='#000'/><rect x='6' y='48' width='52' height='1.5' fill='#8a8a8a'/><rect x='23' y='9' width='18' height='40' fill='#fff'/><rect x='24.6' y='10.6' width='14.8' height='38.4' fill='#000'/><rect x='31.4' y='10.6' width='1.2' height='38.4' fill='#fff'/></svg>");
 ---
 <!doctype html>
 <html lang="en" data-lang="en" translate="no">
@@ -61,13 +65,15 @@ const icon = 'data:image/svg+xml,' + encodeURIComponent(
       d.setAttribute('data-lang', l);
       d.lang = l === 'zh' ? 'zh-CN' : 'en';
       d.setAttribute('data-sound', S === 'on' ? 'on' : 'off');
-      if (A === '1') d.classList.add('from-light');
+      d.classList.add('js');
+      // 从首页那一幕的光里进来：先满屏是那个颜色，再从那个颜色里淡出（首页把颜色记在 zero.arrive）
+      if (A) { d.classList.add('from-light'); if (/^#[0-9a-fA-F]{6}$/.test(A)) d.style.setProperty('--arrive', A); }
       var t = document.querySelector('meta[name="zero:title-' + l + '"]');
       if (t) document.title = t.content;
     })();
   </script>
 </head>
-<body class={home ? 'is-home' : 'is-page'}>
+<body class={home ? 'is-home' : 'is-page'} style={`--beam: ${beam}`}>
   <Header home={home} current={current} />
   <main id="main">
     <slot />

@@ -8,13 +8,31 @@ export const ui = {
   en: {
     site: {
       title: 'Zero-Flesh Creation · 零肉身造物',
-      desc: 'One monolith, five doors: QIANSHOU LAB, the Cyber Bodega, Specimens, Artifacts and the Codex. A workshop with no carbon on the payroll.',
+      desc: 'A gate at the end of black water, and light behind it. Scroll, and it makes a world: QIANSHOU LAB, the Cyber Bodega, Specimens, Artifacts and the Codex. A workshop with no carbon on the payroll.',
       skip: 'Skip to content',
     },
     home: {
       tagline: 'One set. Five subsets. No flesh involved.',
       entries: 'Five doors',
+      hint: 'Scroll to create',
+      acts: 'Seven acts',
+      enter: 'Enter',
     },
+    // 七幕：幕名一个词，代码一行（代码两种语言一样，只有开场那句注释各写各的）
+    act: {
+      a1: { name: 'LIGHT', c1: '// In the beginning, there was only a formula.', c2: 'let light;' },
+      a2: { name: 'SUN', code: 'let sun = hands(1000);' },
+      a3: { name: 'RING', code: 'let ring = shelf(6);' },
+      a4: { name: 'LIFE', code: 'let life = specimen("001");' },
+      a5: { name: 'FIRE', code: 'let artifact = forge(1200);' },
+      a6: { name: 'LAW', code: 'let law = orbit(everything);' },
+      a7: { name: 'CLOCK OUT', code: 'return;' },
+    },
+    finale: {
+      motto: 'Give the grind to the code. Give your body back to your life.',
+    },
+    moon: { price: '$0.00' },
+    label: { no: 'NO. 001', kind: 'CETUS LAPIDEUS', spec: 'L 312 · 2,800 BLOCKS' },
     entry: {
       qianshou: { name: 'QIANSHOU LAB', line: 'A thousand monks toil while you unwind.' },
       zahuopu: { name: 'CYBER BODEGA', line: 'Small tools on the shelf. Grab one and go.' },
@@ -22,7 +40,7 @@ export const ui = {
       artifacts: { name: 'ARTIFACTS', line: 'Made in-house. Some still warm.' },
       codex: { name: 'CODEX', line: 'The laws, with knobs on.' },
     },
-    nav: { label: 'Sections', home: 'Back to the monolith' },
+    nav: { label: 'Sections', home: 'Back to the gate' },
     lang: { label: 'Language' },
     sound: { label: 'Sound', on: 'SOUND: ON', off: 'SOUND: OFF' },
     company: {
@@ -83,13 +101,30 @@ export const ui = {
   zh: {
     site: {
       title: '零肉身造物 · Zero-Flesh Creation',
-      desc: '零肉身造物：一块碑，五道门——千手院、赛博杂货铺、标本、文物、法典。一家没有碳基员工的作坊。',
+      desc: '零肉身造物：黑水尽头一道门，门里是光。往下滑，门里一样一样往外生东西——千手院、赛博杂货铺、标本、文物、法典。一家没有碳基员工的作坊。',
       skip: '跳到正文',
     },
     home: {
       tagline: '一个全集，五个子集，不含肉身。',
       entries: '五道门',
+      hint: '往下滑，造物',
+      acts: '七幕',
+      enter: '进去',
     },
+    act: {
+      a1: { name: '启光', c1: '// 太初，只有一条公式。', c2: 'let light;' },
+      a2: { name: '燃日', code: 'let sun = hands(1000);' },
+      a3: { name: '布环', code: 'let ring = shelf(6);' },
+      a4: { name: '赋生', code: 'let life = specimen("001");' },
+      a5: { name: '铸器', code: 'let artifact = forge(1200);' },
+      a6: { name: '立法', code: 'let law = orbit(everything);' },
+      a7: { name: '收工', code: 'return;' },
+    },
+    finale: {
+      motto: '把折磨肉体的活交给代码，把肉身还给生活。',
+    },
+    moon: { price: '¥0.00' },
+    label: { no: '编号 001', kind: '石鲸 · 野生', spec: '体长 312 · 石块 2800' },
     entry: {
       qianshou: { name: '千手院', line: '千僧替牛马，施主自风流。' },
       zahuopu: { name: '赛博杂货铺', line: '小工具都在货架上，拿了就走。' },
@@ -97,7 +132,7 @@ export const ui = {
       artifacts: { name: '文物', line: '自家手造，有的还烫手。' },
       codex: { name: '法典', line: '造物法则，自带旋钮。' },
     },
-    nav: { label: '栏目', home: '回到黑碑' },
+    nav: { label: '栏目', home: '回到造物之门' },
     lang: { label: '语言' },
     sound: { label: '声音', on: '声音：开', off: '声音：关' },
     company: {

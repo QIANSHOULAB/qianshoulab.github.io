@@ -5,16 +5,18 @@ name: 零肉身造物
 # 千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
 # 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，根目录还是该是的那个，零肉身页面不报错、不横向溢出。
 # 拉最新 main 再放产物，推不上再拉再推，最多 5 次，不许 --force。提交作者沿用触发这次构建的那个提交的作者。
+# 分支（zero-v3 这种）推上来只跑 preview：构建、在工作流机器上本地起服务、三个内核截图、传附件——不发版，不碰 main。
+# 发版那两步（build、live）只在 main 上跑：在分支上手动触发也不会把分支产物提交到 main。
 on:
   push:
-    branches: [main]
+    branches: [main, zero-v3]
     paths:
       - '_zero/**'
       - '.github/workflows/zero.yml'
   workflow_dispatch:
     inputs:
       commit_shots:
-        description: '把黑碑首页的验收截图提交到 _ops/零肉身造物/黑碑截图/'
+        description: '把造物之门七幕的线上截图提交到 _ops/零肉身造物/造物之门截图/（只在 main 上有用）'
         type: boolean
         default: false
 
@@ -23,11 +25,63 @@ permissions:
   pages: write
 
 concurrency:
-  group: zero
-  cancel-in-progress: false
+  group: zero-${{ github.ref_name }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  preview:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: _zero/package-lock.json
+
+      - name: 装依赖
+        working-directory: _zero
+        run: npm ci
+
+      - name: 构建
+        working-directory: _zero
+        env:
+          ZERO_BUILD: ${{ github.sha }}
+        run: npm run build
+
+      - name: 装三个内核（Chromium、WebKit、Firefox）
+        working-directory: _zero
+        run: npx playwright install --with-deps chromium webkit firefox
+
+      - name: 本地起服务（跟线上一样排：零肉身造物那几样从 dist 出，别的从仓库根目录出）
+        working-directory: _zero
+        run: |
+          nohup node scripts/serve.mjs 4321 > ../serve.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:4321/zero/ && break; sleep 1; done
+          code=0
+          for p in / /zero/ /qianshou/ /zahuopu/ /zhahuopu/ /specimens/ /specimens/001-cinderfall-arena/ /artifacts/ /codex/ /codex/web-audio-formulas/ \
+                   /yijing/ /chaojing/ /zhike/ /saodi/ /huayuan/ /xunshan/ /daibi/ /baozuseng/ /tiexie/ /xiaobai/ /privacy/ /apps.json; do
+            s=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:4321$p")
+            echo "$s $p"; [ "$s" = "200" ] || code=1
+          done
+          exit $code
+
+      - name: 三个内核 × 七幕截图（Chromium 11 个尺寸，WebKit、Firefox 各 4 个），查溢出、报错、字出框
+        working-directory: _zero
+        run: node scripts/genesis-shots.mjs --base http://127.0.0.1:4321 --out "${{ github.workspace }}/preview-shots"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zero-preview-shots
+          path: preview-shots
+          if-no-files-found: ignore
+
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -96,7 +150,7 @@ jobs:
 
   live:
     needs: build
-    if: ${{ always() && (needs.build.outputs.published == 'yes' || github.event_name == 'workflow_dispatch') }}
+    if: ${{ always() && github.ref == 'refs/heads/main' && (needs.build.outputs.published == 'yes' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -124,7 +178,7 @@ jobs:
         working-directory: _zero
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit firefox
 
       - name: 线上验收
         working-directory: _zero
@@ -132,9 +186,15 @@ jobs:
           SHOTS: ${{ github.workspace }}/live-shots
         run: node scripts/live-check.mjs
 
-      - name: 黑碑首页截图（黎明 0/5/10 秒、五撮出碑、进门半路、声音开关、10 秒帧数）
+      - name: 造物之门线上截图（七幕 × 1440×900、390×844，2 倍图；顺带查溢出、报错、字出框）
         working-directory: _zero
-        run: node scripts/monolith-shots.mjs "${{ github.workspace }}/live-shots/黑碑截图"
+        run: |
+          node scripts/genesis-shots.mjs --base https://qianshoulab.github.io --engines chromium --sizes 1440x900,390x844 --dpr 2 --out "${{ github.workspace }}/live-shots/造物之门截图"
+          node scripts/genesis-shots.mjs --base https://qianshoulab.github.io --engines chromium --sizes 1440x900,390x844 --langs zh --out "${{ github.workspace }}/live-shots/中文"
+
+      - name: 线上三个内核再走一遍（Chromium 11 个尺寸，WebKit、Firefox 各 4 个）
+        working-directory: _zero
+        run: node scripts/genesis-shots.mjs --base https://qianshoulab.github.io --out "${{ github.workspace }}/live-shots/三内核"
 
       - name: 截图提交到 _ops（只有手动跑、勾了 commit_shots 才提交）
         if: github.event_name == 'workflow_dispatch' && inputs.commit_shots
@@ -144,11 +204,11 @@ jobs:
           for i in 1 2 3 4 5; do
             git fetch -q origin main
             git reset -q --hard origin/main
-            mkdir -p "_ops/零肉身造物/黑碑截图"
-            cp -f live-shots/黑碑截图/* "_ops/零肉身造物/黑碑截图/"
-            git add "_ops/零肉身造物/黑碑截图"
+            mkdir -p "_ops/零肉身造物/造物之门截图"
+            cp -f live-shots/造物之门截图/* "_ops/零肉身造物/造物之门截图/"
+            git add "_ops/零肉身造物/造物之门截图"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
-            git commit -q -m "零肉身造物：黑碑首页线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
+            git commit -q -m "零肉身造物：造物之门七幕线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
             if git push -q origin HEAD:main; then exit 0; fi
             sleep 8
           done

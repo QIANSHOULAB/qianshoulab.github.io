@@ -104,16 +104,16 @@ html[data-lang="zh"] .hd-nav .nm { font: 500 13px/1 var(--serif-zh); letter-spac
   html[data-lang="zh"] .hd-mark .b { font-size: 8.5px; letter-spacing: .2em; padding-left: .2em; }
 }
 
-/* —— 子页面的「同一束光」：顶上一条地平线，正中最亮，后面透出一点光 —— */
+/* —— 子页面的「同一束光」：顶上一条地平线，正中最亮，后面透出一点光。光的颜色 = 这个栏目在首页那一幕的颜色（--beam） —— */
 .is-page { background: #000; }
 .is-page::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(60% 46% at 50% 0%, rgba(255, 255, 255, .085), rgba(255, 255, 255, .03) 45%, rgba(255, 255, 255, 0) 75%),
-    radial-gradient(140% 70% at 50% 0%, rgba(255, 255, 255, .03), rgba(255, 255, 255, 0) 70%); }
+    radial-gradient(60% 46% at 50% 0%, rgba(var(--beam, 255, 255, 255), .11), rgba(var(--beam, 255, 255, 255), .035) 45%, rgba(var(--beam, 255, 255, 255), 0) 75%),
+    radial-gradient(140% 70% at 50% 0%, rgba(var(--beam, 255, 255, 255), .035), rgba(var(--beam, 255, 255, 255), 0) 70%); }
 .is-page::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; background-image: var(--grain); opacity: .05; mix-blend-mode: screen; }
 .is-page .hd-nav { position: relative; border-top: 0; }
 .is-page .hd-nav::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
-  background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, .5) 50%, rgba(255, 255, 255, 0)); }
+  background: linear-gradient(to right, rgba(var(--beam, 255, 255, 255), 0), rgba(var(--beam, 255, 255, 255), .6) 50%, rgba(var(--beam, 255, 255, 255), 0)); }
 .is-page main, .is-page .ft { position: relative; z-index: 2; }
 .is-page .hd { z-index: 3; }
 
@@ -128,8 +128,8 @@ html[data-lang="zh"] .hd-nav .nm { font: 500 13px/1 var(--serif-zh); letter-spac
 .ft-mail a:hover { color: var(--ink); border-color: var(--ink-2); }
 .is-page .ft { margin-top: 96px; border-top: 1px solid var(--line); }
 
-/* —— 从黑碑那道光里进来：子页面先白，再慢慢暗下去 —— */
-.arrive { position: fixed; inset: 0; background: #fff; z-index: 80; pointer-events: none; opacity: 0; }
+/* —— 从首页那一幕的光里进来：子页面先满屏是那个颜色，再从那个颜色里淡出来 —— */
+.arrive { position: fixed; inset: 0; background: var(--arrive, #fff); z-index: 80; pointer-events: none; opacity: 0; }
 html.from-light .arrive { animation: arrive 1.1s var(--slow) forwards; }
 @keyframes arrive { 0% { opacity: 1; } 100% { opacity: 0; } }
 
@@ -177,3 +177,7 @@ html[data-lang="zh"] .prose h2 { font-family: var(--sans); font-weight: 600; fon
 .prose code { font-family: var(--mono); font-size: .84em; padding: 1px 6px; background: rgba(255, 255, 255, .06); border: 1px solid var(--line); white-space: nowrap; }
 .prose pre code { white-space: pre; border: 0; padding: 0; background: none; }
 .prose blockquote { margin: 0 0 20px; padding-left: 18px; border-left: 1px solid var(--ink-3); color: var(--ink-2); }
+
+/* —— 一个字一个字写出来（components/core/Ink.astro）：父元素的 --w 走到哪，字就写到哪 —— */
+.ink-v > span { opacity: clamp(0, (var(--w, 1) - var(--i)) * 9, 1); }
+.ink-type .ink-v > span { opacity: clamp(0, (var(--w, 1) - var(--i)) * 400, 1); }
