@@ -2,7 +2,7 @@
 
 - `src/fonts/cormorant-garamond-{400,500}.woff2`：wordmark、标题、铭文（拉丁字母）。Cormorant Garamond，SIL OFL，从 @fontsource 拷的 latin 子集。
 - `src/fonts/ibm-plex-mono-400.woff2`：编号、小标签、SOUND: OFF。IBM Plex Mono，SIL OFL。
-- `src/fonts/zero-serif-sc-500.woff2`：中文标题字（思源宋体 Noto Serif SC 500，SIL OFL），**只留页面上用到的那百来个字**，所以只有 20 KB。
+- `src/fonts/zero-serif-sc-500.woff2`：中文标题字（思源宋体 Noto Serif SC 500，SIL OFL），**只留页面上用到的那百来个字**，所以只有 20 KB 上下。
 
 ## 改了中文标题字以后（wordmark、标语、五道门的名字和那句话、页面大标题、三套档案的中文标题）
 
