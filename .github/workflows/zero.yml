@@ -1,9 +1,9 @@
 name: 零肉身造物
-# 零肉身造物（Zero-Flesh Creation）：首页 / 和 /zahuopu、/specimens、/artifacts、/codex 的源码在 _zero/（Astro + MDX + Tailwind）。
-# 改了 _zero/ 就在这里构建，零肉身自检（产物里不许有图片、音频、字体、3D 网格）过了，
-# 再把产物提交到仓库根目录：只动 _zero/scripts/publish.mjs 里 OWNED 那几样，千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。
-# GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
-# 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，零肉身页面 0 图 0 音 0 字体，千手院两套皮的链接都通。
+# 零肉身造物（Zero-Flesh Creation）：首页 /zero/ 和 /zahuopu、/specimens、/artifacts、/codex 的源码在 _zero/（Astro + MDX + Tailwind + three.js）。
+# 改了 _zero/ 就在这里构建，再把产物提交到仓库根目录：只动 _zero/scripts/publish.mjs 里 OWNED 那几样。
+# 首页发到 /zero/；根目录 / 是千手院，不碰——除非有人把 _zero/home.mjs 里 HOME_AT_ROOT 改成 true（那一行就是换根目录的开关）。
+# 千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
+# 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，根目录还是该是的那个，零肉身页面不报错、不横向溢出。
 # 拉最新 main 再放产物，推不上再拉再推，最多 5 次，不许 --force。提交作者沿用触发这次构建的那个提交的作者。
 on:
   push:
@@ -40,23 +40,33 @@ jobs:
         working-directory: _zero
         run: npm ci
 
-      - name: 构建 + 零肉身自检
+      - name: 构建
         working-directory: _zero
         env:
           ZERO_BUILD: ${{ github.sha }}
         run: npm run build
 
-      - name: 产物提交到根目录
+      - name: 产物提交到根目录（根目录 index.html 只在 HOME_AT_ROOT = true 时才动）
         id: publish
         run: |
           NAME="$(git log -1 --format=%an)"; MAIL="$(git log -1 --format=%ae)"
           git config user.name "$NAME"
           git config user.email "$MAIL"
+          ROOT="$(node _zero/scripts/publish.mjs --root)"
+          echo "HOME_AT_ROOT: $ROOT"
           for i in 1 2 3 4 5; do
             git fetch -q origin main
             git reset -q --hard origin/main          # _zero/dist、node_modules 被 .gitignore 管着，不受影响
             node _zero/scripts/publish.mjs
             git add -A -- $(node _zero/scripts/publish.mjs --list)
+            CHANGED="$(git diff --cached --name-only)"
+            # 保险：千手院、_ops、工作流永远不许被产物提交碰到；根目录 index.html 只有开关打开才许动
+            if echo "$CHANGED" | grep -qE '^(qianshou/|_ops/|_zero/|\.github/)'; then
+              echo "::error::产物提交碰到了不归零肉身造物管的文件："; echo "$CHANGED" | grep -E '^(qianshou/|_ops/|_zero/|\.github/)'; exit 1
+            fi
+            if [ "$ROOT" != "yes" ] && echo "$CHANGED" | grep -qx 'index.html'; then
+              echo "::error::HOME_AT_ROOT 是 false，根目录 index.html（千手院）不许动"; exit 1
+            fi
             if git diff --cached --quiet; then
               echo "产物跟线上一样，不用提交"
               echo "published=same" >> "$GITHUB_OUTPUT"
@@ -65,7 +75,7 @@ jobs:
             git commit -q -m "零肉身造物：构建产物（源码 ${GITHUB_SHA::7}）"
             if git push -q origin HEAD:main; then
               echo "published=yes" >> "$GITHUB_OUTPUT"
-              git log -1 --stat --format='%h %s' | head -30
+              git log -1 --stat --format='%h %s' | head -40
               exit 0
             fi
             echo "推不上（别人先推了），第 $i 次重来"
@@ -87,10 +97,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 等 Pages 发到这一版
+      - name: 等 Pages 发到这一版（看 /zero/ 上的构建记号）
         run: |
           for i in $(seq 1 60); do
-            got=$(curl -s "https://qianshoulab.github.io/?v=$RANDOM$i" | grep -o 'name="zero:build" content="[^"]*"' | sed 's/.*content="//; s/"//')
+            got=$(curl -s "https://qianshoulab.github.io/zero/?v=$RANDOM$i" | grep -o 'name="zero:build" content="[^"]*"' | sed 's/.*content="//; s/"//')
             if [ "$got" = "$GITHUB_SHA" ]; then echo "线上已经是 ${GITHUB_SHA::7}"; exit 0; fi
             echo "线上还是 ${got:-（没读到）}，等 15 秒（第 $i 次）"
             sleep 15
