@@ -165,7 +165,7 @@ function init() {
   syncLang();
   syncMode();
   document.querySelectorAll<HTMLButtonElement>('[data-lang-set]').forEach((b) =>
-    b.addEventListener('click', () => { setLang(b.dataset.langSet === 'zh' ? 'zh' : 'en'); blip('lang'); }));
+    b.addEventListener('click', () => setLang(b.dataset.langSet === 'zh' ? 'zh' : 'en')));
   document.querySelectorAll<HTMLButtonElement>('[data-mode-set]').forEach((b) =>
     b.addEventListener('click', () => {
       const m = b.dataset.v === 'headless' ? 'headless' : 'render';
@@ -183,7 +183,7 @@ function init() {
       if (!m) blip('toggle');
     });
   }
-  // 其它能点的（链接卡片、分段、筛选）轻轻一声
+  // 声音只放几处关键地方（Song 11-27：「声音做几个不太多」）：肉身 / 无头、取景框变异、展开代码、测试板。带 data-sfx 的才响
   document.addEventListener('click', (e) => {
     const el = (e.target as Element).closest('[data-sfx]') as HTMLElement | null;
     if (el) blip((el.dataset.sfx as 'tick' | 'toggle' | 'open') || 'tick');

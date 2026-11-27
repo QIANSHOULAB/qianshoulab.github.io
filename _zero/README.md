@@ -1,6 +1,6 @@
-# 零肉身造物（Assetless Genesis）· 源码
+# 零肉身造物（Zero-Flesh Creation）· 源码
 
-网址：https://qianshoulab.github.io/ （首页 / 观测台）、/zhahuopu/（赛博炸货铺）、/specimens/、/artifacts/、/codex/。
+网址：https://qianshoulab.github.io/ （首页 / 观测台）、/zahuopu/（赛博杂货铺；/zhahuopu/ 是头一版打错字的网址，留了跳转）、/specimens/、/artifacts/、/codex/。
 千手院在 /qianshou/，那页是手写的单文件，不归这里管。
 
 ## 规矩（策划书第一原则）
@@ -17,14 +17,14 @@
 自研造物放 `src/content/artifacts/`（status: wip 就是「还在炉子里」），造物法则放 `src/content/codex/`。
 
 ## 改字
-界面上的字全在 `src/i18n/ui.ts`（en 门面、zh 第二语言）。工具分拣（千手院 / 赛博炸货铺）在 `src/data/tools.ts`。
+界面上的字全在 `src/i18n/ui.ts`（en 门面、zh 第二语言）。工具分拣（千手院 / 赛博杂货铺）在 `src/data/tools.ts`。
 
 ## 本地
 ```
 cd _zero
 npm ci
 npm run build          # 出到 _zero/dist，带零肉身自检
-node scripts/publish.mjs   # 拷到仓库根目录（只动 index.html、zhahuopu、specimens、artifacts、codex、zero-assets）
+node scripts/publish.mjs   # 拷到仓库根目录（只动 index.html、zahuopu、zhahuopu、specimens、artifacts、codex、zero-assets）
 ```
 平时不用本地拷：推上去工作流会做。`publish.mjs` 发现 dist 里有名单外的东西会直接停，不会踩到别人的网址。
 

@@ -2,7 +2,7 @@
 
 *English below first · 中文在下面*
 
-Since 2026-11-27 the site root https://qianshoulab.github.io/ is **Assetless Genesis (零肉身造物)**, a pure-code lab with two doors: QIANSHOU LAB and the Cyber Fry Shop. Its source lives in `_zero/` (Astro, built by `.github/workflows/zero.yml`); see `_zero/README.md`.
+Since 2026-11-27 the site root https://qianshoulab.github.io/ is **Zero-Flesh Creation (零肉身造物)**, a pure-code lab with two doors: QIANSHOU LAB and the Cyber Bodega. Its source lives in `_zero/` (Astro, built by `.github/workflows/zero.yml`); see `_zero/README.md`.
 
 Homepage of QIANSHOU LAB: https://qianshoulab.github.io/qianshou/
 
@@ -12,7 +12,7 @@ Cyber Zen · Hardcore Tools.
 - English by default; Chinese is one click away (top right, **EN / 中文**). Your pick is remembered. Add `?lang=zh` or `?lang=en` to the URL to force one for a single visit.
 - Two skins, picked at random on each visit: A “Thousand Hands” (a halo of hands and eyes) or B “Cyber Gate” (neon gate and pagoda). Add `?a` or `?b` to the URL (`/qianshou/?a`) to pick one.
 - The 3D is drawn live with three.js, no images: `qianshou/scene-a.js`, `qianshou/scene-b.js`.
-- The office monks sit on one shelf; cards swipe sideways (arrows on desktop). The small tools with plain names moved to the **Cyber Fry Shop** next door (https://qianshoulab.github.io/zhahuopu/); the second tab links there.
+- The office monks sit on one shelf; cards swipe sideways (arrows on desktop). The small tools with plain names moved to the **Cyber Bodega** next door (https://qianshoulab.github.io/zahuopu/); the second tab links there.
 - Swipe to a tool and the whole temple follows it: the thousand hands turn, every eye looks at that card and the page takes on its color (skin B: the camera walks around the pagoda). Each card's color is its `data-tint`.
 - All copy on that page, both languages, lives in one place: `QS_STRINGS` near the top of `qianshou/index.html`.
 - Served by GitHub Pages from the root of `main`.
@@ -32,7 +32,7 @@ Office tools:
 - [Zhike · Inbox Sorter](https://qianshoulab.github.io/zhike/): Orders, invoices and tracking numbers file themselves into Excel. (Windows app)
 - [Jiechi · File Sweeper](https://qianshoulab.github.io/saodi/): Your files, disciplined. (Batch file chores, Windows app)
 
-Cyber Fry Shop (https://qianshoulab.github.io/zhahuopu/):
+Cyber Bodega (https://qianshoulab.github.io/zahuopu/):
 
 - [Gongshi · Net Hours](https://qianshoulab.github.io/gongshi/): Squeeze out the breaks. Keep the real hours. (Changeover time minus breaks and meals)
 - [Yingcun · Inch Converter](https://qianshoulab.github.io/gongshi/inch/): Point it at the sheet. Inches confess in millimeters.
@@ -45,7 +45,7 @@ Cyber Fry Shop (https://qianshoulab.github.io/zhahuopu/):
 
 # 千手院 · QIANSHOU LAB
 
-2026-11-27 起，站点根目录 https://qianshoulab.github.io/ 是**零肉身造物（Assetless Genesis）**：纯代码实验室，里面两扇门，千手院和赛博炸货铺。源码在 `_zero/`（Astro，工作流 `.github/workflows/zero.yml` 构建），写法见 `_zero/README.md`。
+2026-11-27 起，站点根目录 https://qianshoulab.github.io/ 是**零肉身造物（Zero-Flesh Creation）**：纯代码实验室，里面两扇门，千手院和赛博杂货铺。源码在 `_zero/`（Astro，工作流 `.github/workflows/zero.yml` 构建），写法见 `_zero/README.md`。
 
 千手院总舵主页，网址：https://qianshoulab.github.io/qianshou/ （仓库得叫 qianshoulab.github.io 才挂在根上）
 
@@ -53,7 +53,7 @@ Cyber Fry Shop (https://qianshoulab.github.io/zhahuopu/):
 - 每次打开随机换一套皮：A「千手法相」（千手千眼的光环）或 B「赛博山门」（霓虹牌坊和五层宝塔）。
   想指定就在网址后面加 `?a` 或 `?b`（`/qianshou/?a`）。
 - 3D 是网页自己用 three.js 现画的，没有图片：`qianshou/scene-a.js`、`qianshou/scene-b.js`。
-- 千手院只放「X 僧」那些办公罗汉，卡片左右滑（电脑上右上角有箭头）。大白话名字的小工具 11-27 搬进了隔壁**赛博炸货铺**（https://qianshoulab.github.io/zhahuopu/），第二个分页就是去那儿的入口。
+- 千手院只放「X 僧」那些办公罗汉，卡片左右滑（电脑上右上角有箭头）。大白话名字的小工具 11-27 搬进了隔壁**赛博杂货铺**（https://qianshoulab.github.io/zahuopu/），第二个分页就是去那儿的入口。
 - 千手指路：滑到哪尊，背后跟着它——千手往那边转、九百六十只眼睛一起盯着那张卡、整页染成它的颜色（赛博山门那套是镜头绕着宝塔走）。每张卡的颜色写在它的 `data-tint`，新加一尊记得写。
 - 这页中英两套字全在一处：`qianshou/index.html` 顶上的 `QS_STRINGS`。
 - GitHub Pages 从 `main` 分支根目录发布。
@@ -73,7 +73,7 @@ Cyber Fry Shop (https://qianshoulab.github.io/zhahuopu/):
 - [知客僧](https://qianshoulab.github.io/zhike/)：收发室那点活，贫僧包了（邮件分拣，Windows 电脑版）
 - [戒尺僧](https://qianshoulab.github.io/saodi/)：凡尘乱档，统统归位（文件批处理，Windows 电脑版）
 
-赛博炸货铺（https://qianshoulab.github.io/zhahuopu/）：
+赛博杂货铺（https://qianshoulab.github.io/zahuopu/）：
 
 - [工时榨汁机](https://qianshoulab.github.io/gongshi/)：水分榨干，只剩真工时（换型实际用时，自动扣茶歇饭点）
 - [英寸照妖镜](https://qianshoulab.github.io/gongshi/inch/)：八分之三算断魂，二五点四乘进坟（拍检查表，英寸换毫米）

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 const dist = new URL('../dist/', import.meta.url).pathname;
 const repo = new URL('../../', import.meta.url).pathname;
-export const OWNED = ['index.html', 'zhahuopu', 'specimens', 'artifacts', 'codex', 'zero-assets'];
+export const OWNED = ['index.html', 'zahuopu', 'zhahuopu', 'specimens', 'artifacts', 'codex', 'zero-assets'];   // zhahuopu 只剩一张跳到 /zahuopu/ 的跳转页
 const NEVER = ['qianshou', '_ops', '_zero', '.github', 'apps.json', 'README.md'];
 
 if (process.argv.includes('--list')) { console.log(OWNED.join(' ')); process.exit(0); }

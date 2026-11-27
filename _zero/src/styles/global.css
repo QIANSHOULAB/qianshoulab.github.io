@@ -1,4 +1,4 @@
-/* 零肉身造物（Assetless Genesis）· 零资产设计系统
+/* 零肉身造物（Zero-Flesh Creation）· 零资产设计系统
    策划书 §3.1：实验室黑底、细边框、示波器荧光绿（活跃 / 渲染态）、琥珀（警告 / 无头日志）。
    字只用系统字：等宽一套、无衬线一套，一个字体文件都不下载。 */
 @import "tailwindcss";
@@ -164,9 +164,9 @@ h3 { font-weight: 600; }
 .purity .sep { color: var(--line-2); }
 @media (max-width: 640px) { .purity .sep { display: none; } }
 
-/* 无头态：渲染全部剥掉，只剩黑底白字的等宽结构（策划书 §3.2-1）。 */
+/* 无头态：渲染全部剥掉，只剩黑底等宽字的结构（策划书 §3.2-1）；强调色换琥珀（3.1：琥珀 = 无头状态机日志；Song 发的 Gemini 样稿也是这样） */
 .hl-only { display: none; }
-html[data-mode="headless"] { --ink: #FFFFFF; --dim: #FFFFFF; --faint: #FFFFFF; --line: #FFFFFF; --line-2: #FFFFFF; --card: #000000; --card-2: #000000; --lab: #000000; --signal: #FFFFFF; --signal-ink: #000000; --amber: #FFFFFF; }
+html[data-mode="headless"] { --ink: #E6E6E6; --dim: #9A9A9A; --faint: #7A7A7A; --line: rgba(255, 176, 0, .45); --line-2: rgba(255, 176, 0, .7); --card: #000000; --card-2: #000000; --lab: #000000; --signal: #FFB000; --signal-ink: #000000; }
 html[data-mode="headless"], html[data-mode="headless"] body { background: #000 !important; }
 html[data-mode="headless"] body, html[data-mode="headless"] button { font-family: var(--font-mono) !important; }
 html[data-mode="headless"] *, html[data-mode="headless"] *::before, html[data-mode="headless"] *::after {
@@ -174,23 +174,20 @@ html[data-mode="headless"] *, html[data-mode="headless"] *::before, html[data-mo
   animation: none !important; transition: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html[data-mode="headless"] canvas, html[data-mode="headless"] .render-only, html[data-mode="headless"] .paper, html[data-mode="headless"] .ticks { display: none !important; }
 html[data-mode="headless"] .hl-only { display: block; }
-html[data-mode="headless"] .card { border: 1px dashed #fff; }
-/* 纯黑白：所有字一律白，所有线一律白（颜色也是肉身的一部分） */
-html[data-mode="headless"] body *, html[data-mode="headless"] body *::before, html[data-mode="headless"] body *::after { color: #fff !important; border-color: #fff !important; }
-html[data-mode="headless"] .seg button[aria-pressed="true"], html[data-mode="headless"] .btn.primary { background: #fff !important; color: #000 !important; }
-html[data-mode="headless"] .seg button[aria-pressed="true"] *, html[data-mode="headless"] .btn.primary * { color: #000 !important; }
-html[data-mode="headless"] ::selection { background: #fff; color: #000; }
+html[data-mode="headless"] .card { border: 1px dashed var(--line-2); }
+html[data-mode="headless"] h1, html[data-mode="headless"] h2, html[data-mode="headless"] h3 { color: var(--amber); }
+html[data-mode="headless"] .seg button[aria-pressed="true"] { background: rgba(255, 176, 0, .16) !important; color: var(--amber) !important; }
+html[data-mode="headless"] .btn.primary { background: var(--amber) !important; border-color: var(--amber) !important; color: #000 !important; }
+html[data-mode="headless"] .btn.primary * { color: #000 !important; }
+html[data-mode="headless"] ::selection { background: var(--amber); color: #000; }
 .hl-box { margin-top: 24px; }
-html[data-mode="headless"] .top { background: #000; border-bottom: 1px solid #fff; }
-html[data-mode="headless"] .chip, html[data-mode="headless"] .go, html[data-mode="headless"] .sec-no,
-html[data-mode="headless"] .purity .verdict { color: #fff !important; }
-html[data-mode="headless"] .btn.primary { background: #fff; color: #000; border-color: #fff; }
-html[data-mode="headless"] .brand-mark::before { border-color: #fff; }
-html[data-mode="headless"] .brand-mark::after { background: #fff; }
-html[data-mode="headless"] .seg.mode button[data-v="headless"][aria-pressed="true"] { background: #fff; color: #000 !important; }
-html[data-mode="headless"] .sfx[aria-pressed="true"] { color: #fff; }
-.hl-dump { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; color: #fff;
-  border: 1px dashed #fff; padding: 14px 16px; margin: 0 0 24px; }
+html[data-mode="headless"] .top { background: #000; border-bottom: 1px dashed var(--line-2); }
+html[data-mode="headless"] .chip { color: var(--amber) !important; border-color: var(--line) !important; background: transparent !important; }
+html[data-mode="headless"] .brand-mark::before { border-color: var(--amber); }
+html[data-mode="headless"] .brand-mark::after { background: var(--amber); }
+html[data-mode="headless"] .sfx[aria-pressed="true"] { color: var(--dim); }
+.hl-dump { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; color: var(--amber);
+  border: 1px dashed var(--line-2); padding: 14px 16px; margin: 0 0 24px; }
 .hl-dump .amber { color: var(--amber); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -217,8 +214,6 @@ html[data-lang="zh"] .prose { line-height: 1.85; }
 .prose pre code { white-space: pre; border: 0; padding: 0; background: none; }
 .prose blockquote { margin: 0 0 18px; padding-left: 16px; border-left: 2px solid var(--signal); color: var(--dim); }
 html[data-mode="headless"] .prose strong { color: #fff; }
-html[data-mode="headless"] .prose h3::before { color: #fff; }
-html[data-mode="headless"] .prose li::before { background: #fff; }
 
 /* —— 栏目页抬头 —— */
 .page-head { padding-top: 56px; }

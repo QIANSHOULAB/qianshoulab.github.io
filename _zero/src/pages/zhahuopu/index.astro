@@ -1,87 +1,17 @@
 ---
-// /zhahuopu 赛博炸货铺：大白话名字的小工具都在这儿。每张卡指向工具原来的网址，一个网址都不改。
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import T from '../../components/core/T.astro';
-import { fryShop } from '../../data/tools';
-import { t } from '../../i18n/ui';
+// /zhahuopu 是 11-27 头一版的网址（Song 打字把「杂货铺」打成了「炸货铺」）：留一张跳转页，老链接照样能到 /zahuopu/。
 ---
-<BaseLayout current="zhahuopu" title={{ en: t('en', 'zhahuopu.h1'), zh: t('zh', 'zhahuopu.h1') }} desc={{ en: t('en', 'zhahuopu.lede'), zh: t('zh', 'zhahuopu.lede') }}>
-  <header class="wrap page-head shop-head">
-    <p class="page-kicker">/zhahuopu</p>
-    <h1 class="page-h1 sign"><T k="zhahuopu.h1" /></h1>
-    <T as="p" class="page-lede" k="zhahuopu.lede" />
-    <p class="open mono"><span class="lamp" aria-hidden="true"></span><T k="zhahuopu.sign" /></p>
-  </header>
-
-  <section class="wrap" aria-labelledby="menu-t">
-    <div class="menu-h"><h2 class="sec-t" id="menu-t"><T k="zhahuopu.menu" /></h2><span class="mono menu-n"><T en={`${String(fryShop.length).padStart(2, '0')} items`} zh={`共 ${fryShop.length} 样`} /></span></div>
-    <ol class="menu">
-      {fryShop.map((x, i) => (
-        <li>
-          <a class="dish card link-card" href={x.href} data-sfx="open">
-            <div class="dish-art" data-emblem={`species:${x.slug}`} data-r1={x.species?.[0].join(',')} data-r2={x.species?.[1].join(',')}>
-              <span class="glyph" lang="zh-CN" aria-hidden="true">{x.glyph}</span>
-              <span class="no mono" aria-hidden="true">No.{String(i + 1).padStart(2, '0')}</span>
-            </div>
-            <div class="dish-body">
-              <div class="dish-top">
-                <h3 class="dish-name"><T en={x.name.en} zh={x.name.zh} /></h3>
-                <span class="price mono" aria-hidden="true"><span data-l="en">$0.00</span><span data-l="zh">¥0.00</span></span>
-              </div>
-              <T as="p" class="dish-sub" en={x.sub.en} zh={x.sub.zh} />
-              <p class="dish-what"><T en={x.what.en} zh={x.what.zh} /> <T class="dish-note" en={x.note.en} zh={x.note.zh} /></p>
-              <span class="go"><T en={x.go?.en ?? 'Open'} zh={x.go?.zh ?? '打开'} /> <span class="arr" aria-hidden="true">→</span></span>
-            </div>
-          </a>
-        </li>
-      ))}
-    </ol>
-  </section>
-
-  <section class="wrap">
-    <a class="temple card link-card" href="/qianshou/" data-sfx="open">
-      <T as="p" class="temple-t" k="zhahuopu.also" />
-      <span class="go"><T k="zhahuopu.alsoGo" /> <span class="arr" aria-hidden="true">→</span></span>
-    </a>
-  </section>
-</BaseLayout>
-
-<script>
-  import { mountEmblems } from '../../components/labs/emblems';
-  mountEmblems();
-</script>
-
-<style>
-  .shop-head { position: relative; }
-  .sign { color: #fff; text-shadow: 0 0 1px #fff, 0 0 18px rgba(0, 255, 157, .55), 0 0 42px rgba(0, 255, 157, .25); }
-  .open { display: inline-flex; align-items: center; gap: 8px; margin: 18px 0 0; font-size: 12.5px; color: var(--signal); border: 1px solid rgba(0, 255, 157, .3); border-radius: 999px; padding: 4px 12px; }
-  .lamp { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px var(--signal); animation: glow 2.6s ease-in-out infinite; }
-  @keyframes glow { 50% { opacity: .4; } }
-  .menu-h { display: flex; align-items: baseline; justify-content: space-between; margin: 56px 0 20px; }
-  .menu-n { font-size: 12.5px; color: var(--faint); }
-  .menu { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-  .dish { display: grid; grid-template-columns: 148px minmax(0, 1fr); height: 100%; overflow: hidden; }
-  .dish-art { position: relative; border-right: 1px solid var(--line); background: radial-gradient(100% 100% at 50% 45%, #12161B 0%, #0C0E11 75%); border-radius: var(--r-card) 0 0 var(--r-card); min-height: 180px; }
-  .dish-art :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .glyph { position: absolute; left: 12px; bottom: 8px; font-size: 22px; font-weight: 700; color: rgba(230, 237, 243, .82); z-index: 1; }
-  .no { position: absolute; left: 12px; top: 10px; font-size: 11px; color: var(--faint); z-index: 1; }
-  .dish-body { padding: 18px 20px 18px; display: flex; flex-direction: column; min-width: 0; }
-  .dish-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-  .dish-name { margin: 0; font-size: 20px; line-height: 1.3; }
-  .price { font-size: 12px; color: var(--signal); white-space: nowrap; }
-  .dish :global(.dish-sub) { margin: 6px 0 0; font-size: 15px; color: var(--ink); white-space: pre-line; }
-  .dish-what { margin: 8px 0 0; font-size: 14px; color: var(--dim); line-height: 1.55; }
-  .dish :global(.dish-note) { color: var(--faint); }
-  .dish .go { margin-top: auto; padding-top: 14px; font-size: 14px; }
-  .temple { margin-top: 24px; padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; }
-  .temple :global(.temple-t) { margin: 0; color: var(--dim); }
-  @media (max-width: 860px) { .menu { grid-template-columns: 1fr; } }
-  @media (max-width: 520px) {
-    .dish { grid-template-columns: 1fr; }
-    .dish-art { border-right: 0; border-bottom: 1px solid var(--line); border-radius: var(--r-card) var(--r-card) 0 0; min-height: 132px; }
-  }
-  :global(html[data-mode="headless"]) .dish { grid-template-columns: 1fr; }
-  :global(html[data-mode="headless"]) .dish-art { min-height: 0; border: 0; }
-  :global(html[data-mode="headless"]) .glyph, :global(html[data-mode="headless"]) .no { position: static; display: inline-block; padding: 12px 0 0 20px; }
-  :global(html[data-mode="headless"]) .sign { text-shadow: none; }
-</style>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>赛博杂货铺 · Cyber Bodega</title>
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://qianshoulab.github.io/zahuopu/" />
+  <meta http-equiv="refresh" content="0; url=/zahuopu/" />
+  <script is:inline>location.replace('/zahuopu/' + location.search + location.hash);</script>
+  <style>html,body{margin:0;background:#0A0B0D;color:#8B949E;font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}a{color:#00FF9D}p{padding:24px}</style>
+</head>
+<body><p>赛博杂货铺搬到了 <a href="/zahuopu/">/zahuopu/</a> · The Cyber Bodega lives at <a href="/zahuopu/">/zahuopu/</a></p></body>
+</html>

@@ -3,7 +3,7 @@
 import T from './T.astro';
 import { t } from '../../i18n/ui';
 
-interface Props { current?: 'home' | 'specimens' | 'artifacts' | 'codex' | 'zhahuopu' }
+interface Props { current?: 'home' | 'specimens' | 'artifacts' | 'codex' | 'zahuopu' }
 const { current = 'home' } = Astro.props;
 const items = [
   { key: 'specimens', href: '/specimens/' },
@@ -14,14 +14,14 @@ const items = [
 <header class="top">
   <a class="skip" href="#main"><T k="site.skip" /></a>
   <div class="wrap top-in">
-    <a class="brand" href="/" aria-label="零肉身造物 · Assetless Genesis" data-sfx="tick">
+    <a class="brand" href="/" aria-label="零肉身造物 · Zero-Flesh Creation">
       <span class="brand-mark" aria-hidden="true"></span>
       <span class="brand-zh" lang="zh-CN">零肉身造物</span>
-      <span class="brand-en">ASSETLESS GENESIS</span>
+      <span class="brand-en">ZERO-FLESH CREATION</span>
     </a>
     <nav class="nav" aria-label={t('en', 'nav.label')} data-aria-en={t('en', 'nav.label')} data-aria-zh={t('zh', 'nav.label')}>
       {items.map((it) => (
-        <a href={it.href} aria-current={current === it.key ? 'page' : undefined} data-sfx="tick"><T k={`nav.${it.key}`} /></a>
+        <a href={it.href} aria-current={current === it.key ? 'page' : undefined}><T k={`nav.${it.key}`} /><span class="nav-path" aria-hidden="true">{it.href.replace(/\/$/, '')}</span></a>
       ))}
     </nav>
     <div class="top-r">
@@ -43,6 +43,9 @@ const items = [
 <style>
   .skip { position: absolute; left: 12px; top: -60px; z-index: 50; background: var(--signal); color: var(--signal-ink); padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 14px; }
   .skip:focus { top: 8px; }
+  /* 栏目名后面跟一截路径（照样稿：样本档案 /specimens），窄屏收起 */
+  .nav-path { font-family: var(--font-mono); font-size: 11px; color: var(--faint); margin-left: 6px; }
+  @media (max-width: 1100px) { .nav-path { display: none; } }
   /* 手机：一行放牌子和三个开关，栏目挪到第二行，横着能滑 */
   @media (max-width: 860px) {
     .brand-en { display: none; }
@@ -54,8 +57,13 @@ const items = [
     .nav a { min-height: 40px; }
     .top-r { gap: 6px; }
   }
-  @media (max-width: 400px) {
+  /* 390 宽的手机上英文「Render | Headless」也要跟牌子挤一行：开关整体小一号 */
+  @media (max-width: 430px) {
+    .top-in { column-gap: 10px; }
+    .brand { gap: 8px; }
     .brand-zh { font-size: 15px; }
-    .top-r :global(.seg button) { min-width: 40px; padding: 0 8px; }
+    .top-r { gap: 5px; }
+    .top-r :global(.seg button) { min-width: 0; padding: 0 6px; font-size: 11px; height: 26px; line-height: 26px; }
+    .top-r :global(.sfx) { width: 30px; height: 30px; }
   }
 </style>

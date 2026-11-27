@@ -1,6 +1,6 @@
 // 把每篇的英文、中文两份配成一对；共用字段（日期、链接、编号……）两边写得不一样就直接报错。
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { fryShop } from '../data/tools';
+import { shop } from '../data/tools';
 
 type Name = 'specimens' | 'artifacts' | 'codex';
 export type Pair<N extends Name> = { slug: string; en: CollectionEntry<N>; zh: CollectionEntry<N> };
@@ -65,8 +65,8 @@ export const siteLog: Update[] = [
     date: '2026-11-27', kind: 'log', href: '/qianshou/',
     title: { en: 'The observatory opens', zh: '观测台开张' },
     summary: {
-      en: `QIANSHOU LAB moved up the hill to /qianshou/. The Cyber Fry Shop opened next door with ${fryShop.length} small tools.`,
-      zh: `千手院搬上山，新家在 /qianshou/；隔壁赛博炸货铺开张，先上 ${fryShop.length} 样小工具。`,
+      en: `QIANSHOU LAB moved up the hill to /qianshou/. The Cyber Bodega opened next door with ${shop.length} small tools on the shelf.`,
+      zh: `千手院搬上山，新家在 /qianshou/；隔壁赛博杂货铺开张，货架上先摆 ${shop.length} 样小工具。`,
     },
   },
 ];

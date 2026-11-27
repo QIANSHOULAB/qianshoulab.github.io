@@ -1,5 +1,5 @@
 // 零资产线框引擎：一个顶点数组 + 一串折线，Canvas 2D 自己投影、自己画。没有 Three.js，没有贴图，没有网格文件。
-// 用在首页取景框（HeroCanvas）、两扇门的门牌、炸货铺菜单上的小物种。
+// 用在首页取景框（HeroCanvas）、两扇门的门牌、杂货铺货架上的小物种。
 
 export type Mesh = {
   pos: Float32Array;          // x,y,z 连着放
@@ -89,41 +89,31 @@ export function halo(n = 48): Mesh {
   return { pos: new Float32Array(pts), lines };
 }
 
-/** 炸货铺门牌：一根麻花。三股面团绕着一根轴拧，每股是一根管子（管子 = 一圈圈截面 + 几条纵线）。 */
-export function mahua(turns = 2.6, rings = 60, sides = 8, strands = 3): Mesh {
+/** 杂货铺门牌：两层货架，摆着几样不一样的小物件（立方、八面体、七角星、球、海胆），杂 = 什么都有。 */
+export function assorted(): Mesh {
   const pts: number[] = [];
   const lines: Uint16Array[] = [];
-  const len = 1.5, R = 0.12, tube = 0.115;
-  for (let s = 0; s < strands; s++) {
-    const off = (s * Math.PI * 2) / strands;
-    const start = pts.length / 3;
-    for (let r = 0; r <= rings; r++) {
-      const u = r / rings;
-      const x = -len / 2 + u * len;
-      const a = u * turns * Math.PI * 2 + off;
-      const taper = Math.sin(Math.PI * Math.min(1, u * 1.08 + 0.02)) * 0.35 + 0.65;   // 两头收一点
-      const cy = Math.cos(a) * R, cz = Math.sin(a) * R;
-      for (let k = 0; k < sides; k++) {
-        const b = (k / sides) * Math.PI * 2;
-        // 截面圈：法向近似取在 y-z 平面里
-        pts.push(x + Math.sin(b) * tube * 0.25 * taper, cy + Math.cos(b) * tube * taper, cz + Math.sin(b) * tube * taper);
-      }
-    }
-    for (let r = 0; r <= rings; r += 2) {          // 截面圈（隔一圈画一圈，像面团上的纹）
-      const l = new Uint16Array(sides + 1);
-      for (let k = 0; k <= sides; k++) l[k] = start + r * sides + (k % sides);
-      lines.push(l);
-    }
-    for (let k = 0; k < sides; k++) {               // 纵线
-      const l = new Uint16Array(rings + 1);
-      for (let r = 0; r <= rings; r++) l[r] = start + r * sides + k;
-      lines.push(l);
-    }
-  }
+  const add = (m: Mesh, s: number, ox: number, oy: number, oz: number) => {
+    const base = pts.length / 3;
+    for (let k = 0; k < m.pos.length; k += 3) pts.push(m.pos[k] * s + ox, m.pos[k + 1] * s + oy, m.pos[k + 2] * s + oz);
+    for (const l of m.lines) lines.push(Uint16Array.from(l, (v) => v + base));
+  };
+  const shelf = (y: number) => {             // 一块搁板：一个扁长方形框
+    const b = pts.length / 3, w = 1.15, d = 0.32;
+    pts.push(-w, y, -d, w, y, -d, w, y, d, -w, y, d);
+    lines.push(new Uint16Array([b, b + 1, b + 2, b + 3, b]));
+  };
+  shelf(-0.42); shelf(0.36);
+  const g = (r1: Super, r2: Super) => supershape(r1, r2, 16, 8);
+  add(g({ m: 4, n1: 12, n2: 15, n3: 15 }, { m: 4, n1: 12, n2: 15, n3: 15 }), 0.22, -0.72, -0.2, 0);
+  add(g({ m: 4, n1: 1, n2: 1, n3: 1 }, { m: 4, n1: 1, n2: 1, n3: 1 }), 0.26, 0, -0.16, 0);
+  add(g({ m: 7, n1: 0.2, n2: 1.7, n3: 1.7 }, { m: 7, n1: 0.2, n2: 1.7, n3: 1.7 }), 0.25, 0.72, -0.17, 0);
+  add(g({ m: 0, n1: 1, n2: 1, n3: 1 }, { m: 0, n1: 1, n2: 1, n3: 1 }), 0.2, -0.38, 0.56, 0);
+  add(g({ m: 12, n1: 0.6, n2: 1.2, n3: 1.2 }, { m: 12, n1: 0.6, n2: 1.2, n3: 1.2 }), 0.22, 0.4, 0.58, 0);
   return { pos: new Float32Array(pts), lines };
 }
 
-/** 字符串哈希 → 一只确定的小物种（炸货铺菜单上每样工具一只，名字一样长出来就一样）。 */
+/** 字符串哈希 → 一只确定的小物种（货架上没指定物种的工具用它，名字一样长出来就一样）。 */
 export function speciesOf(seed: string): [Super, Super] {
   let h = 2166136261;
   for (const ch of seed) { h ^= ch.codePointAt(0)!; h = Math.imul(h, 16777619); }

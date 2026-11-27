@@ -1,6 +1,6 @@
 // 门牌和菜单上的小物种：全是 wire.ts 现算现画的线框。
-// data-emblem="halo"（千手院：一圈千手千眼）、"mahua"（炸货铺：一根麻花）、"species:<名字>"（菜单上每样工具一只）。
-import { halo, mahua, supershape, speciesOf, draw, fit, reduced, headless, frameBook, type Mesh, type View, type Ink } from './wire';
+// data-emblem="halo"（千手院：一圈千手千眼）、"assorted"（杂货铺：一架子杂货）、"species:<名字>"（货架上每样工具一只）。
+import { halo, assorted, supershape, speciesOf, draw, fit, reduced, headless, frameBook, type Mesh, type View, type Ink } from './wire';
 
 type Spec = { mesh: Mesh; view: (t: number) => View; ink: Ink; spin: boolean };
 
@@ -14,10 +14,10 @@ function specFor(kind: string, box: HTMLElement): Spec {
     return { mesh: halo(56), ink: { rgb: [255, 176, 0], alpha: [0.1, 0.95] }, spin: true,
       view: (t) => ({ yaw: t * 0.00018, pitch: 0.42 + Math.sin(t * 0.0004) * 0.05, roll: 0.06, dist: 3.2, scale: 0.55 }) };
   }
-  if (kind === 'mahua') {
-    return { mesh: mahua(), ink: { rgb: [0, 255, 157], alpha: [0.1, 0.95] }, spin: true,
-      // 绕着麻花自己的轴拧（pitch 在转），轻轻歪一点：像在油锅里翻身
-      view: (t) => ({ yaw: 0.28 + Math.sin(t * 0.00025) * 0.12, pitch: t * 0.0007, roll: -0.16, dist: 3.4, scale: 0.9 }) };
+  if (kind === 'assorted') {
+    // 货架慢慢左右转一点：像在店门口往里瞄
+    return { mesh: assorted(), ink: { rgb: [0, 255, 157], alpha: [0.1, 0.95] }, spin: true,
+      view: (t) => ({ yaw: Math.sin(t * 0.0004) * 0.45, pitch: 0.3, roll: 0, dist: 3.6, scale: 0.56 }) };
   }
   const seed = kind.replace(/^species:/, '');
   const given = [parse(box.dataset.r1), parse(box.dataset.r2)];

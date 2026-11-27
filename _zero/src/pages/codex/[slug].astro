@@ -15,12 +15,12 @@ const { Content: Zh } = await render(pair.zh);
 ---
 <BaseLayout current="codex" title={{ en: `${en.id} · ${en.title}`, zh: `${zh.id} · ${zh.title}` }} desc={{ en: en.summary, zh: zh.summary }}>
   <article class="wrap cx">
-    <p class="crumb mono"><a href="/codex/" data-sfx="tick">/codex</a> / {en.id.toLowerCase()}</p>
+    <p class="crumb mono"><a href="/codex/">/codex</a> / {en.id.toLowerCase()}</p>
     <p class="meta mono"><span class="chip live">{en.id}</span> <span>{en.category}</span>{en.date && <> · <time datetime={ymd(en.date)}>{ymd(en.date)}</time></>}</p>
     <h1 class="cx-t"><T en={en.title} zh={zh.title} /></h1>
     <div class="prose" data-l="en" lang="en"><En /></div>
     <div class="prose" data-l="zh" lang="zh-CN"><Zh /></div>
-    <p class="back"><a href="/codex/" data-sfx="tick">← <T k="codex.back" /></a></p>
+    <p class="back"><a href="/codex/">← <T k="codex.back" /></a></p>
   </article>
 </BaseLayout>
 <style>

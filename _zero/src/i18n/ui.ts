@@ -1,4 +1,4 @@
-// 零肉身造物 · 给人看的字全在这一处。en 是门面（默认），zh 是第二语言。
+// 零肉身造物（Zero-Flesh Creation）· 给人看的字全在这一处。en 是门面（默认），zh 是第二语言。
 // 英文不是翻译，是照英文读者的习惯重写的（_ops/文案规范.md）。
 // 改字只改这里；模板里用 <T k="home.h1" /> 取，键写错了构建直接报错。
 // 公司那张卡（company.*）的中文是 Song 的原话，一个字都别动；英文沿用千手院总舵上那版。
@@ -6,8 +6,8 @@
 export const ui = {
   en: {
     site: {
-      title: 'Assetless Genesis · 零肉身造物',
-      desc: 'A lab for digital species built from pure math: procedural geometry, live Web Audio synthesis and headless simulation. No meshes, no samples, no bitmaps. Home of QIANSHOU LAB and the Cyber Fry Shop.',
+      title: 'Zero-Flesh Creation · 零肉身造物',
+      desc: 'A lab for digital species built from pure math: procedural geometry, live Web Audio synthesis and headless simulation. No meshes, no samples, no bitmaps. Home of QIANSHOU LAB and the Cyber Bodega.',
       skip: 'Skip to content',
     },
     nav: { label: 'Sections', home: 'Observatory', specimens: 'Specimens', artifacts: 'Artifacts', codex: 'Codex' },
@@ -26,12 +26,13 @@ export const ui = {
         meta: '10 cyber monks on duty · office grunt work',
         go: 'Enter',
       },
-      zhahuopu: {
-        name: 'Cyber Fry Shop', alt: '赛博炸货铺',
-        sub: 'Small tools, fried to order. Grab one and go.',
-        meta: '{n} on the menu · phone-sized jobs',
-        go: 'See the menu',
+      zahuopu: {
+        name: 'Cyber Bodega', alt: '赛博杂货铺',
+        sub: 'Small tools on the shelf. Grab one and go.',
+        meta: '{n} on the shelf · phone-sized jobs',
+        go: 'Browse the shelf',
       },
+      cta: 'Dissect Specimen 001', toHeadless: 'Go headless', toRender: 'Restore render',
       lab: { no: '§01', t: 'The lab', sub: 'Three drawers. One rule: no assets.' },
       latest: { no: '§02', t: 'Latest', all: 'All', empty: 'Nothing in this drawer yet. It’s still in the oven.' },
       manifesto: {
@@ -86,18 +87,18 @@ export const ui = {
       open: 'Open the bench',
       back: 'All codex cards',
     },
-    zhahuopu: {
-      kicker: '/zhahuopu',
-      h1: 'Cyber Fry Shop',
-      lede: 'Small tools, fried to order. No sign-up, no cover charge, no waiting in line.',
+    zahuopu: {
+      kicker: '/zahuopu',
+      h1: 'Cyber Bodega',
+      lede: 'Small tools on the shelf. No sign-up, no cover charge, no line at the register.',
       sign: 'open 24/7',
-      menu: 'Menu',
+      menu: 'On the shelf',
       also: 'Looking for the office monks? They live at the temple.',
       alsoGo: 'QIANSHOU LAB',
     },
     foot: {
       qianshou: 'QIANSHOU LAB',
-      zhahuopu: 'Cyber Fry Shop',
+      zahuopu: 'Cyber Bodega',
       mail: 'Send a pigeon (email)',
       purity: 'Purity check',
       pass: 'clean · no flesh detected',
@@ -130,8 +131,8 @@ export const ui = {
 
   zh: {
     site: {
-      title: '零肉身造物 · Assetless Genesis',
-      desc: '零肉身造物：用纯数学公式、Web Audio 实时合成和无头模拟造数字物种的实验室。零网格、零采样、零位图。千手院和赛博炸货铺的家。',
+      title: '零肉身造物 · Zero-Flesh Creation',
+      desc: '零肉身造物：用纯数学公式、Web Audio 实时合成和无头模拟造数字物种的实验室。零网格、零采样、零位图。千手院和赛博杂货铺的家。',
       skip: '跳到正文',
     },
     nav: { label: '栏目', home: '观测台', specimens: '样本档案', artifacts: '自研造物', codex: '造物法则' },
@@ -150,12 +151,13 @@ export const ui = {
         meta: '在岗罗汉 10 尊 · 专治办公苦活',
         go: '进山门',
       },
-      zhahuopu: {
-        name: '赛博炸货铺', alt: 'Cyber Fry Shop',
-        sub: '小工具现炸现卖，拿了就走。',
-        meta: '菜单上 {n} 样 · 手机上的小活',
-        go: '看菜单',
+      zahuopu: {
+        name: '赛博杂货铺', alt: 'Cyber Bodega',
+        sub: '小工具都在货架上，拿了就走。',
+        meta: '货架上 {n} 样 · 手机上的小活',
+        go: '逛货架',
       },
+      cta: '解剖样本 001', toHeadless: '切换无头态', toRender: '恢复肉身渲染',
       lab: { no: '§01', t: '实验室', sub: '三个抽屉，一条规矩：不准有资产。' },
       latest: { no: '§02', t: '最新归档', all: '全部', empty: '这格还空着，东西在炉子里。' },
       manifesto: {
@@ -210,18 +212,18 @@ export const ui = {
       open: '上实验台',
       back: '全部法则',
     },
-    zhahuopu: {
-      kicker: '/zhahuopu',
-      h1: '赛博炸货铺',
-      lede: '小工具现炸现卖。不用注册，不收门票，不用排队。',
+    zahuopu: {
+      kicker: '/zahuopu',
+      h1: '赛博杂货铺',
+      lede: '小工具都在货架上。不用注册，不收门票，结账不用排队。',
       sign: '营业中 24/7',
-      menu: '菜单',
+      menu: '货架',
       also: '找办公室那群和尚？他们住在山上的千手院。',
       alsoGo: '千手院',
     },
     foot: {
       qianshou: '千手院',
-      zhahuopu: '赛博炸货铺',
+      zahuopu: '赛博杂货铺',
       mail: '飞鸽传书（发邮件）',
       purity: '纯洁度检疫',
       pass: '干净 · 未检出肉身',

@@ -18,6 +18,7 @@ export function mountHero(root: HTMLElement) {
     params: root.querySelector<HTMLElement>('[data-hud="params"]'),
     fps: root.querySelector<HTMLElement>('[data-hud="fps"]'),
     verts: root.querySelector<HTMLElement>('[data-hud="verts"]'),
+    trig: root.querySelector<HTMLElement>('[data-hud="trig"]'),
   };
   const stage = root.querySelector<HTMLElement>('[data-stage]') ?? root;
 
@@ -80,6 +81,7 @@ export function mountHero(root: HTMLElement) {
     fpsN++;
     if (now - fpsT > 500) {
       if (hud.fps) hud.fps.textContent = String(Math.round((fpsN * 1000) / (now - fpsT)));
+      if (hud.trig) hud.trig.textContent = `${Math.sin(yaw).toFixed(2)} / ${Math.cos(yaw).toFixed(2)}`;   // 取景框此刻的转角，真算的
       fpsT = now; fpsN = 0;
     }
     if (visible && !document.hidden && !still) raf = requestAnimationFrame(frame);

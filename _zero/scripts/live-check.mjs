@@ -12,13 +12,13 @@ mkdirSync(OUT, { recursive: true });
 
 // 本仓库里每个工具的文件夹 + 别的仓库挂在 qianshoulab.github.io 下面的工具（luruseng、pabiao、xibiao、gongshi、qianye）
 const MUST_200 = [
-  '/', '/qianshou/', '/zhahuopu/', '/specimens/', '/specimens/001-cinderfall-arena/', '/artifacts/', '/codex/', '/codex/web-audio-formulas/',
+  '/', '/qianshou/', '/zahuopu/', '/zhahuopu/', '/specimens/', '/specimens/001-cinderfall-arena/', '/artifacts/', '/codex/', '/codex/web-audio-formulas/',
   '/yijing/', '/chaojing/', '/zhike/', '/saodi/', '/huayuan/', '/xunshan/', '/daibi/', '/baozuseng/', '/tiexie/', '/xiaobai/', '/privacy/',
   '/apps.json', '/qianshou/scene-a.js', '/qianshou/scene-b.js',
   '/luruseng/', '/pabiao/', '/xibiao/', '/gongshi/', '/gongshi/inch/', '/gongshi/tp/', '/qianye/',
 ];
 const PROBE = ['/gongshi/count/'];   // 铁件点钞机网页：交接里说还在草稿分支，只报不卡
-const ZERO = ['/', '/zhahuopu/', '/specimens/', '/specimens/001-cinderfall-arena/', '/artifacts/', '/codex/', '/codex/web-audio-formulas/'];
+const ZERO = ['/', '/zahuopu/', '/specimens/', '/specimens/001-cinderfall-arena/', '/artifacts/', '/codex/', '/codex/web-audio-formulas/'];
 
 const lines = [];
 const fail = [];

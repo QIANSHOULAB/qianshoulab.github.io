@@ -12,7 +12,7 @@ const chars = { en: plainLength(pair.en.body), zh: plainLength(pair.zh.body) };
 ---
 <BaseLayout current="specimens" title={{ en: `Specimen ${en.id} · ${en.title}`, zh: `样本 ${zh.id} · ${zh.title}` }} desc={{ en: en.summary, zh: zh.summary }}>
   <article class="spec wrap">
-    <p class="crumb mono"><a href="/specimens/" data-sfx="tick">/specimens</a> / {en.id}</p>
+    <p class="crumb mono"><a href="/specimens/">/specimens</a> / {en.id}</p>
     <h1 class="spec-t"><T en={en.title} zh={zh.title} /></h1>
     <T as="p" class="spec-sum" en={en.summary} zh={zh.summary} />
 
@@ -31,7 +31,7 @@ const chars = { en: plainLength(pair.en.body), zh: plainLength(pair.zh.body) };
         <div class="wide"><dt><T k="specimen.source" /></dt><dd><a class="ext" href={en.sourceUrl} rel="noopener" target="_blank">{en.sourceLabel} ↗</a></dd></div>
       </dl>
       <div class="fc-actions">
-        <a class="btn primary" href={en.liveUrl} rel="noopener" target="_blank" data-sfx="open"><T k="specimen.play" /> ↗</a>
+        <a class="btn primary" href={en.liveUrl} rel="noopener" target="_blank"><T k="specimen.play" /> ↗</a>
         <a class="btn" href={en.sourceUrl} rel="noopener" target="_blank"><T k="specimen.post" /> ↗</a>
         <span class="fc-url mono">{en.liveUrl.replace(/^https:\/\//, '').replace(/\/$/, '')}</span>
       </div>
@@ -41,7 +41,7 @@ const chars = { en: plainLength(pair.en.body), zh: plainLength(pair.zh.body) };
     <div class="prose-wrap">
       <slot />
     </div>
-    <p class="back"><a href="/specimens/" data-sfx="tick">← <T k="specimen.back" /></a></p>
+    <p class="back"><a href="/specimens/">← <T k="specimen.back" /></a></p>
   </article>
 </BaseLayout>
 

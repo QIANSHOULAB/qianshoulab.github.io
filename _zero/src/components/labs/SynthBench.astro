@@ -18,13 +18,13 @@ const { compact = false } = Astro.props;
       ))}
     </div>
     <div class="scope" data-scope data-noscan><span class="scope-tag mono">scope</span></div>
-    <p class="bench-foot"><T k="bench.hint" /> <a href="/codex/web-audio-formulas/" data-sfx="tick"><T k="bench.full" /> →</a></p>
+    <p class="bench-foot"><T k="bench.hint" /> <a href="/codex/web-audio-formulas/"><T k="bench.full" /> →</a></p>
   ) : (
     <>
       <div class="bench-head">
         <div class="seg picks" role="group">
           {PRESETS.map((p, i) => (
-            <button type="button" data-pick={p.id} aria-pressed={i === 0 ? 'true' : 'false'} data-sfx="tick"><T k={`bench.${p.id}`} /></button>
+            <button type="button" data-pick={p.id} aria-pressed={i === 0 ? 'true' : 'false'}><T k={`bench.${p.id}`} /></button>
           ))}
         </div>
         {PRESETS.map((p, i) => (

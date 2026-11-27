@@ -1,5 +1,5 @@
 name: 零肉身造物
-# 零肉身造物（Assetless Genesis）：首页 / 和 /zhahuopu、/specimens、/artifacts、/codex 的源码在 _zero/（Astro + MDX + Tailwind）。
+# 零肉身造物（Zero-Flesh Creation）：首页 / 和 /zahuopu、/specimens、/artifacts、/codex 的源码在 _zero/（Astro + MDX + Tailwind）。
 # 改了 _zero/ 就在这里构建，零肉身自检（产物里不许有图片、音频、字体、3D 网格）过了，
 # 再把产物提交到仓库根目录：只动 _zero/scripts/publish.mjs 里 OWNED 那几样，千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。
 # GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。

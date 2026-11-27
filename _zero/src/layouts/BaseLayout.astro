@@ -8,12 +8,12 @@ import { t } from '../i18n/ui';
 interface Props {
   title?: { en: string; zh: string };
   desc?: { en: string; zh: string };
-  current?: 'home' | 'specimens' | 'artifacts' | 'codex' | 'zhahuopu';
+  current?: 'home' | 'specimens' | 'artifacts' | 'codex' | 'zahuopu';
 }
 const site = { en: t('en', 'site.title'), zh: t('zh', 'site.title') };
 const { current = 'home' } = Astro.props;
 const title = Astro.props.title
-  ? { en: `${Astro.props.title.en} · Assetless Genesis`, zh: `${Astro.props.title.zh} · 零肉身造物` }
+  ? { en: `${Astro.props.title.en} · Zero-Flesh Creation`, zh: `${Astro.props.title.zh} · 零肉身造物` }
   : site;
 const desc = Astro.props.desc ?? { en: t('en', 'site.desc'), zh: t('zh', 'site.desc') };
 const url = new URL(Astro.url.pathname, Astro.site).href;
@@ -36,7 +36,7 @@ const icon = "data:image/svg+xml," + encodeURIComponent(
   <meta name="theme-color" content="#0A0B0D" />
   <meta name="zero:build" content={build} />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Assetless Genesis · 零肉身造物" />
+  <meta property="og:site_name" content="Zero-Flesh Creation · 零肉身造物" />
   <meta property="og:title" content={title.en} />
   <meta property="og:description" content={desc.en} />
   <meta property="og:url" content={url} />

@@ -14,7 +14,7 @@ const list = await pairs('specimens');
   </header>
   <section class="wrap list">
     {list.map((p) => (
-      <a class="item card link-card" href={`/specimens/${p.slug}/`} data-sfx="open">
+      <a class="item card link-card" href={`/specimens/${p.slug}/`}>
         <div class="ticks" aria-hidden="true"></div>
         <div class="no mono">{p.en.data.id}</div>
         <div class="body">

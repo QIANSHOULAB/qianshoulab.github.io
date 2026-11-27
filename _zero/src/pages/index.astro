@@ -1,9 +1,9 @@
 ---
-// 观测台（首页）：宣言 + 实时几何取景框 + 两扇门（千手院、赛博炸货铺）+ 三个抽屉 + 最新归档时间流。
+// 观测台（首页）：宣言 + 实时几何取景框 + 两扇门（千手院、赛博杂货铺）+ 三个抽屉 + 最新归档时间流。
 import BaseLayout from '../layouts/BaseLayout.astro';
 import T from '../components/core/T.astro';
 import { tAny } from '../i18n/ui';
-import { monks, fryShop } from '../data/tools';
+import { monks, shop } from '../data/tools';
 import { pairs, updates } from '../utils/archive';
 import { SPECIES } from '../data/species';
 
@@ -27,6 +27,13 @@ const kinds = [['specimen', 'specimens'], ['artifact', 'artifacts'], ['codex', '
       <p class="kicker mono"><span class="dot" aria-hidden="true"></span><span>/</span><T k="home.kicker" /></p>
       <h1 class="h1"><T k="home.h1" /></h1>
       <T as="p" class="lede" k="home.lede" />
+      <div class="cta">
+        <a class="btn primary" href="/specimens/001-cinderfall-arena/"><T k="home.cta" /> <span aria-hidden="true">→</span></a>
+        <button type="button" class="btn mono-tag" data-mode-flip>
+          <span class="to-hl"><T k="home.toHeadless" /> <span class="tag">[HEADLESS]</span></span>
+          <span class="to-rd"><T k="home.toRender" /> <span class="tag">[RENDER]</span></span>
+        </button>
+      </div>
     </div>
     <figure class="viewport card" data-hero>
       <div class="stage" data-stage></div>
@@ -38,7 +45,7 @@ const kinds = [['specimen', 'specimens'], ['artifact', 'artifacts'], ['codex', '
         <span class="latin" data-hud="latin">{first.latin}</span>
         <span class="common"><span data-hud="common" data-l="en" lang="en">{first.en}</span><span data-hud="common" data-l="zh" lang="zh-CN">{first.zh}</span></span>
       </div>
-      <div class="hud br mono render-only" data-noscan aria-hidden="true"><T k="home.vp.drag" /></div>
+      <div class="hud br mono" data-noscan aria-hidden="true"><span class="render-only"><T k="home.vp.drag" /> · </span>sin/cos <span data-hud="trig">0.00 / 1.00</span></div>
       <figcaption class="formula mono" data-noscan>
         <span>r(φ) = ( |cos(m·φ/4)|<sup>n₂</sup> + |sin(m·φ/4)|<sup>n₃</sup> )<sup>−1/n₁</sup></span>
         <span class="params" data-hud="params"></span>
@@ -46,8 +53,8 @@ const kinds = [['specimen', 'specimens'], ['artifact', 'artifacts'], ['codex', '
     </figure>
   </section>
 
-  <nav class="doors wrap" aria-label="QIANSHOU LAB · Cyber Fry Shop">
-    <a class="door card link-card" href="/qianshou/" data-sfx="open">
+  <nav class="doors wrap" aria-label="QIANSHOU LAB · Cyber Bodega">
+    <a class="door card link-card" href="/qianshou/">
       <div class="door-art" data-emblem="halo"></div>
       <div class="door-body">
         <p class="door-path mono">/qianshou</p>
@@ -61,18 +68,18 @@ const kinds = [['specimen', 'specimens'], ['artifact', 'artifacts'], ['codex', '
         <span class="go"><T k="home.qianshou.go" /> <span class="arr" aria-hidden="true">→</span></span>
       </div>
     </a>
-    <a class="door card link-card" href="/zhahuopu/" data-sfx="open">
-      <div class="door-art" data-emblem="mahua"></div>
+    <a class="door card link-card" href="/zahuopu/">
+      <div class="door-art" data-emblem="assorted"></div>
       <div class="door-body">
-        <p class="door-path mono">/zhahuopu</p>
-        <h2 class="door-name"><T k="home.zhahuopu.name" /><span class="door-alt"><T k="home.zhahuopu.alt" /></span></h2>
-        <T as="p" class="door-sub" k="home.zhahuopu.sub" />
-        <p class="door-meta"><T k="home.zhahuopu.meta" vars={{ n: fryShop.length }} /></p>
+        <p class="door-path mono">/zahuopu</p>
+        <h2 class="door-name"><T k="home.zahuopu.name" /><span class="door-alt"><T k="home.zahuopu.alt" /></span></h2>
+        <T as="p" class="door-sub" k="home.zahuopu.sub" />
+        <p class="door-meta"><T k="home.zahuopu.meta" vars={{ n: shop.length }} /></p>
         <p class="door-list mono" aria-hidden="true">
-          <span data-l="en" lang="en">{fryShop.map((m) => pin(m.name.en)).join(' · ')}</span>
-          <span data-l="zh" lang="zh-CN">{fryShop.map((m) => m.name.zh).join(' · ')}</span>
+          <span data-l="en" lang="en">{shop.map((m) => pin(m.name.en)).join(' · ')}</span>
+          <span data-l="zh" lang="zh-CN">{shop.map((m) => m.name.zh).join(' · ')}</span>
         </p>
-        <span class="go"><T k="home.zhahuopu.go" /> <span class="arr" aria-hidden="true">→</span></span>
+        <span class="go"><T k="home.zahuopu.go" /> <span class="arr" aria-hidden="true">→</span></span>
       </div>
     </a>
   </nav>
@@ -82,7 +89,7 @@ const kinds = [['specimen', 'specimens'], ['artifact', 'artifacts'], ['codex', '
     <T as="p" class="sec-sub" k="home.lab.sub" />
     <div class="cols">
       {cols.map((c) => (
-        <a class="col card link-card" href={`${c.path}/`} data-sfx="tick">
+        <a class="col card link-card" href={`${c.path}/`}>
           <p class="col-path mono">{c.path}</p>
           <h3 class="col-name"><T k={`cols.${c.key}.name`} /></h3>
           <T as="p" class="col-desc" k={`cols.${c.key}.desc`} />
@@ -106,14 +113,14 @@ const kinds = [['specimen', 'specimens'], ['artifact', 'artifacts'], ['codex', '
     <div class="sec-h latest-h">
       <span class="sec-no">§02</span><h2 class="sec-t" id="latest-t"><T k="home.latest.t" /></h2>
       <div class="seg filters" role="group" aria-label="Filter">
-        <button type="button" data-f="all" aria-pressed="true" data-sfx="tick"><T k="home.latest.all" /></button>
-        {kinds.map(([k, col]) => <button type="button" data-f={k} aria-pressed="false" data-sfx="tick"><T k={`cols.${col}.name`} /></button>)}
+        <button type="button" data-f="all" aria-pressed="true"><T k="home.latest.all" /> <span class="n">{ups.length}</span></button>
+        {kinds.map(([k, col]) => <button type="button" data-f={k} aria-pressed="false"><T k={`cols.${col}.name`} /> <span class="n">{ups.filter((u) => u.kind === k).length}</span></button>)}
       </div>
     </div>
     <ol class="stream">
       {ups.map((u) => (
         <li data-kind={u.kind}>
-          <a class="row" href={u.href} data-sfx="tick">
+          <a class="row" href={u.href}>
             <time class="mono when" datetime={u.date}>{u.date}</time>
             <span class={`chip kind k-${u.kind}`}>{u.kind === 'specimen' ? <><T k="kind.specimen" />{'\u00a0·\u00a0'}{u.tag}</> : u.tag ? u.tag : <T k={`kind.${u.kind}`} />}</span>
             <span class="what">
@@ -171,6 +178,11 @@ const kinds = [['specimen', 'specimens'], ['artifact', 'artifacts'], ['codex', '
     empty.forEach((e) => e.classList.toggle('show', n === 0));
   }
   btns.forEach((b) => b.addEventListener('click', () => apply(b.dataset.f || 'all')));
+
+  document.querySelector('[data-mode-flip]')?.addEventListener('click', () => {
+    const to = document.documentElement.getAttribute('data-mode') === 'headless' ? 'render' : 'headless';
+    document.querySelector<HTMLButtonElement>(`[data-mode-set][data-v="${to}"]`)?.click();
+  });
 </script>
 
 <style>
@@ -182,6 +194,12 @@ const kinds = [['specimen', 'specimens'], ['artifact', 'artifacts'], ['codex', '
   :global(html[data-lang="zh"]) .h1 { letter-spacing: 0; line-height: 1.15; }
   .hero :global(.lede) { font-size: 19px; line-height: 1.55; color: var(--dim); margin: 0; max-width: 34em; text-wrap: pretty; }
 
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .mono-tag .tag { font-family: var(--font-mono); font-size: 12.5px; color: var(--dim); font-weight: 500; }
+  .to-rd { display: none; }
+  :global(html[data-mode="headless"]) .to-hl { display: none; }
+  :global(html[data-mode="headless"]) .to-rd { display: inline; }
+  .filters .n { font-family: var(--font-mono); font-size: 11px; color: var(--faint); margin-left: 2px; }
   .viewport { margin: 0; aspect-ratio: 7 / 5.2; overflow: hidden; background: radial-gradient(120% 90% at 50% 45%, #10161A 0%, #0C0E11 60%, #0A0B0D 100%); display: flex; flex-direction: column; }
   .stage { position: relative; flex: 1; min-height: 0; }
   .stage :global(.hero-canvas) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; }

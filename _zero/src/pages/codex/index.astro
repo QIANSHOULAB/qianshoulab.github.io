@@ -24,7 +24,7 @@ const cats = {
         <div class="cat">
           <h2 class="cat-t"><span class="mono cat-k">{c}</span> <T en={cats[c].en} zh={cats[c].zh} /></h2>
           {items.length ? items.map((p) => (
-            <a class="item card link-card" href={`/codex/${p.slug}/`} data-sfx="open">
+            <a class="item card link-card" href={`/codex/${p.slug}/`}>
               <p class="meta mono"><span class="chip live">{p.en.data.id}</span>{p.en.data.date && <time datetime={ymd(p.en.data.date)}>{ymd(p.en.data.date)}</time>}</p>
               <h3 class="tt"><T en={p.en.data.title} zh={p.zh.data.title} /></h3>
               <T as="p" class="sum" en={p.en.data.summary} zh={p.zh.data.summary} />
