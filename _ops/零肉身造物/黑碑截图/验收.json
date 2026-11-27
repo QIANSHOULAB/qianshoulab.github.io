@@ -1,0 +1,22 @@
+{
+  "base": "https://qianshoulab.github.io",
+  "when": "2026-11-27T12:53:35.201Z",
+  "views": {
+    "390": {
+      "gl": "yes",
+      "dawnAt3s": 0.36,
+      "fps10s": 4.5,
+      "sound": "SOUND: ON",
+      "landed": "https://qianshoulab.github.io/specimens/",
+      "errors": []
+    },
+    "1440": {
+      "gl": "yes",
+      "dawnAt3s": 0.452,
+      "fps10s": 1.2,
+      "sound": "SOUND: ON",
+      "landed": "https://qianshoulab.github.io/specimens/",
+      "errors": []
+    }
+  }
+}
