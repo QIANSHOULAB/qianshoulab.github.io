@@ -5,16 +5,18 @@ name: 零肉身造物
 # 千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
 # 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，根目录还是该是的那个，零肉身页面不报错、不横向溢出。
 # 拉最新 main 再放产物，推不上再拉再推，最多 5 次，不许 --force。提交作者沿用触发这次构建的那个提交的作者。
+# v3「造物之门」在分支 zero-v3-alt 上做（Song 11-28 01:45 定的）：推分支只跑 preview（本地构建、本地起服务、三内核截图、总览图提交回分支），不发版；
+# 并进 main 以后才走 build → live 这条发版的路。
 on:
   push:
-    branches: [main]
+    branches: [main, zero-v3-alt]
     paths:
       - '_zero/**'
       - '.github/workflows/zero.yml'
   workflow_dispatch:
     inputs:
       commit_shots:
-        description: '把黑碑首页的验收截图提交到 _ops/零肉身造物/黑碑截图/'
+        description: '把造物之门的验收截图（总览图、验收.json、几张原图）提交到 _ops/零肉身造物/门截图/'
         type: boolean
         default: false
 
@@ -23,11 +25,12 @@ permissions:
   pages: write
 
 concurrency:
-  group: zero
+  group: zero-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -94,11 +97,85 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent || echo "没请动也没关系，推送本身会触发"
 
+  # 分支 zero-v3-alt：只构建、在工作流机器上本地起服务、三内核截图，总览图提交回分支。不碰 main，不发版。
+  preview:
+    if: github.ref == 'refs/heads/zero-v3-alt'
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: _zero/package-lock.json
+
+      - name: 装依赖、构建
+        working-directory: _zero
+        env:
+          ZERO_BUILD: ${{ github.sha }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: 本地起服务（摆成线上的样子：/zero/ 是首页）
+        run: |
+          mkdir -p site/zero
+          cp -r _zero/dist/* site/
+          cp _zero/dist/index.html site/zero/index.html
+          (cd site && nohup python3 -m http.server 4321 --bind 127.0.0.1 > /dev/null 2>&1 &)
+          sleep 2
+          curl -sf -o /dev/null http://127.0.0.1:4321/zero/ && echo "本地服务起来了"
+
+      - name: 装 Playwright（三个内核）
+        working-directory: _zero
+        run: npx playwright install --with-deps chromium webkit firefox
+
+      - name: 三内核截图
+        working-directory: _zero
+        env:
+          BASE: http://127.0.0.1:4321
+        run: node scripts/genesis-shots.mjs "${{ github.workspace }}/preview-shots" || echo "::warning::有报错或溢出，见 验收.json"
+
+      - name: 拼总览图
+        run: |
+          python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
+          python3 _zero/scripts/shots-sheet.py preview-shots preview-sheets
+
+      - name: 总览图、验收结果、几张原图提交回分支（_ops/零肉身造物/门截图/预览/）
+        run: |
+          git config user.name "$(git log -1 --format=%an)"
+          git config user.email "$(git log -1 --format=%ae)"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin zero-v3-alt
+            git reset -q --hard origin/zero-v3-alt
+            D="_ops/零肉身造物/门截图/预览"
+            mkdir -p "$D"
+            rm -f "$D"/*
+            cp preview-sheets/*.jpg "$D/"
+            cp preview-shots/验收.json "$D/"
+            for f in chromium-390x844 chromium-1440x900 webkit-390x844 firefox-1440x900; do cp preview-shots/$f-*.jpg "$D/" 2>/dev/null || true; done
+            git add -A "$D"
+            if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
+            git commit -q -m "零肉身造物 v3：分支预览截图（源码 ${GITHUB_SHA::7}）"
+            if git push -q origin HEAD:zero-v3-alt; then exit 0; fi
+            sleep 8
+          done
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zero-preview-shots
+          path: preview-shots
+          if-no-files-found: ignore
+
   live:
     needs: build
     if: ${{ always() && (needs.build.outputs.published == 'yes' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
 
@@ -124,7 +201,7 @@ jobs:
         working-directory: _zero
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit firefox
 
       - name: 线上验收
         working-directory: _zero
@@ -132,23 +209,32 @@ jobs:
           SHOTS: ${{ github.workspace }}/live-shots
         run: node scripts/live-check.mjs
 
-      - name: 黑碑首页截图（黎明 0/5/10 秒、五撮出碑、进门半路、声音开关、10 秒帧数）
+      - name: 造物之门三内核截图（Chromium 11 个尺寸、WebKit 和 Firefox 各 4 个，七幕各一张）
         working-directory: _zero
-        run: node scripts/monolith-shots.mjs "${{ github.workspace }}/live-shots/黑碑截图"
+        run: node scripts/genesis-shots.mjs "${{ github.workspace }}/live-shots/门截图"
+
+      - name: 拼总览图
+        if: always()
+        run: |
+          python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
+          python3 _zero/scripts/shots-sheet.py live-shots/门截图 live-shots/门总览
 
       - name: 截图提交到 _ops（只有手动跑、勾了 commit_shots 才提交）
         if: github.event_name == 'workflow_dispatch' && inputs.commit_shots
         run: |
-          git config user.name "QIANSHOULAB"
-          git config user.email "oilsongchengmin@gmail.com"
+          git config user.name "$(git log -1 --format=%an)"
+          git config user.email "$(git log -1 --format=%ae)"
           for i in 1 2 3 4 5; do
             git fetch -q origin main
             git reset -q --hard origin/main
-            mkdir -p "_ops/零肉身造物/黑碑截图"
-            cp -f live-shots/黑碑截图/* "_ops/零肉身造物/黑碑截图/"
-            git add "_ops/零肉身造物/黑碑截图"
+            D="_ops/零肉身造物/门截图"
+            mkdir -p "$D"
+            cp -f live-shots/门总览/*.jpg "$D/"
+            cp -f live-shots/门截图/验收.json "$D/"
+            for f in chromium-390x844 chromium-1440x900 webkit-390x844 firefox-1440x900; do cp -f live-shots/门截图/$f-*.jpg "$D/" 2>/dev/null || true; done
+            git add "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
-            git commit -q -m "零肉身造物：黑碑首页线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
+            git commit -q -m "零肉身造物：造物之门线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
             if git push -q origin HEAD:main; then exit 0; fi
             sleep 8
           done
