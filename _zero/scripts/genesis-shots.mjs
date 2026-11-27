@@ -6,7 +6,7 @@
 // 有一条没过，退出码就是 1（工作流变红）。WebKit 在没有显卡的机器上起不来 3D 的话，查的是静态图兜底和版式，照样算数。
 import { chromium, webkit, firefox } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, x, i, arr) => (x.startsWith('--') ? [...a, [x.slice(2), arr[i + 1] && !arr[i + 1].startsWith('--') ? arr[i + 1] : '1']] : a), []));
 const BASE = args.base || process.env.LIVE_BASE || 'http://127.0.0.1:4321';
@@ -116,8 +116,11 @@ if (args.sheets) {
   const want = (args.sheetSizes || '390x844,1440x900').split(',');
   for (const [key, list] of Object.entries(groups)) {
     if (!want.some((w) => key.includes(w))) continue;
-    const imgs = list.sort((a, b2) => a.act - b2.act).map((s) => `<figure><img src="${pathToFileURL(join(process.cwd(), OUT, s.file)).href}"><figcaption>${NUM[s.act - 1]}${s.issues.length || s.errors.length ? ' ✗' : ''}</figcaption></figure>`).join('');
-    await page.setContent(`<html><body style="margin:0;background:#000;color:#999;font:12px monospace"><div style="display:flex;gap:4px;padding:4px">${imgs}</div><style>figure{margin:0;flex:1}img{width:100%;display:block}figcaption{padding:2px 4px}</style></body></html>`);
+    // 拼图页写在截图旁边，用 file:// 打开（setContent 的空白页读不了本地图片）
+    const imgs = list.sort((a, b2) => a.act - b2.act).map((s) => `<figure><img src="${s.file}"><figcaption>${NUM[s.act - 1]}${s.issues.length || s.errors.length ? ' ✗' : ''}</figcaption></figure>`).join('');
+    const html = join(OUT, `_sheet-${key}.html`);
+    writeFileSync(html, `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#000;color:#999;font:12px monospace}figure{margin:0;flex:1}img{width:100%;display:block}figcaption{padding:2px 4px}</style></head><body><div style="display:flex;gap:4px;padding:4px">${imgs}</div></body></html>`);
+    await page.goto(pathToFileURL(resolve(html)).href, { waitUntil: 'load' });
     await page.waitForTimeout(300);
     const h = await page.evaluate(() => document.body.scrollHeight);
     await page.setViewportSize({ width: 1600, height: Math.min(1400, h) });
