@@ -104,7 +104,8 @@ function go(k: number) {
     setTimeout(leave, 340);
     return;
   }
-  scene.enter(k, (s) => { flood.style.opacity = String(sstep(0.7, 1, s)); }).then(() => {
+  stage.classList.add('entering');
+  scene.enter(k, (s) => { flood.style.opacity = String(sstep(0.72, 1, s)); }).then(() => {
     flood.style.opacity = '1';
     setTimeout(leave, 40);
   });
@@ -112,6 +113,7 @@ function go(k: number) {
 window.addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
   going = false;
+  stage.classList.remove('entering');
   flood.style.transition = '';
   flood.style.opacity = '0';
   scene?.reset();

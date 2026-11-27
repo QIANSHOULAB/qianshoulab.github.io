@@ -130,6 +130,10 @@ import stillP from '../assets/still-portrait.jpg?url';
   .foot-out { display: none; }
 
   .flood { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 90; }
+  /* 进门：字和线先退下，只剩画面 */
+  .title, .foot-in, .leaders { transition: opacity .5s var(--ease); }
+  .stage:global(.entering) .title, .stage:global(.entering) .entries, .stage:global(.entering) .leaders, .stage:global(.entering) .foot-in { opacity: 0 !important; transition: opacity .45s var(--ease); }
+  :global(.is-home):has(.stage.entering) :global(.hd) { opacity: 0; transition: opacity .45s var(--ease); }
 
   @media (max-width: 760px), (max-height: 620px) {
     .foot-in { display: none; }

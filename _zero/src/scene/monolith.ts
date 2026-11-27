@@ -274,7 +274,7 @@ export function createScene(opts: SceneOpts) {
     U.uClMax.value.copy(bx.max);
     glow.visible = amt[a1] > 0.01;
     glow.position.set(c.center[0], c.center[1], Z_FRONT + 0.35);
-    glow.scale.set(hw * 2 + 90, hh * 2 + 90, 1);
+    glow.scale.set(hw * 2 + 64, hh * 2 + 64, 1);
   }
   const box = new Box3();
 
@@ -375,10 +375,11 @@ export function createScene(opts: SceneOpts) {
         lerp(startPos.y, hy, sstep(0.25, 1, e)),
         lerp(0, Z_FRONT + 2.5, e),
       );
-      const aim = sstep(0.1, 0.85, s);
-      look.set(lerp(camera.position.x, hx, aim), lerp(camera.position.y, hy, aim), camera.position.z - 50);
+      // 一直看着碑面上那道口子（看的点在碑面上，离得远，镜头不会一下子仰起来）
+      const aim = sstep(0.05, 0.6, s);
+      look.set(lerp(camera.position.x, hx, aim), lerp(camera.position.y, hy, aim), Z_FRONT);
       camera.lookAt(look);
-      applyProjection(lerp(fovBase, fovBase * 1.32, e), lerp(shift, 0, sstep(0, 0.6, s)));
+      applyProjection(lerp(fovBase, fovBase * 1.35, e), lerp(shift, 0, sstep(0.3, 0.95, s)));
       U.uExposure.value = 0.62 * (1 + 2.6 * e * e);
       entering.onProgress?.(s);
       if (s >= 1) { const r = entering.resolve; entering = null; r(); }

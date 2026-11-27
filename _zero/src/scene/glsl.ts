@@ -83,7 +83,7 @@ float planeLight(vec3 ro, vec3 rd, out float inside) {
   vec2 rp = vec2(abs(q.x), q.y - uCenterY);
   float ang = atan(rp.y, rp.x);
   float n = vnoise(ang * 11. + 3.1) * .55 + vnoise(ang * 37. + 11.7 + uTime * .01) * .45;
-  float rays = pow(n, 5.) * exp(-length(rp) / 170.) * exp(-d / 150.) * smoothstep(0., 20., d) * smoothstep(.45, 1., uDawn) * .22 * (1. - .6 * exp(-rp.x * rp.x / 900.));
+  float rays = pow(n, 5.) * exp(-length(rp) / (170. * uGlowScale)) * exp(-d / (150. * uGlowScale)) * smoothstep(0., 20., d) * smoothstep(.45, 1., uDawn) * .22 * (1. - .6 * exp(-rp.x * rp.x / 900.));
   return (g + cor + rays) * uLight;
 }
 
@@ -219,7 +219,7 @@ void main() {
     float spec = pow(max(dot(N, Hh), 0.), shin) * (shin + 8.) / 25.;
     float lane = exp(-abs(P.x) / (6. + t * .07));
     float toward = exp(-down * 30.);
-    float path = spec * F * (.35 + .65 * lane) * uLight * smoothstep(.0006, .004, down) * .5 * (.05 + .95 * toward);
+    float path = spec * F * (.35 + .65 * lane) * uLight * smoothstep(.0006, .004, down) * .5 * (.012 + .988 * toward);
     // 远处细浪抹平以后，光路变成一条柔和的亮带
     float soft = exp(-abs(az) / (.005 + .3 * down)) * smoothstep(.0002, .006, down) * (1. - smoothstep(.01, .085, down)) * .26 * uLight;
     waterC += (path + soft * F) * smoothstep(.12, .6, uDawn);
@@ -309,7 +309,7 @@ void main() {
     // 碑缝漏光
     float sw = max(.2, pw * 1.05);
     float seam = (1. - smoothstep(0., sw, dEdge)) * seamLight(vWorld.xy) * min(1., .2 / sw) * mix(.12, 1.5, vRand.z * vRand.z);
-    seam *= 1. + 4.5 * me;
+    seam *= 1. + 3. * me;
     col += seam;
     // 碑的外沿：一圈细亮边，跟天上那圈日冕接上
     float e = vInfo.y;
@@ -357,7 +357,7 @@ varying vec2 vQuad;
 void main() {
   vec2 q = vWorld.xy;
   float d = max(rectSD(q, uHole.xy, uHole.zw), 0.);
-  float g = .9 * exp(-d / 1.2) + .42 * exp(-d / 6.) + .12 * exp(-d / 18.);
+  float g = .6 * exp(-d / 1.2) + .26 * exp(-d / 6.) + .07 * exp(-d / 18.);
   vec2 c = (uHole.xy + uHole.zw) * .5;
   vec2 rp = q - c;
   float a = atan(rp.y, abs(rp.x));
