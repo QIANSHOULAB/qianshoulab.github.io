@@ -1,87 +1,78 @@
 ---
-// /zahuopu 赛博杂货铺：大白话名字的小工具都摆在这儿的货架上。每张卡指向工具原来的网址，一个网址都不改。
+// /zahuopu 赛博杂货铺（02）：大白话名字的小工具都摆在这儿。每张卡指向工具原来的网址，一个网址都不改。
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import T from '../../components/core/T.astro';
 import { shop } from '../../data/tools';
 import { t } from '../../i18n/ui';
 ---
 <BaseLayout current="zahuopu" title={{ en: t('en', 'zahuopu.h1'), zh: t('zh', 'zahuopu.h1') }} desc={{ en: t('en', 'zahuopu.lede'), zh: t('zh', 'zahuopu.lede') }}>
-  <header class="wrap page-head shop-head">
-    <p class="page-kicker">/zahuopu</p>
-    <h1 class="page-h1 sign"><T k="zahuopu.h1" /></h1>
+  <header class="wrap page-head">
+    <p class="page-no">02 / 05</p>
+    <h1 class="page-h1"><T k="zahuopu.h1" /></h1>
     <T as="p" class="page-lede" k="zahuopu.lede" />
-    <p class="open mono"><span class="lamp" aria-hidden="true"></span><T k="zahuopu.sign" /></p>
+    <p class="open label"><span class="lamp" aria-hidden="true"></span><T k="zahuopu.sign" /></p>
   </header>
 
-  <section class="wrap" aria-labelledby="menu-t">
-    <div class="menu-h"><h2 class="sec-t" id="menu-t"><T k="zahuopu.menu" /></h2><span class="mono menu-n"><T en={`${String(shop.length).padStart(2, '0')} items`} zh={`共 ${shop.length} 样`} /></span></div>
+  <section class="wrap shelf" aria-labelledby="menu-t">
+    <div class="shelf-h">
+      <h2 class="label" id="menu-t"><T k="zahuopu.menu" /></h2>
+      <span class="label"><T en={`${String(shop.length).padStart(2, '0')} items`} zh={`共 ${shop.length} 样`} /></span>
+    </div>
     <ol class="menu">
       {shop.map((x, i) => (
         <li>
-          <a class="dish card link-card" href={x.href}>
-            <div class="dish-art" data-emblem={`species:${x.slug}`} data-r1={x.species?.[0].join(',')} data-r2={x.species?.[1].join(',')}>
-              <span class="glyph" lang="zh-CN" aria-hidden="true">{x.glyph}</span>
-              <span class="no mono" aria-hidden="true">No.{String(i + 1).padStart(2, '0')}</span>
+          <a class="item slab" href={x.href}>
+            <div class="glyph-tile" aria-hidden="true">
+              <span class="glyph" lang="zh-CN">{x.glyph}</span>
+              <span class="no">{String(i + 1).padStart(2, '0')}</span>
             </div>
-            <div class="dish-body">
-              <div class="dish-top">
-                <h3 class="dish-name"><T en={x.name.en} zh={x.name.zh} /></h3>
-                <span class="price mono" aria-hidden="true"><span data-l="en">$0.00</span><span data-l="zh">¥0.00</span></span>
+            <div class="body">
+              <div class="top">
+                <h3 class="name"><T en={x.name.en} zh={x.name.zh} /></h3>
+                <span class="price label" aria-hidden="true"><span data-l="en">$0.00</span><span data-l="zh">¥0.00</span></span>
               </div>
-              <T as="p" class="dish-sub" en={x.sub.en} zh={x.sub.zh} />
-              <p class="dish-what"><T en={x.what.en} zh={x.what.zh} /> <T class="dish-note" en={x.note.en} zh={x.note.zh} /></p>
+              <T as="p" class="sub" en={x.sub.en} zh={x.sub.zh} />
+              <p class="what"><T en={x.what.en} zh={x.what.zh} /> <T class="note" en={x.note.en} zh={x.note.zh} /></p>
               <span class="go"><T en={x.go?.en ?? 'Open'} zh={x.go?.zh ?? '打开'} /> <span class="arr" aria-hidden="true">→</span></span>
             </div>
           </a>
         </li>
       ))}
     </ol>
-  </section>
-
-  <section class="wrap">
-    <a class="temple card link-card" href="/qianshou/">
+    <a class="temple slab" href="/qianshou/">
       <T as="p" class="temple-t" k="zahuopu.also" />
-      <span class="go"><T k="zahuopu.alsoGo" /> <span class="arr" aria-hidden="true">→</span></span>
+      <span class="go"><span class="label nob">01</span> <T k="zahuopu.alsoGo" /> <span class="arr" aria-hidden="true">→</span></span>
     </a>
   </section>
 </BaseLayout>
 
-<script>
-  import { mountEmblems } from '../../components/labs/emblems';
-  mountEmblems();
-</script>
-
 <style>
-  .shop-head { position: relative; }
-  .sign { color: #fff; text-shadow: 0 0 1px #fff, 0 0 18px rgba(0, 255, 157, .55), 0 0 42px rgba(0, 255, 157, .25); }
-  .open { display: inline-flex; align-items: center; gap: 8px; margin: 18px 0 0; font-size: 12.5px; color: var(--signal); border: 1px solid rgba(0, 255, 157, .3); border-radius: 999px; padding: 4px 12px; }
-  .lamp { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px var(--signal); animation: glow 2.6s ease-in-out infinite; }
-  @keyframes glow { 50% { opacity: .4; } }
-  .menu-h { display: flex; align-items: baseline; justify-content: space-between; margin: 56px 0 20px; }
-  .menu-n { font-size: 12.5px; color: var(--faint); }
-  .menu { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-  .dish { display: grid; grid-template-columns: 148px minmax(0, 1fr); height: 100%; overflow: hidden; }
-  .dish-art { position: relative; border-right: 1px solid var(--line); background: radial-gradient(100% 100% at 50% 45%, #12161B 0%, #0C0E11 75%); border-radius: var(--r-card) 0 0 var(--r-card); min-height: 180px; }
-  .dish-art :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .glyph { position: absolute; left: 12px; bottom: 8px; font-size: 22px; font-weight: 700; color: rgba(230, 237, 243, .82); z-index: 1; }
-  .no { position: absolute; left: 12px; top: 10px; font-size: 11px; color: var(--faint); z-index: 1; }
-  .dish-body { padding: 18px 20px 18px; display: flex; flex-direction: column; min-width: 0; }
-  .dish-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-  .dish-name { margin: 0; font-size: 20px; line-height: 1.3; }
-  .price { font-size: 12px; color: var(--signal); white-space: nowrap; }
-  .dish :global(.dish-sub) { margin: 6px 0 0; font-size: 15px; color: var(--ink); white-space: pre-line; }
-  .dish-what { margin: 8px 0 0; font-size: 14px; color: var(--dim); line-height: 1.55; }
-  .dish :global(.dish-note) { color: var(--faint); }
-  .dish .go { margin-top: auto; padding-top: 14px; font-size: 14px; }
-  .temple { margin-top: 24px; padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; }
-  .temple :global(.temple-t) { margin: 0; color: var(--dim); }
+  .open { display: inline-flex; align-items: center; gap: 10px; margin: 26px 0 0; }
+  .lamp { width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(255, 255, 255, .8); animation: breathe 7s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .35; } }
+  .shelf { margin-top: 64px; }
+  .shelf-h { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .shelf-h h2 { margin: 0; font-weight: 400; }
+  .menu { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .item { display: grid; grid-template-columns: 128px minmax(0, 1fr); height: 100%; }
+  .glyph-tile { position: relative; border-right: 1px solid var(--line); min-height: 176px; display: grid; place-items: center; overflow: hidden;
+    background: radial-gradient(70% 60% at 50% 100%, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 70%); }
+  .glyph { font: 500 46px/1 var(--serif-zh); color: #f0f0f0; text-shadow: 0 0 22px rgba(255, 255, 255, .22); }
+  .no { position: absolute; left: 12px; top: 12px; font: 400 10.5px/1 var(--mono); letter-spacing: .14em; color: var(--ink-4); }
+  .body { padding: 20px 22px; display: flex; flex-direction: column; min-width: 0; }
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .name { margin: 0; font: 600 19px/1.3 var(--sans); color: var(--ink); }
+  .price { color: var(--ink-3); }
+  .item :global(.sub) { margin: 6px 0 0; font-size: 15px; color: var(--ink); white-space: pre-line; }
+  .what { margin: 8px 0 0; font-size: 14px; color: var(--ink-2); line-height: 1.6; }
+  .item :global(.note) { color: var(--ink-3); }
+  .item .go { margin-top: auto; padding-top: 16px; }
+  .temple { margin-top: 16px; padding: 22px 24px; display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; }
+  .temple :global(.temple-t) { margin: 0; color: var(--ink-2); font-size: 15px; }
+  .nob { color: var(--ink-3); margin-right: 4px; }
   @media (max-width: 860px) { .menu { grid-template-columns: 1fr; } }
   @media (max-width: 520px) {
-    .dish { grid-template-columns: 1fr; }
-    .dish-art { border-right: 0; border-bottom: 1px solid var(--line); border-radius: var(--r-card) var(--r-card) 0 0; min-height: 132px; }
+    .item { grid-template-columns: 1fr; }
+    .glyph-tile { border-right: 0; border-bottom: 1px solid var(--line); min-height: 116px; }
   }
-  :global(html[data-mode="headless"]) .dish { grid-template-columns: 1fr; }
-  :global(html[data-mode="headless"]) .dish-art { min-height: 0; border: 0; }
-  :global(html[data-mode="headless"]) .glyph, :global(html[data-mode="headless"]) .no { position: static; display: inline-block; padding: 12px 0 0 20px; }
-  :global(html[data-mode="headless"]) .sign { text-shadow: none; }
 </style>

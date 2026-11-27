@@ -1,50 +1,47 @@
 ---
-// /codex 造物法则：常青技术卡片，按几何捏骨、声学合成、无头演化分类。
+// /codex 法典（05）：常青技术卡片，按几何捏骨、声学合成、无头演化分类。
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import T from '../../components/core/T.astro';
 import { pairs, ymd } from '../../utils/archive';
 import { t } from '../../i18n/ui';
 const list = await pairs('codex');
-const cats = {
-  geometry: { en: 'Geometry', zh: '几何捏骨' },
-  sound: { en: 'Sound', zh: '声学合成' },
-  headless: { en: 'Headless', zh: '无头演化' },
-} as const;
+const cats = ['geometry', 'sound', 'headless'] as const;
 ---
 <BaseLayout current="codex" title={{ en: t('en', 'codex.h1'), zh: t('zh', 'codex.h1') }} desc={{ en: t('en', 'codex.lede'), zh: t('zh', 'codex.lede') }}>
   <header class="wrap page-head">
-    <p class="page-kicker">/codex</p>
+    <p class="page-no">05 / 05</p>
     <h1 class="page-h1"><T k="codex.h1" /></h1>
     <T as="p" class="page-lede" k="codex.lede" />
   </header>
   <section class="wrap shelf">
-    {(Object.keys(cats) as (keyof typeof cats)[]).map((c) => {
+    {cats.map((c, ci) => {
       const items = list.filter((p) => p.en.data.category === c);
       return (
         <div class="cat">
-          <h2 class="cat-t"><span class="mono cat-k">{c}</span> <T en={cats[c].en} zh={cats[c].zh} /></h2>
+          <h2 class="cat-t"><span class="label">{['I', 'II', 'III'][ci]}</span> <T k={`codex.cats.${c}`} /></h2>
           {items.length ? items.map((p) => (
-            <a class="item card link-card" href={`/codex/${p.slug}/`}>
-              <p class="meta mono"><span class="chip live">{p.en.data.id}</span>{p.en.data.date && <time datetime={ymd(p.en.data.date)}>{ymd(p.en.data.date)}</time>}</p>
+            <a class="item slab" href={`/codex/${p.slug}/`}>
+              <p class="meta"><span class="chip">{p.en.data.id}</span>{p.en.data.date && <time class="label" datetime={ymd(p.en.data.date)}>{ymd(p.en.data.date)}</time>}</p>
               <h3 class="tt"><T en={p.en.data.title} zh={p.zh.data.title} /></h3>
               <T as="p" class="sum" en={p.en.data.summary} zh={p.zh.data.summary} />
               <span class="go"><T k="codex.open" /> <span class="arr" aria-hidden="true">→</span></span>
             </a>
-          )) : <p class="none card"><span class="chip wip"><T k="status.wip" /></span></p>}
+          )) : <p class="none"><span class="label"><T k="status.wip" /></span></p>}
         </div>
       );
     })}
   </section>
 </BaseLayout>
 <style>
-  .shelf { margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
-  .cat-t { font-size: 17px; margin: 0 0 12px; display: flex; gap: 10px; align-items: baseline; }
-  .cat-k { font-size: 12px; color: var(--faint); font-weight: 400; }
-  .item { display: flex; flex-direction: column; padding: 22px; min-height: 240px; }
-  .meta { margin: 0 0 10px; display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--dim); }
-  .tt { font-size: 21px; line-height: 1.3; margin: 0 0 8px; }
-  .item :global(.sum) { color: var(--dim); font-size: 15px; margin: 0 0 16px; }
+  .shelf { margin-top: 64px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .cat-t { font: 500 15px/1 var(--serif); letter-spacing: .2em; text-transform: uppercase; margin: 0 0 14px; display: flex; gap: 12px; align-items: baseline; color: var(--ink); padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  :global(html[data-lang="zh"]) .cat-t { font-family: var(--serif-zh); letter-spacing: .3em; }
+  .item { display: flex; flex-direction: column; padding: 24px; min-height: 252px; }
+  .meta { margin: 0 0 14px; display: flex; gap: 10px; align-items: center; }
+  .tt { font: 500 24px/1.25 var(--serif); margin: 0 0 10px; color: var(--ink); }
+  :global(html[data-lang="zh"]) .tt { font-family: var(--serif-zh); font-size: 21px; letter-spacing: .03em; }
+  .item :global(.sum) { color: var(--ink-2); font-size: 15px; margin: 0 0 18px; }
   .item .go { margin-top: auto; }
-  .none { margin: 0; padding: 22px; min-height: 120px; display: flex; align-items: flex-start; border-style: dashed; background: transparent; }
+  .none { margin: 0; padding: 24px; min-height: 120px; border: 1px dashed var(--line); }
   @media (max-width: 960px) { .shelf { grid-template-columns: 1fr; } .item { min-height: 0; } .none { min-height: 0; } }
 </style>

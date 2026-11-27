@@ -1,8 +1,7 @@
 // 振荡器声波合成器 + 实时示波器（策划书 §4.2 AudioSynthLab.ts，Codex-01 声学公式测试板）。
 // 三条公式：挥砍 = 高通白噪音 + 指数衰减；重击 = 正弦 150→30 Hz；吟唱 = 双振荡器 FM + 代码现算的混响。
 // 「复制代码」拿到的函数，跟这里发声用的是同一套参数、同一个写法。
-import { audio } from '../../utils/microSfx';
-import { fit, headless, frameBook } from './wire';
+import { audio, fit } from '../../utils/audio';
 
 type Knob = { key: string; min: number; max: number; step: number; unit: string };
 type Preset = { id: 'slash' | 'thud' | 'chant'; knobs: Knob[]; defaults: Record<string, number> };
@@ -182,15 +181,14 @@ export function mountBench(el: HTMLElement) {
   function drawScope(now: number) {
     raf = 0;
     if (!canvas || !ctx2) return;
-    const t0 = performance.now();
     const { w, h } = fit(canvas, ctx2);
     ctx2.clearRect(0, 0, w, h);
-    ctx2.strokeStyle = 'rgba(230,237,243,0.07)'; ctx2.lineWidth = 1;
+    ctx2.strokeStyle = 'rgba(255,255,255,0.07)'; ctx2.lineWidth = 1;
     ctx2.beginPath();
     for (let i = 1; i < 8; i++) { const x = Math.round((w * i) / 8) + 0.5; ctx2.moveTo(x, 0); ctx2.lineTo(x, h); }
     for (let i = 1; i < 4; i++) { const y = Math.round((h * i) / 4) + 0.5; ctx2.moveTo(0, y); ctx2.lineTo(w, y); }
     ctx2.stroke();
-    ctx2.strokeStyle = '#00FF9D'; ctx2.lineWidth = 1.5; ctx2.shadowColor = 'rgba(0,255,157,.6)'; ctx2.shadowBlur = 6;
+    ctx2.strokeStyle = '#f2f2f2'; ctx2.lineWidth = 1.25; ctx2.shadowColor = 'rgba(255,255,255,.45)'; ctx2.shadowBlur = 5;
     ctx2.beginPath();
     if (analyser && wave) {
       analyser.getByteTimeDomainData(wave);
@@ -200,7 +198,6 @@ export function mountBench(el: HTMLElement) {
       }
     } else { ctx2.moveTo(0, h / 2); ctx2.lineTo(w, h / 2); }
     ctx2.stroke(); ctx2.shadowBlur = 0;
-    frameBook().add(performance.now() - t0);
     if (now < until) raf = requestAnimationFrame(drawScope);
   }
   function kick(sec = 0) {
@@ -208,12 +205,11 @@ export function mountBench(el: HTMLElement) {
     if (!raf && canvas) raf = requestAnimationFrame(drawScope);
   }
   function build() {
-    if (canvas || headless() || !stage) return;
+    if (canvas || !stage) return;
     canvas = document.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
     stage.prepend(canvas);
     ctx2 = canvas.getContext('2d');
-    frameBook().canvases++;
     kick();
   }
   function destroy() {
@@ -259,7 +255,6 @@ export function mountBench(el: HTMLElement) {
     catch { if (codeEl) { const r = document.createRange(); r.selectNodeContents(codeEl); getSelection()?.removeAllRanges(); getSelection()?.addRange(r); } }
   });
 
-  document.addEventListener('zero:mode', () => { headless() ? destroy() : build(); });
   window.addEventListener('resize', () => kick());
   build();
   renderCode();

@@ -1,5 +1,5 @@
 ---
-// /artifacts 自研造物：亲手写的纯代码原型。第一件 EXP-01 还在炉子里（策划书第三阶段）。
+// /artifacts 文物（04）：亲手写的纯代码原型。第一件 EXP-01 还在炉子里。
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import T from '../../components/core/T.astro';
 import { pairs } from '../../utils/archive';
@@ -10,7 +10,7 @@ const bodies = await Promise.all(list.map(async (p) => ({ En: (await render(p.en
 ---
 <BaseLayout current="artifacts" title={{ en: t('en', 'artifacts.h1'), zh: t('zh', 'artifacts.h1') }} desc={{ en: t('en', 'artifacts.lede'), zh: t('zh', 'artifacts.lede') }}>
   <header class="wrap page-head">
-    <p class="page-kicker">/artifacts</p>
+    <p class="page-no">04 / 05</p>
     <h1 class="page-h1"><T k="artifacts.h1" /></h1>
     <T as="p" class="page-lede" k="artifacts.lede" />
   </header>
@@ -18,10 +18,10 @@ const bodies = await Promise.all(list.map(async (p) => ({ En: (await render(p.en
     {list.map((p, i) => {
       const B = bodies[i];
       return (
-        <article class={`item card ${p.en.data.status}`}>
-          <div class="oven render-only" aria-hidden="true"><span></span><span></span><span></span></div>
+        <article class={`item slab ${p.en.data.status}`}>
+          <div class="kiln" aria-hidden="true"><span></span><span></span><span></span></div>
           <div class="body">
-            <p class="meta mono"><span class="chip wip">{p.en.data.id}</span> <span class="chip wip"><T k={`status.${p.en.data.status}`} /></span></p>
+            <p class="meta"><span class="chip">{p.en.data.id}</span> <span class="chip"><T k={`status.${p.en.data.status}`} /></span></p>
             <h2 class="tt"><T en={p.en.data.title} zh={p.zh.data.title} /></h2>
             <T as="p" class="sum" en={p.en.data.summary} zh={p.zh.data.summary} />
             <div class="prose small" data-l="en" lang="en"><B.En /></div>
@@ -33,22 +33,24 @@ const bodies = await Promise.all(list.map(async (p) => ({ En: (await render(p.en
   </section>
 </BaseLayout>
 <style>
-  .list { margin-top: 40px; display: grid; gap: 20px; }
-  .item { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 24px; padding: 26px 28px; }
-  .meta { margin: 0 0 10px; display: flex; gap: 6px; }
-  .tt { font-size: 26px; line-height: 1.25; margin: 0 0 10px; }
-  .item :global(.sum) { color: var(--dim); margin: 0 0 14px; max-width: 46em; }
-  .prose.small { font-size: 15px; color: var(--dim); }
+  .list { margin-top: 64px; display: grid; gap: 16px; }
+  .item { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; padding: 30px; }
+  .meta { margin: 0 0 12px; display: flex; gap: 6px; }
+  .tt { font: 500 30px/1.2 var(--serif); margin: 0 0 12px; color: var(--ink); }
+  :global(html[data-lang="zh"]) .tt { font-family: var(--serif-zh); font-size: 26px; letter-spacing: .04em; }
+  .item :global(.sum) { color: var(--ink-2); margin: 0 0 16px; max-width: 46em; }
+  .prose.small { font-size: 15px; color: var(--ink-2); }
   .prose.small :global(p) { margin-bottom: 10px; }
-  /* 炉子：三道热浪，CSS 画的 */
-  .oven { position: relative; height: 120px; border: 1px dashed rgba(255, 176, 0, .35); border-radius: 14px; display: flex; align-items: flex-end; justify-content: center; gap: 12px; padding-bottom: 22px; overflow: hidden; }
-  .oven span { width: 3px; height: 46px; border-radius: 2px; background: linear-gradient(to top, rgba(255, 176, 0, .9), rgba(255, 176, 0, 0)); animation: heat 2.2s ease-in-out infinite; transform-origin: bottom; }
-  .oven span:nth-child(2) { animation-delay: .4s; height: 60px; }
-  .oven span:nth-child(3) { animation-delay: .8s; }
-  @keyframes heat { 0%, 100% { transform: scaleY(.55) translateX(0); opacity: .5; } 50% { transform: scaleY(1) translateX(2px); opacity: 1; } }
+  /* 炉子：三道热气，一块砖底下漏出来的光 */
+  .kiln { position: relative; height: 132px; border: 1px solid var(--line); display: flex; align-items: flex-end; justify-content: center; gap: 12px; padding-bottom: 20px; overflow: hidden;
+    background: radial-gradient(60% 50% at 50% 100%, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0) 75%); }
+  .kiln span { width: 1px; height: 52px; background: linear-gradient(to top, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0)); animation: heat 2.6s ease-in-out infinite; transform-origin: bottom; }
+  .kiln span:nth-child(2) { animation-delay: .5s; height: 68px; }
+  .kiln span:nth-child(3) { animation-delay: 1s; }
+  @keyframes heat { 0%, 100% { transform: scaleY(.55) translateX(0); opacity: .4; } 50% { transform: scaleY(1) translateX(2px); opacity: 1; } }
   @media (max-width: 720px) {
-    .item { grid-template-columns: 1fr; padding: 20px; }
-    .oven { height: 72px; padding-bottom: 12px; }
-    .tt { font-size: 22px; }
+    .item { grid-template-columns: 1fr; padding: 22px 20px; }
+    .kiln { height: 76px; padding-bottom: 12px; }
+    .tt { font-size: 24px; }
   }
 </style>

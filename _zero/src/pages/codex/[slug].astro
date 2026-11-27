@@ -15,23 +15,22 @@ const { Content: Zh } = await render(pair.zh);
 ---
 <BaseLayout current="codex" title={{ en: `${en.id} · ${en.title}`, zh: `${zh.id} · ${zh.title}` }} desc={{ en: en.summary, zh: zh.summary }}>
   <article class="wrap cx">
-    <p class="crumb mono"><a href="/codex/">/codex</a> / {en.id.toLowerCase()}</p>
-    <p class="meta mono"><span class="chip live">{en.id}</span> <span>{en.category}</span>{en.date && <> · <time datetime={ymd(en.date)}>{ymd(en.date)}</time></>}</p>
+    <p class="crumb label"><a href="/codex/">05 · <T k="codex.h1" /></a> <span aria-hidden="true">/</span> {en.id}</p>
+    <p class="meta"><span class="chip">{en.id}</span> <span class="label"><T k={`codex.cats.${en.category}`} /></span>{en.date && <span class="label">· <time datetime={ymd(en.date)}>{ymd(en.date)}</time></span>}</p>
     <h1 class="cx-t"><T en={en.title} zh={zh.title} /></h1>
     <div class="prose" data-l="en" lang="en"><En /></div>
     <div class="prose" data-l="zh" lang="zh-CN"><Zh /></div>
-    <p class="back"><a href="/codex/">← <T k="codex.back" /></a></p>
+    <p class="back"><a class="go" href="/codex/"><span class="arr" aria-hidden="true">←</span> <T k="codex.back" /></a></p>
   </article>
 </BaseLayout>
 <style>
-  .cx { padding-top: 48px; }
-  .cx > * { max-width: 880px; }
-  .crumb { font-size: 13px; color: var(--faint); margin: 0 0 16px; }
-  .crumb a { color: var(--signal); }
-  .meta { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--dim); margin: 0 0 12px; }
-  .cx-t { font-size: clamp(32px, 4.4vw, 48px); line-height: 1.12; letter-spacing: -.02em; margin: 0 0 24px; }
-  :global(html[data-lang="zh"]) .cx-t { letter-spacing: 0; }
-  .back { margin: 48px 0 0; }
-  .back a { color: var(--signal); }
-  @media (max-width: 720px) { .cx { padding-top: 28px; } }
+  .cx { padding-top: 56px; max-width: 900px; }
+  .crumb { margin: 0 0 22px; }
+  .crumb a { color: var(--ink-2); }
+  .crumb a:hover { color: var(--ink); }
+  .meta { display: flex; gap: 10px; align-items: center; margin: 0 0 16px; }
+  .cx-t { font: 500 clamp(34px, 4.6vw, 54px)/1.1 var(--serif); letter-spacing: .01em; margin: 0 0 32px; color: var(--ink); }
+  :global(html[data-lang="zh"]) .cx-t { font-family: var(--serif-zh); font-size: clamp(28px, 3.8vw, 42px); line-height: 1.3; letter-spacing: .03em; }
+  .back { margin: 56px 0 0; }
+  @media (max-width: 720px) { .cx { padding-top: 32px; } }
 </style>

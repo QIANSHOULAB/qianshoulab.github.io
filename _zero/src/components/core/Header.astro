@@ -1,69 +1,44 @@
 ---
-// 顶栏：左边牌子 + 三个栏目，右边 [肉身 | 无头]、声音开关、EN / 中文（策划书 §3.2：开关在导航栏右侧，静音在右上角）。
-import T from './T.astro';
-import { t } from '../../i18n/ui';
+// 顶栏：左右对称——左 EN / 中文，右 SOUND: OFF；子页面中间一个小 wordmark（点它回黑碑），下面一行五道门。
+// 首页不放中间那个 wordmark（首页自己有大的），也不放五道门那行（首页的五道门是水上那五条铭文）。
+import { t, ENTRIES, type EntryKey } from '../../i18n/ui';
+import { HOME_PATH } from '../../../home.mjs';
 
-interface Props { current?: 'home' | 'specimens' | 'artifacts' | 'codex' | 'zahuopu' }
-const { current = 'home' } = Astro.props;
-const items = [
-  { key: 'specimens', href: '/specimens/' },
-  { key: 'artifacts', href: '/artifacts/' },
-  { key: 'codex', href: '/codex/' },
-] as const;
+interface Props { home?: boolean; current?: EntryKey | null }
+const { home = false, current = null } = Astro.props;
 ---
-<header class="top">
-  <a class="skip" href="#main"><T k="site.skip" /></a>
-  <div class="wrap top-in">
-    <a class="brand" href="/" aria-label="零肉身造物 · Zero-Flesh Creation">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-zh" lang="zh-CN">零肉身造物</span>
-      <span class="brand-en">ZERO-FLESH CREATION</span>
-    </a>
-    <nav class="nav" aria-label={t('en', 'nav.label')} data-aria-en={t('en', 'nav.label')} data-aria-zh={t('zh', 'nav.label')}>
-      {items.map((it) => (
-        <a href={it.href} aria-current={current === it.key ? 'page' : undefined}><T k={`nav.${it.key}`} /><span class="nav-path" aria-hidden="true">{it.href.replace(/\/$/, '')}</span></a>
-      ))}
-    </nav>
-    <div class="top-r">
-      <div class="seg mode" role="group" aria-label={t('en', 'mode.label')} data-aria-en={t('en', 'mode.label')} data-aria-zh={t('zh', 'mode.label')}>
-        <button type="button" data-mode-set data-v="render" aria-pressed="true"><T k="mode.render" /></button>
-        <button type="button" data-mode-set data-v="headless" aria-pressed="false"><T k="mode.headless" /></button>
-      </div>
-      <button type="button" class="sfx" data-sfx-toggle aria-pressed="true" aria-label={t('en', 'sfx.label')} data-aria-en={t('en', 'sfx.label')} data-aria-zh={t('zh', 'sfx.label')}>
-        <i aria-hidden="true"><b></b><b></b><b></b></i>
-      </button>
-      <div class="seg lang" role="group" aria-label={t('en', 'lang.label')} data-aria-en={t('en', 'lang.label')} data-aria-zh={t('zh', 'lang.label')}>
-        <button type="button" data-lang-set="en" lang="en" aria-pressed="true">EN</button>
-        <button type="button" data-lang-set="zh" lang="zh-CN" aria-pressed="false">中文</button>
+<header class="hd" data-home={home ? '' : undefined}>
+  <a class="skip" href="#main"><span data-l="en">{t('en', 'site.skip')}</span><span data-l="zh">{t('zh', 'site.skip')}</span></a>
+  <div class="hd-row">
+    <div class="hd-l">
+      <div class="toggle" role="group" aria-label={t('en', 'lang.label')} data-aria-en={t('en', 'lang.label')} data-aria-zh={t('zh', 'lang.label')}>
+        <button type="button" data-lang-set="en" lang="en" aria-pressed="true">EN</button><span class="sep" aria-hidden="true">/</span><button type="button" data-lang-set="zh" lang="zh-CN" aria-pressed="false">中文</button>
       </div>
     </div>
+    {home ? <span></span> : (
+      <a class="hd-mark" href={HOME_PATH} aria-label={`${t('en', 'nav.home')} · Zero-Flesh Creation`} data-aria-en={`${t('en', 'nav.home')} · Zero-Flesh Creation`} data-aria-zh={`${t('zh', 'nav.home')} · 零肉身造物`}>
+        <span class="a" data-l="en">ZERO-FLESH CREATION</span><span class="b" data-l="en" lang="zh-CN">零肉身造物</span>
+        <span class="a" data-l="zh" lang="zh-CN">零肉身造物</span><span class="b" data-l="zh">ZERO-FLESH CREATION</span>
+      </a>
+    )}
+    <div class="hd-r">
+      <button type="button" class="snd" data-sound-toggle aria-pressed="false">
+        <span data-l="en" lang="en">SOUND: <span class="st-off">OFF</span><span class="st-on">ON</span></span><span data-l="zh" lang="zh-CN">声音：<span class="st-off">关</span><span class="st-on">开</span></span>
+      </button>
+    </div>
   </div>
+  {!home && (
+    <nav class="hd-nav" aria-label={t('en', 'nav.label')} data-aria-en={t('en', 'nav.label')} data-aria-zh={t('zh', 'nav.label')}>
+      <ol>
+        {ENTRIES.map((e, i) => (
+          <li>
+            <a href={e.href} aria-current={current === e.key ? 'page' : undefined}>
+              <span class="no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+              <span class="nm" data-l="en" lang="en">{t('en', `entry.${e.key}.name`)}</span><span class="nm" data-l="zh" lang="zh-CN">{t('zh', `entry.${e.key}.name`)}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )}
 </header>
-
-<style>
-  .skip { position: absolute; left: 12px; top: -60px; z-index: 50; background: var(--signal); color: var(--signal-ink); padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 14px; }
-  .skip:focus { top: 8px; }
-  /* 栏目名后面跟一截路径（照样稿：样本档案 /specimens），窄屏收起 */
-  .nav-path { font-family: var(--font-mono); font-size: 11px; color: var(--faint); margin-left: 6px; }
-  @media (max-width: 1100px) { .nav-path { display: none; } }
-  /* 手机：一行放牌子和三个开关，栏目挪到第二行，横着能滑 */
-  @media (max-width: 860px) {
-    .brand-en { display: none; }
-  }
-  @media (max-width: 720px) {
-    .top-in { height: auto; flex-wrap: wrap; row-gap: 0; padding-top: 6px; }
-    .nav { order: 3; width: 100%; margin: 0 0 0 -10px; overflow-x: auto; scrollbar-width: none; }
-    .nav::-webkit-scrollbar { display: none; }
-    .nav a { min-height: 40px; }
-    .top-r { gap: 6px; }
-  }
-  /* 390 宽的手机上英文「Render | Headless」也要跟牌子挤一行：开关整体小一号 */
-  @media (max-width: 430px) {
-    .top-in { column-gap: 10px; }
-    .brand { gap: 8px; }
-    .brand-zh { font-size: 15px; }
-    .top-r { gap: 5px; }
-    .top-r :global(.seg button) { min-width: 0; padding: 0 6px; font-size: 11px; height: 26px; line-height: 26px; }
-    .top-r :global(.sfx) { width: 30px; height: 30px; }
-  }
-</style>

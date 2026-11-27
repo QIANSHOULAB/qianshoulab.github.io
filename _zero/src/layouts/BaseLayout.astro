@@ -1,30 +1,36 @@
 ---
-// 每一页的骨架：头（不闪的语言 / 模式脚本）、顶栏、正文、纯洁度页脚。
+// 每一页的骨架：头（第一帧之前定好语言、声音开关、是不是从黑碑那道光里进来的）、顶栏、正文、页脚。
 import '../styles/global.css';
 import Header from '../components/core/Header.astro';
-import PurityFooter from '../components/core/PurityFooter.astro';
-import { t } from '../i18n/ui';
+import Footer from '../components/core/Footer.astro';
+import { t, type EntryKey } from '../i18n/ui';
+import { HOME_PATH } from '../../home.mjs';
+import corUrl from '../fonts/cormorant-garamond-500.woff2?url';
+import monoUrl from '../fonts/ibm-plex-mono-400.woff2?url';
+import scUrl from '../fonts/zero-serif-sc-500.woff2?url';
 
 interface Props {
   title?: { en: string; zh: string };
   desc?: { en: string; zh: string };
-  current?: 'home' | 'specimens' | 'artifacts' | 'codex' | 'zahuopu';
+  current?: EntryKey | null;
+  home?: boolean;
 }
+const { current = null, home = false } = Astro.props;
 const site = { en: t('en', 'site.title'), zh: t('zh', 'site.title') };
-const { current = 'home' } = Astro.props;
 const title = Astro.props.title
   ? { en: `${Astro.props.title.en} · Zero-Flesh Creation`, zh: `${Astro.props.title.zh} · 零肉身造物` }
   : site;
 const desc = Astro.props.desc ?? { en: t('en', 'site.desc'), zh: t('zh', 'site.desc') };
-const url = new URL(Astro.url.pathname, Astro.site).href;
+const path = home ? HOME_PATH : Astro.url.pathname;
+const url = new URL(path, Astro.site).href;
 // 构建记号：工作流里是源码那次提交的 SHA，线上验收靠它认「Pages 已经发到这一版了」；本地构建写 local
 const build = process.env.ZERO_BUILD || 'local';
-// 浏览器标签上的小图标也是代码：一段内联 SVG（不发请求），菱形 + 一个亮点，跟顶栏的牌子一样
-const icon = "data:image/svg+xml," + encodeURIComponent(
-  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='#0A0B0D'/><rect x='19' y='19' width='26' height='26' rx='3' transform='rotate(45 32 32)' fill='none' stroke='#00FF9D' stroke-width='4'/><circle cx='32' cy='32' r='4.5' fill='#00FF9D'/></svg>");
+// 标签页小图标：黑底、一条地平线、一块碑，轮廓一圈亮边
+const icon = 'data:image/svg+xml,' + encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='#000'/><rect x='6' y='48' width='52' height='1.5' fill='#8a8a8a'/><rect x='23' y='9' width='18' height='40' fill='#fff'/><rect x='24.6' y='10.6' width='14.8' height='38.4' fill='#000'/></svg>");
 ---
 <!doctype html>
-<html lang="en" data-lang="en" data-mode="render">
+<html lang="en" data-lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -33,7 +39,7 @@ const icon = "data:image/svg+xml," + encodeURIComponent(
   <meta name="zero:title-zh" content={title.zh} />
   <meta name="description" content={desc.en} />
   <meta name="color-scheme" content="dark" />
-  <meta name="theme-color" content="#0A0B0D" />
+  <meta name="theme-color" content="#000000" />
   <meta name="zero:build" content={build} />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Zero-Flesh Creation · 零肉身造物" />
@@ -42,28 +48,32 @@ const icon = "data:image/svg+xml," + encodeURIComponent(
   <meta property="og:url" content={url} />
   <link rel="canonical" href={url} />
   <link rel="icon" href={icon} />
+  <link rel="preload" href={corUrl} as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href={monoUrl} as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href={scUrl} as="font" type="font/woff2" crossorigin />
   <script is:inline>
-    // 第一帧之前定语言和模式，不闪：网址 ?lang= / ?mode= 只管这一次 > 上次选的（语言跟千手院总舵共用一个记忆）> 英文、肉身
+    // 第一帧之前：语言（?lang= 只管这一次 > 上次选的，跟千手院共用一个记忆 > 英文）、声音开关、是不是刚从黑碑的光里进来
     (function () {
-      var d = document.documentElement, s = location.search, L = null, M = null;
-      var q = /[?&]lang=(zh|en)(?:&|$)/.exec(s), m = /[?&]mode=(render|headless)(?:&|$)/.exec(s);
-      try { L = localStorage.getItem('qianshou.lang'); M = localStorage.getItem('zero.mode'); } catch (e) {}
+      var d = document.documentElement, L = null, S = null, A = null;
+      var q = /[?&]lang=(zh|en)(?:&|$)/.exec(location.search);
+      try { L = localStorage.getItem('qianshou.lang'); S = localStorage.getItem('zero.sound'); A = sessionStorage.getItem('zero.arrive'); sessionStorage.removeItem('zero.arrive'); } catch (e) {}
       var l = q ? q[1] : (L === 'zh' || L === 'en' ? L : 'en');
       d.setAttribute('data-lang', l);
       d.lang = l === 'zh' ? 'zh-CN' : 'en';
-      d.setAttribute('data-mode', m ? m[1] : (M === 'headless' ? 'headless' : 'render'));
+      d.setAttribute('data-sound', S === 'on' ? 'on' : 'off');
+      if (A === '1') d.classList.add('from-light');
       var t = document.querySelector('meta[name="zero:title-' + l + '"]');
       if (t) document.title = t.content;
     })();
   </script>
 </head>
-<body>
-  <div class="paper" aria-hidden="true"></div>
-  <Header current={current} />
+<body class={home ? 'is-home' : 'is-page'}>
+  <Header home={home} current={current} />
   <main id="main">
     <slot />
   </main>
-  <PurityFooter />
+  {!home && <Footer />}
+  {!home && <div class="arrive" aria-hidden="true"></div>}
   <script>
     import '../utils/site';
   </script>
