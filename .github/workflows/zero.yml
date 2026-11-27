@@ -5,11 +5,11 @@ name: 零肉身造物
 # 千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
 # 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，根目录还是该是的那个，零肉身页面不报错、不横向溢出。
 # 拉最新 main 再放产物，推不上再拉再推，最多 5 次，不许 --force。提交作者沿用触发这次构建的那个提交的作者。
-# v3「造物之门」在分支 zero-v3 上做：推分支只跑 preview（本地构建、本地起服务、三内核截图、总览图提交回分支），不发版；
+# v3「造物之门」在分支 zero-v3-alt 上做（Song 11-28 01:45 定的）：推分支只跑 preview（本地构建、本地起服务、三内核截图、总览图提交回分支），不发版；
 # 并进 main 以后才走 build → live 这条发版的路。
 on:
   push:
-    branches: [main, zero-v3]
+    branches: [main, zero-v3-alt]
     paths:
       - '_zero/**'
       - '.github/workflows/zero.yml'
@@ -97,9 +97,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent || echo "没请动也没关系，推送本身会触发"
 
-  # 分支 zero-v3：只构建、在工作流机器上本地起服务、三内核截图，总览图提交回分支。不碰 main，不发版。
+  # 分支 zero-v3-alt：只构建、在工作流机器上本地起服务、三内核截图，总览图提交回分支。不碰 main，不发版。
   preview:
-    if: github.ref == 'refs/heads/zero-v3'
+    if: github.ref == 'refs/heads/zero-v3-alt'
     runs-on: ubuntu-latest
     timeout-minutes: 100
     steps:
@@ -148,8 +148,8 @@ jobs:
           git config user.name "$(git log -1 --format=%an)"
           git config user.email "$(git log -1 --format=%ae)"
           for i in 1 2 3 4 5; do
-            git fetch -q origin zero-v3
-            git reset -q --hard origin/zero-v3
+            git fetch -q origin zero-v3-alt
+            git reset -q --hard origin/zero-v3-alt
             D="_ops/零肉身造物/门截图/预览"
             mkdir -p "$D"
             rm -f "$D"/*
@@ -159,7 +159,7 @@ jobs:
             git add -A "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
             git commit -q -m "零肉身造物 v3：分支预览截图（源码 ${GITHUB_SHA::7}）"
-            if git push -q origin HEAD:zero-v3; then exit 0; fi
+            if git push -q origin HEAD:zero-v3-alt; then exit 0; fi
             sleep 8
           done
           exit 1
