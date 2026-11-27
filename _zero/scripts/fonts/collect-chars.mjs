@@ -14,6 +14,11 @@ const parts = [
   zh.nav.home, zh.specimen.card,
   ...Object.values(zh.codex.cats),
   ...tools.map((t) => t.glyph),        // 赛博杂货铺卡片上那个大字
+  // v3 造物之门：七幕的幕名、「进去」、往下滑的提示、收工那句话、小月（货架上的小工具）的名字、标本签
+  ...Object.values(zh.act).map((a) => a.name),
+  zh.home.hint, zh.home.acts, zh.home.enter, zh.finale.motto,
+  ...tools.filter((t) => t.home === 'zahuopu').map((t) => t.name.zh),
+  zh.label.no, zh.label.kind, zh.label.spec,
 ];
 const content = new URL('../../src/content/', import.meta.url).pathname;
 for (const dir of readdirSync(content)) {

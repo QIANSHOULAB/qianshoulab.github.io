@@ -60,7 +60,8 @@ void main() {
   vec2 e = abs(vQ) * 2.;
   float win = (1. - smoothstep(.6, 1., e.x)) * (1. - smoothstep(.75, 1., e.y));
   col *= win * (1. - .9 * uWhite);
-  if (uMirror < 0.) col *= .8;
+  // 倒影里越深越暗：门缝的倒影不一路亮到脚下（不冲掉水上的字）
+  if (uMirror < 0.) col *= .7 * exp(-max(q.y, 0.) / 110.);
   gl_FragColor = outAdd(col);
 }
 `;

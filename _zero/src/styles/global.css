@@ -179,5 +179,5 @@ html[data-lang="zh"] .prose h2 { font-family: var(--sans); font-weight: 600; fon
 .prose blockquote { margin: 0 0 20px; padding-left: 18px; border-left: 1px solid var(--ink-3); color: var(--ink-2); }
 
 /* —— 一个字一个字写出来（components/core/Ink.astro）：父元素的 --w 走到哪，字就写到哪 —— */
-.ink-v > span { opacity: clamp(0, (var(--w, 1) - var(--i)) * 9, 1); }
+.ink-v > span { opacity: clamp(0, (var(--w, 1) * 1.12 - var(--i)) * 9, 1); }
 .ink-type .ink-v > span { opacity: clamp(0, (var(--w, 1) - var(--i)) * 400, 1); }

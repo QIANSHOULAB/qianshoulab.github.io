@@ -1,25 +1,33 @@
 # 零肉身造物（Zero-Flesh Creation）· 源码
 
-首页（黑碑）：https://qianshoulab.github.io/zero/ 。根目录 / 现在还是千手院；换不换只看 `home.mjs` 里 `HOME_AT_ROOT` 那一行。
+首页（造物之门）：https://qianshoulab.github.io/zero/ 。根目录 / 现在还是千手院；换不换只看 `home.mjs` 里 `HOME_AT_ROOT` 那一行。
 栏目：/zahuopu/（赛博杂货铺；/zhahuopu/ 是头一版打错字的网址，留了跳转）、/specimens/（标本）、/artifacts/（文物）、/codex/（法典）。
 千手院在 /qianshou/，那页是手写的单文件，不归这里管。
 
-## 第二版长什么样（Song 11-27 定的）
-- 只有黑、白、灰；简单几何，做工要拿得出手。对标 Igloo Inc（方块拼成的主体、等宽小字带细引线）。
-- 首页：一望无际的黑水，地平线正中一块 1:4:9 的碑，324 块黑石（InstancedMesh）砌成。开场几乎全黑，10 秒里光从碑后面慢慢升起来（天从黑变成白灰、碑成剪影带一圈细亮边、碑缝透光、光芒从边上散开、水上一条光路铺到脚下），然后极轻地呼吸。同一次会话再来、或者点一下 / 滑一下 / 按个键，1.5 秒快进到天亮；系统设了「减少动效」就直接给天亮的样子。
-- 全集和子集：碑是全集，下半截五撮砖是五个子集（01 千手院、02 赛博杂货铺、03 标本、04 文物、05 法典）。平时看不出来；指到铭文或者那撮砖，那撮就沉沉地从碑里出来，背后的光从新开的口子里涌出来，缝发亮，铭文一个字一个字写出来。点了（回车、手机上第二下）镜头贴着水面冲进那道光，白光吞屏，然后跳转。
-- 声音默认关，右上角 SOUND: OFF，记住开没开。开了只有三样：随天亮升起的低长音、出碑时一声石头闷响、进门时一口气涌上来的光声。全是 Web Audio 当场合成。
-- 没有 WebGL：换成一张天亮时的静态图（`src/assets/still-*.jpg`，自己的场景截的）+ 文字链接。
+## 第三版「造物之门」长什么样（Song 11-27 提、11-28 回「Ab」定的；规划书在 `_ops/零肉身造物/造物之门规划书.md`）
+- 黑水尽头立一道门，门里是光。往下滑，门里一样一样往外生东西。滑的人就是造物主：手指动，世界才往下造；手指停，创世暂停；往回滑，世界倒回去。
+- 七幕：Ⅰ 启光（白，开场自己放 10 秒）、Ⅱ 燃日（01 千手院，琥珀金：太阳 + 一千道火舌）、Ⅲ 布环（02 赛博杂货铺，品红：一道环，环上的小月就是货架上的小工具，名字能点）、
+  Ⅳ 赋生（03 标本，冷青：巨鲸从门里游出来，绕门一周，升天钉成星座）、Ⅴ 铸器（04 文物，暗红：红点坍缩、顿帧、炸开、浑天仪）、
+  Ⅵ 立法（05 法典，靛紫：轨道把万物系住绕门运转，水上光格网，星空）、Ⅶ 收工（门全开，五色合白，全家福剪影，那句话）。
+- 每幕：先打出一行代码（法先到）→ 光换成这一幕的颜色 → 门上属于这个栏目的那一撮石头离开，留下一个彩色的窗 → 造出来、点活 → 最后才写名字。
+- 底子是黑，颜色只在光里，一幕一种当家；光最亮的芯子发白，外圈带色。
+- 声音默认关（右上角 SOUND: OFF，记住选择）。开了以后：随幕变化的低长音（每造一样加一个音，第六幕五个音成和弦）、石门闷响、第五幕炸开、点「进去」那一口气。全是 Web Audio 当场合成。
+- 没有 WebGL：七幕各一张场景自己截的静态图（`src/assets/genesis/`，电脑一套、手机一套），字和链接照样能滑、能点。减少动效：每幕直接摆到位。没开 JavaScript：一张图 + 七段字和链接。
 
 ## 文件
 - `home.mjs`：首页放哪（换根目录的开关）。
-- `src/scene/`：画面。`layout.ts`（碑的尺寸、砖、五撮的位置）、`glsl.ts`（天、水、倒影、碑、光、浮尘的着色器）、`monolith.ts`（three.js 场景、黎明、出碑的弹簧、进门的镜头）。
-- `src/home/`：首页的手。`home.ts`（铭文、引线、一个字一个字写、点了进门、静态图后备）、`sound.ts`（三样声音）。
-- `src/components/core/`：`Header.astro`（左 EN / 中文，右声音；子页面中间小 wordmark + 五道门那一行）、`Footer.astro`（Song 那句公司的话 + 宇宙地址，一字不改）、`T.astro`（一段字出中英两份）。
+- `src/genesis/config.ts`：**所有能调的数**——七幕的颜色、每幕滑多长、镜头离门多远、地平线多高、门开多大、每幕要看得见多大一块天、三档力气、每样东西多少块。
+- `src/genesis/timeline.ts`：进度 P（0..7）= 平滑后滚动位置的纯函数；镜头距离、视角、地平线、门的角度都是 P 的函数。
+- `src/genesis/scene.ts`：three.js 场景、先画倒影再画正片、三档力气（量帧时间自动升降）、点「进去」时的镜头。
+- `src/genesis/creations/`：日（sun）、环和小月（ring）、巨鲸（whale）、浑天仪和炸开（forge）、轨道格网星空和全家福（law）。每样东西怎么走在这里算。
+- `src/genesis/glsl/`：着色器。`world.ts` 天和水、`stone.ts` 石块（门和造物共用）、`fx.ts` 门缝的光、点、细线、光晕，其余各是一样造物。
+- `src/home/genesis-page.ts`：首页的手（滚动、开场、每幕的字、刻度、铭文、进去、标本签、静态图兜底）；`src/home/sound.ts`：四样声音。
+- `src/pages/index.astro`：首页骨架（10.5 屏高的滚动容器，画布固定铺满，七个 section）。
+- `src/components/core/`：`Header.astro`、`Footer.astro`（Song 那句公司的话 + 宇宙地址，一字不改）、`T.astro`（一段字出中英两份）、`Ink.astro`（一个字一个字写出来）。
 - `src/i18n/ui.ts`：所有给人看的字（en 门面、zh 第二语言）。改中文标题字以后照 `scripts/fonts/README.md` 补宋体小字库。
-- `src/data/tools.ts`：工具分拣（千手院 / 赛博杂货铺）。
-- `src/content/`：三套档案（标本、文物、法典），每篇一份英文、一份中文。
-- `scripts/publish.mjs`：把 dist 拷到仓库根目录名下那几样（dist/index.html → zero/index.html）。`scripts/live-check.mjs`：线上验收。
+- `src/data/tools.ts`：工具分拣（千手院 / 赛博杂货铺）；第三幕的小月从这里的 `shop` 读，有几样工具就有几颗。
+- `scripts/publish.mjs`：把 dist 拷到仓库根目录名下那几样。`scripts/live-check.mjs`：线上验收。
+- `scripts/serve.mjs`：本地起一个跟线上一样排的服务。`scripts/genesis-shots.mjs`：三内核 × 尺寸 × 七幕截图，自动查溢出、报错、字出框。`scripts/genesis-stills.mjs`：重出七幕静态图。
 
 ## 写一篇新标本（写完推上去就上线）
 1. 在 `src/content/specimens/` 放两份：`002-名字.en.mdx`、`002-名字.zh.mdx`（英文重写，不是翻译）。
@@ -32,8 +40,9 @@
 cd _zero
 npm ci
 npm run build              # 出到 _zero/dist
-node scripts/publish.mjs   # 拷到仓库根目录（只动 zero、zahuopu、zhahuopu、specimens、artifacts、codex、zero-assets）
+node scripts/serve.mjs     # http://127.0.0.1:4321/zero/ （不用拷，不动仓库里的文件）
 ```
 平时不用本地拷：推上去工作流会做。`publish.mjs` 发现 dist 里有名单外的东西会直接停，不会踩到别人的网址。
+推别的分支（比如 `zero-v3`）只跑 preview：构建、本地起服务、三个内核截图，拼图提交回分支的 `_ops/零肉身造物/预览/`；不发版。
 
-调试用的网址参数（只影响自己这一次）：`?dawn=0.5` 把黎明定在一半；`?still` 只留画面（截静态图用）；`?hq` 不自动降分辨率；`?lang=zh` 中文。
+调试用的网址参数（只影响自己这一次）：`?act=3.5` 把进度定在 3.5（截图靠它）；`?still` 只留画面；`?tier=high|mid|low` 定死档位；`?lang=zh` 中文。

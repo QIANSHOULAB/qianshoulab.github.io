@@ -191,11 +191,13 @@ const mail = ['oilsongchengmin', 'gmail.com'].join('@');
   .act-in { position: fixed; left: 0; right: 0; margin: 0 auto; bottom: calc(var(--safe) + var(--abot, 5vh)); width: min(760px, calc(100% - 32px)); z-index: 6;
     text-align: center; opacity: var(--o, 0); pointer-events: none; --w: 0; --cw: 0; }
   /* 字底下一团暗：水上的字不被光路冲掉 */
-  .act-h::before { content: ""; position: absolute; left: 50%; bottom: -10px; width: min(640px, 100%); height: 190px; transform: translateX(-50%); z-index: -1; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(0, 0, 0, .62), rgba(0, 0, 0, 0)); opacity: clamp(0, var(--w) * 3, 1); }
+  .act-h::before { content: ""; position: absolute; left: 50%; top: -34px; width: min(700px, 110%); height: 230px; transform: translateX(-50%); z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .8), rgba(0, 0, 0, .5) 55%, rgba(0, 0, 0, 0)); opacity: clamp(0, var(--w) * 3, 1); }
+  .act-tag, .act-line, .sec { text-shadow: 0 0 10px rgba(0, 0, 0, .95), 0 0 2px rgba(0, 0, 0, .9); }
   .act-no, .sec-no { opacity: clamp(0, var(--w) * 6, 1); }
   /* 那行代码打在天上（法先到，东西还没出来）；名字在水上 */
-  .act-in .code { position: fixed; left: 16px; right: 16px; top: calc(var(--code-top, 12) * 1vh); margin: 0; font-size: 12.5px; letter-spacing: .05em; color: #b4b4b4; --w: var(--cw); text-shadow: 0 0 10px rgba(0, 0, 0, .9); }
+  .act-in .code { position: fixed; left: 16px; right: 16px; top: calc(56px + 2.2vh); margin: 0; font-size: 12.5px; letter-spacing: .05em; color: #b9b9b9; --w: var(--cw);
+    text-shadow: 0 0 12px rgba(0, 0, 0, 1), 0 0 3px rgba(0, 0, 0, .9); }
   .caret { display: inline-block; width: .55em; height: 1.05em; margin-left: 2px; vertical-align: -.16em; background: #bdbdbd; opacity: var(--caret, 0); animation: blink 1s steps(1) infinite; }
   @keyframes blink { 50% { visibility: hidden; } }
   .act-h { position: relative; margin: 0; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 10px; }

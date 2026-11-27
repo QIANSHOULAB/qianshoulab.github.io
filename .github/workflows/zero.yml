@@ -213,7 +213,7 @@ jobs:
 
       - name: 线上三个内核再走一遍（Chromium 11 个尺寸，WebKit、Firefox 各 4 个）
         working-directory: _zero
-        run: node scripts/genesis-shots.mjs --base https://qianshoulab.github.io --out "${{ github.workspace }}/live-shots/三内核"
+        run: node scripts/genesis-shots.mjs --base https://qianshoulab.github.io --out "${{ github.workspace }}/live-shots/三内核" --sheets "${{ github.workspace }}/live-shots/三内核拼图" --sheetSizes 390x844,820x1180,1366x768,1440x900
 
       - name: 截图提交到 _ops（只有手动跑、勾了 commit_shots 才提交）
         if: github.event_name == 'workflow_dispatch' && inputs.commit_shots
@@ -223,8 +223,9 @@ jobs:
           for i in 1 2 3 4 5; do
             git fetch -q origin main
             git reset -q --hard origin/main
-            mkdir -p "_ops/零肉身造物/造物之门截图"
-            cp -f live-shots/造物之门截图/* "_ops/零肉身造物/造物之门截图/"
+            mkdir -p "_ops/零肉身造物/造物之门截图/三内核"
+            cp -f live-shots/造物之门截图/*.jpg live-shots/造物之门截图/验收.md "_ops/零肉身造物/造物之门截图/"
+            cp -f live-shots/三内核拼图/* "_ops/零肉身造物/造物之门截图/三内核/" 2>/dev/null || true
             git add "_ops/零肉身造物/造物之门截图"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
             git commit -q -m "零肉身造物：造物之门七幕线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
