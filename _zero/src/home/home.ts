@@ -276,6 +276,12 @@ async function boot() {
     p: () => scene?.p ?? 0,
     activate: (k: number) => setActive(k, 'entry'),
     go,
+    // 验收截图：冲向第 k 撮的那道光，停在半路（不跳转）
+    hold: (k: number, s = 0.55) => {
+      setActive(k, 'entry');
+      stage.classList.add('entering');
+      scene?.enter(k, (x) => { flood.style.opacity = String(sstep(0.72, 1, x)); }, s);
+    },
   };
 }
 if (fine) stage.classList.add('fine');

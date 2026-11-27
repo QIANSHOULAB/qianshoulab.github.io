@@ -283,12 +283,13 @@ export function createScene(opts: SceneOpts) {
   function setParallax(x: number, y: number) { parGoal.set(clamp(x, -1, 1), clamp(y, -1, 1)); }
 
   // —— 进门 ——
-  let entering: { k: number; t0: number; resolve: () => void; onProgress?: (s: number) => void } | null = null;
-  function enter(k: number, onProgress?: (s: number) => void) {
+  let entering: { k: number; t0: number; resolve: () => void; onProgress?: (s: number) => void; hold: number } | null = null;
+  /** hold：验收截图用，镜头停在半路（0..1），不往下走 */
+  function enter(k: number, onProgress?: (s: number) => void, hold = 1) {
     return new Promise<void>((resolve) => {
       activate(k);
       if (opts.reduced) { resolve(); return; }
-      entering = { k, t0: performance.now(), resolve, onProgress };
+      entering = { k, t0: performance.now(), resolve, onProgress, hold };
     });
   }
   function reset() {
@@ -365,7 +366,7 @@ export function createScene(opts: SceneOpts) {
     const driftY = opts.reduced ? 0 : 0.05 * Math.sin(tSec * 0.047);
     startPos.set(driftX + par.x * 0.9, EYE + driftY + par.y * 0.22, 0);
     if (entering) {
-      const s = clamp((now - entering.t0) / ENTER_MS);
+      const s = Math.min(clamp((now - entering.t0) / ENTER_MS), entering.hold);
       const e = s * s * s;
       const c = clusters[entering.k];
       goal[entering.k] = 1 + 1.3 * sstep(0.05, 0.7, s);    // 那撮继续往外让开，给镜头腾路

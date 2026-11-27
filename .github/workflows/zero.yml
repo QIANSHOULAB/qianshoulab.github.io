@@ -12,6 +12,11 @@ on:
       - '_zero/**'
       - '.github/workflows/zero.yml'
   workflow_dispatch:
+    inputs:
+      commit_shots:
+        description: '把黑碑首页的验收截图提交到 _ops/零肉身造物/黑碑截图/'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -91,13 +96,14 @@ jobs:
 
   live:
     needs: build
-    if: ${{ needs.build.outputs.published == 'yes' }}
+    if: ${{ always() && (needs.build.outputs.published == 'yes' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
       - name: 等 Pages 发到这一版（看 /zero/ 上的构建记号）
+        if: github.event_name != 'workflow_dispatch'
         run: |
           for i in $(seq 1 60); do
             got=$(curl -s "https://qianshoulab.github.io/zero/?v=$RANDOM$i" | grep -o 'name="zero:build" content="[^"]*"' | sed 's/.*content="//; s/"//')
@@ -125,6 +131,28 @@ jobs:
         env:
           SHOTS: ${{ github.workspace }}/live-shots
         run: node scripts/live-check.mjs
+
+      - name: 黑碑首页截图（黎明 0/5/10 秒、五撮出碑、进门半路、声音开关、10 秒帧数）
+        working-directory: _zero
+        run: node scripts/monolith-shots.mjs "${{ github.workspace }}/live-shots/黑碑截图"
+
+      - name: 截图提交到 _ops（只有手动跑、勾了 commit_shots 才提交）
+        if: github.event_name == 'workflow_dispatch' && inputs.commit_shots
+        run: |
+          git config user.name "QIANSHOULAB"
+          git config user.email "oilsongchengmin@gmail.com"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            mkdir -p "_ops/零肉身造物/黑碑截图"
+            cp -f live-shots/黑碑截图/* "_ops/零肉身造物/黑碑截图/"
+            git add "_ops/零肉身造物/黑碑截图"
+            if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
+            git commit -q -m "零肉身造物：黑碑首页线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
+            if git push -q origin HEAD:main; then exit 0; fi
+            sleep 8
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v4
         if: always()

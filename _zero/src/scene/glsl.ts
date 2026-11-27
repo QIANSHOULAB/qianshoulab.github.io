@@ -78,7 +78,7 @@ float planeLight(vec3 ro, vec3 rd, out float inside) {
     // 碑后面就是光源本身：只有碑上开了口才看得见。贴着轮廓那一两个像素别给它（多重采样时会从边上漏出一条亮线）
     inside = 1.;
     float core = (46. * exp(-length(q - vec2(0., uCenterY)) / 200.) + 9.);
-    return mix(g + cor, core, smoothstep(.6, 5., -d0)) * uLight;
+    return mix(g + cor, core, smoothstep(.5, 1.8, -d0)) * uLight;
   }
   vec2 rp = vec2(abs(q.x), q.y - uCenterY);
   float ang = atan(rp.y, rp.x);
