@@ -7,24 +7,24 @@ import T from '../components/core/T.astro';
 import { t, ENTRIES } from '../i18n/ui';
 import { shop } from '../data/tools';
 import { SCROLL, SECTION_HEX } from '../scene/tune';
-import stillL from '../assets/still-landscape.jpg?url';
-import stillP from '../assets/still-portrait.jpg?url';
+// 七幕各一张静态图（scripts/stills.mjs 截的）：没有 WebGL 时首页用它们
+const stillMods = import.meta.glob('../assets/stills/*.jpg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const still = (k: number, o: 'l' | 'p') => stillMods[`../assets/stills/act${k}-${o}.jpg`];
 
-const ROMAN = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ'];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];   // 罗马数字用 Cormorant 的大写字母写（宋体小字库里没有 Ⅰ–Ⅶ 那几个字）
 const CODE = ['', 'let sun = hands(1000);', `let ring = shelf(${shop.length});`, 'let life = specimen("001");', 'let artifact = forge(1200);', 'let law = orbit(everything);'];
 const ACTS = ENTRIES.map((e, i) => ({ ...e, k: i + 2, code: CODE[i + 1], hex: SECTION_HEX[i] }));
 const units = SCROLL.hold + SCROLL.acts.reduce((a, b) => a + b, 0) + SCROLL.tail + 1;
 const chars = (s: string) => [...s].map((c, i) => ({ c, i }));
 const mail = ['oilsongchengmin', 'gmail.com'].join('@');
 const moons = shop.map((x) => ({ href: x.href, en: x.name.en, zh: x.name.zh }));
-// 每幕一张静态图（没有 WebGL 时用），做出来之前先都用开场那张
-const stills = { l: ROMAN.map(() => stillL), p: ROMAN.map(() => stillP) };
+const stills = { l: ROMAN.map((_, i) => still(i + 1, 'l')), p: ROMAN.map((_, i) => still(i + 1, 'p')) };
 ---
 <BaseLayout home>
   <div class="stage" data-stage aria-hidden="true">
     <div class="gl-host" data-gl-host></div>
     <img class="still" alt="" data-stills={JSON.stringify(stills)} decoding="async" />
-    <noscript><img class="still on" src={stillL} alt="" /></noscript>
+    <noscript><img class="still on" src={still(1, 'l')} alt="" /></noscript>
   </div>
 
   <div class="ui" data-ui>
@@ -203,7 +203,7 @@ const stills = { l: ROMAN.map(() => stillL), p: ROMAN.map(() => stillP) };
   .act:not(:global(.on)) .card .go { pointer-events: none; }
   .act-name { margin: 0 0 18px; display: flex; align-items: baseline; gap: .7em; font: 500 clamp(30px, 3.4vw, 44px)/1 var(--serif); letter-spacing: .3em; color: #f4f4f4; text-shadow: 0 0 24px rgba(0, 0, 0, .7); }
   :global(html[data-lang="zh"]) .act-name { font-family: var(--serif-zh); letter-spacing: .5em; }
-  .act-name .num { font: 400 .48em/1 var(--serif-zh); letter-spacing: 0; color: #cfcfcf; }
+  .act-name .num { font: 500 .5em/1 var(--serif); letter-spacing: .06em; color: #cfcfcf; }
   .sec { margin: 0 0 10px; display: flex; align-items: center; gap: 10px; font: 500 15px/1.3 var(--serif); letter-spacing: .2em; color: #e4e4e4; }
   :global(html[data-lang="zh"]) .sec { font-family: var(--serif-zh); letter-spacing: .3em; }
   .sec .no { font: 400 11px/1 var(--mono); letter-spacing: .14em; color: #a9a9a9; }
@@ -253,7 +253,7 @@ const stills = { l: ROMAN.map(() => stillL), p: ROMAN.map(() => stillP) };
   /* —— 右边一列七个小刻度 —— */
   .ticks { position: fixed; right: max(12px, 1.5vw); top: 50%; transform: translateY(-50%); z-index: 20; display: flex; flex-direction: column; gap: 4px; transition: opacity .6s var(--ease); }
   .ticks button { all: unset; cursor: pointer; display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 6px 2px; color: #8a8a8a; }
-  .tk-l { font: 400 11px/1 var(--serif-zh); opacity: 0; transform: translateX(4px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+  .tk-l { font: 500 11px/1 var(--serif); letter-spacing: .06em; opacity: 0; transform: translateX(4px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
   .tk-m { width: 12px; height: 1px; background: currentColor; transition: width .35s var(--ease), background-color .35s var(--ease); }
   .ticks button:global(.on) { color: #fff; }
   .ticks button:global(.on) .tk-m { width: 26px; }

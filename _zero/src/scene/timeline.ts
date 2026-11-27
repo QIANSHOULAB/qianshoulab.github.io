@@ -175,7 +175,7 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const o = a[1];
   let light = 0.012 + 0.988 * Math.pow(ss(0.38, 0.72, o), 1.3);
   for (let k = 2; k <= 6; k++) light += 0.22 * ss(0.02, 0.12, a[k]) * (1 - ss(0.18, 0.45, a[k]));
-  light *= mix(1, 0.5, ss(0.84, 1, a[7]));
+  light *= mix(1, 0.3, ss(0.78, 1, a[7]));
   let lightCol: V3 = [1, 1, 1];
   for (let k = 2; k <= 6; k++) {
     const s = ss(k - 1 + 0.01, k - 1 + 0.13, P) * (1 - ss(k - 0.08, k + 0.02, P));
@@ -184,7 +184,7 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const slit = ss(0.14, 0.4, o);
   const slitGlow = ss(0.13, 0.2, o) * mix(1, 0.55, ss(0.5, 0.8, o));
   const horizon = ss(0.48, 0.76, o), reach = ss(0.58, 0.9, o), dawn = ss(0.4, 0.92, o);
-  const flood = ss(0.42, 0.62, a[7]) * mix(1, 0.4, ss(0.78, 1, a[7]));
+  const flood = ss(0.42, 0.62, a[7]) * mix(1, 0.32, ss(0.76, 1, a[7]));
   const floodB = ss(0.44, 0.6, a[7]) * (1 - ss(0.68, 0.9, a[7]));
   const dark = ss(0.4, 0.6, a[7]);
 
