@@ -163,6 +163,8 @@ import stillP from '../assets/still-portrait.jpg?url';
   :global(html[data-still]) .title, :global(html[data-still]) .entries, :global(html[data-still]) .leaders, :global(html[data-still]) .foot-in,
   :global(html[data-still]) :global(.hd) { visibility: hidden; }
   :global(html[data-gl="no"]) .leaders { display: none; }
+  /* 一层极淡的胶片颗粒，压在画面上，字下面 */
+  .gl-host::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: var(--grain); background-size: 160px 160px; opacity: .045; mix-blend-mode: screen; }
   /* 底边压暗一点：倒影的尽头、页脚都落在暗处 */
   .stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 22%; pointer-events: none; z-index: 1;
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, .55)); }
