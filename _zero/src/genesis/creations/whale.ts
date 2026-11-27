@@ -6,7 +6,7 @@ import { MAX_ASPECT } from '../config';
 import { WHALE_FN, WHALE_PLACE, WHALE_STARS, WHALE_LINE, WHALE_LINE_COL } from '../glsl/whale';
 import { blockMesh, lineMaterial, lineMesh, pointCloud, pointMaterial, stoneMaterial, type Creation, type Frame, type U } from '../kit';
 import { rng, shuffle } from '../layout';
-import { orbitPos, portraitPos } from './law';
+import { orbitPos, portraitPos, PORTRAIT_SCALE } from './law';
 
 const ZG = GATE.Z - GATE.T / 2;
 export const WHALE_L = 300;          // 比门还高（门 240）
@@ -109,22 +109,21 @@ export function buildWhale(shared: U, stone: U) {
     if (key === lastKey) return;
     lastKey = key;
     const sp = spot(portrait, halfW);
-    K.copy(sp.K); dir.copy(sp.dir);
+    // 头停在 K；身子沿最后那一截直线摆开（钉成星座时是一条直的、侧身的鲸，不打弯）
+    const STRAIGHT = WHALE_L + 30;
+    K.copy(sp.K).addScaledVector(sp.dir, -STRAIGHT); dir.copy(sp.dir);
     F.set(0, WH, ZG + 280);
     B1.copy(F).add(new Vector3(-200, 30, -60));
-    B2.copy(K).addScaledVector(dir, -220);
+    B2.copy(K).addScaledVector(dir, -200);
     // 量一下贝塞尔有多长（身子按路线上的长度排）
     let len = 0;
     const prev = F.clone(), cur = new Vector3();
     for (let i = 1; i <= 96; i++) { bez(F, B1, B2, K, i / 96, cur); len += cur.distanceTo(prev); prev.copy(cur); }
     Lb = len;
-    aTotal = SEG + Lb;
+    aTotal = SEG + Lb + STRAIGHT;
     u.uB1.value.copy(B1); u.uB2.value.copy(B2); u.uK.value.copy(K); u.uLb.value = Lb;
-    // 星座的中心（第六幕绕它转）：身子中段落在贝塞尔上的那一点
-    let acc = 0;
-    prev.copy(F);
-    for (let i = 1; i <= 96; i++) { bez(F, B1, B2, K, i / 96, cur); acc += cur.distanceTo(prev); prev.copy(cur); if (acc >= Lb - WHALE_L * 0.45) break; }
-    pivot.copy(cur);
+    // 星座的中心（第六幕绕它转）：身子中段
+    pivot.copy(sp.K).addScaledVector(sp.dir, -WHALE_L * 0.45);
     u.uPivot.value.copy(pivot);
   }
 
@@ -133,6 +132,7 @@ export function buildWhale(shared: U, stone: U) {
   const creation: Creation & { label: () => { pos: Vector3; o: number } } = {
     name: 'whale',
     objects: [body, stars, lines],
+    target: () => moved,
     setTier(t: Tier) { body.geometry.instanceCount = Math.round(N * TIERS[t].blocks); },
     update(f: Frame) {
       const P = f.P, uu = P - 3;
@@ -161,13 +161,13 @@ export function buildWhale(shared: U, stone: U) {
       u.uMoveT.value.copy(moved).sub(pivot);
       const caught = sstep(5.54, 5.64, P);
       u.uMoveYaw.value = caught * ((f.time / 40) * Math.PI * 2 * 0.25) % (Math.PI * 2);
-      u.uMoveS.value = lerp(1, 0.2, sstep(6.45, 6.85, P));
+      u.uMoveS.value = lerp(1, PORTRAIT_SCALE[2], sstep(6.45, 6.85, P));
       // 游的时候自带一盏青光（照水）；钉成星座以后天上一团淡淡的光
       const swim = sstep(0.16, 0.3, uu) * (1 - pin);
       if (swim > 0.01) f.water.push({ pos: tmp.set(0, WH, ZG + 200), col: LIFE_COL, i: 0.5 * swim });
       if (pin > 0.01) f.orbs.push({ pos: moved.clone(), col: LIFE_COL, i: 0.22 * pin * bright, r: 90 });
       // 标本签：星座下方
-      labelAt.copy(moved).add(f.portrait ? new Vector3(-110, 78, 0) : new Vector3(-60, -112, 0));
+      labelAt.copy(moved).add(f.portrait ? new Vector3(-95, -78, 0) : new Vector3(-60, -112, 0));
       labelO = sstep(0.93, 0.98, uu) * (1 - sstep(1.03, 1.1, uu));
     },
     label: () => ({ pos: labelAt, o: vis ? labelO : 0 }),

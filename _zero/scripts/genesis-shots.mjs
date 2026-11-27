@@ -105,12 +105,34 @@ for (const name of ENGINES) {
   await browser.close();
 }
 
+// 拼图：每个内核、每个尺寸七幕拼成一长条（工作流的附件本地拿不到，拼好的小图提交回分支好看）
+if (args.sheets) {
+  mkdirSync(args.sheets, { recursive: true });
+  const { pathToFileURL } = await import('node:url');
+  const b = await chromium.launch();
+  const page = await b.newPage({ viewport: { width: 1600, height: 400 } });
+  const groups = {};
+  for (const s of report.shots) (groups[`${s.engine}-${s.size}${s.lang !== 'en' ? '-' + s.lang : ''}`] ||= []).push(s);
+  const want = (args.sheetSizes || '390x844,1440x900').split(',');
+  for (const [key, list] of Object.entries(groups)) {
+    if (!want.some((w) => key.includes(w))) continue;
+    const imgs = list.sort((a, b2) => a.act - b2.act).map((s) => `<figure><img src="${pathToFileURL(join(process.cwd(), OUT, s.file)).href}"><figcaption>${NUM[s.act - 1]}${s.issues.length || s.errors.length ? ' ✗' : ''}</figcaption></figure>`).join('');
+    await page.setContent(`<html><body style="margin:0;background:#000;color:#999;font:12px monospace"><div style="display:flex;gap:4px;padding:4px">${imgs}</div><style>figure{margin:0;flex:1}img{width:100%;display:block}figcaption{padding:2px 4px}</style></body></html>`);
+    await page.waitForTimeout(300);
+    const h = await page.evaluate(() => document.body.scrollHeight);
+    await page.setViewportSize({ width: 1600, height: Math.min(1400, h) });
+    await page.screenshot({ path: join(args.sheets, `${key}.jpg`), type: 'jpeg', quality: 70, fullPage: true });
+  }
+  await b.close();
+}
+
 const lines = [`# 造物之门截图验收（${report.when}）`, '', `对着 ${BASE}；${report.shots.length} 张。`, ''];
 lines.push('| 内核 | 尺寸 | 幕 | 3D | 溢出 | 报错 | 字 |', '|---|---|---|---|---|---|---|');
 for (const s of report.shots) lines.push(`| ${s.engine} | ${s.size}${s.lang !== 'en' ? ' ' + s.lang : ''} | ${NUM[s.act - 1]} | ${s.gl}${s.tier ? '/' + s.tier : ''} | ${s.overflow > 0 ? s.overflow + 'px' : '0'} | ${s.errors.length} | ${s.issues.length ? '✗ ' + s.issues.join('；') : '✓'} |`);
 lines.push('', report.fail.length ? `## ✗ 没过（${report.fail.length}）\n` + report.fail.map((x) => `- ${x}`).join('\n') : '## ✓ 全过');
 writeFileSync(join(OUT, '验收.json'), JSON.stringify(report, null, 2));
 writeFileSync(join(OUT, '验收.md'), lines.join('\n'));
+if (args.sheets) writeFileSync(join(args.sheets, '验收.md'), lines.join('\n'));
 if (process.env.GITHUB_STEP_SUMMARY) {
   const { appendFileSync } = await import('node:fs');
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');

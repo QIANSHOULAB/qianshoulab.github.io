@@ -6,7 +6,7 @@ import { RING_FN, RING_PLACE, MOON_PLACE } from '../glsl/ring';
 import { blockMesh, stoneMaterial, type Creation, type Frame, type U } from '../kit';
 import { rng, shuffle } from '../layout';
 import { shop } from '../../data/tools';
-import { portraitPos } from './law';
+import { portraitPos, PORTRAIT_SCALE } from './law';
 
 const ZG = GATE.Z - GATE.T / 2;
 export const RING = { c: new Vector3(0, 120, ZG), tilt: 0.38, r0: 168, r1: 216, gap: [190, 196], moonR: 9.5, moonRho: 193 };
@@ -90,9 +90,11 @@ export function buildRing(shared: U, stone: U) {
     return out;
   }
 
+  const frontPt = new Vector3();
   const creation: Creation & { moons: () => { pos: Vector3; o: number }[] } = {
     name: 'ring',
     objects: [ring, moons],
+    target: () => frontPt,
     setTier(t: Tier) {
       ring.geometry.instanceCount = Math.round(N * TIERS[t].blocks);
       moons.geometry.instanceCount = Math.round(n * M * Math.max(0.6, TIERS[t].blocks)) - (Math.round(n * M * Math.max(0.6, TIERS[t].blocks)) % 1);
@@ -110,13 +112,14 @@ export function buildRing(shared: U, stone: U) {
       if (!f.reduced) spin += f.dt * law * ((Math.PI * 2) / 60);
       const rot = TH_MAX * seg(uu, 0.46, 0.95) + spin;
       u.uRot.value = rot;
+      ringPoint(FRONT + rot, RING.moonRho, 0, frontPt);
       u.uRingYaw.value = 0.25 * Math.sin(spin * 0.5) * law;
       // 全家福：环缩小、站进门洞那道白光里
       const pw = sstep(6.45, 6.85, P);
       if (pw > 0) {
         portraitPos(1, P, f.portrait, RING.c, tmp);
         (u.uRingC.value as Vector3).copy(tmp);
-        const sc = lerp(1, 0.16, pw) * (f.portrait ? 0.8 : 1);
+        const sc = lerp(1, PORTRAIT_SCALE[1], pw) * (f.portrait ? 0.8 : 1);
         u.uRingScale.value = [sc, sc];
       } else (u.uRingC.value as Vector3).copy(RING.c);
       const dim = lerp(1, 0.32, sstep(1.02, 1.22, uu));

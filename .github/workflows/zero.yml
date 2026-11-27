@@ -71,7 +71,26 @@ jobs:
 
       - name: 三个内核 × 七幕截图（Chromium 11 个尺寸，WebKit、Firefox 各 4 个），查溢出、报错、字出框
         working-directory: _zero
-        run: node scripts/genesis-shots.mjs --base http://127.0.0.1:4321 --out "${{ github.workspace }}/preview-shots"
+        run: node scripts/genesis-shots.mjs --base http://127.0.0.1:4321 --out "${{ github.workspace }}/preview-shots" --sheets "${{ github.workspace }}/preview-sheets"
+
+      - name: 拼好的预览小图提交回分支（只动 _ops/零肉身造物/预览/；本地会话拿不到附件，靠它看三个内核）
+        if: always()
+        continue-on-error: true
+        run: |
+          [ -d preview-sheets ] || exit 0
+          mkdir -p "_ops/零肉身造物/预览"
+          rm -f "_ops/零肉身造物/预览/"*
+          cp preview-sheets/* "_ops/零肉身造物/预览/"
+          git config user.name "QIANSHOULAB"
+          git config user.email "oilsongchengmin@gmail.com"
+          git add -A "_ops/零肉身造物/预览"
+          git diff --cached --quiet && exit 0
+          git commit -q -m "零肉身造物 v3：分支预览拼图（${GITHUB_SHA::7}）[skip ci]"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "${GITHUB_REF_NAME}" && git rebase -q "origin/${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep 6
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v4
         if: always()

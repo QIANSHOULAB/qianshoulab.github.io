@@ -22,7 +22,6 @@ uniform float uHalo;         // 门周围那团光
 uniform float uCorona;       // 贴着门轮廓的一圈亮边
 uniform float uReach;        // 地平线从门脚往两边划开了多少（0..1）
 uniform float uPath;         // 水上那条光路
-uniform float uWhite;        // 第七幕：白光漫天
 uniform vec4 uLightPos[6];   // 水面高光最多六盏灯：xyz 位置，w 强度
 uniform vec3 uLightCol[6];
 uniform vec4 uWinRect[5];    // 门上五个窗（门正面上的矩形）
@@ -32,26 +31,7 @@ uniform float uGrid;         // 第六幕：水上浮出的光格网
 uniform vec3 uGridCol;
 uniform vec4 uShock;         // 第五幕冲击波：中心 x、中心 z、半径、强度
 uniform float uSrcBack;
-uniform vec4 uOrb[4];        // 造物自带的那团光（太阳、小月、浑天仪……）：xyz 位置，w 半径
-uniform vec3 uOrbCol[4];
-uniform float uOrbI[4];
 varying vec2 vNdc;
-
-// 造物身边那团光（天上和水里都看得见）
-vec3 orbs(vec3 ro, vec3 rd) {
-  vec3 c = vec3(0.);
-  for (int i = 0; i < 4; i++) {
-    if (uOrbI[i] <= 0.) continue;
-    vec3 v = uOrb[i].xyz - ro;
-    float t = dot(v, rd);
-    if (t < 0.) continue;
-    float d = length(v - rd * t);
-    float r = uOrb[i].w;
-    float g = .5 * exp(-d / (r * .55)) + .26 * exp(-d / (r * 1.5)) + .035 * exp(-d / (r * 4.));
-    c += glowCol(g * uOrbI[i], uOrbCol[i]);
-  }
-  return c;
-}
 
 // 方向决定的天：头顶几乎全黑，地平线那一圈略亮，正前方（门那边）再亮一点
 vec3 skyBase(vec3 rd) {
@@ -115,7 +95,7 @@ vec3 gateLight(vec3 ro, vec3 rd, out float inside) {
   return outside;
 }
 
-vec3 sky(vec3 ro, vec3 rd, out float inside) { return skyBase(rd) + gateLight(ro, rd, inside) + orbs(ro, rd); }
+vec3 sky(vec3 ro, vec3 rd, out float inside) { return skyBase(rd) + gateLight(ro, rd, inside); }
 
 // 水波：几道很慢的细浪，越远越平（像素盖不住的浪直接抹掉，不闪）；第五幕的冲击波在水面推一圈浪
 vec3 waterNormal(vec2 p, float fpx, float fpz, float dist) {
@@ -237,8 +217,9 @@ void main() {
   // 地平线：门脚那里最亮，从门脚往左右两边划开（第一幕天和水是这时候才分开的）
   float reach = uReach * 1.7;
   float mask = 1. - smoothstep(reach * .72, reach + 1e-3, abs(az));
-  float line = exp(-abs(elPx + .35) / .7) * (.14 + 1.5 * exp(-az * az * 40.) + .3 * exp(-az * az * 2.)) * uLight * mask;
-  float mist = exp(-abs(rd.y) * 70.) * (.025 + .28 * exp(-az * az * 9.)) * uLight * mask;
+  // 门脚那里不单独打亮（亮竖缝 + 亮横线 = 十字，不要）：一条匀匀的细线，往两边慢慢暗下去
+  float line = exp(-abs(elPx + .35) / .7) * (.1 + .38 * exp(-az * az * 6.)) * uLight * mask;
+  float mist = exp(-abs(rd.y) * 70.) * (.02 + .2 * exp(-az * az * 9.)) * uLight * mask;
   col += glowCol(line + mist, uActCol);
   // 镜头暗角：四角压暗，光只在正中
   float vg = 1. - .45 * pow(length(vNdc * vec2(.8, 1.)) * .72, 2.2);

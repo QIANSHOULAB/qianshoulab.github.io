@@ -49,7 +49,6 @@ uniform vec4 uWinRect[5];
 uniform vec3 uWinCol[5];
 uniform float uWinOn[5];
 uniform float uHalo;
-uniform float uWhite;
 varying vec3 vLocal;
 varying vec3 vNL;
 varying vec3 vScale;
@@ -62,6 +61,7 @@ varying vec3 vTint;
 varying vec2 vExtra;
 varying float vBev;
 
+float gateOrSil() { return (vExtra.x > -.5 && vExtra.x < 7.5) ? 0. : uSil; }
 // 门缝透出来的光有多亮（门那一面上，离竖缝越近越亮）
 float slitLight(vec2 q) {
   float ds = length(vec2(q.x * .8, q.y - clamp(q.y, 0., uGate.y)));
@@ -100,7 +100,7 @@ void main() {
   float env = (.0008 + .012 * uLight * exp(-abs(Rv.y) * 3.)) * F * comp;
   col += glowCol(env * 4., uActCol);
 
-  float bright = vMat.w;
+  float bright = vMat.w * (1. - .97 * (gateOrSil()));
   bool gate = vExtra.x > -.5 && vExtra.x < 7.5;
   // 石缝透光（门上的缝：离门缝越近越亮）
   float sw = max(.14, pw * 1.05);
@@ -117,6 +117,8 @@ void main() {
     float ld = length(Lv);
     Lv /= ld;
     float lam = max(dot(N, Lv), 0.) * uKey.w / (1. + ld * ld / 52000.);
+    // 门是黑石：这盏灯只在它边上擦一点光，不把整面门照亮
+    if (gate) lam *= .12 * (1. - .7 * max(dot(N, normalize(cam - vWorld)), 0.));
     col += glowCol(lam * .5 * comp, uKeyCol);
   }
   // 背光勾边：门后那盏光在它背后，轮廓亮一圈
@@ -148,6 +150,7 @@ void main() {
   }
   // 第七幕白光：所有东西都成了白光里的剪影
   col *= 1. - .85 * uWhite;
+  if (!gate) col *= 1. - .9 * uSil;
   // 倒影那一遍：越深越暗
   if (uMirror < 0.) col *= exp(-max(vWorld.y, 0.) / 230.) * .9;
   // 远处薄薄一层空气

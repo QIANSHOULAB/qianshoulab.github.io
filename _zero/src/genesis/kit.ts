@@ -24,6 +24,8 @@ export function sharedUniforms() {
     uGate: { value: new Vector4(GATE.W / 2, GATE.H, GATE.Z, GATE.T) },
     uPixAng: { value: 0.0007 },
     uPortrait: { value: 0 },
+    uWhite: { value: 0 },
+    uSil: { value: 0 },
   };
 }
 
@@ -37,7 +39,6 @@ export function stoneUniforms() {
     uWinCol: { value: [0, 1, 2, 3, 4].map(() => new Vector3(1, 1, 1)) },
     uWinOn: { value: [0, 0, 0, 0, 0] },
     uHalo: { value: 0 },
-    uWhite: { value: 0 },
   };
 }
 
@@ -158,4 +159,6 @@ export interface Creation {
   objects: (Mesh | Points)[];
   update(f: Frame): void;
   setTier?(t: Tier): void;
+  /** 点「进去」时镜头扎向哪一点（这样造物现在在哪） */
+  target?(): Vector3;
 }

@@ -28,7 +28,7 @@ bool place(inout vec3 c, inout vec3 s, inout mat3 R, inout vec4 m, inout vec3 ti
   // 碎石：不是贴得整整齐齐的瓷砖，大小不一、歪着、有的鼓出来一点
   c = mix(blade, sph, k) + d * (aSeed.w - .5) * 2.2 * k;
   R = k < .5 ? rotZ(aSeed.w * 6.28) : lookDir(d) * rotAxis(normalize(aSeed.xyz - .5 + .001), (aSeed.y - .5) * 1.1);
-  float sz = uSize * mix(.62, 1.15, aSeed.w * aSeed.w) * (1. + .25 * aDir.w);
+  float sz = uSize * mix(.62, 1.15, aSeed.w * aSeed.w) * (1. + .25 * aDir.w) * (uSunRad / 42.);
   s = vec3(sz, sz * mix(.8, 1.2, aSeed.x), sz * mix(.7, 1.3, aSeed.y));
   ex = vec2(-1., aSeed.z);
   vBev = .38;

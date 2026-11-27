@@ -5,7 +5,7 @@ import { sstep, seg, lerp, clamp } from '../timeline';
 import { SUN_PLACE, FLAME_PLACE } from '../glsl/sun';
 import { blockMesh, pointCloud, pointMaterial, stoneMaterial, type Creation, type Frame, type U } from '../kit';
 import { rng, shuffle } from '../layout';
-import { orbitPos, portraitPos } from './law';
+import { orbitPos, portraitPos, PORTRAIT_SCALE } from './law';
 
 export const SUN_R = 42;            // 门比太阳大：直径 84 < 门宽 107
 const ZG = GATE.Z - GATE.T / 2;     // 门的中面
@@ -94,6 +94,7 @@ export function buildSun(shared: U, stone: U): Creation {
   return {
     name: 'sun',
     objects: [blocks, flames],
+    target: () => center,
     setTier(t: Tier) {
       const f = TIERS[t].blocks;
       blocks.geometry.instanceCount = Math.round(N * f);
@@ -107,7 +108,7 @@ export function buildSun(shared: U, stone: U): Creation {
       u.uU.value = uu;
       sunCenter(P, f.portrait, f.time, center);
       u.uSunPos.value.copy(center);
-      const rad = SUN_R * lerp(0.55, 1, sstep(0.2, 0.5, uu)) * (P > 6 ? lerp(1, 0.8, sstep(6.3, 6.9, P)) : 1);
+      const rad = SUN_R * lerp(0.55, 1, sstep(0.2, 0.5, uu)) * lerp(1, PORTRAIT_SCALE[0], sstep(6.45, 6.85, P));
       u.uSunRad.value = rad;
       u.uSpin.value = f.reduced ? 0 : f.time * 0.045;
       const heat = sstep(0.46, 0.6, uu);

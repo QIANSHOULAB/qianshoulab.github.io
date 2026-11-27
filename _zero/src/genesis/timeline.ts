@@ -57,10 +57,7 @@ export const doorDeg = (P: number) => keyed(DOOR, P);
 export function camDist(P: number): number {
   if (P <= 1) return CAM_DIST[1];
   if (P >= 7) return CAM_DIST[7];
-  if (P >= 6) {
-    const t = seg(P, 6, 6.94);
-    return lerp(CAM_DIST[6], CAM_DIST[7], 0.25 * t + 0.75 * easeInOut(t));
-  }
+  if (P >= 6) return keyed([[6, CAM_DIST[6]], [6.42, 430], [6.7, 250], [6.86, 160], [6.97, CAM_DIST[7]]], P);
   const k = Math.floor(P), t = P - k;
   return lerp(CAM_DIST[k], CAM_DIST[k + 1], 0.45 * t + 0.55 * sstep(0, 1, t));
 }
@@ -83,13 +80,13 @@ export function tanHalfAt(P: number, aspect: number, hz: number): number {
     const k = Math.max(1, Math.min(6, Math.floor(Pq)));
     const t = sstep(0, 1, Pq - k);
     const a = box(k), b = box(k + 1);
-    const top = lerp(a.top, b.top, t);
+    const top = lerp(portrait ? a.topP : a.top, portrait ? b.topP : b.top, t);
     const half = lerp(portrait ? a.halfP : a.half, portrait ? b.halfP : b.half, t);
     const d = camDist(Pq);
     const ar = Math.min(aspect, MAX_ASPECT);
     return Math.max(top / (2 * d * (1 - hz)), half / (d * ar));
   };
   if (P <= 6) return need(Math.max(1, P));
-  // 第七幕：视角只放大一点点，门越走越高、顶到天外
-  return need(6) * (1 + 0.12 * sstep(6, 7, P));
+  // 第七幕：走到门槛前，视角放开一些（站在门洞跟前），门越走越高、顶到天外
+  return need(6) * (1 + 0.62 * sstep(6.3, 7, P));
 }

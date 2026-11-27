@@ -43,15 +43,15 @@ export const HORIZON = { hero: 0.4, heroPortrait: 0.355, acts: 0.28, actsPortrai
  * 竖屏 halfP 单独定（窄屏不硬塞，环、轨道两边出框也行）。镜头视角按这块算，字和 3D 用同一把尺子。
  * 下标 = 幕号（0 = 开场黑屏，1 = 首屏）。
  */
-export const FRAME: { top: number; half: number; halfP: number }[] = [
-  { top: 380, half: 150, halfP: 150 },   // 0 开场
-  { top: 380, half: 150, halfP: 150 },   // Ⅰ 首屏：门占屏高 38%（跟 v2 黑碑一样大）
-  { top: 470, half: 220, halfP: 160 },   // Ⅱ 燃日：太阳升到门顶上，头顶要留出火舌的地方
-  { top: 452, half: 260, halfP: 170 },   // Ⅲ 布环：环绕门一圈
-  { top: 434, half: 270, halfP: 175 },   // Ⅳ 赋生：鲸绕门、升天成星座
-  { top: 416, half: 250, halfP: 165 },   // Ⅴ 铸器：浑天仪悬在门前
-  { top: 398, half: 300, halfP: 185 },   // Ⅵ 立法：轨道绕住整道门（top 一幕比一幕小：每走近一段，门大一圈）
-  { top: 398, half: 300, halfP: 185 },   // Ⅶ 收工：镜头往前走（视角沿用第六幕，门越走越高）
+export const FRAME: { top: number; half: number; halfP: number; topP: number }[] = [
+  { top: 380, half: 150, halfP: 150, topP: 380 },   // 0 开场
+  { top: 380, half: 150, halfP: 150, topP: 380 },   // Ⅰ 首屏：门占屏高 38%（跟 v2 黑碑一样大）
+  { top: 470, half: 220, halfP: 160, topP: 470 },   // Ⅱ 燃日：太阳升到门顶上，头顶要留出火舌的地方
+  { top: 452, half: 260, halfP: 170, topP: 470 },   // Ⅲ 布环：环绕门一圈
+  { top: 434, half: 270, halfP: 175, topP: 640 },   // Ⅳ 赋生：鲸绕门、升天成星座（竖屏：星座横在太阳上头，要更高的天）
+  { top: 416, half: 250, halfP: 165, topP: 480 },   // Ⅴ 铸器：浑天仪悬在门前
+  { top: 398, half: 300, halfP: 185, topP: 460 },   // Ⅵ 立法：轨道绕住整道门（top 一幕比一幕小：每走近一段，门大一圈）
+  { top: 398, half: 300, halfP: 185, topP: 460 },   // Ⅶ 收工：镜头往前走（视角沿用第六幕，门越走越高）
 ];
 /** 超宽屏：造物永远落在正中 16:9 的框里，两边多出来的只是更长的地平线和更多的黑 */
 export const MAX_ASPECT = 16 / 9;

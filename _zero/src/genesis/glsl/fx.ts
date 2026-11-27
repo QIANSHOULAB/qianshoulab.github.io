@@ -24,7 +24,6 @@ uniform vec3 uWinCol[5];
 uniform float uWinOn[5];
 uniform float uHovGlow[5];
 uniform vec3 uSecCol[5];
-uniform float uWhite;
 varying vec3 vW;
 varying vec2 vQ;
 void main() {
@@ -83,6 +82,7 @@ void main() {
   vec3 cam = uMirror < 0. ? vec3(uCamPos.x, -uCamPos.y, uCamPos.z) : uCamPos;
   float dist = length(p - cam);
   if (uMirror < 0.) col *= exp(-max(p.y, 0.) / 230.) * .85;
+  col *= (1. - uWhite) * (1. - uSil);
   vec3 pp = p;
   pp.y *= uMirror;
   vec4 mv = viewMatrix * vec4(pp, 1.);
@@ -153,9 +153,48 @@ varying vec3 vWp;
 // 每样东西写自己的 lineColor(沿线位置, 世界坐标) → 颜色
 void main() {
   float a = 1. - smoothstep(uWidth * .5 - .5, uWidth * .5 + .7, abs(vEdge));
-  vec3 c = lineColor(vAlong, vWp) * a;
+  vec3 c = lineColor(vAlong, vWp) * a * (1. - uWhite) * (1. - .8 * uSil);
   if (uMirror < 0.) c *= exp(-max(vWp.y, 0.) / 230.) * .8;
   if (dot(c, c) < 1e-9) discard;
+  gl_FragColor = outAdd(c);
+}
+`;
+
+/** 光晕：造物身边那团光（太阳、小月、红点、浑天仪）。对着镜头的一块片子，四边淡到零；在它前面的东西会挡住它 */
+export const HALO_VERT = /* glsl */ `
+attribute vec3 aPos;
+attribute vec4 aCol;      // rgb 颜色，a 强度
+attribute float aR;       // 光团半径
+varying vec2 vQ;
+varying vec4 vC;
+varying float vR;
+void main() {
+  vec3 c = aPos;
+  vec3 cam = uMirror < 0. ? vec3(uCamPos.x, -uCamPos.y, uCamPos.z) : uCamPos;
+  vec3 f = normalize(cam - c);
+  vec3 r = normalize(cross(vec3(0., 1., 0.), f));
+  vec3 u = cross(f, r);
+  float S = aR * 7.;
+  vec3 p = c + (r * position.x + u * position.y) * S + f * aR * .5;
+  vQ = position.xy * S;
+  vC = aCol;
+  vR = aR;
+  vec3 pp = p;
+  pp.y *= uMirror;
+  gl_Position = aCol.a > 0. ? projectionMatrix * viewMatrix * vec4(pp, 1.) : vec4(2., 2., 2., 1.);
+}
+`;
+export const HALO_FRAG = /* glsl */ `
+varying vec2 vQ;
+varying vec4 vC;
+varying float vR;
+void main() {
+  float d = length(vQ);
+  float r = vR;
+  float g = .5 * exp(-d / (r * .55)) + .26 * exp(-d / (r * 1.5)) + .035 * exp(-d / (r * 4.));
+  g *= 1. - smoothstep(r * 5., r * 7., d);
+  vec3 c = glowCol(g * vC.a, vC.rgb) * (1. - uWhite) * (1. - uSil);
+  if (uMirror < 0.) c *= .8;
   gl_FragColor = outAdd(c);
 }
 `;

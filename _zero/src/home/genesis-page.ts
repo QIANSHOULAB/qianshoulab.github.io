@@ -99,7 +99,7 @@ function frame(now: number) {
   let sEff = sSmooth;
   if (freeze != null) { p = freeze; sEff = scrollOfP(p); }
   P = p;
-  if (scene && !going) scene.frame(P, now);
+  if (scene) scene.frame(P, now);
   updateDom(P, sEff, Pi);
   snd.update(P, dt);
 }

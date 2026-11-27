@@ -54,6 +54,7 @@ const mail = ['oilsongchengmin', 'gmail.com'].join('@');
             <span class="wm-a" data-l="zh" lang="zh-CN">零肉身造物</span><span class="wm-b" data-l="zh" lang="en">ZERO-FLESH CREATION</span>
           </h1>
           <T as="p" class="tag" k="home.tagline" />
+          <p class="hint hint-m mono" aria-hidden="true"><T k="home.hint" /><span class="hint-l"></span></p>
         </div>
         <nav class="entries" aria-label={t('en', 'home.entries')} data-aria-en={t('en', 'home.entries')} data-aria-zh={t('zh', 'home.entries')}>
           <ol>
@@ -70,7 +71,7 @@ const mail = ['oilsongchengmin', 'gmail.com'].join('@');
             ))}
           </ol>
         </nav>
-        <p class="hint mono" aria-hidden="true"><T k="home.hint" /><span class="hint-l"></span></p>
+        <p class="hint hint-d mono" aria-hidden="true"><T k="home.hint" /><span class="hint-l"></span></p>
       </div>
     </section>
 
@@ -173,6 +174,7 @@ const mail = ['oilsongchengmin', 'gmail.com'].join('@');
   .hint { position: absolute; left: 0; right: 0; bottom: calc(var(--safe) + 22px); margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px;
     font-size: 10.5px; letter-spacing: .26em; color: #8a8a8a; text-transform: uppercase; }
   :global(html[data-lang="zh"]) .hint { font: 500 12px/1 var(--serif-zh); letter-spacing: .4em; text-transform: none; }
+  .hint-m { display: none; }
   .hint-l { width: 1px; height: 28px; background: linear-gradient(#8a8a8a, rgba(138, 138, 138, 0)); animation: drip 2.6s var(--slow) infinite; transform-origin: top; }
   @keyframes drip { 0% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
 
@@ -242,9 +244,12 @@ const mail = ['oilsongchengmin', 'gmail.com'].join('@');
   .bar { display: none; }
 
   /* —— Ⅶ 收工 —— */
-  .fin { position: fixed; left: 50%; top: calc(var(--fin-top, 52) * 1%); transform: translate(-50%, -50%); width: min(920px, calc(100% - 32px)); z-index: 6; text-align: center;
+  .fin { position: fixed; left: 0; right: 0; margin: 0 auto; bottom: calc(var(--safe) + 4.5vh); width: min(920px, calc(100% - 32px)); z-index: 6; text-align: center;
     opacity: var(--fo, 0); visibility: var(--fv, hidden); pointer-events: var(--fpe, none); }
-  .fin .code { margin: 0 0 30px; font-size: 12px; letter-spacing: .06em; color: #a9a9a9; --w: var(--fc, 0); }
+  /* 字底下一团暗：门洞那道白光收暗以后，字落在暗处 */
+  .fin::before { content: ""; position: absolute; left: 50%; top: -70px; bottom: -50px; width: min(1100px, 140%); transform: translateX(-50%); z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .8), rgba(0, 0, 0, .45) 60%, rgba(0, 0, 0, 0)); opacity: clamp(0, var(--fw, 0) * 3, 1); }
+  .fin .code { position: fixed; left: 16px; right: 16px; top: calc(var(--code-top, 12) * 1vh); margin: 0; font-size: 12.5px; letter-spacing: .06em; color: #b4b4b4; --w: var(--fc, 0); text-shadow: 0 0 10px rgba(0, 0, 0, .9); }
   .motto { margin: 0; --w: var(--fw, 0); font: 500 clamp(22px, 2.6vw, 36px)/1.45 var(--serif); letter-spacing: .06em; color: #f4f4f4; text-wrap: balance; text-shadow: 0 0 30px rgba(0, 0, 0, .7); }
   :global(html[data-lang="zh"]) .motto { font-family: var(--serif-zh); letter-spacing: .24em; font-size: clamp(20px, 2.3vw, 32px); }
   .fin-more { margin-top: 36px; opacity: var(--fm, 0); }
@@ -280,7 +285,28 @@ const mail = ['oilsongchengmin', 'gmail.com'].join('@');
     .ticks { display: none; }
     .bar { display: block; position: absolute; left: 16px; right: 16px; bottom: 14px; height: 1px; background: rgba(255, 255, 255, .14); z-index: 20; opacity: var(--ticks, 0); }
     .bar span { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--prog, 0) * 100%); background: rgba(255, 255, 255, .7); }
-    .fin { top: 46%; }
+    .fin { bottom: calc(var(--safe) + 4px); }
+    .fin .code { top: 84px; font-size: 11.5px; }
+  }
+  /* 平板竖着、窄窗口：五条铭文一排放不下，错成两排（之字形） */
+  @media (max-width: 900px) and (min-height: 521px) {
+    .entries ol { padding: 0 6px; max-width: 560px; }
+    .entries li:nth-child(odd) { transform: translateY(var(--zig)); }
+    .entries { --zig: 46px; }
+    .nm { font-size: 12.5px; letter-spacing: .14em; padding-left: .14em; white-space: normal; width: min-content; text-align: center; line-height: 1.4; }
+    :global(html[data-lang="zh"]) .nm { font-size: 14px; letter-spacing: .24em; padding-left: .24em; width: auto; white-space: nowrap; }
+    :global(html[data-lang="zh"]) .entries { --zig: 38px; }
+  }
+  @media (max-aspect-ratio: 1/1) and (max-width: 760px) {
+    /* 手机竖屏：往下滑的提示放到那句话下面（底下那块留给五条铭文和 Safari 的工具栏） */
+    .hint-d { display: none; }
+    .hint-m { display: flex; position: static; margin-top: 16px; }
+    .hint-l { height: 16px; }
+    .fin-more :global(.ft-addr) { font-size: 9.5px; line-height: 1.6; }
+    .fin-more :global(.ft-co) { font-size: 11px; line-height: 1.55; }
+    .fin-more { margin-top: 18px; }
+    .fin-nav ol { margin-top: 10px; }
+    .fin-nav a { min-height: 36px; }
   }
   @media (max-width: 760px) {
     .wm { gap: 10px; }
@@ -303,6 +329,11 @@ const mail = ['oilsongchengmin', 'gmail.com'].join('@');
   }
   /* 手机横屏：能看，不乱。字只留名字和「进去」 */
   @media (max-height: 520px) and (min-aspect-ratio: 1/1) {
+    .nm { font-size: 11px; letter-spacing: .12em; padding-left: .12em; }
+    :global(html[data-lang="zh"]) .nm { font-size: 12.5px; letter-spacing: .2em; padding-left: .2em; }
+    .no { font-size: 9.5px; }
+    .tick { height: 10px; }
+    .entry { gap: 5px; }
     .act-in .code, .act-line, .act-tag { display: none; }
     .act-row { margin-top: 8px; }
     .act-in { --abot: 10px; }

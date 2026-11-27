@@ -2,7 +2,7 @@
 // 这个文件只管画：每帧拿到进度 P，把门、光、天、水、每样造物摆好，先画一遍倒影，再画正片。
 // 字、刻度、声音、滚动在 ../home/genesis-page.ts。three.js 跟这个文件一起异步加载，不挡首屏。
 import {
-  BufferGeometry, DoubleSide, Float32BufferAttribute, LinearSRGBColorSpace, Mesh, PerspectiveCamera, PlaneGeometry,
+  BufferGeometry, DoubleSide, InstancedBufferAttribute, InstancedBufferGeometry, Float32BufferAttribute, LinearSRGBColorSpace, Mesh, PerspectiveCamera, PlaneGeometry,
   Scene, ShaderMaterial, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget, RGBAFormat, UnsignedByteType, LinearFilter,
   type Points,
 } from 'three';
@@ -11,12 +11,14 @@ import { camDist, clamp, doorDeg, horizonAt, lerp, seg, sstep, tanHalfAt } from 
 import { COMMON, FRAG } from './glsl/common';
 import { WORLD_VERT, WORLD_FRAG } from './glsl/world';
 import { GATE_PLACE } from './glsl/stone';
-import { GLOW_VERT, GLOW_FRAG } from './glsl/fx';
+import { GLOW_VERT, GLOW_FRAG, HALO_VERT, HALO_FRAG } from './glsl/fx';
 import { SPOT_RECTS, gateBlocks } from './layout';
 import { additive, blockMesh, sharedUniforms, stoneMaterial, stoneUniforms, type Creation, type Frame, type Lamp } from './kit';
 import { buildSun } from './creations/sun';
 import { buildRing } from './creations/ring';
 import { buildWhale } from './creations/whale';
+import { buildForge } from './creations/forge';
+import { buildLaw, setLift } from './creations/law';
 
 export interface GenesisOpts {
   stage: HTMLElement;          // 画布铺满它
@@ -80,9 +82,6 @@ export function createGenesis(opts: GenesisOpts) {
     uGridCol: { value: new Vector3(...ACT_COLS[5]) },
     uShock: { value: new Vector4() },
     uSrcBack: { value: SRC_BACK },
-    uOrb: { value: [0, 1, 2, 3].map(() => new Vector4()) },
-    uOrbCol: { value: [0, 1, 2, 3].map(() => new Vector3(1, 1, 1)) },
-    uOrbI: { value: [0, 0, 0, 0] },
   };
   const worldMat = new ShaderMaterial({
     uniforms: { ...U, ...S, ...W },
@@ -131,10 +130,34 @@ export function createGenesis(opts: GenesisOpts) {
   glow.frustumCulled = false;
   scene.add(glow);
 
+  // —— 光晕：造物身边那团光（对着镜头的片子，在它前面的东西挡得住它） ——
+  const NH = 6;
+  const haloGeo = new InstancedBufferGeometry();
+  const quad = new PlaneGeometry(2, 2);
+  haloGeo.index = quad.index;
+  haloGeo.setAttribute('position', quad.getAttribute('position'));
+  const hPos = new InstancedBufferAttribute(new Float32Array(NH * 3), 3);
+  const hCol = new InstancedBufferAttribute(new Float32Array(NH * 4), 4);
+  const hR = new InstancedBufferAttribute(new Float32Array(NH), 1);
+  haloGeo.setAttribute('aPos', hPos);
+  haloGeo.setAttribute('aCol', hCol);
+  haloGeo.setAttribute('aR', hR);
+  haloGeo.instanceCount = NH;
+  const haloMat = new ShaderMaterial({ uniforms: { ...U }, vertexShader: COMMON + HALO_VERT, fragmentShader: COMMON + FRAG + HALO_FRAG, ...additive, side: DoubleSide });
+  const halos = new Mesh(haloGeo, haloMat);
+  halos.frustumCulled = false;
+  halos.renderOrder = 7;
+  scene.add(halos);
+
   // —— 造物 ——
   const ringC = buildRing(shared, S);
   const whaleC = buildWhale(shared, S);
-  const creations: Creation[] = [buildSun(shared, S), ringC, whaleC];
+  const forgeC = buildForge(shared, S);
+  const lawC = buildLaw(shared, forgeC.state);
+  const sunC = buildSun(shared, S);
+  const creations: Creation[] = [sunC, ringC, whaleC, forgeC, lawC];
+  /** 第 k 幕那样造物（2 日 … 6 律） */
+  const byAct: Record<number, Creation> = { 2: sunC, 3: ringC, 4: whaleC, 5: forgeC, 6: lawC };
   for (const c of creations) for (const o of c.objects) scene.add(o);
 
   // —— 倒影：门和造物沿水面翻过来画在一张贴图上，水面按行错位地取 ——
@@ -163,6 +186,17 @@ export function createGenesis(opts: GenesisOpts) {
     U.uPortrait.value = portrait ? 1 : 0;
   }
   let lastHz = 0.4, lastTan = 0.3;
+  function setProjection(tanHalf: number, hz: number) {
+    camera.fov = (2 * Math.atan(tanHalf) * 180) / Math.PI;
+    camera.aspect = aspect;
+    camera.updateProjectionMatrix();
+    // 移轴：镜头保持水平，用投影矩阵把地平线压到离底边 hz 的地方，竖线不歪
+    camera.projectionMatrix.elements[9] = 1 - 2 * hz;
+    camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+    U.uPixAng.value = (2 * tanHalf) / (size.h * dpr);
+    W.uLens.value = [tanHalf, aspect];
+    px.uPxScale.value = (size.h * dpr) / (2 * tanHalf);
+  }
   function applyCamera(P: number) {
     const hz = horizonAt(P, portrait);
     const tanHalf = tanHalfAt(P, aspect, hz);
@@ -170,19 +204,53 @@ export function createGenesis(opts: GenesisOpts) {
     const d = camDist(P);
     camera.position.set(0, EYE, GATE.Z + d);
     camera.rotation.set(0, 0, 0);
-    camera.fov = (2 * Math.atan(tanHalf) * 180) / Math.PI;
-    camera.aspect = aspect;
     camera.near = Math.max(0.5, Math.min(4, d * 0.01));
     camera.far = 9000;
-    camera.updateProjectionMatrix();
-    // 移轴：镜头保持水平，用投影矩阵把地平线压到离底边 hz 的地方，竖线不歪
-    camera.projectionMatrix.elements[9] = 1 - 2 * hz;
-    camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+    setProjection(tanHalf, hz);
     camera.updateMatrixWorld();
-    U.uPixAng.value = (2 * tanHalf) / (size.h * dpr);
-    W.uLens.value = [tanHalf, aspect];
-    px.uPxScale.value = (size.h * dpr) / (2 * tanHalf);
     U.uCamPos.value.copy(camera.position);
+  }
+
+  // —— 进去：镜头扎进那样造物本身（冲进太阳、落到环上、贴着鲸掠过去、穿过浑天仪、顺着轨道滑走），满屏变成它的颜色 ——
+  // 首屏的五条铭文：照旧扎进门上那撮的窗里
+  const ENTER_MS = 1900;
+  let entering: { kind: string; k: number; t0: number; from: Vector3; resolve: () => void; onP?: (s: number) => void; hold: number } | null = null;
+  function enter(kind: 'gate' | 'creation', k: number, onP?: (s: number) => void, hold = 1) {
+    return new Promise<void>((resolve) => {
+      if (opts.reduced) { resolve(); return; }
+      entering = { kind, k, t0: performance.now(), from: camera.position.clone(), resolve, onP, hold };
+    });
+  }
+  const tgt = new Vector3(), look = new Vector3();
+  function enterTarget(kind: string, k: number) {
+    if (kind === 'gate') {
+      const [x0, y0, x1, y1] = SPOT_RECTS[k];
+      return tgt.set((x0 + x1) / 2, (y0 + y1) / 2, GATE.Z - 6);
+    }
+    const c = byAct[k];
+    return tgt.copy(c?.target ? c.target() : new Vector3(0, GATE.H / 2, GATE.Z));
+  }
+  function flyCamera(now: number) {
+    if (!entering) return;
+    const s = Math.min(clamp((now - entering.t0) / ENTER_MS), entering.hold);
+    const e = s * s * s;
+    const T = enterTarget(entering.kind, entering.k);
+    // 停在目标跟前一点点（穿进去那一刻满屏是它的颜色）
+    const end = T.clone().add(entering.from.clone().sub(T).normalize().multiplyScalar(entering.kind === 'gate' ? 2 : 6));
+    camera.position.lerpVectors(entering.from, end, e);
+    const aim = sstep(0.04, 0.55, s);
+    look.set(lerp(camera.position.x, T.x, aim), lerp(camera.position.y, T.y, aim), lerp(camera.position.z - 100, T.z, aim));
+    camera.lookAt(look);
+    setProjection(lastTan * lerp(1, 1.3, e), lerp(lastHz, 0.5, sstep(0.25, 0.9, s)));
+    camera.updateMatrixWorld();
+    U.uCamPos.value.copy(camera.position);
+    U.uExposure.value = 0.72 * (1 + 2.4 * e * e);
+    entering.onP?.(s);
+    if (s >= 1) { const r = entering.resolve; entering = null; r(); }
+  }
+  function reset() {
+    entering = null;
+    U.uExposure.value = 0.72;
   }
 
   // —— 档位 ——
@@ -238,6 +306,7 @@ export function createGenesis(opts: GenesisOpts) {
 
     // —— Ⅰ 启光：全黑 → 一条发丝细的竖光从下往上亮 → 门推开一线，光涌出来，地平线从门脚往两边划开 ——
     let light = P >= 1 ? 1 : Math.pow(sstep(0.2, 0.8, P), 1.25);
+    light *= 1 - 0.93 * sstep(6.86, 7, P);     // 第七幕最后：白光慢慢收暗（收到字看得清）
     if (P >= 1 && !opts.reduced) light *= 1 + 0.026 * Math.sin((nowMs / BREATH_MS) * Math.PI * 2);
     const door = (doorDeg(P) * Math.PI) / 180;
     G.uDoor.value = door;
@@ -253,7 +322,10 @@ export function createGenesis(opts: GenesisOpts) {
     W.uPath.value = sstep(0.5, 0.86, P);
     const col = actColor(P);
     U.uActCol.value.set(col[0], col[1], col[2]);
-    U.uExposure.value = 0.72;
+    if (!entering) U.uExposure.value = 0.72;
+    // —— Ⅶ 收工：两扇门完全推开，五种颜色收回来合成白光；日、环、鲸、器全成了白光里的剪影；白光再慢慢收暗 ——
+    U.uWhite.value = sstep(6.6, 6.82, P) * (1 - sstep(6.86, 7, P));
+    U.uSil.value = sstep(6.56, 6.8, P);
 
     // —— 门上的五撮：哪一幕开始，哪一撮松动、离开，留下一个透光的缺口（缺口里是那一幕的颜色） ——
     const rects = windowRects(door);
@@ -273,7 +345,11 @@ export function createGenesis(opts: GenesisOpts) {
     }
 
     // —— 造物 ——
+    setLift(P);
     for (const c of creations) c.update(f);
+    W.uShock.value.copy(forgeC.shock);
+    W.uGrid.value = lawC.grid;
+    flyCamera(nowMs);
 
     // 门后那盏主光也照水：门缝正中那条光路
     const gateLamp: Lamp = { pos: tmpV.set(0, GATE.H * 0.42, GATE.Z - GATE.T - 10), col: col, i: 1.6 * U.uLight.value * W.uPath.value };
@@ -283,13 +359,14 @@ export function createGenesis(opts: GenesisOpts) {
       if (l) { W.uLightPos.value[i].set(l.pos.x, l.pos.y, l.pos.z, l.i); W.uLightCol.value[i].set(...l.col); }
       else W.uLightPos.value[i].w = 0;
     }
-    const orbs = f.orbs.sort((a, b) => b.i - a.i).slice(0, 4);
-    for (let i = 0; i < 4; i++) {
+    const orbs = f.orbs.sort((a, b) => b.i - a.i).slice(0, NH);
+    for (let i = 0; i < NH; i++) {
       const o = orbs[i];
-      if (o) { W.uOrb.value[i].set(o.pos.x, o.pos.y, o.pos.z, o.r ?? 40); W.uOrbCol.value[i].set(...o.col); W.uOrbI.value[i] = o.i; }
-      else W.uOrbI.value[i] = 0;
+      if (o) { hPos.setXYZ(i, o.pos.x, o.pos.y, o.pos.z); hCol.setXYZW(i, o.col[0], o.col[1], o.col[2], o.i); hR.setX(i, o.r ?? 40); }
+      else hCol.setW(i, 0);
     }
-    const key = f.keys.sort((a, b) => b.i - a.i)[0];
+    hPos.needsUpdate = true; hCol.needsUpdate = true; hR.needsUpdate = true;
+    const key = P < 6.5 ? f.keys.sort((a, b) => b.i - a.i)[0] : undefined;
     if (key) { S.uKey.value.set(key.pos.x, key.pos.y, key.pos.z, key.i); S.uKeyCol.value.set(...key.col); }
     else S.uKey.value.w = 0;
 
@@ -347,7 +424,9 @@ export function createGenesis(opts: GenesisOpts) {
     });
     const wl = whaleC.label();
     const q = project(wl.pos);
-    const spec = { x: q.x, y: q.y, o: q.front ? wl.o : 0 };
+    // 标本签：锚点出了画面就不出；在画面里就挪进屏幕里面（左右上下各留 16 像素，不压顶栏）
+    const inView = q.front && q.x > -40 && q.x < size.w + 40 && q.y > 0 && q.y < size.h;
+    const spec = { x: clamp(q.x, 16, size.w - 190), y: clamp(q.y, 70, size.h - 150), o: inView ? wl.o : 0 };
     return { moons, spec };
   }
 
@@ -373,6 +452,8 @@ export function createGenesis(opts: GenesisOpts) {
     layout,
     project,
     tags,
+    enter,
+    reset,
     setTier,
     get tier() { return tier; },
     set onTier(f: ((t: Tier) => void) | null) { onTier = f; },

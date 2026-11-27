@@ -16,6 +16,8 @@ uniform vec3 uActCol;     // 这一幕当家的颜色（线性，最大的通道
 uniform vec4 uGate;       // 半宽、高、正面 z、厚
 uniform float uPixAng;    // 一个像素对应多少弧度
 uniform float uPortrait;  // 竖屏 1，横屏 0（竖屏单独排一套）
+uniform float uWhite;     // 第七幕：门全开，白光漫天
+uniform float uSil;       // 第七幕：日、环、鲸、器、轨道全成了白光里的黑剪影（白光收暗以后也不再亮回来）
 
 float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
 float hash11(float p) { p = fract(p * .1031); p *= p + 33.33; p *= p + p; return fract(p); }

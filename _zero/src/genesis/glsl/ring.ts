@@ -43,7 +43,7 @@ bool place(inout vec3 c, inout vec3 s, inout mat3 R, inout vec4 m, inout vec3 ti
   if (u < e - FALL) return false;
   float rho = aRing.y, hh = aRing.z;
   vec3 tang;
-  float sz = uSize * mix(.55, 1.25, aSeed.x * aSeed.x);
+  float sz = uSize * mix(.55, 1.25, aSeed.x * aSeed.x) * uRingScale.x;
   s = vec3(sz * mix(.8, 1.6, aSeed.y), sz * mix(.5, .9, aSeed.z), sz);
   float moving = 0.;
   if (u < e) {
@@ -100,10 +100,10 @@ bool place(inout vec3 c, inout vec3 s, inout mat3 R, inout vec4 m, inout vec3 ti
   float k = sstep(arrive, arrive + .08, u);
   vec3 cen = ringPoint(FRONT + min(V_FLOW * max(u - (arrive - .05), 0.), D) + uRot, 193., 0.);
   vec3 dir = normalize(aMoon.yzw);
-  float r = uMoonR * mix(2.2, 1., k);
+  float r = uMoonR * mix(2.2, 1., k) * uRingScale.x;
   c = cen + dir * r * mix(.6 + .8 * aSeed.x, 1., k);
   R = lookDir(dir) * rotZ(aSeed.y * 6.);
-  float sz = uMoonR * .42 * mix(.7, 1.1, aSeed.z);
+  float sz = uMoonR * .42 * mix(.7, 1.1, aSeed.z) * uRingScale.x;
   s = vec3(sz);
   ex = vec2(-1., aSeed.w);
   tint = mix(uRingCol, vec3(1.), .15);
