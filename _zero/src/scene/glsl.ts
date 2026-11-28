@@ -1156,8 +1156,22 @@ attribute vec4 aBlk2;      // 那块石头另外两个随机数、星自己的�
 attribute vec4 aSeed;      // 星在最后那个镜头里的位置（-1..1）、亮度、闪的快慢
 uniform vec4 uFin;         // 最后那个镜头：抬头、竖直半视角正切、宽高比、移轴
 uniform float uPxScale;
+// v3.3：那句话由其中一部分星聚成（「飞上天的那些石头变成星，其中一部分聚成这句话」）
+attribute vec4 aMot;       // 英文落点 xy、中文落点 xy（em）
+attribute vec3 aMotG;      // x：1 = 这颗星去聚那句话；y、z：英文、中文里那个字什么时候亮
+uniform vec3 uMotA;
+uniform vec3 uMotR;
+uniform vec3 uMotU;
+uniform vec3 uMotN;
+uniform float uMotF;
+uniform float uMotLang;
+uniform float uMote;
 varying float vA;
 varying vec3 vTint;
+vec3 sdir(vec3 r) {
+  float z = r.x * 2. - 1., a = r.y * TAU, q = sqrt(max(1. - z * z, 0.));
+  return vec3(q * cos(a), z, q * sin(a));
+}
 void main() {
   vec4 rnd = vec4(aBlk.z, aBlk.w, aBlk2.x, aBlk2.y);
   float s = riseS(aBlk.y, rnd.x);
@@ -1179,6 +1193,22 @@ void main() {
   float u = (s - te) / (1. - te);
   float k = u * u * u * (u * (u * 6. - 15.) + 10.);
   vec3 p = mix(B, S, k);
+  // 去聚那句话的星：到了天上以后再往那句话的笔画上聚；聚好以后并进那份清楚的字，只留几颗光点慢慢飘
+  float gat = 0., merge = 0., mote = 0.;
+  if (aMotG.x > .5 && uMotF > 0.) {
+    float lsc = sin(PI * uMotLang);
+    vec2 tl = mix(aMot.xy, aMot.zw, uMotLang);
+    float em = length(uMotR);
+    vec3 T = uMotA + uMotR * tl.x + uMotU * tl.y + (sdir(vec3(aSeed.w, aBlk2.z, aSeed.y)) * vec3(1., .6, .3) + uMotN * .3) * em * 2.2 * lsc;
+    float g0 = mix(aMotG.y, aMotG.z, uMotLang);
+    gat = clamp((uMotF - (g0 - .52) - aBlk2.z * .06) / .5, 0., 1.);
+    gat = gat * gat * (3. - 2. * gat);
+    vec3 mid = mix(p, T, .5) + uMotN * em * (2. + 3. * aSeed.y) * (1. - gat);
+    p = mix(mix(p, mid, gat), mix(mid, T, gat), gat);
+    mote = step(fract(aSeed.w * 13.1), uMote);
+    merge = smoothstep(g0 + .03, g0 + .17, uMotF) * (1. - lsc);
+    p += (uMotR * sin(uTime * (.2 + aSeed.y * .2) + aSeed.z * 9.) + uMotU * cos(uTime * (.16 + aSeed.x * .2) + aSeed.y * 7.)) * em * .1 * mote * merge;
+  }
   vec3 rp = p;
   if (uMirror > .5) rp.y = -rp.y;
   gl_Position = projectionMatrix * viewMatrix * vec4(rp, 1.);
@@ -1190,6 +1220,12 @@ void main() {
   gl_PointSize = mix(1.25, 4.2, m) * clamp(uPxScale / 900., .7, 2.2) * (1. + 1.2 * flash);
   vA = b * (1. + 3. * flash) * smoothstep(0., .03, u);
   vTint = mix(vec3(1., .97, .93), five(fract(aBlk2.z * 7.13 + aBlk2.w * 3.7)), .28 + .4 * flash);
+  if (gat > 0.) {
+    // 聚的时候亮一点、小一点（像在笔画上排队的光点）
+    gl_PointSize = mix(gl_PointSize, clamp(uPxScale / 900., .7, 2.2) * 1.7, gat);
+    vA = mix(vA, 1.25, gat) * mix(1. - merge, .55, mote * merge);
+    vTint = mix(vTint, vec3(1., .96, .9), gat * .6);
+  }
 }
 `;
 export const SKYSTAR_FRAG = /* glsl */ `
@@ -1336,4 +1372,187 @@ void main() {
   float a = exp(-dot(c, c) * 14.);
   gl_FragColor = outGlow(mix(uLightCol, vec3(1.), .5) * vA * a * 3.);
 }
+`;
+
+// ———— v3.3 星尘字 ————
+// 名字（第二到第六幕、天上五个名字）：那一幕造出来的东西身上掉下碎块，聚成它的名字。碎块的颜色、材质跟那样东西一样（片元照用 CHIP_FRAG）。
+// 每块碎块记着它在英文、中文两套字形里各落在哪（笔画上的点，em），什么时候那个字亮（g0）。
+// uF：聚到哪了（0..1，跟着进度走）；uLang：0 英文 1 中文（换语言时中间往外散一下再聚）。
+export const DUST_CHIP = /* glsl */ `
+attribute vec3 aTE;        // 英文：落点 xy（em）、那个字什么时候亮
+attribute vec3 aTZ;        // 中文
+uniform vec3 uAnchor;      // 字的正中（世界）
+uniform vec3 uRight;       // 一个 em 往右是多少（世界）
+uniform vec3 uUp;
+uniform vec3 uNorm;        // 字面朝镜头那一面
+uniform float uF;
+uniform float uLang;
+uniform float uMote;       // 聚好以后留下来慢慢飘的光点占几成
+uniform float uChip;       // 出发时一块多大（跟那样东西身上的石头一样大）
+uniform float uSrc;        // 从哪来：0 日 1 环 2 鲸 3 器 4 轨道 6 散在字四周的星尘（退路列表）
+uniform vec3 uSC;
+uniform mat3 uSRot;
+uniform vec4 uSP;
+uniform mat3 uRA;
+uniform mat3 uRB;
+uniform mat3 uRC;
+vec3 srcPoint(vec4 r) {
+  if (uSrc < .5) return uSC + hdir(r.xyz) * uSP.x;
+  if (uSrc < 1.5) {
+    float th = r.x * TAU;
+    float rr = uSP.x + (r.y - .5) * uSP.y;
+    return uSC + uSRot * vec3(rr * cos(th), (r.z - .5) * uSP.z, rr * sin(th));
+  }
+  if (uSrc < 2.5) {
+    float u = r.x, a = r.y * TAU;
+    float rad = uSP.y * sqrt(smoothstep(0., .16, u)) * mix(1., .1, smoothstep(.36, .9, u));
+    return uSC + uSRot * vec3(uSP.x * (.5 - u), rad * sin(a), rad * cos(a));
+  }
+  if (uSrc < 3.5) {
+    float q = r.x * 3., j = floor(q), th = fract(q) * TAU;
+    float rr = (66. - j * 7.) * uSP.x;
+    mat3 RR = j < .5 ? uRA : (j < 1.5 ? uRB : uRC);
+    return uSC + RR * vec3(rr * cos(th), 0., rr * sin(th));
+  }
+  if (uSrc < 4.5) {
+    float th = r.x * uSP.y * TAU;
+    return uSC + uSRot * vec3(uSP.x * cos(th), 0., uSP.x * sin(th));
+  }
+  return uAnchor + (hdir(r.xyz) * vec3(1., .55, .35) + uNorm * (r.w - .3)) * length(uRight) * 7.;
+}
+void chip(out vec3 P, out mat3 R, out vec3 S, out float heat) {
+  vec2 tl = mix(aTE.xy, aTZ.xy, uLang);
+  float g0 = mix(aTE.z, aTZ.z, uLang);
+  float em = length(uRight);
+  float sc = sin(PI * uLang);
+  vec3 T = uAnchor + uRight * tl.x + uUp * tl.y;
+  // 换语言：散开再聚
+  T += (hdir(aSeed.wzy) * vec3(1., .7, .4) + uNorm * .4) * em * 1.8 * sc;
+  // 飞：从那样东西身上掉下来（先往外、往下掉一点），再从字的正前方落进笔画里
+  float dep = g0 - .44 + aSeed.x * .08;
+  float s = clamp((uF - dep) / .46, 0., 1.);
+  float e = s * s * (3. - 2. * s);
+  vec3 S0 = srcPoint(aSeed);
+  vec3 out1 = normalize(S0 - uSC + vec3(1e-3));
+  if (uSrc > 5.5) out1 = normalize(S0 - uAnchor + vec3(1e-3));
+  vec3 B = S0 + (out1 * .7 + vec3(0., -.35, 0.)) * uChip * (6. + 8. * aSeed.y);
+  vec3 C = T + uNorm * em * (1.2 + 2.2 * aSeed.y) + (S0 - T) * .12;
+  P = bez(S0, B, C, T, e);
+  // 落定以后：并进那份清楚的字（缩没）；少数几颗留下来当光点，绕着落点慢慢飘
+  float mote = step(aSeed.w, uMote);
+  float merge = smoothstep(g0 + .03, g0 + .17, uF) * (1. - sc);
+  float drift = smoothstep(g0, g0 + .25, uF) * mote;
+  P += (uRight * sin(uTime * (.21 + aSeed.y * .2) + aSeed.z * 9.) + uUp * cos(uTime * (.17 + aSeed.x * .2) + aSeed.y * 7.)) * em * .09 * drift;
+  float sz0 = uChip * mix(.75, 1.25, aSeed.z);
+  float szT = em * .05;
+  float sz = mix(sz0, szT, smoothstep(.4, 1., s));
+  sz *= mix(1. - merge, .42, mote * merge);
+  sz *= smoothstep(0., .05, s);
+  R = rotAxis(hdir(aSeed.zxy), (1. - e) * (uTime * (.5 + aSeed.x) + aSeed.y * 12.) + aSeed.w * 3.);
+  S = vec3(sz, sz * mix(.7, 1.1, aSeed.y), sz * .7);
+  heat = mix(.7, 1.9, smoothstep(.5, 1., s)) * mix(1., 1.6, mote * merge);
+}
+`;
+
+// 那份清楚的细发光字：一个字一块四边形（图集里那一格），从距离场里取笔画和光晕。
+// 主画面那遍画在原生分辨率上（画面本身按档位降分辨率画好再放大），所以字是锐的；造物从字前面经过，按画面的深度挡住字。
+// 水里的倒影那遍（uMirror = 1）只出光，不出暗。
+export const TEXT_VERT = /* glsl */ `
+attribute vec4 aBox;       // 这一格在字里的位置（em）：左、下、宽、高
+attribute vec4 aUV;        // 图集里的位置：左、下、右、上
+attribute vec2 aG;         // 这个字什么时候亮；1 = 底下垫的那一小团暗
+uniform vec3 uAnchor;
+uniform vec3 uRight;
+uniform vec3 uUp;
+uniform float uF;
+uniform float uReveal;     // 1 = 不聚，直接整个亮（wordmark、减少动效）
+uniform float uMirInf;     // 1 = 倒影按「在无穷远」算（那句话：跟星、星云一样挂在天上，倒影跟地平线上下对称；不然镜头升高以后它的倒影落到屏幕外头）
+varying vec2 vUV;
+varying float vRev;
+varying float vKind;
+varying vec2 vQ;
+varying float vViewZ;
+void main() {
+  vec2 q = aBox.xy + position.xy * aBox.zw;
+  vec3 wp = uAnchor + uRight * q.x + uUp * q.y;
+  vUV = vec2(mix(aUV.x, aUV.z, position.x), mix(aUV.y, aUV.w, position.y));
+  vRev = max(uReveal, smoothstep(aG.x, aG.x + .16, uF));
+  vKind = aG.y;
+  vQ = position.xy * 2. - 1.;
+  vec3 rp = wp;
+  if (uMirror > .5) rp.y = uMirInf > .5 ? 2. * cameraPosition.y - rp.y : -rp.y;
+  vec4 mv = viewMatrix * vec4(rp, 1.);
+  vViewZ = -mv.z;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+export const TEXT_FRAG = /* glsl */ `
+uniform sampler2D uAtlas;
+uniform vec2 uAtlasSize;
+uniform float uSpread;
+uniform float uInMax;
+uniform vec3 uCore;        // 笔画的颜色（显示空间）
+uniform float uCoreA;      // 笔画盖住底下多少（wordmark 没被照亮的时候是暗的那一块）
+uniform vec3 uGlow;        // 光晕的颜色
+uniform float uAlpha;
+uniform float uShadow;     // 字底下垫多少暗（星云很亮的地方也读得清）
+uniform float uBold;       // 小字加一点粗（像素）：笔画别细过一个像素
+uniform sampler2D uDepth;  // 画面的深度：造物在字前面就挡住字
+uniform vec2 uCanvas;
+uniform vec2 uNF;
+uniform float uUseDepth;
+uniform float uMirInf;
+varying vec2 vUV;
+varying float vRev;
+varying float vKind;
+varying vec2 vQ;
+varying float vViewZ;
+void main() {
+  float occ = 1.;
+  if (uUseDepth > .5 && uMirror < .5) {
+    float d = texture2D(uDepth, gl_FragCoord.xy / uCanvas).x;
+    float z = d * 2. - 1.;
+    float sz = 2. * uNF.x * uNF.y / (uNF.y + uNF.x - z * (uNF.y - uNF.x));
+    occ = smoothstep(-4., 3., sz - vViewZ);
+  }
+  if (vKind > .5) {
+    if (uMirror > .5) discard;
+    // 圆角的一小团暗：中间最浓，往外慢慢没（不是一块方的）
+    vec2 e = max(abs(vQ) - vec2(.35, 0.), 0.) / vec2(.65, 1.);
+    float r = length(e);
+    float a = pow(1. - smoothstep(0., 1., r), 1.6) * uShadow * uAlpha * occ * vRev;
+    gl_FragColor = vec4(0., 0., 0., a);
+    return;
+  }
+  float v = texture2D(uAtlas, vUV).r;
+  float dTex = uSpread - v * (uSpread + uInMax);
+  vec2 tpp = fwidth(vUV * uAtlasSize);
+  float tp = max(.5 * (tpp.x + tpp.y), 1e-4);
+  float dPx = dTex / tp;
+  float core = clamp(.5 - dPx + uBold, 0., 1.);
+  float halo = exp(-max(dTex, 0.) / (uSpread * .3)) * (1. - smoothstep(uSpread * .62, uSpread * .98, dTex));
+  float sh = exp(-max(dTex, 0.) / (uSpread * .45)) * (1. - smoothstep(uSpread * .7, uSpread * .98, dTex));
+  float a = uAlpha * vRev * occ;
+  if (uMirror > .5) {
+    // 那句话的倒影落在页脚那一带：淡一点，是水里一层亮，不跟片尾字幕抢
+    vec3 c = (uCore * core * .7 + uGlow * halo * .5) * a * (uMirInf > .5 ? .75 : 1.4);
+    gl_FragColor = vec4(c / (1. + c), 0.);
+    return;
+  }
+  vec3 rgb = (uCore * core + uGlow * halo * .5) * a;
+  float alpha = (core * uCoreA + sh * uShadow * .45) * a;
+  gl_FragColor = vec4(rgb, clamp(alpha, 0., 1.));
+}
+`;
+
+// 画面（按档位的分辨率画在一张图上）放大铺满画布
+export const BLIT_VERT = /* glsl */ `
+varying vec2 vUv;
+void main() { vUv = position.xy * .5 + .5; gl_Position = vec4(position.xy, 0., 1.); }
+`;
+export const BLIT_FRAG = /* glsl */ `
+precision highp float;
+uniform sampler2D tColor;
+varying vec2 vUv;
+void main() { gl_FragColor = texture2D(tColor, vUv); }
 `;

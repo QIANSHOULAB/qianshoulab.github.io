@@ -5,19 +5,19 @@ name: 零肉身造物
 # 千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
 # 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，根目录还是该是的那个，零肉身页面不报错、不横向溢出。
 # 拉最新 main 再放产物，推不上再拉再推，最多 5 次，不许 --force。提交作者沿用触发这次构建的那个提交的作者。
-# v3.2（星空目录：「目录」快进到那片天、名字挂在天上的五样造物上、墨蓝底）在分支 zero-v3-2 上做：推分支只跑 preview
-# （本地构建、本地起服务、三内核截图、WebKit iPhone 真点测试、v3.2 交货截图，总览图提交回分支），不发版；
-# 并进 main 以后才走 build → live 这条发版的路。（v3、v3.1 当时用的分支 zero-v3-alt、zero-v3-1 已经并进 main，不再认它们。）
+# v3.3（停手以后自己走到每一幕的展示位置；星尘字）在分支 zero-v3-3 上做：推分支只跑 preview（三个内核各开一台机器同时跑：
+# 本地构建、本地起服务、v3.3 交互验收、v3.3 交货截图、七幕截图、WebKit iPhone 真点），再由 preview-commit 把总览图、录屏、结果提交回分支；不发版。
+# 并进 main 以后才走 build → live 这条发版的路。（v3、v3.1、v3.2 当时用的分支 zero-v3-alt、zero-v3-1、zero-v3-2 已经并进 main，不再认它们。）
 on:
   push:
-    branches: [main, zero-v3-2]
+    branches: [main, zero-v3-3]
     paths:
       - '_zero/**'
       - '.github/workflows/zero.yml'
   workflow_dispatch:
     inputs:
       commit_shots:
-        description: '把造物之门的验收截图（总览图、验收.json、真点.json、v3.2 交货图）提交到 _ops/零肉身造物/v3.2截图/'
+        description: '把造物之门的验收截图（v3.3 交货图和总览、录屏、验收结果、七幕总览、真点）提交到 _ops/零肉身造物/v3.3截图/'
         type: boolean
         default: false
 
@@ -98,11 +98,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent || echo "没请动也没关系，推送本身会触发"
 
-  # 分支 zero-v3-2：只构建、在工作流机器上本地起服务、三内核截图、真点测试，总览图提交回分支。不碰 main，不发版。
+  # 分支 zero-v3-3：只构建、在工作流机器上本地起服务、跑验收和截图。三个内核各一台机器同时跑，不碰 main，不发版。
   preview:
-    if: github.ref == 'refs/heads/zero-v3-2'
+    if: github.ref == 'refs/heads/zero-v3-3'
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit, firefox]
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -130,72 +134,137 @@ jobs:
           sleep 2
           curl -sf -o /dev/null http://127.0.0.1:4321/zero/ && echo "本地服务起来了"
 
-      - name: 装 Playwright（三个内核）
+      - name: 装 Playwright（${{ matrix.engine }}）
         working-directory: _zero
-        run: npx playwright install --with-deps chromium webkit firefox
+        run: npx playwright install --with-deps ${{ matrix.engine }}
 
-      - name: 三内核截图
+      - name: v3.3 交互验收（停手以后自己走到展示位置；${{ matrix.engine }}）
         working-directory: _zero
         env:
           BASE: http://127.0.0.1:4321
-        run: node scripts/genesis-shots.mjs "${{ github.workspace }}/preview-shots" || echo "::warning::有报错或溢出，见 验收.json"
+          ENGINE: ${{ matrix.engine }}
+        run: node scripts/v33-test.mjs "${{ github.workspace }}/preview/${{ matrix.engine }}/v33" || echo "::warning::v3.3 交互验收没全过，见 v33-${{ matrix.engine }}.json"
 
-      - name: WebKit iPhone 真点（目录、天上五个名字、造物本身、第二到第六幕「进去」、后退回到天上）
-        id: tap
+      - name: v3.3 交货截图（每个展示位置 390、1440，中英各一套；半路；查字体）
+        if: matrix.engine != 'firefox'
+        working-directory: _zero
+        env:
+          BASE: http://127.0.0.1:4321
+          ENGINES: ${{ matrix.engine }}
+        run: node scripts/v33-shots.mjs "${{ github.workspace }}/preview/${{ matrix.engine }}/字" || echo "::warning::交货截图有问题，见 v33.json"
+
+      - name: 七幕截图（各尺寸不报错、不横向溢出、天上名字不打架）
+        working-directory: _zero
+        env:
+          BASE: http://127.0.0.1:4321
+          ENGINES: ${{ matrix.engine }}
+        run: node scripts/genesis-shots.mjs "${{ github.workspace }}/preview/${{ matrix.engine }}/门" || echo "::warning::有报错或溢出，见 验收.json"
+
+      - name: WebKit iPhone 真点（目录、天上五个名字、造物本身、第二到第六幕「进去」、后退回到天上、退路 B）
+        if: matrix.engine == 'webkit'
         working-directory: _zero
         env:
           BASE: http://127.0.0.1:4321
           ENGINE: webkit
-        run: node scripts/tap-test.mjs "${{ github.workspace }}/preview-shots/真点" || { echo "::warning::真点没全过，见 真点.json"; echo "failed=1" >> "$GITHUB_OUTPUT"; }
-
-      - name: v3.2 交货截图（三内核 × 1440×900、390×844）
-        working-directory: _zero
-        env:
-          BASE: http://127.0.0.1:4321
-        run: node scripts/v32-shots.mjs "${{ github.workspace }}/preview-shots/v3.2" || echo "::warning::交货截图有问题，见 v32.json"
-
-      - name: 拼总览图
-        run: |
-          python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
-          python3 _zero/scripts/shots-sheet.py preview-shots preview-sheets
-          python3 _zero/scripts/v32-sheet.py preview-shots/v3.2 preview-sheets/v3.2 || true
-
-      - name: 总览图、验收结果、几张原图提交回分支（_ops/零肉身造物/v3.2截图/预览/）
-        run: |
-          git config user.name "$(git log -1 --format=%an)"
-          git config user.email "$(git log -1 --format=%ae)"
-          for i in 1 2 3 4 5; do
-            git fetch -q origin zero-v3-2
-            git reset -q --hard origin/zero-v3-2
-            D="_ops/零肉身造物/v3.2截图/预览"
-            mkdir -p "$D"
-            rm -rf "$D"/*
-            cp preview-sheets/*.jpg "$D/"
-            cp preview-shots/验收.json "$D/"
-            mkdir -p "$D/真点" "$D/交货"
-            cp preview-shots/真点/* "$D/真点/" 2>/dev/null || true
-            cp preview-shots/v3.2/*.jpg preview-shots/v3.2/v32.json "$D/交货/" 2>/dev/null || true
-            cp preview-sheets/v3.2/* "$D/交货/" 2>/dev/null || true
-            git add -A "$D"
-            if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
-            git commit -q -m "零肉身造物 v3.2：分支预览截图、真点结果（源码 ${GITHUB_SHA::7}）"
-            if git push -q origin HEAD:zero-v3-2; then exit 0; fi
-            sleep 8
-          done
-          exit 1
+        run: node scripts/tap-test.mjs "${{ github.workspace }}/preview/webkit/真点" || echo "::warning::真点没全过，见 真点.json"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: zero-preview-shots
-          path: preview-shots
+          name: zero-preview-${{ matrix.engine }}
+          path: preview
           if-no-files-found: ignore
 
+  # 三台机器跑完：拼总览图、录屏转 gif，连同验收结果提交回分支（_ops/零肉身造物/v3.3截图/预览/）
+  preview-commit:
+    needs: preview
+    if: always() && github.ref == 'refs/heads/zero-v3-3'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: zero-preview-*
+          path: preview
+          merge-multiple: true
+
+      - name: 拼总览图、录屏转 gif
+        run: |
+          python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
+          # 录屏转 gif 要 ffmpeg；装不上（Ubuntu 源偶尔 404）就留着 webm，不让整步失败
+          which ffmpeg || { sudo apt-get update -q && sudo apt-get install -y -q ffmpeg; } || echo "::warning::ffmpeg 没装上，录屏留 webm"
+          mkdir -p sheets
+          # 七幕：三个内核的 验收.json 并成一份再拼
+          mkdir -p merged
+          python3 - <<'PY'
+          import json, os, shutil
+          rows = []
+          for eng in ('chromium', 'webkit', 'firefox'):
+              d = f'preview/{eng}/门'
+              p = os.path.join(d, '验收.json')
+              if not os.path.exists(p):
+                  continue
+              rows += json.load(open(p, encoding='utf-8'))['rows']
+              for f in os.listdir(d):
+                  if f.endswith('.jpg'):
+                      shutil.copy(os.path.join(d, f), 'merged/' + f)
+          json.dump({'rows': rows, 'total': len(rows), 'problems': sum(1 for r in rows if r.get('errors') or r.get('overflow') or r.get('clipped') or r.get('clash'))}, open('merged/验收.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+          PY
+          python3 _zero/scripts/shots-sheet.py merged sheets || true
+          for e in chromium webkit; do
+            [ -d "preview/$e/字" ] && python3 _zero/scripts/v33-sheet.py "preview/$e/字" sheets "preview/$e/v33/录屏" || true
+          done
+          [ -d preview/chromium/v33/录屏 ] && python3 _zero/scripts/v33-sheet.py /nonexistent sheets preview/chromium/v33/录屏 || true
+          ls -la sheets
+
+      - name: 提交回分支
+        run: |
+          git config user.name "$(git log -1 --format=%an)"
+          git config user.email "$(git log -1 --format=%ae)"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin zero-v3-3
+            git reset -q --hard origin/zero-v3-3
+            D="_ops/零肉身造物/v3.3截图/预览"
+            mkdir -p "$D"
+            rm -rf "$D"/*
+            cp sheets/*.jpg sheets/*.gif "$D/" 2>/dev/null || true
+            cp merged/验收.json "$D/七幕验收.json" 2>/dev/null || true
+            for e in chromium webkit firefox; do
+              cp preview/$e/v33/v33-$e.json "$D/" 2>/dev/null || true
+              [ -f preview/$e/字/v33.json ] && cp preview/$e/字/v33.json "$D/交货-$e.json" || true
+            done
+            mkdir -p "$D/真点" && cp preview/webkit/真点/* "$D/真点/" 2>/dev/null || true
+            # 交货图原图（390、1440 两个尺寸，中英，Chromium 和 WebKit）：存成 JPG（质量 92，一张几百 KB；PNG 一张 1–2 MB，几十张太压仓库）
+            mkdir -p "$D/交货"
+            python3 - "$D/交货" preview/chromium/字 preview/webkit/字 <<'PY'
+          import os, sys
+          from PIL import Image
+          for d in sys.argv[2:]:
+              if os.path.isdir(d):
+                  for f in sorted(os.listdir(d)):
+                      if f.endswith('.png'):
+                          Image.open(os.path.join(d, f)).convert('RGB').save(os.path.join(sys.argv[1], f[:-4] + '.jpg'), quality=92)
+          PY
+            git add -A "$D"
+            if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
+            git commit -q -m "零肉身造物 v3.3：分支预览截图、录屏、验收结果（源码 ${GITHUB_SHA::7}）"
+            if git push -q origin HEAD:zero-v3-3; then exit 0; fi
+            sleep 8
+          done
+          exit 1
+
+  # 发版以后对着真网址：三个内核各一台机器同时跑（老网址、v3.3 交互验收、交货截图、七幕截图、WebKit 真点）
   live:
     needs: build
     if: ${{ always() && (needs.build.outputs.published == 'yes' || github.event_name == 'workflow_dispatch') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit, firefox]
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -217,67 +286,125 @@ jobs:
           cache: npm
           cache-dependency-path: _zero/package-lock.json
 
-      - name: 装 Playwright
+      - name: 装 Playwright（${{ matrix.engine }}）
         working-directory: _zero
         run: |
           npm ci
-          npx playwright install --with-deps chromium webkit firefox
+          npx playwright install --with-deps ${{ matrix.engine }}
 
-      - name: 线上验收
+      - name: 线上验收（老网址全 200、根目录还是该是的那个、零肉身造物页面不报错不溢出、千手院两套皮）
+        if: matrix.engine == 'chromium'
         working-directory: _zero
         env:
-          SHOTS: ${{ github.workspace }}/live-shots
+          SHOTS: ${{ github.workspace }}/live/chromium/线上
         run: node scripts/live-check.mjs
 
-      - name: 造物之门三内核截图（Chromium 11 个尺寸、WebKit 和 Firefox 各 4 个，七幕各一张；第七幕在 1440×900、390×844 上多三张）
+      - name: v3.3 交互验收（对着线上；${{ matrix.engine }}）
+        if: always()
         working-directory: _zero
-        run: node scripts/genesis-shots.mjs "${{ github.workspace }}/live-shots/门截图"
+        env:
+          ENGINE: ${{ matrix.engine }}
+        run: node scripts/v33-test.mjs "${{ github.workspace }}/live/${{ matrix.engine }}/v33"
 
-      - name: WebKit iPhone 真点（对着线上：目录、天上五个名字、造物本身、第二到第六幕「进去」、后退回到天上）
+      - name: v3.3 交货截图（对着线上）
+        if: always() && matrix.engine != 'firefox'
+        working-directory: _zero
+        env:
+          ENGINES: ${{ matrix.engine }}
+        run: node scripts/v33-shots.mjs "${{ github.workspace }}/live/${{ matrix.engine }}/字" || echo "::warning::交货截图有问题，见 v33.json"
+
+      - name: 七幕截图（对着线上）
+        if: always()
+        working-directory: _zero
+        env:
+          ENGINES: ${{ matrix.engine }}
+        run: node scripts/genesis-shots.mjs "${{ github.workspace }}/live/${{ matrix.engine }}/门"
+
+      - name: WebKit iPhone 真点（对着线上）
+        if: always() && matrix.engine == 'webkit'
         working-directory: _zero
         env:
           ENGINE: webkit
-        run: node scripts/tap-test.mjs "${{ github.workspace }}/live-shots/真点"
+        run: node scripts/tap-test.mjs "${{ github.workspace }}/live/webkit/真点"
 
-      - name: v3.2 交货截图（三内核 × 1440×900、390×844）
+      - uses: actions/upload-artifact@v4
         if: always()
-        working-directory: _zero
-        run: node scripts/v32-shots.mjs "${{ github.workspace }}/live-shots/v3.2" || echo "::warning::交货截图有问题，见 v32.json"
+        with:
+          name: zero-live-${{ matrix.engine }}
+          path: live
+          if-no-files-found: ignore
 
-      - name: 拼总览图
-        if: always()
+  # 手动跑、勾了 commit_shots：线上的总览图、录屏、验收结果、交货原图提交到 _ops/零肉身造物/v3.3截图/
+  live-commit:
+    needs: live
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.commit_shots }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: zero-live-*
+          path: live
+          merge-multiple: true
+
+      - name: 拼总览图、录屏转 gif
         run: |
           python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
-          python3 _zero/scripts/shots-sheet.py live-shots/门截图 live-shots/门总览
-          python3 _zero/scripts/v32-sheet.py live-shots/v3.2 live-shots/v3.2总览 || true
+          # 录屏转 gif 要 ffmpeg；装不上（Ubuntu 源偶尔 404）就留着 webm，不让整步失败
+          which ffmpeg || { sudo apt-get update -q && sudo apt-get install -y -q ffmpeg; } || echo "::warning::ffmpeg 没装上，录屏留 webm"
+          mkdir -p sheets merged
+          python3 - <<'PY'
+          import json, os, shutil
+          rows = []
+          for eng in ('chromium', 'webkit', 'firefox'):
+              d = f'live/{eng}/门'
+              p = os.path.join(d, '验收.json')
+              if not os.path.exists(p):
+                  continue
+              rows += json.load(open(p, encoding='utf-8'))['rows']
+              for f in os.listdir(d):
+                  if f.endswith('.jpg'):
+                      shutil.copy(os.path.join(d, f), 'merged/' + f)
+          json.dump({'rows': rows, 'total': len(rows), 'problems': sum(1 for r in rows if r.get('errors') or r.get('overflow') or r.get('clipped') or r.get('clash'))}, open('merged/验收.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+          PY
+          python3 _zero/scripts/shots-sheet.py merged sheets || true
+          for e in chromium webkit; do
+            [ -d "live/$e/字" ] && python3 _zero/scripts/v33-sheet.py "live/$e/字" sheets "live/$e/v33/录屏" || true
+          done
+          [ -d live/chromium/v33/录屏 ] && python3 _zero/scripts/v33-sheet.py /nonexistent sheets live/chromium/v33/录屏 || true
+          ls -la sheets
 
-      - name: 截图提交到 _ops（只有手动跑、勾了 commit_shots 才提交）
-        if: github.event_name == 'workflow_dispatch' && inputs.commit_shots
+      - name: 截图提交到 _ops
         run: |
           git config user.name "$(git log -1 --format=%an)"
           git config user.email "$(git log -1 --format=%ae)"
           for i in 1 2 3 4 5; do
             git fetch -q origin main
             git reset -q --hard origin/main
-            D="_ops/零肉身造物/v3.2截图"
-            mkdir -p "$D/七幕" "$D/真点"
-            cp -f live-shots/门总览/*.jpg "$D/七幕/"
-            cp -f live-shots/门截图/验收.json "$D/七幕/"
-            for e in chromium webkit firefox; do for z in 390x844 1440x900; do cp -f live-shots/门截图/$e-$z-*.jpg "$D/七幕/" 2>/dev/null || true; done; done
-            cp -f live-shots/真点/* "$D/真点/" 2>/dev/null || true
-            cp -f live-shots/v3.2/*.jpg live-shots/v3.2/v32.json "$D/" 2>/dev/null || true
-            cp -f live-shots/v3.2总览/* "$D/" 2>/dev/null || true
+            D="_ops/零肉身造物/v3.3截图"
+            mkdir -p "$D/线上" "$D/线上/交货" "$D/线上/真点"
+            cp -f sheets/*.jpg sheets/*.gif "$D/线上/" 2>/dev/null || true
+            cp -f merged/验收.json "$D/线上/七幕验收.json" 2>/dev/null || true
+            for e in chromium webkit firefox; do
+              cp -f live/$e/v33/v33-$e.json "$D/线上/" 2>/dev/null || true
+              [ -f live/$e/字/v33.json ] && cp -f live/$e/字/v33.json "$D/线上/交货-$e.json" || true
+            done
+            python3 - "$D/线上/交货" live/chromium/字 live/webkit/字 <<'PY'
+          import os, sys
+          from PIL import Image
+          for d in sys.argv[2:]:
+              if os.path.isdir(d):
+                  for f in sorted(os.listdir(d)):
+                      if f.endswith('.png'):
+                          Image.open(os.path.join(d, f)).convert('RGB').save(os.path.join(sys.argv[1], f[:-4] + '.jpg'), quality=92)
+          PY
+            cp -f live/webkit/真点/* "$D/线上/真点/" 2>/dev/null || true
             git add "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
-            git commit -q -m "零肉身造物：造物之门线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
+            git commit -q -m "零肉身造物：v3.3 线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
             if git push -q origin HEAD:main; then exit 0; fi
             sleep 8
           done
           exit 1
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: zero-live-shots
-          path: live-shots
-          if-no-files-found: ignore

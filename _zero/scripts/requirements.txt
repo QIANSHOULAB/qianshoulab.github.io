@@ -1,0 +1,4 @@
+# 脚本要的 Python 包（pip install -r scripts/requirements.txt）
+fonttools>=4.50   # scripts/fonts/subset.py：裁字库
+brotli>=1.1       # 同上：存成 woff2
+Pillow>=10        # *-sheet.py：截图拼总览
