@@ -164,15 +164,20 @@ export function finAt(f: Fin, nx: number, ny: number, d: number): V3 {
 /** 第七幕：每样造物在最后那个镜头里站哪（屏幕坐标、离镜头多远、占屏多大）。不挤在一起、不在门里、不压着门原来的位置，
  *  也不压着正中下面那句话（index.astro 的 .end）。电脑横屏一套、手机竖屏一套，中间的屏按竖的程度插。 */
 function slots(f: Fin, n: number) {
+  // 比 16:9 还宽的屏（带鱼屏、手机横着）：造物还是落在正中 16:9 的那个框里，两边多出来的只是更长的地平线、更多的星云
+  const a16 = Math.min(f.aspect, 16 / 9), kx = a16 / f.aspect;
   const hW = (d: number) => 2 * d * f.tanV;               // 那个距离上，一屏高是多少世界单位
-  const wW = (d: number) => 2 * d * f.tanV * f.aspect;    // 一屏宽
+  const wW = (d: number) => 2 * d * f.tanV * a16;         // 一屏宽（按 16:9 那个框算）
   const L = (k: [number, number]) => mix(k[0], k[1], n);
+  const X = (k: [number, number]) => L(k) * kx;
   const sunD = 1300, whD = 1500, ringD = 1250, armD = 1100;
+  // 很宽的屏（手机横着、带鱼屏）：屏矮，器和环往上让一让，别压到那句话
+  const wide = cl((f.aspect - 1.65) / 0.6);
   return {
-    sun: { p: finAt(f, L([-0.58, -0.46]), L([0.5, 0.78]), sunD), s: (L([0.058, 0.042]) * hW(sunD)) / 46 },
-    whale: { p: finAt(f, L([0.34, 0.14]), L([0.6, 0.5]), whD), s: (L([0.21, 0.46]) * wW(whD)) / WHALE_L, R: L([0.1, 0.16]) * wW(whD) },
-    ring: { p: finAt(f, L([0.62, 0.5]), L([0.24, 0.16]), ringD), s: (L([0.085, 0.24]) * wW(ringD)) / RING_R },
-    arm: { p: finAt(f, L([-0.74, -0.58]), L([0.04, 0.22]), armD), s: (L([0.068, 0.046]) * hW(armD)) / 66 },
+    sun: { p: finAt(f, X([-0.58, -0.46]), L([0.5, 0.78]), sunD), s: (L([0.058, 0.042]) * hW(sunD)) / 46 },
+    whale: { p: finAt(f, X([0.34, 0.14]), L([0.6, 0.5]), whD), s: (L([0.21, 0.46]) * wW(whD)) / WHALE_L, R: L([0.1, 0.16]) * wW(whD) },
+    ring: { p: finAt(f, X([0.62, 0.5]), L([0.24, 0.16]) + 0.1 * wide, ringD), s: (L([0.085, 0.24]) * wW(ringD)) / RING_R },
+    arm: { p: finAt(f, X([-0.74, -0.58]), L([0.04, 0.22]) + 0.1 * wide, armD), s: (L([0.068, 0.046]) * hW(armD)) / 66 },
   };
 }
 
@@ -360,7 +365,7 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
     const so = SKY_ORB[j];
     const k = ss(SKY.fam[0] + 0.05 * j, SKY.fam[1] + 0.05 * j, a7);
     q = qSlerp(q, qMul(qMul(qAxis(Z, so.z), qAxis(X, so.x)), qAxis(Y, (clock / so.per) * Math.PI * 2)), k);
-    c = mix3(c, finAt(fin, mix(so.nx[0], so.nx[1], n), mix(so.ny[0], so.ny[1], n), so.d), k);
+    c = mix3(c, finAt(fin, mix(so.nx[0], so.nx[1], n) * Math.min(fin.aspect, 16 / 9) / fin.aspect, mix(so.ny[0], so.ny[1], n), so.d), k);
     R = mix(R, mix(so.R[0], so.R[1], n), k);
     const draw = ss(ob.from, ob.from + (ob.to - ob.from) * 0.85, a6) * mix(1, 0.72, k);
     return { c, R, q, draw, I: mix(1, 0.5, k) };

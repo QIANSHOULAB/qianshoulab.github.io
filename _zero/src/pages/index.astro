@@ -20,6 +20,9 @@ const mail = ['oilsongchengmin', 'gmail.com'].join('@');
 const SEVEN = [1, 2, 3, 4, 5, 6, 7];
 const stills = { l: SEVEN.map((k) => still(k, 'l')), p: SEVEN.map((k) => still(k, 'p')) };
 const nm = (l: 'en' | 'zh', key: string) => t(l, `entry.${key}.name`);
+// 那句话拆成两半（各自不断行）：屏宽放得下就一行，放不下就从句号 / 逗号那儿换行，不会断在「把肉身」后面
+const motto = { en: t('en', 'company.motto').replace(/^—\s*/, ''), zh: t('zh', 'company.motto').replace(/^——/, '') };
+const halves = (s: string) => { const m = /^(.+?[.，])\s*(.+)$/.exec(s); return m ? [m[1], m[2]] : [s]; };
 // 右边七个刻度没有字；读屏念的是它通到哪：首屏念 wordmark，第二到第六幕念栏目名，第七幕念「五个入口」
 const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-Flesh Creation' : '零肉身造物') : k === 7 ? t(l, 'acts.doors') : nm(l, ENTRIES[k - 2].key));
 ---
@@ -56,8 +59,8 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
     <section class="act act7" data-act="7" aria-labelledby="h-act7">
       <div class="end" data-end>
         <h2 class="motto" id="h-act7">
-          <span data-l="en" lang="en">{t('en', 'company.motto').replace(/^—\s*/, '')}</span>
-          <span data-l="zh" lang="zh-CN">{t('zh', 'company.motto').replace(/^——/, '')}</span>
+          <span data-l="en" lang="en">{halves(motto.en).map((h, i) => <>{i > 0 && ' '}<span class="mh">{h}</span></>)}</span>
+          <span data-l="zh" lang="zh-CN">{halves(motto.zh).map((h) => <span class="mh">{h}</span>)}</span>
         </h2>
         <nav class="links" aria-label={t('en', 'acts.doors')} data-aria-en={t('en', 'acts.doors')} data-aria-zh={t('zh', 'acts.doors')}>
           {ENTRIES.map((e, i) => (
@@ -123,6 +126,9 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   .hint { position: absolute; left: 0; right: 0; bottom: 26px; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 9px;
     font: 400 9px/1 var(--mono); letter-spacing: .32em; padding-left: .32em; text-transform: uppercase; color: #7c7c7c; }
   :global(html[data-lang="zh"]) .hint { font: 500 10px/1 var(--serif-zh); letter-spacing: .5em; padding-left: .5em; }
+  /* 提示正压在门的那条光路上：底下垫一小团暗，字才看得清 */
+  .hint::before { content: ""; position: absolute; left: 50%; top: -16px; width: 150px; height: 64px; transform: translateX(-50%); z-index: -1;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .78), rgba(0, 0, 0, 0)); }
   .hint-line { width: 1px; height: 26px; background: linear-gradient(#fff, rgba(255, 255, 255, 0)); opacity: .5; transform-origin: 50% 0; animation: drip 2.6s var(--slow) infinite; }
   @keyframes drip { 0% { transform: scaleY(0); opacity: 0; } 30% { opacity: .6; } 100% { transform: scaleY(1); opacity: 0; } }
 
@@ -150,6 +156,7 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
     text-shadow: 0 0 2px rgba(0, 0, 0, .5), 0 0 26px rgba(0, 0, 0, .75), 0 0 60px rgba(0, 0, 0, .5);
     opacity: 0; filter: blur(6px); transition: opacity 2.4s var(--slow), filter 2.4s var(--slow); }
   :global(html[data-lang="zh"]) .motto { font-family: var(--serif-zh); letter-spacing: .22em; padding-left: .22em; }
+  .mh { display: inline-block; }
   .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 34px; margin: 0; opacity: 0; transform: translateY(6px); transition: opacity 1.2s var(--ease) .9s, transform 1.2s var(--ease) .9s; }
   .links a { pointer-events: auto; font: 500 13.5px/1 var(--serif); letter-spacing: .24em; padding: 9px 0 9px .24em; color: #e2e2e2; border-bottom: 1px solid transparent;
     text-shadow: 0 0 14px rgba(0, 0, 0, .85), 0 0 3px rgba(0, 0, 0, .6); transition: color .3s var(--ease), border-color .3s var(--ease); }
@@ -219,7 +226,7 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
     /* 手机横着：造物缩小，字只留名字和「进去」 */
     .act-name { font-size: 24px; margin-bottom: 8px; }
     .card { bottom: 20px; }
-    .act7 { --end-y: 42%; }
+    .act7 { --end-y: 57%; }
     .act7 .foot :global(.addr), .co { display: none; }
     .act7 .foot { bottom: 12px; }
     .motto { margin-bottom: 10px; }

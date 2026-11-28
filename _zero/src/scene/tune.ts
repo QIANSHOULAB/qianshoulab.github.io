@@ -44,9 +44,9 @@ export const DOOR_DEG: [number, number][] = [
  * 下面的数都是第七幕的幕内进度（0..1，P = 6 + 它）。
  */
 export const SKY = {
-  crack: [0.1, 0.2] as [number, number],     // 缝里透光、门轻轻抖
-  rise: [0.17, 0.76] as [number, number],    // 石头升天：第一块松开 → 最后一颗星到位
-  gone: [0.24, 0.54] as [number, number],    // 门洞里那片光跟着石头走光
+  crack: [0.08, 0.18] as [number, number],   // 缝里透光、门轻轻抖
+  rise: [0.13, 0.76] as [number, number],    // 石头升天：第一块松开 → 最后一颗星到位
+  gone: [0.22, 0.54] as [number, number],    // 门洞里那片光跟着石头走光
   fam: [0.05, 0.52] as [number, number],     // 日、环、鲸、器、轨道先离开门，升到天上各自的位置（门留给它自己裂开）
   neb: [0.3, 0.84] as [number, number],      // 五种颜色从五样造物身上散开，铺满天
   cam: [0.24, 0.94] as [number, number],     // 镜头抬头、升高、视角放宽
