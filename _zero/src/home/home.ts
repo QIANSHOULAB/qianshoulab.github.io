@@ -1,15 +1,20 @@
-// 首页的手：滚动 → 进度、字跟着画面走、右边七个刻度、声音、「进去」、没有 WebGL 时的静态图。
-// 画面本身在 ../scene/genesis.ts（three.js 跟它一起异步加载）。
+// 首页的手：滚动 → 进度、停手以后自己走到展示位置（./glide.ts）、字（星尘字放进 3D，页面里的真字跟着它摆）、右边七个刻度、声音、「进去」、
+// 天上的名字、「目录」、没有 WebGL 时的静态图。画面本身在 ../scene/genesis.ts（three.js 跟它一起异步加载）。
 // v3.1：画面上只留名字——首屏 wordmark + 往下滑的小提示，第二到第六幕栏目名 + 「进去」。
-// v3.2（Song 11-28 选的 C 星空目录）：
-//   - 顶栏正中「目录」：世界从现在的进度快进到结尾「开天」（约 2.5–3 秒，起步收尾都缓），滚动位置跟着走，停在那片天上；途中一动就把手还给你。
-//   - 天上的五个名字：落定以后挂在五样造物旁边（日千手院、环赛博杂货铺、鲸标本、器文物、轨道法典），每帧跟着造物、镜头摆；
-//     点名字、或者点那样造物本身，马上冲进去（镜头扎进它、满屏它的颜色、栏目页从这个颜色里淡出）。
-//   - 从栏目页按「后退」：回到离开时那片天，五个名字还在、还能点（不放开场、不回开头）。
+// v3.2（Song 11-28 选的 C 星空目录）：顶栏正中「目录」快进到「开天」那片天；五个名字挂在天上五样造物旁边，点名字或造物本身就冲进去；
+//   从栏目页按「后退」回到离开时那片天。
+// v3.3（Song 11-28）：
+//   - 10:11「每一个板块点了主动走完到到展示的位置」：停手以后页面自己走到一幕的展示位置；刻度、「目录」、天上的名字、Tab、键盘都一路走到底（glide.ts）。
+//     点了「进去」一口气扎进去，中途滑、点、滚轮都不打断；从栏目页后退回来，直接就在离开时那一幕的展示位置。
+//   - 10:31 选的 A 星尘字：字也是造出来的（../scene/stardust.ts、words.ts）。页面里的文字和链接照旧在 DOM 里（读屏、Tab、搜索、翻译开关都靠它），
+//     只是看不见；画面上看到的是 3D 的那份，这里每帧把真字摆到 3D 那份在屏幕上的位置，两份对得上、点的位置也对得上。
 import * as sound from './sound';
-import { SCROLL, DIVE_MS, HITSTOP_MS, SECTION_HEX, INDEX, NAMES, type Tier } from '../scene/tune';
+import { SCROLL, DIVE_MS, HITSTOP_MS, SECTION_HEX, NAMES, REST_PS, restP, DUST, type Tier } from '../scene/tune';
 import { scrollToP, pToScroll, qRot, ss, type State, type V3 } from '../scene/timeline';
 import type { Genesis, Marks } from '../scene/genesis';
+import type { ItemDef } from '../scene/stardust';
+import { COL } from '../scene/timeline';
+import { createGlide, type GlideKind } from './glide';
 
 const root = document.documentElement;
 const stage = document.querySelector<HTMLElement>('[data-stage]')!;
@@ -30,6 +35,12 @@ const indexBtn = document.querySelector<HTMLButtonElement>('[data-index]');
 const skyNav = document.querySelector<HTMLElement>('[data-sky]')!;
 const names = [...document.querySelectorAll<HTMLAnchorElement>('[data-sky-go]')];
 const lead = document.querySelector<HTMLElement>('[data-lead]')!;
+const cards = new Map<number, { card: HTMLElement; h: HTMLElement; go: HTMLElement }>();
+for (const el of acts) {
+  const k = Number(el.dataset.act);
+  const card = el.querySelector<HTMLElement>('.card'), h = el.querySelector<HTMLElement>('.act-name'), go = el.querySelector<HTMLElement>('.go');
+  if (card && h && go) cards.set(k, { card, h, go });
+}
 
 const q = new URLSearchParams(location.search);
 const num = (k: string) => (q.has(k) && Number.isFinite(parseFloat(q.get(k)!)) ? parseFloat(q.get(k)!) : null);
@@ -40,8 +51,9 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (q.has('still')) root.setAttribute('data-still', '');
 let seen = false;
 try { seen = sessionStorage.getItem('zero.opener') === '1'; } catch { /* 无痕 */ }
+const lang = () => (root.getAttribute('data-lang') === 'zh' ? 'zh' : 'en') as 'en' | 'zh';
 
-// —— 从栏目页按「后退」回来：摆回离开时那个进度（那片天），不放开场 ——
+// —— 从栏目页按「后退」回来：直接就在离开时那一幕的展示位置（从天上进去的回到天上），不放开场、不演、不走 ——
 const BACK_KEY = 'zero.back';
 let backP: number | null = null;
 try {
@@ -51,29 +63,44 @@ try {
   sessionStorage.removeItem(BACK_KEY);
   if (raw && isBack && freezeP == null) {
     const v = JSON.parse(raw) as { P?: number };
-    if (typeof v.P === 'number' && v.P > 1.02) backP = Math.min(7, v.P);
+    if (typeof v.P === 'number' && v.P > 1.02) backP = nearestRest(v.P);
   }
 } catch { /* 存不了就照常从头放 */ }
+function nearestRest(p: number) { let b: number = REST_PS[0]; for (const r of REST_PS) if (Math.abs(r - p) < Math.abs(b - p)) b = r; return b; }
 
 // —— 滚动 → 进度 ——
 const vh = () => Math.max(1, stage.clientHeight);
 const scrollP = () => scrollToP(window.scrollY / vh(), SCROLL.hold, SCROLL.acts);
 const scrollYFor = (p: number) => pToScroll(p, SCROLL.hold, SCROLL.acts) * vh();
-const restP = (k: number) => (k <= 1 ? 1 : k === 7 ? 7 : k - 0.12);
-function scrollToAct(k: number, smooth = !reduced) {
-  window.scrollTo({ top: scrollYFor(restP(k)), behavior: smooth ? 'smooth' : 'auto' });
-}
 
 let g: Genesis | null = null;
 let P = freezeP ?? backP ?? (reduced ? 1 : 0);
 let st: State | null = null;
+let going = false;
+
+// —— 停手以后自己走（glide）——
+/** 一口气走过好几幕（目录、跨幕的刻度）：路过的幕名不冒出来，门的闷响不一路响 */
+let ffing = false;
+const glide = createGlide({
+  stage, reduced,
+  driver: () => g,
+  P: () => (g ? g.P : scrollP()),
+  blocked: () => going || freezeP != null,
+  onChange: (gl) => {
+    ffing = !!gl?.pass;
+    root.toggleAttribute('data-ff', gl?.kind === 'index');
+    const k = gl ? REST_PS.indexOf(gl.to as (typeof REST_PS)[number]) + 1 : -1;
+    g?.words.setPass(ffing, k);
+    textFor(g ? P : scrollP());   // 起步、落定都马上更新一下字（没有 3D 的时候没有每帧的回调）
+  },
+});
+const goTo = (p: number, kind: GlideKind) => { if (!going) glide.to(p, kind); };
 
 // —— 字：开着的才亮，换了才动 DOM ——
 const on = (el: Element, v: boolean) => { if (el.classList.contains('on') !== v) el.classList.toggle('on', v); };
-/** 「目录」快进途中：每一幕的名字和「进去」先收起来，别一串字闪过去 */
-let ffing = false;
-/** 现在亮第几个刻度：第一幕 P 0..1，第 k 幕（k ≥ 2）P k−1..k；跟「滑到哪幕」差一点点提前量，跟刻度点过去停的位置（restP）对得上 */
+/** 现在亮第几个刻度：跟展示位置那张表对得上（第 k 幕从它的展示位置往前 0.12 起算） */
 export function tickFor(p: number) { return p < 1.12 ? 1 : Math.min(7, Math.floor(p - 0.12) + 1); }
+let dustOn = false;   // 3D 的星尘字搭好了（页面里的真字只留着给读屏、Tab、搜索）
 function textFor(p: number) {
   const a = (k: number) => Math.min(1, Math.max(0, p - (k - 1)));
   on(hero, !ffing && p >= 0.86 && p < 1.1);
@@ -84,7 +111,9 @@ function textFor(p: number) {
     const k = Number(el.dataset.act);
     const ak = a(k);
     if (k === 7) { on(el, ak > 0.86); continue; }
-    on(el, !ffing && ak > 0.52 && ak < 0.975);
+    // 有星尘字：名字聚得差不多了，「进去」才露出来、点得着；没有 3D：照 v3.2 的规矩
+    if (dustOn && g) on(el, !ffing && g.words.f(`a${k}`) > 0.8);
+    else on(el, !ffing && ak > 0.52 && ak < 0.975);
   }
   const cur = tickFor(p);
   ticks.forEach((b) => on(b, Number(b.dataset.tick) === cur));
@@ -93,12 +122,12 @@ function textFor(p: number) {
 // —— 第七幕：那句话那块天要留暗。告诉画面它在屏幕上哪（量的是排好版的位置，没亮也量得到）——
 function markEnd() {
   if (!g) return;
-  const r = endBox.getBoundingClientRect();
+  const r = mottoEl.getBoundingClientRect();
   const W = Math.max(1, innerWidth), H = Math.max(1, vh());
   g.setTextBox((r.left + r.right) / 2 / W, (r.top + r.bottom) / 2 / H, r.width / W, r.height / H);
 }
 
-// —— 声音：门动一下响一声；第五幕炸开；第七幕石头升天（只加这一声）；进去。「目录」快进时不一路响，只留石头升天那一声 ——
+// —— 声音：门动一下响一声；第五幕炸开；第七幕石头升天（只加这一声）；进去。一口气快进时不一路响，只留石头升天那一声 ——
 let lastP = P;
 function soundFor(p: number) {
   sound.setLevel(p);
@@ -107,8 +136,7 @@ function soundFor(p: number) {
   lastP = p;
 }
 
-// —— 进去：镜头扎进那样造物本身，满屏变成它的颜色，再落到栏目页 ——
-let going = false;
+// —— 进去：镜头扎进那样造物本身，满屏变成它的颜色，再落到栏目页。一口气：中途滑、点、滚轮都不打断，镜头不乱动 ——
 function prefetch(href: string) {
   if (document.querySelector(`link[rel="prefetch"][href="${href}"]`)) return;
   const l = document.createElement('link');
@@ -131,15 +159,30 @@ function targetFor(k: number): V3 | null {
   const f = qRot(o.q, [0, 0, o.R]);
   return [o.c[0] + f[0], o.c[1] + f[1], o.c[2] + f[2]];
 }
-/** 记下现在的进度：从栏目页按「后退」回来摆回这里 */
-function saveBack() {
-  try { sessionStorage.setItem(BACK_KEY, JSON.stringify({ P: g ? g.P : P })); } catch { /* 存不了就算了 */ }
+/** 记下回来时该在的展示位置（离开时那一幕的；从天上进去的回到天上） */
+let backTo: number | null = null;
+function saveBack(p?: number) {
+  const v = p ?? backTo ?? nearestRest(g ? g.P : P);
+  try { sessionStorage.setItem(BACK_KEY, JSON.stringify({ P: v })); } catch { /* 存不了就算了 */ }
 }
-async function go(href: string, color: string, target: V3 | null, hotK = -1) {
+// 往里扎的时候：滚轮、手指滑、翻页键都拦下来（只在这时候挂着，平时不挡滚动）
+const blockEv = (e: Event) => { if (going) e.preventDefault(); };
+const blockKey = (e: KeyboardEvent) => { if (going && [' ', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End'].includes(e.key)) e.preventDefault(); };
+function lockDive(onIt: boolean) {
+  const f = onIt ? window.addEventListener : window.removeEventListener;
+  f.call(window, 'wheel', blockEv as EventListener, { passive: false } as AddEventListenerOptions);
+  f.call(window, 'touchmove', blockEv as EventListener, { passive: false } as AddEventListenerOptions);
+  f.call(window, 'keydown', blockKey as EventListener, { capture: true } as AddEventListenerOptions);
+}
+async function go(href: string, color: string, target: V3 | null, hotK = -1, rest?: number) {
   if (going) return;
   going = true;
-  cancelFF();
-  saveBack();
+  glide.stop();
+  lockDive(true);
+  backTo = rest ?? nearestRest(g ? g.P : P);
+  saveBack(backTo);
+  g?.drive(g.P);                    // 进度定住：镜头只管往里扎，不跟着滚动乱动
+  g?.words.setDiving(true);
   if (hotK >= 0) { g?.setHot(hotK); names[hotK]?.classList.add('hot'); }   // 点的那样先亮一下：马上看得见
   sound.swell();
   prefetch(href);
@@ -153,21 +196,29 @@ async function go(href: string, color: string, target: V3 | null, hotK = -1) {
     return;
   }
   await g.enter(target, DIVE_MS, (s) => { flood.style.opacity = String(ss(0.5, 0.96, s)); });
+  flood.style.opacity = '1';   // 栏目页来得慢：就停在满屏颜色上等，不露出半截画面
   location.href = href;
 }
-window.addEventListener('pagehide', saveBack);
-// 按「后退」回来、页面是从缓存里整页拿回来的：颜色、镜头、名字都复位，还是离开时那片天
+window.addEventListener('pagehide', () => saveBack());
+// 按「后退」回来、页面是从缓存里整页拿回来的：颜色、镜头、名字都复位，直接摆在离开时那一幕的展示位置
 window.addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
+  const rest = backTo ?? nearestRest(g ? g.P : P);
   going = false;
+  lockDive(false);
   flood.style.opacity = '0';
   flood.style.transition = '';
   root.removeAttribute('data-diving');
   names.forEach((a) => a.classList.remove('hot'));
   labelK = -1; focusK = -1;
   g?.setHot(-1);
-  cancelFF();
+  glide.stop();
   g?.reset();
+  glide.setScroll(Math.ceil(scrollYFor(rest)));
+  g?.jump(rest);
+  g?.words.setDiving(false);
+  g?.words.snap();
+  if (rest >= 7) root.setAttribute('data-names-now', '');
 });
 const plain = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
 document.querySelectorAll<HTMLAnchorElement>('[data-go]').forEach((a) => {
@@ -175,7 +226,7 @@ document.querySelectorAll<HTMLAnchorElement>('[data-go]').forEach((a) => {
     if (plain(e)) return;
     e.preventDefault();
     const k = Number(a.dataset.go);
-    go(a.href, SECTION_HEX[k - 2], targetFor(k));
+    go(a.href, SECTION_HEX[k - 2], targetFor(k), -1, restP(k));
   });
 });
 // 兜底那一排（没有 WebGL 时才看得见）：照样先满屏它的颜色再进
@@ -184,7 +235,7 @@ document.querySelectorAll<HTMLAnchorElement>('[data-end-go]').forEach((a) => {
     if (plain(e)) return;
     e.preventDefault();
     const i = Number(a.dataset.endGo);
-    go(a.href, SECTION_HEX[i], targetFor(i + 2));
+    go(a.href, SECTION_HEX[i], targetFor(i + 2), -1, 7);
   });
 });
 
@@ -192,6 +243,8 @@ document.querySelectorAll<HTMLAnchorElement>('[data-end-go]').forEach((a) => {
 // 0 日 · 千手院｜1 环 · 赛博杂货铺｜2 鲸 · 标本｜3 器 · 文物｜4 轨道 · 法典（跟 ENTRIES、SECTION_HEX 一个顺序）
 // 版面两种：sky = 名字挂在天上（电脑、平板、细长的手机）；list = 退路 B（Song 点过头的）：矮的手机竖屏、手机横着，天上挂不下五个名字——
 //   点「目录」画面压暗，五个名字竖着一列，点哪个直接进；天上不挂名字，结尾照旧露着那一排五个名字。
+// v3.3：名字贴着它自己那样东西（碎块从哪来、字就在哪）：候选位置都从那样东西在屏幕上的外沿出发；
+//   点的判定放宽：点在名字刚才 0.3 秒内待过的地方也算点中（巨鲸在游，名字跟着走）。
 let mode: 'sky' | 'list' = 'sky';
 let namesOn = false;
 let focusK = -1, labelK = -1;
@@ -201,9 +254,10 @@ let sizes: { w: number; h: number }[] = [];
 let obst = { W: 1, H: 1, top: 56, ticks: null as Box | null, motto: null as Box | null, foot: null as Box | null };
 interface Box { x: number; y: number; w: number; h: number }
 const boxes: (Box | null)[] = [null, null, null, null, null];
-const dirs: (string | null)[] = [null, null, null, null, null];
-/** 法典挂在哪：第 j 道轨道上一个固定的点（世界坐标 X），名字在它 dir 那一边，一根很短的细线连过去。
- *  轨道只画大半圈、绕自己的轴慢慢转：挑一个刚画上不久的点，要过很久缺口才转到它；快转到了，名字先淡出、换个刚画上的点再亮 */
+const picks: (string | null)[] = [null, null, null, null, null];   // 上一帧挑的那个候选（不来回跳）
+/** 每个名字刚才 0.3 秒内待过的框：点在那儿也算点中 */
+const trail: { t: number; b: Box }[][] = [[], [], [], [], []];
+const TRAIL_MS = 300;
 let law: { j: number; X: V3; dir: string } | null = null;
 let lawAway = 0;
 let leadAt: { x: number; y: number; j: number; X: V3 } | null = null;
@@ -228,6 +282,7 @@ function measureNames() {
 const grow = (b: Box, d: number): Box => ({ x: b.x - d, y: b.y - d, w: b.w + 2 * d, h: b.h + 2 * d });
 const inner = (b: Box): Box => ({ x: b.x + PAD_X, y: b.y + PAD_Y, w: Math.max(1, b.w - 2 * PAD_X), h: Math.max(1, b.h - 2 * PAD_Y) });
 const hits = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const inBox = (x: number, y: number, b: Box) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
 function boxCircle(b: Box, cx: number, cy: number, r: number) {
   const dx = Math.max(b.x - cx, 0, cx - (b.x + b.w)), dy = Math.max(b.y - cy, 0, cy - (b.y + b.h));
   return Math.max(0, r - Math.hypot(dx, dy)) / Math.max(r, 1);   // 0 = 不碰；越往里越大
@@ -276,7 +331,7 @@ function decideMode() {
     if (m === 'list') { namesOn = false; root.removeAttribute('data-names'); names.forEach((a) => { a.style.transform = ''; a.classList.remove('ok'); }); }
   }
 }
-/** 造物在屏幕上的「身子」：中心、横竖半径（名字贴着它的外沿放） */
+/** 造物在屏幕上的「身子」：中心、横竖半径 */
 function bodyOf(m: Marks, k: number) {
   if (k === 0) return { cx: m.sun.x, cy: m.sun.y, rx: m.sun.r, ry: m.sun.r };
   if (k === 3) return { cx: m.arm.x, cy: m.arm.y, rx: m.arm.r, ry: m.arm.r };
@@ -290,19 +345,64 @@ function bodyOf(m: Marks, k: number) {
   const x0 = Math.min(w.ax!, w.bx!) - w.r, x1 = Math.max(w.ax!, w.bx!) + w.r, y0 = Math.min(w.ay!, w.by!) - w.r, y1 = Math.max(w.ay!, w.by!) + w.r;
   return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, rx: (x1 - x0) / 2, ry: (y1 - y0) / 2 };
 }
-// 每样造物的名字往哪边放（先试的在前）：电脑横屏、平板竖着、手机竖屏各一套
-const PREF: Record<'wide' | 'tab' | 'tall', string[][]> = {
-  tab: [['E', 'SE', 'NE', 'S', 'W'], ['S', 'SW', 'SE', 'W', 'N'], ['S', 'N', 'SW', 'SE', 'E', 'W'], ['E', 'NE', 'SE', 'N', 'S'], []],
-  wide: [['E', 'SE', 'NE', 'S', 'W'], ['S', 'SW', 'W', 'N', 'E'], ['S', 'SE', 'SW', 'N', 'E', 'W'], ['E', 'NE', 'SE', 'N', 'S'], []],
-  tall: [['E', 'SE', 'NE', 'S', 'W'], ['W', 'SW', 'NW', 'N', 'S', 'E'], ['S', 'N', 'SW', 'SE', 'E', 'W'], ['E', 'NE', 'SE', 'N', 'S'], []],
-};
-const DIR: Record<string, [number, number]> = { E: [1, 0], SE: [0.72, 0.72], S: [0, 1], SW: [-0.72, 0.72], W: [-1, 0], NW: [-0.72, -0.72], N: [0, -1], NE: [0.72, -0.72] };
-function candidate(dir: string, b: { cx: number; cy: number; rx: number; ry: number }, w: number, h: number, gap = 7): Box {
-  const [dx, dy] = DIR[dir];
-  const ax = b.cx + dx * (b.rx + gap), ay = b.cy + dy * (b.ry + gap);
+/** 贴着造物外沿的候选落点：(ax, ay) 外沿上一点（再往外 gap），(nx, ny) 往外的方向 */
+interface Cand { id: string; ax: number; ay: number; nx: number; ny: number; pref: number }
+function outline(m: Marks, k: number, tall: string): Cand[] {
+  const out: Cand[] = [];
+  // 往哪边放先试（越小越先）：右、右下、下、左下、左、左上、上、右上
+  const PREFS: Record<string, number[][]> = {
+    wide: [[0, 2, 4, 6, 3, 5, 9, 1], [4, 2, 0, 3, 6, 9, 9, 5], [3, 1, 0, 2, 5, 7, 9, 6], [0, 2, 5, 7, 4, 6, 8, 1], []],
+    tab: [[0, 2, 4, 6, 3, 5, 9, 1], [4, 1, 0, 2, 5, 7, 9, 6], [3, 1, 0, 2, 5, 7, 4, 6], [0, 2, 5, 7, 4, 6, 3, 1], []],
+    tall: [[0, 2, 4, 6, 3, 5, 9, 1], [6, 4, 3, 2, 0, 1, 5, 7], [3, 1, 0, 2, 5, 7, 4, 6], [0, 2, 5, 7, 4, 6, 3, 1], []],
+  };
+  const PREF = PREFS[tall]?.[k] ?? [];
+  const dirPref = (nx: number, ny: number) => {
+    const a = Math.atan2(ny, nx);
+    const i = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8;   // 0 右 1 右下 2 下 3 左下 4 左 5 左上 6 上 7 右上
+    return (PREF[i] ?? 5) * 5;
+  };
+  if (k === 0 || k === 3) {
+    const b = k === 0 ? m.sun : m.arm;
+    for (let i = 0; i < 16; i++) {
+      const t = (i / 16) * Math.PI * 2, nx = Math.cos(t), ny = Math.sin(t);
+      out.push({ id: `c${i}`, ax: b.x + nx * b.r, ay: b.y + ny * b.r, nx, ny, pref: dirPref(nx, ny) });
+    }
+  } else if (k === 1) {
+    const p = m.ring.pts ?? [];
+    const n = p.length / 2;
+    let cx = 0, cy = 0;
+    for (let i = 0; i < n; i++) { cx += p[i * 2]; cy += p[i * 2 + 1]; }
+    cx /= Math.max(1, n); cy /= Math.max(1, n);
+    for (let i = 0; i < n; i++) {
+      let nx = p[i * 2] - cx, ny = p[i * 2 + 1] - cy;
+      const l = Math.hypot(nx, ny) || 1;
+      nx /= l; ny /= l;
+      out.push({ id: `r${i}`, ax: p[i * 2] + nx * 6, ay: p[i * 2 + 1] + ny * 6, nx, ny, pref: dirPref(nx, ny) });
+    }
+  } else if (k === 2) {
+    const w = m.whale;
+    const ax = w.ax!, ay = w.ay!, bx = w.bx!, by = w.by!;
+    let tx = bx - ax, ty = by - ay;
+    const l = Math.hypot(tx, ty) || 1;
+    tx /= l; ty /= l;
+    const px = -ty, py = tx;
+    for (let i = 0; i <= 6; i++) {
+      const u = i / 6, x = ax + (bx - ax) * u, y = ay + (by - ay) * u;
+      for (const sgn of [1, -1]) {
+        const nx = px * sgn, ny = py * sgn;
+        out.push({ id: `w${i}${sgn}`, ax: x + nx * w.r * 1.05, ay: y + ny * w.r * 1.05, nx, ny, pref: dirPref(nx, ny) });
+      }
+    }
+    out.push({ id: 'wh', ax: ax - tx * w.r, ay: ay - ty * w.r, nx: -tx, ny: -ty, pref: dirPref(-tx, -ty) + 10 });
+    out.push({ id: 'wt', ax: bx + tx * w.r, ay: by + ty * w.r, nx: tx, ny: ty, pref: dirPref(tx, ty) + 10 });
+  }
+  return out;
+}
+function candidate(c: Cand, w: number, h: number, gap = 7): Box {
+  const ax = c.ax + c.nx * gap, ay = c.ay + c.ny * gap;
   const iw = w - 2 * PAD_X, ih = h - 2 * PAD_Y;
-  const ix = dx > 0.3 ? ax : dx < -0.3 ? ax - iw : ax - iw / 2;
-  const iy = dy > 0.3 ? ay : dy < -0.3 ? ay - ih : ay - ih / 2;
+  const ix = c.nx > 0.38 ? ax : c.nx < -0.38 ? ax - iw : ax - iw / 2;
+  const iy = c.ny > 0.38 ? ay : c.ny < -0.38 ? ay - ih : ay - ih / 2;
   return { x: ix - PAD_X, y: iy - PAD_Y, w, h };
 }
 /** 这个位置放名字有多糟：0 = 挺好；≥ 500 = 压到别的名字、那句话、顶栏、出屏 */
@@ -314,12 +414,13 @@ function badness(bx: Box, k: number, m: Marks): number {
   if (o.motto && hits(grow(t, 10), o.motto)) c += 1000;
   if (o.foot && hits(grow(t, 8), o.foot)) c += 1000;
   for (let j = 0; j < 5; j++) if (j !== k && boxes[j] && hits(grow(bx, -3), boxes[j]!)) c += 500;
-  // 别压着别的造物（压一点点还行）
+  // 别压着别的造物（压一点点还行）；也别压着自己
   for (let j = 0; j < 4; j++) {
-    if (j === k) continue;
     const b = bodyOf(m, j);
+    if (j === k) { if (j === 0 || j === 3) c += 300 * boxCircle(t, b.cx, b.cy, Math.min(b.rx, b.ry) * 0.92); continue; }
     c += 80 * boxCircle(t, b.cx, b.cy, Math.min(b.rx, b.ry) * 0.9);
   }
+  if (k === 1 && m.ring.pts) { const p = m.ring.pts; for (let i = 0; i < p.length; i += 2) if (inBox(p[i], p[i + 1], grow(t, 2))) c += 40; }
   return c;
 }
 /** 轨道 j 上的世界坐标点 X，现在落在这道轨道的哪个参数上（0..1 一圈；画出来的是 0..draw 那一截） */
@@ -330,6 +431,8 @@ function arcU(j: number, X: V3) {
   return a - Math.floor(a);
 }
 const LAW_DIRS = ['SE', 'SW', 'NE', 'NW', 'S', 'N', 'E', 'W'];
+const DIR: Record<string, [number, number]> = { E: [1, 0], SE: [0.72, 0.72], S: [0, 1], SW: [-0.72, 0.72], W: [-1, 0], NW: [-0.72, -0.72], N: [0, -1], NE: [0.72, -0.72] };
+const lawBox = (dir: string, x: number, y: number, w: number, h: number) => { const [nx, ny] = DIR[dir]; return candidate({ id: dir, ax: x, ay: y, nx, ny, pref: 0 }, w, h, LEAD * 0.9); };
 /** 给法典挑一个落点：画出来的轨道上、刚画上不久的点（u 小），名字往哪边放都不压别的；离别的造物远一点（别像是那样东西的名字） */
 function chooseLaw(m: Marks, w: number, h: number) {
   if (!g || !st) return null;
@@ -341,7 +444,7 @@ function chooseLaw(m: Marks, w: number, h: number) {
       if (u > 0.38 * draw) continue;
       const x = a.pts[i * 2], y = a.pts[i * 2 + 1];
       for (const dir of LAW_DIRS) {
-        const bx = candidate(dir, { cx: x, cy: y, rx: LEAD, ry: LEAD * 0.8 }, w, h, 0);
+        const bx = lawBox(dir, x, y, w, h);
         let c = badness(bx, 4, m) + u * 30;
         const t = inner(bx), cx = t.x + t.w / 2, cy = t.y + t.h / 2;
         for (let j = 0; j < 4; j++) {
@@ -369,27 +472,25 @@ function placeNames(m: Marks) {
   collide = 0;
   // 先放不动的（日、器、环），再放鲸（它在游）和法典
   for (const k of [0, 3, 1, 2]) {
-    const b = bodyOf(m, k);
     const { w, h } = sizes[k] ?? { w: 0, h: 0 };
     if (!w) continue;
-    let pick: Box | null = null, pickC = 1e9, pickD: string | null = null;
-    const prefs = PREF[tall][k];
-    if (dirs[k]) {
-      const bx = candidate(dirs[k]!, b, w, h);
-      const c = badness(bx, k, m);
-      if (c < 40) { pick = bx; pickC = c; pickD = dirs[k]; }
+    const cands = outline(m, k, tall);
+    let pick: Box | null = null, pickC = 1e9, pickId: string | null = null;
+    for (const cd of cands) {
+      const bx = candidate(cd, w, h);
+      const c = badness(bx, k, m) + cd.pref;
+      if (c < pickC) { pickC = c; pick = bx; pickId = cd.id; }
     }
-    if (!pick) {
-      prefs.forEach((d, i) => {
-        const bx = candidate(d, b, w, h);
-        const c = badness(bx, k, m) + i * 6;
-        if (c < pickC) { pickC = c; pick = bx; pickD = d; }
-      });
+    // 上一帧挑的那个还够好就不换（不来回跳）：明显更好（省 25 分以上）才挪
+    const prev = picks[k] ? cands.find((c) => c.id === picks[k]) : null;
+    if (prev && prev.id !== pickId) {
+      const bx = candidate(prev, w, h);
+      const c = badness(bx, k, m) + prev.pref;
+      if (c < 500 && c < pickC + 25) { pick = bx; pickC = c; pickId = prev.id; }
     }
-    // 点得到的那一圈（内边距）出屏几个像素：往里挪一挪，别让整块露在屏外
     const pk = pick as Box | null;
     if (pk) pick = { ...pk, x: Math.max(0, Math.min(pk.x, obst.W - pk.w)) };
-    boxes[k] = pick; dirs[k] = pickD;
+    boxes[k] = pick; picks[k] = pickId;
     if (pickC >= 500) collide++;
   }
   // 法典：挂在轨道上一个固定的点旁边；这个点快转进缺口了（或者位置压到别的了），名字先淡出，换个点再亮
@@ -400,7 +501,7 @@ function placeNames(m: Marks) {
       const draw = st.orbits[law.j].draw;
       const u = arcU(law.j, law.X);
       const a = g!.project(law.X)!;
-      const bad = !a.front || u > draw - 0.025 || badness(candidate(law.dir, { cx: a.x, cy: a.y, rx: LEAD, ry: LEAD * 0.8 }, w, h, 0), 4, m) >= 500;
+      const bad = !a.front || u > draw - 0.025 || badness(lawBox(law.dir, a.x, a.y, w, h), 4, m) >= 500;
       if (bad && !lawAway) lawAway = now;
     }
     if (!law || (lawAway && now - lawAway > 380)) { law = chooseLaw(m, w, h); lawAway = 0; }
@@ -409,7 +510,7 @@ function placeNames(m: Marks) {
   boxes[4] = null;
   if (law && w) {
     const a = g!.project(law.X)!;
-    const b0 = candidate(law.dir, { cx: a.x, cy: a.y, rx: LEAD, ry: LEAD * 0.8 }, w, h, 0);
+    const b0 = lawBox(law.dir, a.x, a.y, w, h);
     const bx = { ...b0, x: Math.max(0, Math.min(b0.x, obst.W - b0.w)) };
     boxes[4] = bx;
     if (badness(bx, 4, m) >= 500) collide++;
@@ -430,12 +531,20 @@ function placeNames(m: Marks) {
     if (!bx) { a.classList.remove('ok'); return; }
     a.style.transform = `translate3d(${Math.round(bx.x)}px, ${Math.round(bx.y)}px, 0)`;
     a.classList.add('ok');
+    // 记下这 0.3 秒里名字待过的地方
+    const tr = trail[k];
+    tr.push({ t: now, b: { ...bx } });
+    while (tr.length && now - tr[0].t > TRAIL_MS) tr.shift();
   });
 }
 
-/** 天上：(x, y) 这一点落在哪样造物身上（-1 = 哪样都不是）。手指比鼠标粗，放宽一点 */
+/** 天上：(x, y) 这一点落在哪样造物身上、或者哪个名字刚才 0.3 秒内待过的地方（-1 = 哪样都不是）。手指比鼠标粗，放宽一点 */
 function hitTest(x: number, y: number, touch: boolean) {
   if (!g || (mode === 'sky' ? !namesOn : (g.P < NAMES.show || root.hasAttribute('data-list')))) return -1;
+  if (mode === 'sky') {
+    const now = performance.now();
+    for (let k = 0; k < 5; k++) for (const e of trail[k]) if (now - e.t <= TRAIL_MS && inBox(x, y, e.b)) return k;
+  }
   const m = g.marks;
   if (!m.ok) return -1;
   const tol = touch ? 14 : 4;
@@ -468,7 +577,7 @@ function skyTarget(i: number): V3 | null {
   const a = g.project(t);
   return a && a.front && a.x > 0 && a.x < obst.W && a.y > 0 && a.y < obst.H && (i < 4 ? g.P >= i + 1.5 : g.P >= 5.5) ? t : null;
 }
-function diveSky(i: number) { go(names[i].href, SECTION_HEX[i], skyTarget(i), i); }
+function diveSky(i: number) { go(names[i].href, SECTION_HEX[i], skyTarget(i), i, mode === 'sky' || (g?.P ?? 0) > 6.9 ? 7 : undefined); }
 names.forEach((a, i) => {
   a.addEventListener('click', (e) => {
     if (plain(e)) return;
@@ -480,7 +589,7 @@ names.forEach((a, i) => {
   a.addEventListener('focus', () => { focusK = i; if (mode === 'sky') root.setAttribute('data-names-now', ''); updateHot(); });
   a.addEventListener('blur', () => { focusK = -1; updateHot(); });
 });
-// 点造物本身：手指（或鼠标）按下去、没怎么动、很快抬起来，就算点了一下（滑动不算）
+// 点造物本身（或者名字刚才待过的地方）：手指（或鼠标）按下去、没怎么动、很快抬起来，就算点了一下（滑动不算）
 let downAt: { x: number; y: number; t: number; id: number; sy: number } | null = null;
 const onUi = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('a, button, input, select, textarea, label');
 window.addEventListener('pointerdown', (e) => {
@@ -498,11 +607,19 @@ window.addEventListener('pointerup', (e) => {
 window.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') hoverXY = [e.clientX, e.clientY]; }, { passive: true });
 document.addEventListener('mouseleave', () => { hoverXY = null; });
 
-/** 天上那片：名字什么时候亮、什么时候收；亮着就每帧跟着造物摆 */
+/** 天上那片：名字什么时候亮、什么时候收；亮着就每帧跟着造物摆（3D 的星尘字按这些框放进去） */
 function frameNames(p: number) {
   if (!g) return;
   const m = g.marks;
-  if (mode === 'list') { updateHot(); return; }
+  if (mode === 'list') {
+    updateHot();
+    g.words.setSky([null, null, null, null, null], false);
+    g.words.setList(listRows(), root.hasAttribute('data-list'));
+    g.stardust.setVeil(root.hasAttribute('data-list') && dustOn ? 0.8 * listVeil() : 0);
+    return;
+  }
+  g.words.setList(null, false);
+  g.stardust.setVeil(0);
   if (going) return;   // 正在往里扎：名字跟着整层字一起淡掉，位置不用再摆
   const want = m.ok && !q.has('still') && (namesOn ? p >= NAMES.hide : p >= NAMES.show);
   if (want !== namesOn) {
@@ -513,26 +630,32 @@ function frameNames(p: number) {
   // 往回滑：名字跟着进度一起暗下去（造物 6.52 以下才开始飞回去，名字先走）
   skyNav.style.opacity = p >= NAMES.show ? '' : String(Math.max(0, Math.min(1, (p - (NAMES.hide - 0.12)) / 0.12)));
   if (m.ok && p >= NAMES.hide - 0.25) placeNames(m);
+  g.words.setSky(boxes.map((b) => (b ? inner(b) : null)), m.ok && p >= NAMES.hide - 0.25);
   updateHot();
+}
+let veilT0 = 0;
+function listVeil() { return reduced ? 1 : Math.min(1, (performance.now() - veilT0) / 300); }
+function listRows(): (Box | null)[] {
+  const ur = uiLayer.getBoundingClientRect();
+  return names.map((a) => {
+    const r = a.getBoundingClientRect();
+    if (!r.width) return null;
+    return { x: r.left - ur.left + PAD_X * 2, y: r.top - ur.top + PAD_Y, w: r.width - PAD_X * 4, h: r.height - PAD_Y * 2 };
+  });
 }
 function pulseNames() {
   names.forEach((a) => { a.classList.remove('pulse'); void a.offsetWidth; a.classList.add('pulse'); });
   setTimeout(() => names.forEach((a) => a.classList.remove('pulse')), 1700);
 }
 
-// ———————————— 「目录」：快进到「开天」那片天 ————————————
+// ———————————— 「目录」：一路走到「开天」那片天（v3.2 的快进，现在是 glide 的一种走法）————————————
 let wantIndex = false;
 let namesMs = 0;   // 每帧摆天上名字花多少毫秒（滑动平均，验收看）
-function cancelFF() {
-  if (!ffing) return;
-  ffing = false;
-  root.removeAttribute('data-ff');
-  g?.land();
-}
 // —— 退路 B：「目录」压暗、五个名字竖着一列 ——
 function openList(byKey: boolean) {
   root.setAttribute('data-list', '');
   indexBtn?.setAttribute('aria-expanded', 'true');
+  veilT0 = performance.now();
   if (byKey) names[0]?.focus({ preventScroll: true });
 }
 function closeList() {
@@ -547,35 +670,45 @@ window.addEventListener('wheel', () => closeList(), { passive: true });
 function toIndex(byKey = false) {
   if (going) return;
   if (mode === 'list') { if (root.hasAttribute('data-list')) closeList(); else openList(byKey); return; }
-  if (!g) {
-    if (root.dataset.gl === 'no') window.scrollTo(0, Math.ceil(scrollYFor(7)));   // 没有 WebGL：滚到结尾那张静态图和那一排名字
-    else wantIndex = true;                                                          // 3D 还在路上：起来了马上走
-    return;
-  }
-  const p = g.P;
-  if (7 - p < 0.03) { pulseNames(); return; }                  // 已经在天上：不动地方，五个名字轻轻亮一下
-  if (reduced || freezeP != null) { window.scrollTo(0, Math.ceil(scrollYFor(7))); return; }   // 减少动效：直接到结尾
-  const dist = 7 - p;
-  const ms = Math.min(INDEX.maxMs + 200, Math.max(INDEX.minMs, INDEX.maxMs * Math.sqrt(dist / 6)));
-  ffing = true;
-  root.setAttribute('data-ff', '');
-  g.fly(7, ms);
-  textFor(p);   // 首屏的 wordmark、这一幕的名字马上收起来（不等下一帧）
+  if (!g && root.dataset.gl !== 'no') { wantIndex = true; return; }   // 3D 还在路上：起来了马上走
+  const p = g ? g.P : scrollP();
+  if (7 - p < 0.03 && !glide.gliding) { pulseNames(); return; }      // 已经在天上：不动地方，五个名字轻轻亮一下
+  if (freezeP != null) return;
+  goTo(7, 'index');
+  textFor(p);   // 首屏的 wordmark、这一幕的「进去」马上收起来（不等下一帧）
 }
 indexBtn?.addEventListener('click', (e) => toIndex(e.detail === 0));
 indexBtn?.setAttribute('aria-expanded', 'false');
-// 快进途中用户一动（滑、点、滚轮、按键）：马上把手还给他
-for (const ev of ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const) window.addEventListener(ev, () => cancelFF(), { passive: true, capture: true });
 
-// —— 刻度、键盘：Tab 到哪一幕的「进去」，页面跟着滚到那一幕 ——
-ticks.forEach((b) => b.addEventListener('click', () => scrollToAct(Number(b.dataset.tick))));
+// —— 刻度、键盘、Tab：都走到展示位置 ——
+ticks.forEach((b) => b.addEventListener('click', () => goTo(restP(Number(b.dataset.tick)), 'tick')));
 acts.forEach((el) => el.addEventListener('focusin', (e) => {
   if (mode === 'list' && (e.target as Element).closest?.('[data-sky]')) return;   // 退路 B 的列表：就地挑，不滚
   const k = Number(el.dataset.act);
   const p = g ? g.P : scrollP();
-  if (Math.abs(p - restP(k)) > 0.3) scrollToAct(k, false);
+  const to = restP(k);
+  if (Math.abs(p - to) > 0.02 && !(glide.gliding && glide.target === to)) goTo(to, 'focus');
 }));
-hero.addEventListener('focusin', () => { if (window.scrollY > 4) window.scrollTo({ top: 0 }); });
+hero.addEventListener('focusin', () => { if (window.scrollY > 4) goTo(1, 'focus'); });
+// ↓、空格、PageDown：下一个展示位置；↑、PageUp：上一个；Home、End：首屏、开天
+document.addEventListener('keydown', (e) => {
+  if (going || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || freezeP != null) return;
+  const t = e.target as Element | null;
+  if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+  let dir = 0, to: number | null = null;
+  switch (e.key) {
+    case 'ArrowDown': case 'PageDown': dir = 1; break;
+    case 'ArrowUp': case 'PageUp': dir = -1; break;
+    case ' ': case 'Spacebar': if (t?.closest?.('button, summary')) return; dir = e.shiftKey ? -1 : 1; break;
+    case 'Home': to = 1; break;
+    case 'End': to = 7; break;
+    default: return;
+  }
+  if (mode === 'list' && root.hasAttribute('data-list')) return;
+  e.preventDefault();
+  if (to == null) to = glide.nextFrom(dir);
+  if (to != null) goTo(to, 'key');
+});
 
 // —— 声音开关 ——
 document.addEventListener('zero:sound', (e) => sound.setOn(Boolean((e as CustomEvent).detail)));
@@ -586,7 +719,118 @@ function frameText(p: number) {
   soundFor(p);
 }
 
-// —— 没有 WebGL：每幕一张静态图，字和链接照常 ——
+// ———————————— 星尘字：3D 那份在屏幕上哪，页面里的真字就摆到哪 ————————————
+const nmText = (el: Element | null | undefined, l: 'en' | 'zh') => (el?.querySelector(`[data-l="${l}"]`)?.textContent ?? '').trim();
+const pxOf = (el: Element | null) => (el ? parseFloat(getComputedStyle(el).fontSize) || 16 : 16);
+const hexLin = [COL.sun, COL.ring, COL.life, COL.fire, COL.law];
+function textDefs(): ItemDef[] {
+  const defs: ItemDef[] = [];
+  const wmEnA = document.querySelector('.wm-a[data-l="en"]'), wmZhA = document.querySelector('.wm-a[data-l="zh"]');
+  const wmEnB = document.querySelector('.wm-b[data-l="en"]'), wmZhB = document.querySelector('.wm-b[data-l="zh"]');
+  const t = (el: Element | null) => (el?.textContent ?? '').trim();
+  defs.push({ id: 'wmA', lines: { en: [t(wmEnA)], zh: [t(wmZhA)] }, ls: { en: 0.46, zh: 0.72 }, lh: 1, scale: { en: 1, zh: pxOf(wmZhA) / pxOf(wmEnA) }, src: -1, count: 0, glow: [1, 1, 1], hot: false, emit: 0 });
+  defs.push({ id: 'wmB', lines: { en: [t(wmEnB)], zh: [t(wmZhB)] }, ls: { en: 1.1, zh: 0.5 }, lh: 1, scale: { en: 1, zh: pxOf(wmZhB) / pxOf(wmEnB) }, src: -1, count: 0, glow: [1, 1, 1], hot: false, emit: 0 });
+  for (let k = 2; k <= 6; k++) {
+    const nm = names[k - 2];
+    defs.push({ id: `a${k}`, lines: { en: [nmText(nm, 'en')], zh: [nmText(nm, 'zh')] }, ls: { en: 0.28, zh: 0.48 }, lh: 1, src: k - 2, count: DUST.actN, glow: hexLin[k - 2], hot: k === 2 || k === 5, emit: k === 6 ? 1.1 : k === 3 ? 0.55 : 0.4 });
+  }
+  for (let j = 0; j < 5; j++) {
+    const nm = names[j];
+    defs.push({ id: `s${j}`, lines: { en: [nmText(nm, 'en')], zh: [nmText(nm, 'zh')] }, ls: { en: 0.26, zh: 0.42 }, lh: 1, scale: { en: 1, zh: skyPx('zh') / skyPx('en') }, src: j, count: DUST.skyN, glow: hexLin[j], hot: j === 0 || j === 3, emit: j === 4 ? 1.1 : j === 1 ? 0.55 : 0.4 });
+  }
+  const halves = (l: 'en' | 'zh') => [...mottoEl.querySelectorAll(`[data-l="${l}"] .mh`)].map((e) => (e.textContent ?? '').trim()).filter(Boolean);
+  defs.push({ id: 'motto', lines: { en: halves('en'), zh: halves('zh') }, ls: { en: 0.06, zh: 0.2 }, lh: 1.5, scale: { en: 1, zh: mottoPx('zh') / mottoPx('en') }, src: 5, count: 2600, glow: [1, 1, 1], hot: false, emit: 0 });
+  return defs;
+}
+/** 天上名字、那句话的字号（照 CSS 的；中英可能不一样） */
+function skyPx(l: 'en' | 'zh') {
+  const was = root.getAttribute('data-lang');
+  if (was !== l) root.setAttribute('data-lang', l);
+  const v = pxOf(names[0]);
+  if (was !== l) root.setAttribute('data-lang', was!);
+  return v;
+}
+function mottoPx(l: 'en' | 'zh') {
+  const was = root.getAttribute('data-lang');
+  if (was !== l) root.setAttribute('data-lang', l);
+  const v = pxOf(mottoEl);
+  if (was !== l) root.setAttribute('data-lang', was!);
+  return v;
+}
+/** 版面变了（转屏、改窗口、换语言、字体载好）：告诉 3D 那份页面上该在哪、多大、避开什么 */
+function relayoutText() {
+  if (!g || !dustOn) return;
+  const ur = uiLayer.getBoundingClientRect();
+  const rel = (el: Element | null): Box | null => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width ? { x: r.left - ur.left, y: r.top - ur.top, w: r.width, h: r.height } : null; };
+  const l = lang();
+  // wordmark 的位置照英文那份量（中文那份按字号比例放在同一个正中）
+  const was = root.getAttribute('data-lang');
+  root.setAttribute('data-lang', 'en');
+  const hd = hero.style.cssText;
+  const a = rel(document.querySelector('.wm-a[data-l="en"]')), b = rel(document.querySelector('.wm-b[data-l="en"]'));
+  const motto = rel(mottoEl);
+  const pa = pxOf(document.querySelector('.wm-a[data-l="en"]')), pb = pxOf(document.querySelector('.wm-b[data-l="en"]'));
+  const mp = mottoPx('en'), sp = skyPx('en');
+  root.setAttribute('data-lang', was ?? l);
+  hero.style.cssText = hd;
+  const hdr = document.querySelector('.hd-row');
+  const W = obst.W, H = obst.H;
+  const phone = W < 600 && W < H;
+  g.words.setObstacles({ top: hdr ? hdr.getBoundingClientRect().bottom - ur.top + 4 : 64, ticks: rel(ticksNav), bottom: phone ? 108 : 36 });
+  g.words.setFixed({ wm: a && b ? { a, b } : null, wmPx: { a: pa, b: pb }, motto: motto ? { box: motto, lines: 2 } : null, mottoPx: mp, skyPx: sp, listPx: 19 });
+  // 天上名字、退路列表：点得到的框照 3D 那份字的大小（字本身看不见）
+  names.forEach((nm, j) => {
+    const it = g!.stardust.items.get(`s${j}`);
+    if (!it?.lay.en || !it.lay.zh) return;
+    const lay = it.lay[l]!;
+    nm.style.setProperty('--tw', `${(lay.w * sp).toFixed(1)}px`);
+    nm.style.setProperty('--th', `${Math.max(lay.h * sp, 12).toFixed(1)}px`);
+  });
+  measureNames();
+}
+const cardAt = new Map<number, number[]>();
+/** 每帧：页面里的真字（看不见）摆到 3D 那份在屏幕上的位置；「进去」跟在名字下面 */
+function syncText() {
+  if (!g || !dustOn) return;
+  const l = lang();
+  for (const [k, c] of cards) {
+    if (k > 6) continue;
+    const f = g.words.f(`a${k}`);
+    if (f < 0.01) continue;
+    const b = g.words.screenBox(`a${k}`, g.camera, l);
+    if (!b) continue;
+    // 整像素、动了一个像素以上才挪（镜头那一点点漂移不让「进去」一直抖）
+    const prev = cardAt.get(k);
+    const x = Math.round(b.x), y = Math.round(b.y), w = Math.round(b.w), h = Math.round(b.h);
+    if (prev && Math.abs(prev[0] - x) < 1.5 && Math.abs(prev[1] - y) < 1.5 && Math.abs(prev[2] - w) < 1.5 && Math.abs(prev[3] - h) < 1.5) continue;
+    cardAt.set(k, [x, y, w, h]);
+    c.card.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    c.h.style.width = `${w}px`;
+    c.h.style.height = `${h}px`;
+  }
+}
+/** 字体载好：搭 3D 的星尘字（载不到也不等太久：用系统的细黑顶上） */
+async function startText() {
+  if (!g || q.has('still')) return;
+  try {
+    const fonts = document.fonts;
+    const wait = fonts ? Promise.all([fonts.load('200 88px "Zero Display"', 'AZaz'), fonts.load('200 88px "Zero Hei SC"', '零造物')]) : Promise.resolve();
+    await Promise.race([wait, new Promise((r) => setTimeout(r, 4000))]);
+    await g.buildText(textDefs());
+    dustOn = true;
+    root.setAttribute('data-dust', 'yes');
+    g.words.setLang(lang(), false);
+    if (backP != null) g.words.snap();
+    relayoutText();
+    relayoutText();
+  } catch (e) {
+    console.warn(e);
+    root.setAttribute('data-dust', 'no');
+    g?.setTextOn(false);
+  }
+}
+
+// —— 没有 WebGL：每幕一张静态图，字和链接照常（新字体的普通文字）——
 function fallback() {
   root.setAttribute('data-gl', 'no');
   const pick = () => {
@@ -600,7 +844,17 @@ function fallback() {
   pick();
   window.addEventListener('scroll', pick, { passive: true });
   window.addEventListener('resize', pick);
+  glide.detach();
+  if (backP != null) glide.setScroll(Math.ceil(scrollYFor(backP)));
   if (wantIndex) { wantIndex = false; toIndex(); }
+  // 截图、验收用（没有 3D 的时候只有滚动这一份）
+  (window as unknown as { __zero: unknown }).__zero = {
+    frames: () => 0, P: () => scrollP(), tick: () => tickFor(scrollP()), rest: () => [...REST_PS],
+    flying: () => glide.gliding, gliding: () => ({ on: glide.gliding, kind: glide.kind, to: glide.target, pass: glide.pass }),
+    glide: () => glide.debug(), ffHold: (onIt: boolean, at?: number) => glide.hold(onIt, at), ffHeld: () => glide.held,
+    to: (p: number, kind: GlideKind = 'tick') => goTo(p, kind),
+    dust: () => ({ on: false }), names: () => ({ mode, on: false, boxes: [] }),
+  };
 }
 function hasWebGL2() {
   try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; }
@@ -613,35 +867,35 @@ async function boot() {
   try {
     g = mod.createGenesis({
       host, reduced, seen, freezeP, freezeT, startP: backP, tier: tierQ, nMoons,
-      onLost: () => { g?.canvas.remove(); g = null; fallback(); },
+      onLost: () => { g?.canvas.remove(); g = null; glide.detach(); fallback(); },
     });
   } catch (e) { console.warn(e); fallback(); return; }
   root.setAttribute('data-gl', 'yes');
-  // 从栏目页按「后退」回来：滚动位置摆回去，名字不用一个个再亮一遍
+  glide.attach();
+  g.onPreFrame = (now) => glide.tick(now);
+  // 从栏目页按「后退」回来：滚动位置摆回那一幕的展示位置，名字不用一个个再亮一遍
   if (backP != null) {
-    window.scrollTo(0, Math.ceil(scrollYFor(backP)));
-    root.setAttribute('data-names-now', '');
+    glide.setScroll(Math.ceil(scrollYFor(backP)));
+    if (backP >= 7) root.setAttribute('data-names-now', '');
   }
-  const relayout = () => { markEnd(); measureNames(); decideMode(); };
+  const relayout = () => { markEnd(); measureNames(); decideMode(); relayoutText(); };
   relayout();
   window.addEventListener('resize', relayout);
   document.fonts?.ready.then(relayout).catch(() => { /* 字体没载到也照样 */ });
-  document.addEventListener('zero:lang', relayout);
+  document.addEventListener('zero:lang', () => { g?.words.setLang(lang(), true); relayout(); });
   g.onHitstop = () => setTimeout(() => sound.blast(), HITSTOP_MS);
+  g.onPlace = (s, p) => {
+    st = s;
+    const n0 = performance.now();
+    frameNames(p);
+    namesMs += (performance.now() - n0 - namesMs) * 0.05;
+  };
   g.onFrame = (s, p) => {
     st = s;
     P = p;
     if (p >= 1 && !seen) { seen = true; try { sessionStorage.setItem('zero.opener', '1'); } catch { /* 无痕 */ } }
-    // 「目录」快进途中：滚动位置跟着进度走（快进完正好停在结尾，往上滑照样倒放）
-    if (ffing && g) {
-      const y = scrollYFor(p);
-      window.scrollTo(0, g.flying ? Math.round(y) : Math.ceil(y));
-      if (!g.flying) { ffing = false; root.removeAttribute('data-ff'); }
-    }
     frameText(p);
-    const n0 = performance.now();
-    frameNames(p);
-    namesMs += (performance.now() - n0 - namesMs) * 0.05;
+    syncText();
   };
   const feed = () => g?.setTarget(scrollP());
   feed();
@@ -669,19 +923,33 @@ async function boot() {
     vv.addEventListener('scroll', align);
   }
   if (wantIndex) { wantIndex = false; toIndex(); }
+  void startText();
   // 截图、验收、调试用
   (window as unknown as { __zero: unknown }).__zero = {
     frames: () => g?.frames ?? 0,
     dpr: () => g?.dpr ?? 0,
+    textDpr: () => g?.textDpr ?? 0,
     tier: () => g?.tier ?? '',
     P: () => g?.P ?? P,
     state: () => g?.state,
     tick: () => tickFor(g?.P ?? P),
-    flying: () => !!g?.flying,
-    ffHold: (on: boolean, at?: number) => g?.holdFlight(on, at),
-    ffHeld: () => !!g?.flightHeld,
-    cost: () => ({ measure: g?.measureMs ?? 0, names: namesMs }),
-    names: () => ({ mode, on: namesOn, boxes: boxes.map((b) => (b ? { ...b } : null)), dirs: [...dirs], lead: leadAt, collide, obst }),
+    rest: () => [...REST_PS],
+    flying: () => glide.gliding,
+    gliding: () => ({ on: glide.gliding, kind: glide.kind, to: glide.target, pass: glide.pass }),
+    glide: () => glide.debug(),
+    ffHold: (onIt: boolean, at?: number) => glide.hold(onIt, at),
+    ffHeld: () => glide.held,
+    to: (p: number, kind: GlideKind = 'tick') => goTo(p, kind),
+    cost: () => ({ measure: g?.measureMs ?? 0, names: namesMs, words: g?.wordsMs ?? 0 }),
+    names: () => ({ mode, on: namesOn, boxes: boxes.map((b) => (b ? { ...b } : null)), dirs: [...picks], lead: leadAt, collide, obst }),
+    dust: () => ({
+      on: dustOn, rt: g?.rt ?? false, lang: g?.words.lang ?? 0,
+      f: Object.fromEntries(['wmA', 'wmB', 'a2', 'a3', 'a4', 'a5', 'a6', 'motto', 's0', 's1', 's2', 's3', 's4'].map((id) => [id, +(g?.words.f(id) ?? 0).toFixed(3)])),
+      boxes: Object.fromEntries(['wmA', 'wmB', 'a2', 'a3', 'a4', 'a5', 'a6', 'motto', 's0', 's1', 's2', 's3', 's4'].map((id) => [id, g ? g.words.screenBox(id, g.camera, lang()) : null])),
+      glyphs: g?.stardust.atlas.glyphs.size ?? 0,
+      place: g?.words.debug(),
+      atlas: g ? [g.stardust.atlas.W, g.stardust.atlas.H] : null,
+    }),
     marks: () => g?.marks,
     project: (p: V3) => g?.project(p),
     orbitPoint: (j: number, u: number) => g?.orbitPoint(j, u),
@@ -690,6 +958,7 @@ async function boot() {
       const target = k <= 1 && g ? g.clusterPoint(0) : k >= 7 ? skyTarget(k - 7) : targetFor(k);
       if (!g || !target) return;
       root.setAttribute('data-diving', '');
+      g.words.setDiving(true);
       flood.style.background = SECTION_HEX[k >= 7 ? k - 7 : Math.max(0, k - 2)];
       void g.enter(target, DIVE_MS, (x) => { flood.style.opacity = String(ss(0.5, 0.96, x)); }, s);
     },

@@ -5,14 +5,16 @@
 // v3.2：底子换成墨蓝（tune.ts 的 INK，画面里没有纯黑）；「目录」快进（fly：进度自己走到 7，滚动位置跟着走）；
 // 每帧把五样造物在屏幕上的位置量出来（marks：天上的名字挂在它们旁边、点造物本身也能进）；指着哪样，哪样亮一点（setHot）。
 import {
-  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, Color, CustomBlending, DoubleSide, Float32BufferAttribute, FrontSide,
-  InstancedBufferAttribute, InstancedBufferGeometry, LinearSRGBColorSpace, Matrix3, Matrix4, Mesh, OneFactor, PerspectiveCamera,
+  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, Color, CustomBlending, DepthTexture, DoubleSide, Float32BufferAttribute, FrontSide,
+  InstancedBufferAttribute, InstancedBufferGeometry, LinearFilter, LinearSRGBColorSpace, Matrix3, Matrix4, Mesh, OneFactor, PerspectiveCamera,
   PlaneGeometry, Points, Quaternion, Scene, ShaderMaterial, SphereGeometry, UnsignedByteType, Vector2, Vector3,
   Vector4, WebGLRenderTarget, WebGLRenderer, ZeroFactor, type Object3D,
 } from 'three';
 import * as G from './glsl';
 import { H, W, T, DIST, Z_FRONT, CELL, clusters, blocks } from './layout';
-import { TIERS, type Tier, EXPOSURE, OPENER_MS, FF_MS, SMOOTH_S, HITSTOP_MS, SECTION_HEX, NEB_I, INK, INDEX, hexToLinear, hexToUnit } from './tune';
+import { TIERS, type Tier, EXPOSURE, OPENER_MS, FF_MS, SMOOTH_S, HITSTOP_MS, SECTION_HEX, NEB_I, INK, REST_PS, DUST, hexToLinear, hexToUnit } from './tune';
+import { createStardust, type ItemDef, type Lang } from './stardust';
+import { createWords, type Box } from './words';
 import { computeState, type State, type V3, type Q, type Fin, EYE, DC, COL, WHALE_L, WHALE_R, qMat, qRot, cl, ss, mix, RING_R } from './timeline';
 
 export interface GenesisOpts {
@@ -28,20 +30,6 @@ export interface GenesisOpts {
 }
 
 const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
-
-/** 三次贝塞尔缓动（跟 CSS cubic-bezier(x1, y1, x2, y2) 一样）：给「目录」快进用 */
-function bezier([x1, y1, x2, y2]: [number, number, number, number]) {
-  const bx = (t: number) => 3 * x1 * t * (1 - t) * (1 - t) + 3 * x2 * t * t * (1 - t) + t * t * t;
-  const by = (t: number) => 3 * y1 * t * (1 - t) * (1 - t) + 3 * y2 * t * t * (1 - t) + t * t * t;
-  return (x: number) => {
-    if (x <= 0) return 0;
-    if (x >= 1) return 1;
-    let lo = 0, hi = 1, t = x;
-    for (let i = 0; i < 28; i++) { t = (lo + hi) / 2; if (bx(t) < x) lo = t; else hi = t; }
-    return by(t);
-  };
-}
-const flyEase = bezier(INDEX.ease);
 
 /** 屏幕上的一样造物（CSS 像素，相对画布左上角）：中心、大致半径；鲸多一根从头到尾的轴；环、轨道多一圈采样点 */
 export interface Mark { x: number; y: number; r: number; front: boolean; ax?: number; ay?: number; bx?: number; by?: number; pts?: number[] }
@@ -79,7 +67,8 @@ export function createGenesis(opts: GenesisOpts) {
   const canvas = document.createElement('canvas');
   canvas.className = 'gl';
   canvas.setAttribute('aria-hidden', 'true');
-  const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance', stencil: false });
+  // v3.3：画布按原生分辨率（清楚的字画在这一层上）；画面本身照档位降分辨率画进 sceneRT（四倍多重采样，抗锯齿在那儿做），再放大铺满画布
+  const renderer = new WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance', stencil: false });
   renderer.outputColorSpace = LinearSRGBColorSpace;
   // 底色是墨蓝（不是纯黑）：画布还没画第一帧的那一下也是它。输出不做色彩转换，所以直接把 sRGB 的值当「线性」写进去
   const inkSky = hexToUnit(INK.sky);
@@ -90,11 +79,33 @@ export function createGenesis(opts: GenesisOpts) {
   const phone = Math.min(screen.width, screen.height) < 600 || matchMedia('(pointer: coarse)').matches;
   const guessed = guessTier(renderer, phone);
   let tier: Tier = opts.tier ?? guessed;
-  let dpr = Math.min(window.devicePixelRatio || 1, TIERS[tier].dprMax);
+  // 验收用：?dpr=0.3 把画面分辨率压得很低（没有显卡的机器上一帧要几百毫秒，量「停手 200 毫秒」这种手感时先让帧快起来）
+  const dprQ = (() => { const m = /[?&]dpr=([\d.]+)/.exec(location.search); const v = m ? parseFloat(m[1]) : NaN; return v > 0.05 && v <= 3 ? v : null; })();
+  let dpr = dprQ ?? Math.min(window.devicePixelRatio || 1, TIERS[tier].dprMax);
+  let textDpr = dprQ ?? Math.max(dpr, Math.min(window.devicePixelRatio || 1, DUST.textDprMax[tier]));
 
   const scene = new Scene();
   const camera = new PerspectiveCamera(33, 1, 1, 6000);
   camera.position.set(0, EYE, 0);
+  // v3.3：画面画进这张图（照档位的分辨率、多重采样、带深度：清楚的字按它判断造物在不在字前面），再放大铺满画布
+  let sceneRT: WebGLRenderTarget | null = null;
+  try {
+    sceneRT = new WebGLRenderTarget(2, 2, { samples: 4, type: UnsignedByteType, depthBuffer: true, depthTexture: new DepthTexture(2, 2) });
+    sceneRT.texture.minFilter = LinearFilter;
+    sceneRT.texture.magFilter = LinearFilter;
+    sceneRT.texture.generateMipmaps = false;
+  } catch (e) { console.warn(e); sceneRT = null; }
+  const blitScene = new Scene();
+  const blitMat = new ShaderMaterial({ uniforms: { tColor: { value: sceneRT?.texture ?? null } }, vertexShader: G.BLIT_VERT, fragmentShader: G.BLIT_FRAG, depthTest: false, depthWrite: false });
+  {
+    const bg = new BufferGeometry();
+    bg.setAttribute('position', new Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
+    const bm = new Mesh(bg, blitMat);
+    bm.frustumCulled = false;
+    blitScene.add(bm);
+  }
+  const textScene = new Scene();
+  const mirrorOnly: Object3D[] = [];
 
   const holeD = clusters.map((c) => new Vector4(-W / 2 + c.c0 * CELL, c.r0 * CELL, -W / 2 + (c.c1 + 1) * CELL, (c.r1 + 1) * CELL));
   const secCol = SECTION_HEX.map((h) => hexToLinear(h));
@@ -380,9 +391,16 @@ export function createGenesis(opts: GenesisOpts) {
     skyGeo.setAttribute('aBlk', new Float32BufferAttribute(blk, 4));
     skyGeo.setAttribute('aBlk2', new Float32BufferAttribute(blk2, 4));
     skyGeo.setAttribute('aSeed', new Float32BufferAttribute(seed, 4));
+    // v3.3：那句话的落点（字形排好以后填进来）。每 5 颗里 2 颗去聚那句话：按档位截断以后比例照旧
+    skyGeo.setAttribute('aMot', new Float32BufferAttribute(new Float32Array(N * 4), 4));
+    skyGeo.setAttribute('aMotG', new Float32BufferAttribute(new Float32Array(N * 3), 3));
   }
+  const motU = {
+    uMotA: { value: new Vector3() }, uMotR: { value: new Vector3(1, 0, 0) }, uMotU: { value: new Vector3(0, 1, 0) }, uMotN: { value: new Vector3(0, 0, 1) },
+    uMotF: { value: 0 }, uMotLang: { value: 0 }, uMote: { value: DUST.mote },
+  };
   const skyMat = additive(new ShaderMaterial({
-    uniforms: { ...U, uPxScale: starMat.uniforms.uPxScale },
+    uniforms: { ...U, uPxScale: starMat.uniforms.uPxScale, ...motU },
     vertexShader: COMMON + G.SKYSTAR_VERT,
     fragmentShader: FRAGC + G.SKYSTAR_FRAG,
   }));
@@ -427,6 +445,18 @@ export function createGenesis(opts: GenesisOpts) {
   dust.frustumCulled = false; dust.renderOrder = 8;
   scene.add(dust);
 
+  // —— v3.3 星尘字：清楚的字（原生分辨率那一遍）、水里的倒影（倒影那遍）、从造物身上掉下来聚成字的碎块（主场景）——
+  const sd = createStardust({ scene, textScene, U, depth: () => sceneRT?.depthTexture ?? null, mirrorOnly });
+  const words = createWords({
+    dust: sd,
+    poseCam: (p, cam) => poseCam(p, cam),
+    size: () => size,
+    reduced: opts.reduced,
+    textDpr: () => (sceneRT ? textDpr : dpr),
+    nebTint: (p) => nebTint(p),
+  });
+  let textOn = !/[?&]still\b/.test(location.search);
+
   // —— 档位 ——
   function applyTier() {
     const t = TIERS[tier];
@@ -439,7 +469,9 @@ export function createGenesis(opts: GenesisOpts) {
     skyGeo.setDrawRange(0, t.skyStars);
     worldMat.uniforms.uNebQ.value = t.nebula;
     dustGeo.setDrawRange(0, t.dust);
-    dpr = Math.min(window.devicePixelRatio || 1, t.dprMax);
+    dpr = dprQ ?? Math.min(window.devicePixelRatio || 1, t.dprMax);
+    textDpr = dprQ ?? Math.max(dpr, Math.min(window.devicePixelRatio || 1, DUST.textDprMax[tier]));
+    sd.setBudget(DUST.tierK[tier]);
   }
   applyTier();
 
@@ -462,9 +494,11 @@ export function createGenesis(opts: GenesisOpts) {
     // 竖着的手机：各幕把视角放宽一点，环、轨道别太出屏
     tanAct = Math.max(tanHero, (175 / (900 * aspect)) * 0.86);
     camera.aspect = aspect;
-    renderer.setPixelRatio(dpr);
+    renderer.setPixelRatio(sceneRT ? textDpr : dpr);
     renderer.setSize(w, h, false);
     const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
+    sceneRT?.setSize(bw, bh);
+    words.markDirty();
     worldMat.uniforms.uRes.value.set(bw, bh);
     res.set(bw, bh);
     const s = TIERS[tier].refl;
@@ -492,37 +526,40 @@ export function createGenesis(opts: GenesisOpts) {
   // 手机竖屏：那句话下面那截天够不够摆浑天仪（home.ts 量好告诉这里），浑天仪摆在那截天正中
   const phoneLay = { tall: 1, band: -0.33 };
   function setPhone(tall: boolean, band: number) { phoneLay.tall = tall ? 1 : 0; phoneLay.band = band; }
-  function setTarget(p: number) { target = clamp(p, 1, 7); if (opener < 1 && target > 1.02 && !flight) fastForward(); }
+  function setTarget(p: number) { target = clamp(p, 1, 7); if (opener < 1 && target > 1.02 && driven == null) fastForward(); }
   function fastForward() { if (ff || opener >= 1) return; ff = { from: opener, t0: performance.now() }; }
-  // 「目录」：进度从现在这里自己走到 to（开场还没走完就连开场一起，一口气）。滚动位置由 home.ts 每帧跟着摆。
-  // 中途用户一动（land）：就停在半路，接着由滚动接手，不跳。
-  let flight: { from: number; to: number; t0: number; ms: number; held?: number; holdAt?: number } | null = null;
-  let holdNext: number | null = null;
-  /** 截图用：快进停在半路（held = 停住那一刻的时间点），再放开接着走；at = 下一次快进走到这个进度就自己停住（机器再慢也停得准） */
-  function holdFlight(on: boolean, at?: number) {
-    if (on && at != null) { holdNext = at; return; }
-    if (!flight) return;
-    const now = performance.now();
-    if (on && flight.held == null) flight.held = now;
-    else if (!on && flight.held != null) { flight.t0 += now - flight.held; flight.held = undefined; }
-  }
-  function fly(to: number, ms: number) {
+  // v3.3：进度交给 ../home/glide.ts 逐帧推（停手以后自己走到展示位置、点刻度、「目录」快进……一套走法）。
+  // drive(p)：这一帧起进度就是 p（不再平滑地追滚动；开场没走完就连开场一起）；drive(null)：还给滚动，从现在这里接着追，不跳。
+  // jump(p)：一下子摆到 p（落定、减少动效、从栏目页后退回来）。
+  let driven: number | null = null;
+  function drive(p: number | null) {
+    if (p == null) {
+      if (driven == null) return;
+      driven = null;
+      ps = Math.max(1, P);
+      // 开场还没走完就被叫停：开场接着从这里快进完（滚动位置还在最上面）
+      if (opener < 1) ff = { from: opener, t0: performance.now() };
+      return;
+    }
     if (opts.freezeP != null) return;
-    flight = { from: P, to: clamp(to, 0, 7), t0: performance.now(), ms: Math.max(1, ms), holdAt: holdNext ?? undefined };
-    holdNext = null;
+    driven = clamp(p, 0, 7);
     ff = null;
+  }
+  function jump(p: number) {
+    if (opts.freezeP != null) return;
+    driven = null;
+    P = clamp(p, 0, 7);
+    ps = target = clamp(p, 1, 7);
+    if (P >= 1) { opener = 1; ff = null; }
     hitUntil = 0;
   }
-  function land() {
-    if (!flight) return;
-    flight = null;
-    ps = Math.max(1, P);
-    // 开场还没走完就被叫停：开场接着从这里快进完（滚动位置还在最上面）
-    if (opener < 1) ff = { from: opener, t0: performance.now() };
-  }
+  /** 第五幕顿帧（自己走的时候由 glide 叫）：真实时间里停 HITSTOP_MS，声音照响 */
+  function hitstop() { hitUntil = performance.now() + HITSTOP_MS; onHitstop?.(); }
+  /** 减少动效：落到最近的展示位置（跟 tune.ts 的 REST_PS 一张表） */
   function snapReduced(p: number) {
-    const k = Math.round(p);
-    return k <= 1 ? 1 : k >= 7 ? 7 : k - 0.06;
+    let b: number = REST_PS[0];
+    for (const r of REST_PS) if (Math.abs(r - p) < Math.abs(b - p)) b = r;
+    return b;
   }
 
   // —— 视差、进去 ——
@@ -660,6 +697,41 @@ export function createGenesis(opts: GenesisOpts) {
     const vy = c * dy + sn * dz, vz = -sn * dy + c * dz;
     const iz = 1 / Math.max(-vz, 1);
     return [(dx * iz) / f.tanV, (vy * iz) / f.tanV + f.shift];
+  }
+  /** v3.3：把一台镜头摆到进度 p 的展示样子（不带漂移、视差、往里扎），返回那一刻的状态。星尘字在展示位置上量造物、挑字的位置用 */
+  function poseCam(p: number, cam: PerspectiveCamera): State {
+    const s = computeState(p, clock, { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, p)), tall: phoneLay.tall, band: phoneLay.band }, nM);
+    cam.aspect = aspect;
+    cam.position.set(0, s.camY, Z_FRONT + s.camD);
+    cam.rotation.set(s.pitch, 0, 0);
+    cam.fov = (2 * Math.atan(s.tanV) * 180) / Math.PI;
+    cam.updateProjectionMatrix();
+    cam.projectionMatrix.elements[9] = -(2 * s.hzf - 1);
+    cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+    cam.updateMatrixWorld();
+    return s;
+  }
+  /** v3.3：第七幕天上这一点被星云照成什么颜色（显示空间）：五样造物各把自己的颜色往外散（跟着色器里星云的颜色一个算法，不带云的纹理） */
+  const FIVE = SECTION_HEX.map((h) => hexToUnit(h));
+  function nebTint(p: V3): [number, number, number] {
+    const n = worldMat.uniforms.uNeb.value as number;
+    if (n <= 0 || !st) return [0.92, 0.93, 0.96];
+    const S = finScreen(st.fin, p);
+    const src = worldMat.uniforms.uNebSrc.value as Vector4[];
+    let r = FIVE[4][0] * 0.05, g = FIVE[4][1] * 0.05, b = FIVE[4][2] * 0.05, ws = 0.05;
+    for (let k = 0; k < 5; k++) {
+      const sr = src[k];
+      let sp = clamp((n - sr.z) / Math.max(1 - sr.z, 0.01));
+      sp = sp * sp * (3 - 2 * sp);
+      const hr = mix(0.06, (k === 4 ? 1.5 : 0.62) * clamp((st.fin.aspect + 0.45) / 2.05, 0.38, 1), sp);
+      const dd = Math.hypot(S[0] - sr.x, (S[1] - sr.y) * 1.15);
+      const wk = Math.exp(-Math.pow(dd / hr, 2)) * sr.w;
+      r += FIVE[k][0] * wk * wk; g += FIVE[k][1] * wk * wk; b += FIVE[k][2] * wk * wk; ws += wk * wk;
+    }
+    r /= ws; g /= ws; b /= ws;
+    const m = Math.max(r, g, b, 1e-3);
+    const k = mix(0, 1, n);
+    return [mix(0.92, r / m, k), mix(0.93, g / m, k), mix(0.96, b / m, k)];
   }
   /** 那句话在屏幕上哪（中心、宽高，都是屏幕的几分之几）：那块天留暗 */
   function setTextBox(cx: number, cy: number, w: number, h: number) {
@@ -868,12 +940,13 @@ export function createGenesis(opts: GenesisOpts) {
   function frame(now: number) {
     if (!running) return;
     requestAnimationFrame(frame);
-    if (openT0 < 0) { openT0 = now; if (opts.seen) ff = { from: 0, t0: now }; perf.t0 = now; }
+    if (openT0 < 0) { openT0 = now; if (opts.seen && opener < 1) ff = { from: 0, t0: now }; perf.t0 = now; }
     const dt = last < 0 ? 1 / 60 : clamp((now - last) / 1000, 0, 0.5);
     last = now;
 
+    onPreFrame?.(now);
     // 开场（自己放）
-    if (opener < 1 && !flight) {
+    if (opener < 1 && driven == null) {
       let o = clamp((now - openT0) / OPENER_MS);
       if (ff) o = Math.max(o, ff.from + (1 - ff.from) * ss(0, 1, (now - ff.t0) / FF_MS));
       opener = o;
@@ -882,21 +955,12 @@ export function createGenesis(opts: GenesisOpts) {
     // 滚动：平滑地追；第五幕炸开前那一拍，真实时间里停一下
     let rate = 1;
     if (opts.freezeP != null) P = opts.freezeP;
-    else if (flight) {
-      // 「目录」快进：进度照缓动曲线自己走（不停顿帧，开场没走完就连开场一起）
-      let k = clamp(((flight.held ?? now) - flight.t0) / flight.ms);
-      if (flight.holdAt != null && flight.held == null && mix(flight.from, flight.to, flyEase(k)) >= flight.holdAt) {
-        // 截图用：走到这个进度就停住（找到正好落在这个进度的那一刻）
-        let lo = 0, hi = k;
-        for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (mix(flight.from, flight.to, flyEase(m)) < flight.holdAt) lo = m; else hi = m; }
-        k = hi;
-        flight.held = flight.t0 + k * flight.ms;
-        flight.holdAt = undefined;
-      }
-      P = mix(flight.from, flight.to, flyEase(k));
+    else if (driven != null) {
+      // 自己走（glide 每帧推进度）：开场没走完就连开场一起
+      P = driven;
       if (opener < 1) { opener = Math.min(1, Math.max(opener, P)); if (opener >= 1) ff = null; }
       ps = Math.max(1, P);
-      if (k >= 1) { P = flight.to; ps = Math.max(1, P); target = ps; flight = null; }
+      if (now < hitUntil) rate = 0;
     } else if (opts.reduced) P = snapReduced(target);
     else if (opener < 1) P = opener;
     else {
@@ -957,6 +1021,16 @@ export function createGenesis(opts: GenesisOpts) {
     const m0 = performance.now();
     measure(st);
     measureMs += (performance.now() - m0 - measureMs) * 0.05;
+    // v3.3 星尘字：home.ts 先在屏幕上挑好天上名字的位置，这里按 3D 的远近放进去、定好每份字聚到哪了
+    const w0 = performance.now();
+    onPlace?.(st, P);
+    if (textOn) words.frame(st, P, camera, now, dt);
+    const mt = sd.items.get('motto');
+    if (mt && textOn) {
+      motU.uMotA.value.copy(mt.u.uAnchor.value); motU.uMotR.value.copy(mt.u.uRight.value); motU.uMotU.value.copy(mt.u.uUp.value);
+      motU.uMotN.value.copy(mt.u.uNorm.value); motU.uMotF.value = mt.vis ? mt.u.uF.value : 0; motU.uMotLang.value = words.lang;
+    } else motU.uMotF.value = 0;
+    wordsMs += (performance.now() - w0 - wordsMs) * 0.05;
 
     // 倒影：门和造物沿水面翻过来再画一遍（低档只画门）
     const tierCfg = TIERS[tier];
@@ -964,7 +1038,10 @@ export function createGenesis(opts: GenesisOpts) {
     const savedChips = chipMeshes.map((o) => o.visible);
     const lineVis = [...orbitLines, constLine].map((o) => o.visible);
     mainOnly.forEach((o) => (o.visible = false));
-    if (!tierCfg.creationRefl) { chipMeshes.forEach((o) => (o.visible = false)); [...orbitLines, constLine].forEach((o) => (o.visible = false)); }
+    mirrorOnly.forEach((o) => (o.visible = !!o.userData.want));
+    const swarms = [...sd.items.values()].map((it) => it.swarm).filter((m): m is Mesh => !!m);
+    const swarmVis = swarms.map((m) => m.visible);
+    if (!tierCfg.creationRefl) { chipMeshes.forEach((o) => (o.visible = false)); [...orbitLines, constLine].forEach((o) => (o.visible = false)); swarms.forEach((m) => (m.visible = false)); }
     for (const m of boxMats) m.side = BackSide;
     U.uMirror.value = 1;
     renderer.setRenderTarget(reflRT);
@@ -978,7 +1055,29 @@ export function createGenesis(opts: GenesisOpts) {
     mainOnly.forEach((o, i) => (o.visible = saved[i]));
     chipMeshes.forEach((o, i) => (o.visible = savedChips[i]));
     [...orbitLines, constLine].forEach((o, i) => (o.visible = lineVis[i]));
-    renderer.render(scene, camera);
+    mirrorOnly.forEach((o) => (o.visible = false));
+    swarms.forEach((m, i) => (m.visible = swarmVis[i]));
+    if (sceneRT) {
+      // 画面照档位的分辨率画进 sceneRT → 放大铺满画布 → 清楚的字按原生分辨率画在上面（造物在字前面就按深度挡住）
+      renderer.setRenderTarget(sceneRT);
+      renderer.render(scene, camera);
+      renderer.setRenderTarget(null);
+      renderer.autoClear = false;
+      renderer.render(blitScene, camera);
+      if (textOn) {
+        sd.frame(Math.round(size.w * textDpr), Math.round(size.h * textDpr), sceneRT.depthTexture, camera.near, camera.far);
+        renderer.render(textScene, camera);
+      }
+      renderer.autoClear = true;
+    } else {
+      renderer.render(scene, camera);
+      if (textOn) {
+        sd.frame(Math.round(size.w * dpr), Math.round(size.h * dpr), null, camera.near, camera.far);
+        renderer.autoClear = false;
+        renderer.render(textScene, camera);
+        renderer.autoClear = true;
+      }
+    }
     frames++;
     onFrame?.(st, P);
 
@@ -999,6 +1098,9 @@ export function createGenesis(opts: GenesisOpts) {
     }
   }
   let onHitstop: (() => void) | null = null;
+  let onPreFrame: ((now: number) => void) | null = null;
+  let onPlace: ((s: State, P: number) => void) | null = null;
+  let wordsMs = 0;
   requestAnimationFrame(frame);
 
   function setPaused(p: boolean) {
@@ -1015,9 +1117,34 @@ export function createGenesis(opts: GenesisOpts) {
   });
   canvas.addEventListener('webglcontextrestored', () => { clearTimeout(lostTimer); layout(true); setPaused(false); });
 
+  /** v3.3：字体载好以后排字、算字形、搭网格；那句话的落点填进天上那些星 */
+  async function buildText(defs: ItemDef[]) {
+    if (!textOn) return;
+    for (const d of defs) sd.define(d);
+    await sd.build(['wmA', 'wmB', 'a2', 'a3', 'a4', 'a5', 'a6', 's0', 's1', 's2', 's3', 's4', 'motto']);
+    sd.setBudget(DUST.tierK[tier]);
+    const mt = sd.items.get('motto');
+    if (mt && mt.lay.en && mt.lay.zh) {
+      const N = NMAX.skyStars, en = mt.lay.en.pts, zh = mt.lay.zh.pts;
+      const aMot = skyGeo.getAttribute('aMot') as Float32BufferAttribute, aMotG = skyGeo.getAttribute('aMotG') as Float32BufferAttribute;
+      for (let i = 0; i < N && i * 3 + 2 < en.length; i++) {
+        const on = i % DUST.mottoEvery[1] < DUST.mottoEvery[0];
+        aMot.setXYZW(i, en[i * 3], en[i * 3 + 1], zh[i * 3], zh[i * 3 + 1]);
+        aMotG.setXYZ(i, on ? 1 : 0, en[i * 3 + 2], zh[i * 3 + 2]);
+      }
+      aMot.needsUpdate = true;
+      aMotG.needsUpdate = true;
+    }
+    words.relayout();
+  }
+
   return {
     canvas,
     renderer,
+    camera,
+    words,
+    stardust: sd,
+    buildText,
     setTarget,
     fastForward,
     setParallax,
@@ -1026,9 +1153,9 @@ export function createGenesis(opts: GenesisOpts) {
     orbitPoint,
     enter,
     reset,
-    fly,
-    land,
-    holdFlight,
+    drive,
+    jump,
+    hitstop,
     setHot,
     setPhone,
     layout: () => layout(true),
@@ -1036,12 +1163,17 @@ export function createGenesis(opts: GenesisOpts) {
     get P() { return P; },
     get state() { return st; },
     get opener() { return opener; },
-    get flying() { return flight != null; },
-    get flightHeld() { return flight?.held != null; },
+    get driven() { return driven != null; },
     get marks() { return marks; },
     get measureMs() { return measureMs; },
     set onFrame(f: ((s: State, P: number) => void) | null) { onFrame = f; },
     set onHitstop(f: (() => void) | null) { onHitstop = f; },
+    set onPreFrame(f: ((now: number) => void) | null) { onPreFrame = f; },
+    set onPlace(f: ((s: State, P: number) => void) | null) { onPlace = f; },
+    get wordsMs() { return wordsMs; },
+    get textDpr() { return sceneRT ? textDpr : dpr; },
+    get rt() { return !!sceneRT; },
+    setTextOn(on: boolean) { textOn = on; },
     get frames() { return frames; },
     get dpr() { return dpr; },
     get tier() { return tier; },

@@ -45,6 +45,31 @@ export const NAMES = {
   stagger: 170,
 };
 
+/**
+ * 展示位置（v3.3，一处说了算）：每一幕停在哪（进度 P）。首屏 1（滚动 0）；第二到第六幕 k − 0.12（这一幕走过 88%，名字聚好、画面到位）；
+ * 「开天」7（往下那段页尾 tail 都算到位）。刻度、「目录」、Tab、键盘翻页、后退回来、停手以后，全用这一张表。
+ */
+export const REST_PS = [1, 1.88, 2.88, 3.88, 4.88, 5.88, 7] as const;
+/** 第 k 幕（1..7）的展示位置 */
+export function restP(k: number) { return REST_PS[Math.max(1, Math.min(7, Math.round(k))) - 1]; }
+
+/**
+ * 停手以后自己走到展示位置（v3.3，Song 11-28 10:11）。门槛按滚动的屏数算，不按 P 算（首屏那段 hold 里 P 一直是 1）。
+ * 时长按距离（进度）开方：一整幕约 actMs；走进「开天」那一段按 skyW 倍距离算（约 2 秒，收尾那场戏别一闪而过）。
+ */
+export const SETTLE = {
+  wheelQuietMs: 200,    // 滚轮、触控板多久没有新输入算停手
+  scrollQuietMs: 140,   // 手指离开以后，惯性多久没再滚算停了
+  endQuietMs: 70,       // 浏览器报了 scrollend：再等这么久没有新的滚动就算停了
+  jitter: 0.05,         // 离起点不到这么多屏：小抖动，回原位
+  overshoot: 0.25,      // 刚冲过一个展示位置不到这么多屏：退回那个
+  actMs: 1200,          // 一整幕（进度 1）走多久
+  skyW: 2.8,            // 「开天」那一段按几倍距离算
+  minMs: 380,
+  maxMs: 2600,
+  ease: [0.42, 0, 0.22, 1] as [number, number, number, number],   // 起步缓、落地缓
+};
+
 /** 滚动长度（单位：一屏高）。首屏停一小段，第二到第七幕各滑这么多，最后再留一点。全程约十屏半。 */
 export const SCROLL = {
   hold: 0.35,
@@ -87,6 +112,31 @@ export const SKY = {
   peakDeg: [22, 27] as [number, number],     // 石头飞上去的时候，镜头跟着多抬一点
   tanV: [0.5, 0.8] as [number, number],      // 最后的竖直半视角（正切）：电脑、手机竖着
   horizon: [0.25, 0.26] as [number, number], // 最后地平线离底边多高（屏高的几分之几）：电脑、手机竖着
+};
+
+/**
+ * 星尘字（v3.3，Song 11-28 10:31 选的 A）：字也是造出来的。
+ * 聚的过程跟着进度走：第 k 幕的名字从这一段 actF[0] 开始聚，到 actF[1]（展示位置 0.88 之前）聚好；往前走过 actOut 散回去。
+ * 碎块预算（高档每份多少块；中档、低档按 tierK 打折；低档少用碎块、多靠清楚的字淡进来）。
+ */
+export const DUST = {
+  actF: [0.5, 0.86] as [number, number],
+  actOut: [0.92, 0.995] as [number, number],
+  motto: [6.6, 6.95] as [number, number],       // 那句话：门上飞上天的星，其中一部分聚成它
+  sky: [6.74, 6.92] as [number, number],        // 天上五个名字（照造出来的先后，每个晚 skyStagger）
+  skyStagger: 0.035,
+  smooth: 0.22,          // 显示出来的「聚到哪了」按真实时间追（秒）：一下子跳过去也看得见聚
+  langMs: 600,           // 换语言：散开、重新聚
+  actN: 1100,            // 每个栏目名多少块碎块（高档）
+  skyN: 340,             // 天上每个名字
+  mottoEvery: [2, 5] as [number, number],   // 那句话：天上的星每 5 颗里 2 颗去聚它
+  mote: 0.035,           // 聚好以后留下来慢慢飘的光点（占碎块的几成）
+  tierK: { high: 1, mid: 0.62, low: 0.26 },
+  textDprMax: { high: 3, mid: 3, low: 2 },  // 清楚的字按原生分辨率画（画面本身照档位降）
+  actPx: [26, 38, 0.025] as [number, number, number],   // 栏目名字号：电脑 clamp(26px, 2.5vw, 38px)
+  actPxPhone: 23,
+  mottoDepth: 1900,      // 那句话离镜头多远（星在 2600 那个球上）
+  listDepth: 1400,       // 退路 B 的列表排在天上这个深度
 };
 
 /** 开场（第一幕）自己放多久；同一次访问再回来快进多久 */
