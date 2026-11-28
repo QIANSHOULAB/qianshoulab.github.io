@@ -15,7 +15,8 @@ import { H, W, T, DIST, Z_FRONT, CELL, clusters, blocks } from './layout';
 import { TIERS, type Tier, EXPOSURE, OPENER_MS, FF_MS, SMOOTH_S, HITSTOP_MS, SECTION_HEX, NEB_I, INK, REST_PS, DUST, hexToLinear, hexToUnit } from './tune';
 import { createStardust, type ItemDef, type Lang } from './stardust';
 import { createWords, type Box } from './words';
-import { computeState, type State, type V3, type Q, type Fin, EYE, DC, COL, WHALE_L, WHALE_R, qMat, qRot, cl, ss, mix, RING_R } from './timeline';
+import { computeState, type State, type V3, type Q, type Fin, EYE, DC, COL, WHALE_L, WHALE_R, qMat, qRot, cl, ss, mix, RING_R, BUILT } from './timeline';
+import { footprints, scan, gapBox, type Foot } from './marks';
 
 export interface GenesisOpts {
   host: HTMLElement;             // 画布铺满它；--monof（门占屏高多少）从它的 CSS 读
@@ -533,7 +534,7 @@ export function createGenesis(opts: GenesisOpts) {
   let hitUntil = 0;
   let clock = opts.freezeT ?? 3;
   let P = opts.freezeP ?? back ?? (opts.reduced ? 1 : 0);
-  let st: State = computeState(P, clock, { narrow, aspect, tanV: tanHero }, nM);
+  let st: State = computeState(P, clock, { narrow, aspect, tanV: tanHero, tanAct }, nM);
   let breathT0 = -1;
   // 手机竖屏：那句话下面那截天够不够摆浑天仪（home.ts 量好告诉这里），浑天仪摆在那截天正中
   const phoneLay = { tall: 1, band: -0.33 };
@@ -712,7 +713,7 @@ export function createGenesis(opts: GenesisOpts) {
   }
   /** v3.3：把一台镜头摆到进度 p 的展示样子（不带漂移、视差、往里扎），返回那一刻的状态。星尘字在展示位置上量造物、挑字的位置用 */
   function poseCam(p: number, cam: PerspectiveCamera, dClock = 0): State {
-    const s = computeState(p, clock + dClock, { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, p)), tall: phoneLay.tall, band: phoneLay.band }, nM);
+    const s = computeState(p, clock + dClock, { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, p)), tanAct, tall: phoneLay.tall, band: phoneLay.band }, nM);
     cam.aspect = aspect;
     cam.position.set(0, s.camY, Z_FRONT + s.camD);
     cam.rotation.set(s.pitch, 0, 0);
@@ -745,6 +746,42 @@ export function createGenesis(opts: GenesisOpts) {
     const k = mix(0, 1, n);
     return [mix(0.92, r / m, k), mix(0.93, g / m, k), mix(0.96, b / m, k)];
   }
+  /** v3.4 验收：进度 p、时钟 t 那一刻（不带漂移、视差、往里扎），四样造物在屏幕上的外圈（marks.ts）、门的框、地平线。
+   *  另起一台镜头量，不碰正在画的那台；只算数不画，一格不到 0.1 毫秒，验收脚本一口气量几万格 */
+  const mcam = new PerspectiveCamera(33, 1, 1, 6000);
+  const mv = new Vector3(), mxv = new Vector3();
+  function marksAt(p: number, t: number) {
+    const s = poseCam(p, mcam, t - clock);
+    const pr = (q: V3) => { mv.set(q[0], q[1], q[2]).project(mcam); return { x: ((mv.x + 1) / 2) * size.w, y: ((1 - mv.y) / 2) * size.h, front: mv.z < 1 && mv.z > -1 }; };
+    const rad = (c: V3, rw: number) => {
+      const a = pr(c);
+      mxv.setFromMatrixColumn(mcam.matrixWorld, 0).multiplyScalar(rw);
+      const b = pr([c[0] + mxv.x, c[1] + mxv.y, c[2] + mxv.z]);
+      return Math.hypot(b.x - a.x, b.y - a.y);
+    };
+    const feet: Foot[] = footprints(s, pr, rad);
+    const d0 = pr([-W * 0.62, -2, Z_FRONT]), d1 = pr([W * 0.62, H * 1.06, Z_FRONT]);
+    const door = { x: Math.min(d0.x, d1.x), y: Math.min(d0.y, d1.y), w: Math.abs(d1.x - d0.x), h: Math.abs(d1.y - d0.y) };
+    // 轨道（法典）画出来的那一截，每 1/96 圈一个点（量第六幕的名字离轨道多远）
+    const arcs = s.orbits.map((o) => {
+      const pts: number[] = [];
+      if (o.draw <= 0.01 || o.I <= 0.01) return pts;
+      const n = Math.max(2, Math.ceil(o.draw * 96));
+      for (let i = 0; i <= n; i++) {
+        const a = (i / n) * o.draw * Math.PI * 2;
+        const v = qRot(o.q, [o.R * Math.cos(a), 0, o.R * Math.sin(a)]);
+        const q = pr([o.c[0] + v[0], o.c[1] + v[1], o.c[2] + v[2]]);
+        if (q.front) pts.push(q.x, q.y);
+      }
+      return pts;
+    });
+    return { feet, door, arcs, horizon: pr([0, 0, Z_FRONT - 60000]).y, cam: mcam, state: s };
+  }
+  /** v3.4 验收：一整段进度 × 几个时钟，造好的东西两两之间的缝（marks.ts 的 scan） */
+  function overlapScan(o: { from?: number; to?: number; step?: number; clocks?: number[]; minGap?: number }) {
+    return scan((p, t) => marksAt(p, t).feet, { from: o.from ?? 1, to: o.to ?? 7, step: o.step ?? 0.05, clocks: o.clocks ?? [5], built: BUILT, minGap: o.minGap ?? 8 });
+  }
+
   /** 那句话在屏幕上哪（中心、宽高，都是屏幕的几分之几）：那块天留暗 */
   function setTextBox(cx: number, cy: number, w: number, h: number) {
     const tw = worldMat.uniforms.uTextWin.value as Vector4;
@@ -989,7 +1026,7 @@ export function createGenesis(opts: GenesisOpts) {
     if (opts.freezeT != null) clock = opts.freezeT;
     else if (!opts.reduced) clock += dt * rate;
 
-    const view = { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, P)), tall: phoneLay.tall, band: phoneLay.band };
+    const view = { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, P)), tanAct, tall: phoneLay.tall, band: phoneLay.band };
     st = computeState(P, clock, view, nM);
     U.uTime.value = clock;
 
@@ -1178,6 +1215,11 @@ export function createGenesis(opts: GenesisOpts) {
     get opener() { return opener; },
     get driven() { return driven != null; },
     get marks() { return marks; },
+    marksAt,
+    overlapScan,
+    get phoneLay() { return { ...phoneLay }; },
+    built: BUILT,
+    gapBox,
     get measureMs() { return measureMs; },
     set onFrame(f: ((s: State, P: number) => void) | null) { onFrame = f; },
     set onHitstop(f: (() => void) | null) { onHitstop = f; },
@@ -1186,6 +1228,8 @@ export function createGenesis(opts: GenesisOpts) {
     get wordsMs() { return wordsMs; },
     get textDpr() { return sceneRT ? textDpr : dpr; },
     get rt() { return !!sceneRT; },
+    /** v3.4 验收（黑屏回归）：画面那张图现在多大、是第几张（尺寸一变就该是新建的一张，不是 setSize 改的那张） */
+    get rtInfo() { return sceneRT ? { w: sceneRT.width, h: sceneRT.height, id: sceneRT.texture.id, dpr, cw: size.w, ch: size.h } : null; },
     setTextOn(on: boolean) { textOn = on; },
     get frames() { return frames; },
     get dpr() { return dpr; },

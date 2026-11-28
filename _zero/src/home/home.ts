@@ -810,13 +810,13 @@ function relayoutText() {
 }
 const cardAt = new Map<number, number[]>();
 /** 每帧：页面里的真字（看不见）摆到 3D 那份在屏幕上的位置；「进去」跟在名字下面 */
-function syncText() {
+function syncText(all = false) {
   if (!g || !dustOn) return;
   const l = lang();
   for (const [k, c] of cards) {
     if (k > 6) continue;
     const f = g.words.f(`a${k}`);
-    if (f < 0.01) continue;
+    if (f < 0.01 && !all) continue;
     const b = g.words.screenBox(`a${k}`, g.camera, l);
     if (!b) continue;
     // 整像素、动了一个像素以上才挪（镜头那一点点漂移不让「进去」一直抖）
@@ -838,7 +838,11 @@ async function startText() {
     await Promise.race([wait, new Promise((r) => setTimeout(r, 4000))]);
     await g.buildText(textDefs());
     dustOn = true;
+    // v3.4：先把每一幕的名字、「进去」摆到 3D 那份字的位置，再换成星尘字那套版式、马上按星尘字的规矩亮灭——
+    // 以前换版式那一帧，正亮着的那一幕「进去」会先跳到左上角（版式已经换了、位置还没摆，工作流 WebKit 截图截到过一次）
+    syncText(true);
     root.setAttribute('data-dust', 'yes');
+    textFor(g.P);
     g.words.setLang(lang(), false);
     if (backP != null) g.words.snap();
     relayoutText();
@@ -971,6 +975,25 @@ async function boot() {
       atlas: g ? [g.stardust.atlas.W, g.stardust.atlas.H] : null,
     }),
     marks: () => g?.marks,
+    // v3.4 验收：任一进度、时钟下四样造物的外圈、门、地平线，第二到第六幕名字和「进去」在那一刻的框（只算数，不画）
+    marksAt: (p: number, t: number) => {
+      if (!g) return null;
+      const m = g.marksAt(p, t);
+      const l = lang();
+      const names: Record<number, { name: Box; go: Box } | null> = {};
+      for (let k = 2; k <= 6; k++) {
+        const nb = g.words.screenBox(`a${k}`, m.cam, l);
+        const go = cards.get(k)?.go;
+        // 「进去」：跟在名字下面正中（index.astro：top 100% + 4px，高 44，左右各 6、上下各 10 的内边距），量看得见的那一截字
+        const gw = go ? Math.max(40, go.offsetWidth - 12) : 100;
+        names[k] = nb ? { name: nb, go: { x: nb.x + nb.w / 2 - gw / 2, y: nb.y + nb.h + 4 + 10, w: gw, h: 24 } } : null;
+      }
+      return { feet: m.feet, door: m.door, arcs: m.arcs, horizon: m.horizon, names, size: { w: obst.W, h: obst.H } };
+    },
+    overlapScan: (o: { from?: number; to?: number; step?: number; clocks?: number[]; minGap?: number }) => g?.overlapScan(o),
+    phone: () => g?.phoneLay,
+    built: () => (g ? { ...g.built } : null),
+    rt: () => g?.rtInfo ?? null,
     hideText: (h: boolean) => g?.words.setHidden(h),
     project: (p: V3) => g?.project(p),
     orbitPoint: (j: number, u: number) => g?.orbitPoint(j, u),

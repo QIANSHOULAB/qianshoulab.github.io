@@ -1,0 +1,67 @@
+{
+ "engine": "firefox",
+ "base": "http://127.0.0.1:4321",
+ "before": "https://qianshoulab.github.io",
+ "at": "2026-11-28T12:14:19.131Z",
+ "scan": [
+  {
+   "size": "390x844",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "360x780",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "430x932",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "390x664",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "844x390",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "1440x900",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "390x844",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "360x780",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "430x932",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  },
+  {
+   "size": "390x664",
+   "gl": "no",
+   "note": "没有 WebGL（走静态图），量不了"
+  }
+ ],
+ "names": [],
+ "same": [],
+ "black": [
+  {
+   "note": "没有 WebGL（走静态图），不用量"
+  }
+ ],
+ "fails": [],
+ "ok": true
+}

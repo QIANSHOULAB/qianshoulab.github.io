@@ -2,7 +2,7 @@
 // 同一个 P 永远是同一个画面（时钟只管呼吸、自转、绕行这些「活着」的小动作），倒着滑就是倒放。
 // P 0..1 第一幕（开场自己放），1..2 第二幕……6..7 第七幕。这里只算数，不碰 three.js，也不碰 DOM。
 import { H, W, T, Z_FRONT } from './layout';
-import { ACT_HEX, CAM_D, DOOR_DEG, HZF, SKY, hexToLinear } from './tune';
+import { ACT_HEX, CAM_D, DOOR_DEG, HZF, SKY, SKY_PHONE, PHONE, REST_PS, hexToLinear } from './tune';
 
 export type V3 = [number, number, number];
 export type Q = [number, number, number, number];
@@ -48,10 +48,11 @@ export function qRot(q: Q, v: V3): V3 {
 const X: V3 = [1, 0, 0], Y: V3 = [0, 1, 0], Z: V3 = [0, 0, 1];
 
 /** 第七幕：造物离开门、去天上自己的位置——先往自己那一边甩出去，再升上去（不从门顶正上方过：那会像「门上一只眼」） */
-function swing(a: V3, b: V3, k: number, side: number): V3 {
+function swing(a: V3, b: V3, k: number, side: number, amp = 1): V3 {
   if (k <= 0) return a;
   if (k >= 1) return b;
-  const c: V3 = [(a[0] + b[0]) / 2 + side * 320, Math.min(a[1], b[1]) + 40, (a[2] + b[2]) / 2 + 120];
+  // amp：往旁边甩多远（v3.4 手机竖屏甩得小一点：屏窄，甩出去就出屏、撞上别的东西；电脑 1，照旧）
+  const c: V3 = [(a[0] + b[0]) / 2 + side * 320 * amp, Math.min(a[1], b[1]) + 40, (a[2] + b[2]) / 2 + 120 * amp];
   const u = 1 - k;
   return [u * u * a[0] + 2 * u * k * c[0] + k * k * b[0], u * u * a[1] + 2 * u * k * c[1] + k * k * b[1], u * u * a[2] + 2 * u * k * c[2] + k * k * b[2]];
 }
@@ -66,7 +67,44 @@ function keyed(P: number, keys: [number, number][]) {
 
 /** 版面：竖屏有多「竖」（0 = 横屏电脑，1 = 手机竖着）、宽高比、竖直半视角的正切。
  *  v3.2 手机竖屏：tall = 那句话下面、页脚上面还空着够大的一截天（home.ts 量的），浑天仪落在那一截正中（band，屏幕坐标 y）；不够大就五样都摆在那句话上面 */
-export interface View { narrow: number; aspect: number; tanV: number; tall?: number; band?: number }
+export interface View { narrow: number; aspect: number; tanV: number; tall?: number; band?: number; tanAct?: number }
+
+/** v3.4：手机竖屏那套落点用不用——宽高比 < 0.8 用（跟 v3.2 换竖版静态图同一条线），≥ 0.8（电脑、平板）是 0，一个像素不动。
+ *  一刀切、不渐变：渐变那一截是两套摆法掺着，电脑那套本来就叠（第五幕器压着环、第六幕三样挂在轨道上转），掺进来就叠（跟 --monof 在 3/4 那里一刀切一个道理） */
+export const portraitOf = (aspect: number) => (aspect < PHONE.aspect ? 1 : 0);
+/** v3.4：第 k 幕（2..6）展示位置上的镜头（跟 computeState 里算镜头的几行一套数，第二到第六幕不抬头）。手机竖屏的落点按它从屏幕坐标换成世界坐标 */
+export function restCam(k: number, v: View) {
+  const P = REST_PS[k - 1];
+  const a = (j: number) => cl(P - (j - 1));
+  let camD = CAM_D[0];
+  for (let j = 2; j <= 6; j++) if (P > j - 1) camD = mix(CAM_D[j - 1], CAM_D[j], ss(0.0, 1.0, a(j)));
+  camD *= 1 + 0.16 * v.narrow * ss(1, 1.4, P);
+  const hzHero = mix(HZF.hero, HZF.heroPhone, v.narrow), hzAct = mix(HZF.act, HZF.actPhone, v.narrow);
+  const hzf = mix(hzHero, hzAct, ss(1.0, 1.32, P));
+  const camY = EYE + 64 * ss(5.04, 5.42, P) * (1 - ss(6.0, 6.14, P));
+  const tanV = v.tanAct ?? v.tanV, shift = 2 * hzf - 1;
+  // 门顶在屏幕上的高度（-1..1）：落点按「门顶到屏顶」那一截天摆
+  const top = (H - camY) / camD / tanV + shift;
+  return { pos: [0, camY, Z_FRONT + camD] as V3, tanV, aspect: v.aspect, shift, top };
+}
+// 落点表（tune.ts 的 PHONE）是照 390×844 这种细长手机定的；别的竖屏（矮的手机、平板竖着、0.75–0.8 那种门显得大的）按「门顶到屏顶」那一截天等比挪、等比缩
+const REF_ASPECT = 390 / 844, REF_TAN = H / (2 * 1000 * 0.31);
+const REF: View = { narrow: Math.min(1, (1 - REF_ASPECT) / (1 - 0.46)), aspect: REF_ASPECT, tanV: REF_TAN, tanAct: REF_TAN };
+const SKY_TOP = 0.9;   // 顶栏底下
+/** 那个镜头里，照落点 [nx, ny, d] 摆的那一点（ny、d 按那一截天跟 390×844 比，等比换算） */
+let refCams: ReturnType<typeof restCam>[] | null = null;
+export function restAt(c: ReturnType<typeof restCam>, s: readonly [number, number, number], k: number): V3 {
+  refCams ??= [2, 3, 4, 5, 6].map((j) => restCam(j, REF));
+  const r = refCams[k - 2];
+  const span = (SKY_TOP - c.top) / (SKY_TOP - r.top);
+  const ny = c.top + (s[1] - r.top) * span;
+  const d = (s[2] * (r.tanV / c.tanV)) / span;
+  const dir = norm3([s[0] * c.tanV * c.aspect, (ny - c.shift) * c.tanV, -1]);
+  return add3(c.pos, mul3(dir, d));
+}
+/** v3.4：每样东西什么时候算「造好了」（进度 P）。诞生那一下（日升起来、环聚起来、鲸游一圈升上去、器炸开挪到落点）不算；
+ *  造好以后，手机竖屏上跟别的造好的东西两两之间至少留 8 像素（验收 v34-check.mjs 每 0.05 一格量） */
+export const BUILT = { sun: 1.6, ring: 2.6, whale: 3.86, arm: 4.84 } as const;
 
 // —— 五样造物的颜色（线性）——
 export const COL = {
@@ -180,17 +218,20 @@ function slots(f: Fin, n: number, tall: number, band: number) {
   // 很宽的屏（手机横着、带鱼屏）：屏矮，器和环往上让一让，别压到那句话
   const wide = cl((f.aspect - 1.65) / 0.6);
   // v3.2 手机竖屏的落点（屏幕坐标 -1..1，y 朝上）：跟 v3.1 的插值按「多像手机」再混一次；手机里再按长、矮各一套（tall 只取 0 或 1，不插：插了浑天仪会从那句话上穿过去）
-  const ph = phoneOf(n), tl = tall >= 0.5 ? 1 : 0;
+  // v3.4：宽高比 < 0.8 的竖屏（平板竖着也算）都用手机这套（以前 0.68 以上的竖屏照 v3.1 摆，鲸在天上兜圈子会撞上日和环）
+  const ph = Math.max(phoneOf(n), portraitOf(f.aspect)), tl = tall >= 0.5 ? 1 : 0;
   const T2 = (t: number, short: number) => mix(short, t, tl);
   const P2 = (a: number, b: number) => mix(a, b, ph);
+  const Q = SKY_PHONE;
   return {
-    sun: { p: finAt(f, P2(X([-0.58, -0.46]), -0.4), P2(L([0.5, 0.78]), T2(0.7, 0.72)), sunD), s: (L([0.058, 0.042]) * hW(sunD)) / 46 },
+    sun: { p: finAt(f, P2(X([-0.58, -0.46]), T2(Q.sun.tall[0], Q.sun.short[0])), P2(L([0.5, 0.78]), T2(Q.sun.tall[1], Q.sun.short[1])), sunD), s: (P2(L([0.058, 0.042]), T2(Q.sun.tall[2], Q.sun.short[2])) * hW(sunD)) / 46 },
     whale: {
-      p: finAt(f, P2(X([0.34, 0.14]), T2(0.2, 0.2)), P2(L([0.6, 0.5]), T2(0.42, 0.42)), whD),
-      s: (P2(L([0.21, 0.46]), T2(0.46, 0.4)) * wW(whD)) / WHALE_L, R: P2(L([0.1, 0.16]), T2(0.12, 0.08)) * wW(whD),
+      p: finAt(f, P2(X([0.34, 0.14]), T2(Q.whale.tall[0], Q.whale.short[0])), P2(L([0.6, 0.5]), T2(Q.whale.tall[1], Q.whale.short[1])), whD),
+      // 手机这套的大小按屏宽定，可再宽的竖屏（平板竖着、0.75–0.8 那种）也不超过屏高的几成，不然天上挤
+      s: P2(L([0.21, 0.46]) * wW(whD), Math.min(T2(Q.whale.tall[2], Q.whale.short[2]) * wW(whD), Q.capH[0] * hW(whD))) / WHALE_L, R: P2(L([0.1, 0.16]), T2(Q.whale.tall[3], Q.whale.short[3])) * wW(whD),
     },
-    ring: { p: finAt(f, P2(X([0.62, 0.5]), T2(0.36, 0.46)), P2(L([0.24, 0.16]) + 0.1 * wide, T2(0.12, 0.2)), ringD), s: (P2(L([0.085, 0.24]), T2(0.24, 0.19)) * wW(ringD)) / RING_R },
-    arm: { p: finAt(f, P2(X([-0.74, -0.58]), T2(-0.56, -0.62)), P2(L([0.04, 0.22]) + 0.1 * wide, T2(band, 0.2)), armD), s: (L([0.068, 0.046]) * hW(armD)) / 66 },
+    ring: { p: finAt(f, P2(X([0.62, 0.5]), T2(Q.ring.tall[0], Q.ring.short[0])), P2(L([0.24, 0.16]) + 0.1 * wide, T2(Q.ring.tall[1], Q.ring.short[1])), ringD), s: P2(L([0.085, 0.24]) * wW(ringD), Math.min(T2(Q.ring.tall[2], Q.ring.short[2]) * wW(ringD), Q.capH[1] * hW(ringD))) / RING_R },
+    arm: { p: finAt(f, P2(X([-0.74, -0.58]), T2(Q.arm.tall[0], Q.arm.short[0])), P2(L([0.04, 0.22]) + 0.1 * wide, T2(band + Q.arm.tall[1], Q.arm.short[1])), armD), s: (P2(L([0.068, 0.046]), T2(Q.arm.tall[2], Q.arm.short[2])) * hW(armD)) / 66 },
   };
 }
 
@@ -201,6 +242,12 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const fin = finalCam(v);
   const fam = slots(fin, n, v.tall ?? 1, v.band ?? -0.33);
   const toFam = ss(SKY.fam[0], SKY.fam[1], a7);
+  // v3.4 手机竖屏：第三到第六幕展示位置上的镜头（落点按它换成世界坐标）、新一幕开头前面造好的东西挪到新落点
+  const pv = portraitOf(v.aspect);
+  const rc = pv > 0 ? [3, 4, 5, 6].map((k) => restCam(k, v)) : [];
+  const slot = (tab: Record<number, readonly [number, number, number]>, k: number) => restAt(rc[k - 3], tab[k], k);
+  const push = (k: number) => ss(k - 1 + PHONE.push[0], k - 1 + PHONE.push[1], P);
+  const amp = mix(1, 0.6, pv);
   const camK = ss(SKY.cam[0], SKY.cam[1], a7);
 
   // —— 镜头 ——
@@ -264,11 +311,16 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const phSun = ORBITS[2].ph0 + (clock / ORBITS[2].period) * Math.PI * 2;
   const rS = mix(1, 0.62, n);
   let sunC = mix3([0, 120, Z0 + 4], S1, ss(0.1, 0.5, a2));
-  sunC = mix3(sunC, SP, park2);
-  sunC = mix3(sunC, orbitPos(ORBITS[2], phSun, rS), sunCatch);
-  sunC = swing(sunC, fam.sun.p, toFam, -1);
+  if (pv > 0) {
+    // 手机竖屏：第三幕让位到自己的落点，之后每一幕开头再挪到那一幕的落点；第六幕不挂到轨道上
+    let ps = mix3(sunC, slot(PHONE.sun, 3), park2);
+    for (let k = 4; k <= 6; k++) ps = mix3(ps, slot(PHONE.sun, k), push(k));
+    sunC = mix3(mix3(sunC, SP, park2), ps, pv);
+  } else sunC = mix3(sunC, SP, park2);
+  sunC = mix3(sunC, orbitPos(ORBITS[2], phSun, rS), sunCatch * (1 - pv));
+  sunC = swing(sunC, fam.sun.p, toFam, -1, amp);
   let sunScale = mix(0.42, 1, ss(0.06, 0.42, a2)) * mix(1, 0.78, park2);
-  sunScale = mix(sunScale, 0.6, sunCatch);
+  sunScale = mix(sunScale, 0.6, sunCatch * (1 - pv));
   sunScale = mix(sunScale, fam.sun.s, toFam);
   let sunHeat = mix(1, 0.3, park2);
   sunHeat = mix(sunHeat, 0.8, ss(0.3, 0.55, a[6]));
@@ -283,12 +335,17 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const a3 = a[3];
   const ringForm = a3 * 1.9;
   const ringSpin = clock * 0.025;
-  let ringQ = qMul(qAxis(X, 0.24), qAxis(Z, 0.06));
-  ringQ = qSlerp(ringQ, qMul(qAxis(X, 0.44), qAxis(Z, -0.12)), ss(5.3, 5.52, P));
+  // v3.4 手机竖屏：环升到门顶以后，镜头是从下面往上看它；照原来那样往前倾，正好侧着对镜头、成一条线。升上去的时候放平一点，看得出是个环
+  const up = pv > 0 ? ss(PHONE.ringUp[0], PHONE.ringUp[1], a3) * pv : 0;
+  let ringQ = qMul(qAxis(X, 0.24 - (0.24 - PHONE.ringTilt[0]) * up), qAxis(Z, 0.06));
+  ringQ = qSlerp(ringQ, qMul(qAxis(X, 0.44 - (0.44 - PHONE.ringTilt[1]) * up), qAxis(Z, -0.12)), ss(5.3, 5.52, P));
   // 天上那道环：差不多水平，从下面仰着看是一个张开的椭圆（不是一条线）
   ringQ = qSlerp(ringQ, qMul(qAxis(Z, mix(0.28, 0.2, n)), qAxis(X, mix(-0.22, -0.06, n))), toFam);
-  const ringScale = mix(mix(1, 0.86, n), fam.ring.s, toFam);
-  const ringC = swing(DC, fam.ring.p, toFam, 1);
+  // v3.4 手机竖屏：升到门顶那一圈收小一点（镜头往前推，第四到第六幕整个环要在屏里）
+  const ringScale = mix(mix(mix(1, 0.86, n), PHONE.ringS, up), fam.ring.s, toFam);
+  // v3.4 手机竖屏：环聚好以后升到门顶那一圈（名字贴着它摆在门上方；鲸绕门游的时候也从它底下过）
+  const ringHome: V3 = pv > 0 ? mix3(DC, [DC[0], PHONE.ringY, DC[2]], up) : DC;
+  const ringC = swing(ringHome, fam.ring.p, toFam, 1, amp);
   const ring = {
     vis: ss(0.005, 0.03, a3), form: ringForm, c: ringC, scale: ringScale, rot: ringQ, spin: ringSpin,
     glow: mix(mix(mix(1, 0.32, ss(3.02, 3.3, P)), 0.85, ss(5.3, 5.5, P)), 1.15, toFam),
@@ -308,15 +365,21 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const a4 = a[4];
   const swim = mix(-1.1, Math.PI * 2 + 0.55, ss(0.03, 0.74, a4));
   const settle = ss(0.66, 0.86, a4);
-  const WF: V3 = [mix(46, 0, n), mix(368, 470, n), Z0 - 230];
-  const whaleCatch = ss(ORBITS[1].to - 0.08, ORBITS[1].to + 0.04, a[6]);
+  let WF: V3 = [mix(46, 0, n), mix(368, 470, n), Z0 - 230];
+  if (pv > 0) {
+    // 手机竖屏：游完一圈升到自己的落点；第五、六幕开头再挪
+    let pw = slot(PHONE.whale, 4);
+    for (let k = 5; k <= 6; k++) pw = mix3(pw, slot(PHONE.whale, k), push(k));
+    WF = mix3(WF, pw, pv);
+  }
+  const whaleCatch = ss(ORBITS[1].to - 0.08, ORBITS[1].to + 0.04, a[6]) * (1 - pv);
   const phW = ORBITS[1].ph0 + (clock / ORBITS[1].period) * Math.PI * 2;
   let wC = mix3(WF, orbitPos(ORBITS[1], phW, mix(1, 0.6, n)), whaleCatch);
   // 第七幕：在星云里游——绕着自己那块天兜一个很大的圈（水平的圈，从下面看是扁的），头朝着游的方向
   // （起点挑过：时钟 5 秒——截图那一刻——它正往左游，跟第六幕挂在轨道上的朝向一样，换位置的时候不用掉头）
   const phSky = 3.44 + (clock / 110) * Math.PI * 2;
   const wSky = add3(fam.whale.p, [fam.whale.R * Math.sin(phSky), fam.whale.R * 0.05 * Math.sin(phSky * 2), fam.whale.R * 0.55 * Math.cos(phSky)]);
-  wC = swing(wC, wSky, toFam, Math.sign(wSky[0]) || 1);
+  wC = swing(wC, wSky, toFam, Math.sign(wSky[0]) || 1, amp);
   let wQ = qAxis(Y, Math.PI);
   wQ = qSlerp(wQ, qAxis(Y, Math.PI - (phW - ORBITS[1].ph0) * 0.0 + 0.35), whaleCatch);
   const headY = Math.atan2(0.55 * Math.sin(phSky), Math.cos(phSky));
@@ -337,10 +400,17 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const F = a5 < 0.45 ? a5 : a5 < 0.5 ? 0.45 : a5 - 0.05;
   const bt = Math.max(F - 0.45, 0);
   const CA: V3 = [0, 128, Z0 + 75];
-  const armCatch = ss(ORBITS[0].to - 0.08, ORBITS[0].to + 0.04, a[6]);
+  const armCatch = ss(ORBITS[0].to - 0.08, ORBITS[0].to + 0.04, a[6]) * (1 - pv);
   const phA = ORBITS[0].ph0 + (clock / ORBITS[0].period) * Math.PI * 2;
-  let aC = mix3(CA, orbitPos(ORBITS[0], phA, mix(1, 0.62, n)), armCatch);
-  aC = swing(aC, fam.arm.p, toFam, -1);
+  let aHome = CA;
+  if (pv > 0) {
+    // 手机竖屏：炸开以后从门前挪到自己的落点（名字贴着它摆在门上方），第六幕开头再挪
+    let pa = mix3(CA, slot(PHONE.arm, 5), ss(PHONE.armGo[0], PHONE.armGo[1], F));
+    pa = mix3(pa, slot(PHONE.arm, 6), push(6));
+    aHome = mix3(CA, pa, pv);
+  }
+  let aC = mix3(aHome, orbitPos(ORBITS[0], phA, mix(1, 0.62, n)), armCatch);
+  aC = swing(aC, fam.arm.p, toFam, -1, amp);
   const armScale = mix(mix(1, 0.9, n) * mix(1, 0.78, armCatch), fam.arm.s, toFam);
   // 浑天仪：赤道、子午、黄道三道环；整架往镜头倾一点、绕极轴慢慢转，三道环永远是三个不同的椭圆
   const q0 = qSlerp(qMul(qAxis(Y, 0.65 + clock * 0.06), qAxis(X, 0.6)), qMul(qAxis(Z, 0.5), qMul(qAxis(Y, 0.4 + clock * 0.05), qAxis(X, 1.05))), toFam);
@@ -371,12 +441,19 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
     { nx: [0.5, 0.36], ny: [0.78, 0.96], d: 2000, R: [620, 420], z: -0.3, x: 1.2, per: 90, phone: [0.4, 0.94, 420] },
     { nx: [0.0, 0.0], ny: [1.05, 1.18], d: 2600, R: [1700, 1000], z: 0.06, x: 0.42, per: 140, phone: [0, 1.18, 1000] },
   ];
-  const ph = phoneOf(n);
+  const ph = Math.max(phoneOf(n), pv);
   const orbits = ORBITS.map((ob, j) => {
     const g = ss(ob.from, ob.to, a6);
     const ringR = (66 - j * 7) * armScale;
     let q = qSlerp(rots[j], orbitQ(ob), g);
     let c = mix3(aC, DC, g), R = mix(ringR, ob.R * mix(1, 0.62, n), g);
+    if (pv > 0) {
+      // v3.4 手机竖屏：三道轨道绕着升到门顶的那个环放大（跟环一个圆心、比环大一圈），名字摆在门上方也贴得着它；日、鲸、器不挂上来
+      const po = PHONE.orbits[j];
+      q = qSlerp(rots[j], qMul(qAxis(Y, ob.node), qAxis(X, po[1])), g);
+      c = mix3(aC, [DC[0], PHONE.ringY, DC[2]], g);
+      R = mix(ringR, po[0], g);
+    }
     const so = SKY_ORB[j];
     const k = ss(SKY.fam[0] + 0.05 * j, SKY.fam[1] + 0.05 * j, a7);
     q = qSlerp(q, qMul(qMul(qAxis(Z, so.z), qAxis(X, so.x)), qAxis(Y, (clock / so.per) * Math.PI * 2)), k);
