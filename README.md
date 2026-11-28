@@ -2,7 +2,7 @@
 
 *English below first · 中文在下面*
 
-Since 2026-11-27 the site root https://qianshoulab.github.io/ is **Zero-Flesh Creation (零肉身造物)**, a pure-code lab with two doors: QIANSHOU LAB and the Cyber Bodega. Its source lives in `_zero/` (Astro, built by `.github/workflows/zero.yml`); see `_zero/README.md`.
+**Zero-Flesh Creation (零肉身造物)**, the pure-code lab with two doors (QIANSHOU LAB and the Cyber Bodega), moved to https://zeroflesh.github.io/ on 2026-11-28; its source lives in the repo zeroflesh/zeroflesh.github.io. The site root here and its old pages (`/zero/`, `/zahuopu/`, `/specimens/`, `/artifacts/`, `/codex/`) now redirect there.
 
 Homepage of QIANSHOU LAB: https://qianshoulab.github.io/qianshou/
 
@@ -45,7 +45,7 @@ Cyber Bodega (https://qianshoulab.github.io/zahuopu/):
 
 # 千手院 · QIANSHOU LAB
 
-2026-11-27 起，站点根目录 https://qianshoulab.github.io/ 是**零肉身造物（Zero-Flesh Creation）**：纯代码实验室，里面两扇门，千手院和赛博杂货铺。源码在 `_zero/`（Astro，工作流 `.github/workflows/zero.yml` 构建），写法见 `_zero/README.md`。
+**零肉身造物（Zero-Flesh Creation）**（纯代码实验室，里面两扇门，千手院和赛博杂货铺）2026-11-28 搬到了 https://zeroflesh.github.io/ ，源码在仓库 zeroflesh/zeroflesh.github.io。这里的根目录和它以前的页面（`/zero/`、`/zahuopu/`、`/specimens/`、`/artifacts/`、`/codex/`）现在跳到那边。
 
 千手院总舵主页，网址：https://qianshoulab.github.io/qianshou/ （仓库得叫 qianshoulab.github.io 才挂在根上）
 
