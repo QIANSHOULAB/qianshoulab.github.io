@@ -193,7 +193,8 @@ jobs:
       - name: 拼总览图、录屏转 gif
         run: |
           python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
-          which ffmpeg || sudo apt-get install -y -q ffmpeg
+          # 录屏转 gif 要 ffmpeg；装不上（Ubuntu 源偶尔 404）就留着 webm，不让整步失败
+          which ffmpeg || { sudo apt-get update -q && sudo apt-get install -y -q ffmpeg; } || echo "::warning::ffmpeg 没装上，录屏留 webm"
           mkdir -p sheets
           # 七幕：三个内核的 验收.json 并成一份再拼
           mkdir -p merged
@@ -343,7 +344,8 @@ jobs:
       - name: 拼总览图、录屏转 gif
         run: |
           python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
-          which ffmpeg || sudo apt-get install -y -q ffmpeg
+          # 录屏转 gif 要 ffmpeg；装不上（Ubuntu 源偶尔 404）就留着 webm，不让整步失败
+          which ffmpeg || { sudo apt-get update -q && sudo apt-get install -y -q ffmpeg; } || echo "::warning::ffmpeg 没装上，录屏留 webm"
           mkdir -p sheets merged
           python3 - <<'PY'
           import json, os, shutil
