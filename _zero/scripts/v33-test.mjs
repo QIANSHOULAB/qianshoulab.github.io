@@ -44,6 +44,8 @@ async function newPage(kind, extra = {}) {
   page.on('pageerror', (e) => { if (mine()) page.errs.push(String(e).slice(0, 200)); });
   page.on('console', (m) => { if (m.type() === 'error' && mine()) page.errs.push(m.text().slice(0, 200)); });
   page.cdp = ENGINE === 'chromium' ? await ctx.newCDPSession(page) : null;
+  // 本机复现工作流机器那种慢（一帧几百毫秒）：THROTTLE=4 把 CPU 压慢四倍（只 Chromium）
+  if (page.cdp && process.env.THROTTLE) await page.cdp.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.THROTTLE) });
   return page;
 }
 async function open(page, q = '', dpr = LOWRES) {
@@ -105,8 +107,16 @@ async function swipe(page, dy, o = {}) {
     if (hold) await sleep(hold);
     const t = performance.now();
     document.body.dispatchEvent(ev('touchend'));
-    let v = v0;
-    while (Math.abs(v) > 0.6) { window.scrollBy(0, v); v *= 0.93; await sleep(16); }
+    // 惯性：跟真的一样跟着帧走（每一帧滚一段，按这一帧过了多久算滚多远、慢下来多少），总长、时长跟帧快慢无关。
+    // 以前用 16 毫秒的计时器：工作流机器上一帧三四百毫秒，计时器被画面饿着，两帧之间一下都没滚，像是惯性停了
+    let v = v0, last = performance.now();
+    while (Math.abs(v) > 0.6) {
+      await new Promise((r) => requestAnimationFrame(r));
+      const now = performance.now(), k = Math.max(0.25, (now - last) / 16);
+      last = now;
+      window.scrollBy(0, (v * (1 - Math.pow(0.93, k))) / (1 - 0.93));
+      v *= Math.pow(0.93, k);
+    }
     return t;
   }, { dy, ms, hold, v0 });
 }
