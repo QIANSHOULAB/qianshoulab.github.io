@@ -199,6 +199,9 @@ export function createWords(o: {
       const od = overlap(txt, { x: door.x - 6, y: door.y - 6, w: door.w + 12, h: door.h + 12 });
       if (od > 0.01) c += 1000 + 400 * od;                             // 门（门缝那道光）上不压字
       c += overlap(blk, door) > 0 ? 120 : 0;
+      // 「进去」那一行看得见的字（约 100×20，在 44 高的那一行正中）也不压门：手机竖屏上名字只能摆在门上方，别让「进去」骑在门顶那条亮边上
+      const goVis: Box = { x: tx + tw / 2 - 50, y: ty + th + gap2 + 12, w: 100, h: 20 };
+      if (overlap(goVis, { x: door.x - 4, y: door.y - 6, w: door.w + 8, h: door.h + 10 }) > 0) c += 1000;
       for (const b of own) { const r = rectCircle(txt, b); if (r > 0.08) c += 1000; c += 400 * r + 80 * rectCircle(blk, b); }
       for (const b of others) c += 300 * rectCircle(txt, b) + 60 * rectCircle(blk, b);
       for (const b of swept) { const r = rectCircle(txt, b); if (r > 0.02) c += 1000; c += 300 * r + 60 * rectCircle(blk, b); }

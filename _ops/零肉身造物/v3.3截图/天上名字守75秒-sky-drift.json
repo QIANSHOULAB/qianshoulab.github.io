@@ -1,0 +1,178 @@
+{
+ "base": "http://127.0.0.1:4321",
+ "at": "2026-11-28T08:28:56.102Z",
+ "rows": [
+  {
+   "size": "1280x720",
+   "secs": 75,
+   "names": [
+    {
+     "name": "千手院",
+     "max": 7,
+     "over40": 0,
+     "n": 110,
+     "worstAt": 0.2,
+     "worstDir": "c0"
+    },
+    {
+     "name": "赛博杂货铺",
+     "max": 21,
+     "over40": 0,
+     "n": 110,
+     "worstAt": 14,
+     "worstDir": "r13"
+    },
+    {
+     "name": "标本",
+     "max": 17,
+     "over40": 0,
+     "n": 110,
+     "worstAt": 14,
+     "worstDir": "w10a"
+    },
+    {
+     "name": "文物",
+     "max": 4,
+     "over40": 0,
+     "n": 110,
+     "worstAt": 14,
+     "worstDir": "c13"
+    }
+   ],
+   "whale": {
+    "avgPxPerSec": 12,
+    "maxPxPerSec": 170,
+    "jumpsOver40px": 3
+   }
+  },
+  {
+   "size": "1440x900",
+   "secs": 75,
+   "names": [
+    {
+     "name": "千手院",
+     "max": 7,
+     "over40": 0,
+     "n": 164,
+     "worstAt": 0.4,
+     "worstDir": "c0"
+    },
+    {
+     "name": "赛博杂货铺",
+     "max": 22,
+     "over40": 0,
+     "n": 164,
+     "worstAt": 16.3,
+     "worstDir": "r13"
+    },
+    {
+     "name": "标本",
+     "max": 18,
+     "over40": 0,
+     "n": 164,
+     "worstAt": 16.3,
+     "worstDir": "w6a"
+    },
+    {
+     "name": "文物",
+     "max": 3,
+     "over40": 0,
+     "n": 164,
+     "worstAt": 16.3,
+     "worstDir": "c13"
+    }
+   ],
+   "whale": {
+    "avgPxPerSec": 13,
+    "maxPxPerSec": 126,
+    "jumpsOver40px": 1
+   }
+  },
+  {
+   "size": "1920x969",
+   "secs": 75,
+   "names": [
+    {
+     "name": "千手院",
+     "max": 7,
+     "over40": 0,
+     "n": 132,
+     "worstAt": 0.2,
+     "worstDir": "c0"
+    },
+    {
+     "name": "赛博杂货铺",
+     "max": 13,
+     "over40": 0,
+     "n": 132,
+     "worstAt": 0.2,
+     "worstDir": "r21"
+    },
+    {
+     "name": "标本",
+     "max": 20,
+     "over40": 0,
+     "n": 132,
+     "worstAt": 21.9,
+     "worstDir": "w3a"
+    },
+    {
+     "name": "文物",
+     "max": 7,
+     "over40": 0,
+     "n": 132,
+     "worstAt": 0.2,
+     "worstDir": "c0"
+    }
+   ],
+   "whale": {
+    "avgPxPerSec": 14,
+    "maxPxPerSec": 470,
+    "jumpsOver40px": 1
+   }
+  },
+  {
+   "size": "390x844",
+   "secs": 75,
+   "names": [
+    {
+     "name": "千手院",
+     "max": 7,
+     "over40": 0,
+     "n": 167,
+     "worstAt": 0.2,
+     "worstDir": "c0"
+    },
+    {
+     "name": "赛博杂货铺",
+     "max": 13,
+     "over40": 0,
+     "n": 167,
+     "worstAt": 12,
+     "worstDir": "r9"
+    },
+    {
+     "name": "标本",
+     "max": 9,
+     "over40": 0,
+     "n": 167,
+     "worstAt": 13.3,
+     "worstDir": "w2a"
+    },
+    {
+     "name": "文物",
+     "max": 7,
+     "over40": 0,
+     "n": 167,
+     "worstAt": 0.2,
+     "worstDir": "c0"
+    }
+   ],
+   "whale": {
+    "avgPxPerSec": 9,
+    "maxPxPerSec": 313,
+    "jumpsOver40px": 1
+   }
+  }
+ ]
+}
