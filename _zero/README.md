@@ -1,8 +1,17 @@
 # 零肉身造物（Zero-Flesh Creation）· 源码
 
-首页（黑碑）：https://qianshoulab.github.io/zero/ 。根目录 / 现在还是千手院；换不换只看 `home.mjs` 里 `HOME_AT_ROOT` 那一行。
+首页（造物之门 v3.1）：https://qianshoulab.github.io/zero/ 。根目录 / 现在还是千手院；换不换只看 `home.mjs` 里 `HOME_AT_ROOT` 那一行。
 栏目：/zahuopu/（赛博杂货铺；/zhahuopu/ 是头一版打错字的网址，留了跳转）、/specimens/（标本）、/artifacts/（文物）、/codex/（法典）。
 千手院在 /qianshou/，那页是手写的单文件，不归这里管。
+
+## 现在长什么样（v3.1「开天」，Song 11-28 定的）
+- 七幕，全程跟着滚动走，倒着滑就是倒放（画面只认进度 P 0..7 和时钟）。黑水尽头一道门 → 光 → 日、环、鲸、器、律一样一样造出来 → 第七幕「开天」：门推到全开、自己裂开，几百块石头升天变成满天的星，五种颜色从五样造物身上散开铺成星云，镜头从水面升进天里，水面成了一面镜子，那句话在星空里亮起来。
+- 画面上只留名字：首屏 wordmark + 一个很小的往下滑提示；第二到第六幕栏目名 +「进去」；第七幕那句话 + 五个栏目名 + 页脚。
+- 能调的数都在 `src/scene/tune.ts`（第七幕的节奏、镜头、档位都在 `SKY`、`TIERS` 里）；画面在 `src/scene/`（`timeline.ts` 算数、`genesis.ts` 画、`glsl.ts` 着色器、`layout.ts` 门的砖）；首页的手在 `src/home/`（`home.ts` 字、刻度、进去、静态图兜底，`sound.ts` 声音）。
+- 调试、截图用的网址参数（只影响自己这一次）：`?act=6.5` 进度定在这里、`?t=5` 时钟定住、`?tier=low|mid|high` 力气定住、`?still` 只留画面、`?nogl` 当没有 WebGL、`?hq` 不自动降档、`?lang=zh` 中文。
+- 截图：`scripts/genesis-shots.mjs`（三内核、七幕，第七幕多拍三张，顺手查画面上亮着哪些字）、`scripts/stills.mjs`（没有 WebGL 时用的静态图）。工作流 `zero.yml`：推 main 发版并对着真网址验；推分支 `zero-v3-1` 只跑预览。
+
+以下是第二版（黑碑）的说明，留着备查。
 
 ## 第二版长什么样（Song 11-27 定的）
 - 只有黑、白、灰；简单几何，做工要拿得出手。对标 Igloo Inc（方块拼成的主体、等宽小字带细引线）。

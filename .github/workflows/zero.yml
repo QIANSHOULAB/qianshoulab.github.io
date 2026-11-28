@@ -5,18 +5,18 @@ name: 零肉身造物
 # 千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
 # 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，根目录还是该是的那个，零肉身页面不报错、不横向溢出。
 # 拉最新 main 再放产物，推不上再拉再推，最多 5 次，不许 --force。提交作者沿用触发这次构建的那个提交的作者。
-# v3「造物之门」在分支 zero-v3-alt 上做（Song 11-28 01:45 定的）：推分支只跑 preview（本地构建、本地起服务、三内核截图、总览图提交回分支），不发版；
-# 并进 main 以后才走 build → live 这条发版的路。
+# v3.1（每幕只留名字、收尾「开天」）在分支 zero-v3-1 上做：推分支只跑 preview（本地构建、本地起服务、三内核截图、总览图提交回分支），不发版；
+# 并进 main 以后才走 build → live 这条发版的路。（v3 当时用的分支 zero-v3-alt 已经并进 main，不再认它。）
 on:
   push:
-    branches: [main, zero-v3-alt]
+    branches: [main, zero-v3-1]
     paths:
       - '_zero/**'
       - '.github/workflows/zero.yml'
   workflow_dispatch:
     inputs:
       commit_shots:
-        description: '把造物之门的验收截图（总览图、验收.json、几张原图）提交到 _ops/零肉身造物/门截图/'
+        description: '把造物之门的验收截图（总览图、验收.json、几张原图）提交到 _ops/零肉身造物/v3.1截图/'
         type: boolean
         default: false
 
@@ -97,9 +97,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent || echo "没请动也没关系，推送本身会触发"
 
-  # 分支 zero-v3-alt：只构建、在工作流机器上本地起服务、三内核截图，总览图提交回分支。不碰 main，不发版。
+  # 分支 zero-v3-1：只构建、在工作流机器上本地起服务、三内核截图，总览图提交回分支。不碰 main，不发版。
   preview:
-    if: github.ref == 'refs/heads/zero-v3-alt'
+    if: github.ref == 'refs/heads/zero-v3-1'
     runs-on: ubuntu-latest
     timeout-minutes: 100
     steps:
@@ -143,23 +143,23 @@ jobs:
           python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
           python3 _zero/scripts/shots-sheet.py preview-shots preview-sheets
 
-      - name: 总览图、验收结果、几张原图提交回分支（_ops/零肉身造物/门截图/预览/）
+      - name: 总览图、验收结果、几张原图提交回分支（_ops/零肉身造物/v3.1截图/预览/）
         run: |
           git config user.name "$(git log -1 --format=%an)"
           git config user.email "$(git log -1 --format=%ae)"
           for i in 1 2 3 4 5; do
-            git fetch -q origin zero-v3-alt
-            git reset -q --hard origin/zero-v3-alt
-            D="_ops/零肉身造物/门截图/预览"
+            git fetch -q origin zero-v3-1
+            git reset -q --hard origin/zero-v3-1
+            D="_ops/零肉身造物/v3.1截图/预览"
             mkdir -p "$D"
             rm -f "$D"/*
             cp preview-sheets/*.jpg "$D/"
             cp preview-shots/验收.json "$D/"
-            for f in chromium-390x844 chromium-1440x900 webkit-390x844 firefox-1440x900; do cp preview-shots/$f-*.jpg "$D/" 2>/dev/null || true; done
+            for e in chromium webkit firefox; do for z in 390x844 1440x900; do cp preview-shots/$e-$z-*.jpg "$D/" 2>/dev/null || true; done; done
             git add -A "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
-            git commit -q -m "零肉身造物 v3：分支预览截图（源码 ${GITHUB_SHA::7}）"
-            if git push -q origin HEAD:zero-v3-alt; then exit 0; fi
+            git commit -q -m "零肉身造物 v3.1：分支预览截图（源码 ${GITHUB_SHA::7}）"
+            if git push -q origin HEAD:zero-v3-1; then exit 0; fi
             sleep 8
           done
           exit 1
@@ -209,7 +209,7 @@ jobs:
           SHOTS: ${{ github.workspace }}/live-shots
         run: node scripts/live-check.mjs
 
-      - name: 造物之门三内核截图（Chromium 11 个尺寸、WebKit 和 Firefox 各 4 个，七幕各一张）
+      - name: 造物之门三内核截图（Chromium 11 个尺寸、WebKit 和 Firefox 各 4 个，七幕各一张；第七幕在 1440×900、390×844 上多三张）
         working-directory: _zero
         run: node scripts/genesis-shots.mjs "${{ github.workspace }}/live-shots/门截图"
 
@@ -227,11 +227,11 @@ jobs:
           for i in 1 2 3 4 5; do
             git fetch -q origin main
             git reset -q --hard origin/main
-            D="_ops/零肉身造物/门截图"
+            D="_ops/零肉身造物/v3.1截图"
             mkdir -p "$D"
             cp -f live-shots/门总览/*.jpg "$D/"
             cp -f live-shots/门截图/验收.json "$D/"
-            for f in chromium-390x844 chromium-1440x900 webkit-390x844 firefox-1440x900; do cp -f live-shots/门截图/$f-*.jpg "$D/" 2>/dev/null || true; done
+            for e in chromium webkit firefox; do for z in 390x844 1440x900; do cp -f live-shots/门截图/$e-$z-*.jpg "$D/" 2>/dev/null || true; done; done
             git add "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
             git commit -q -m "零肉身造物：造物之门线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"

@@ -30,6 +30,13 @@ uniform vec4 uHole[5];     // 门上五个窗（投到门面那个平面上的�
 uniform vec4 uHoleCol[5];  // 窗里的颜色，a = 开了多少
 uniform vec4 uLights[6];   // 六盏灯：xyz 位置，w 光晕半径
 uniform vec4 uLightC[6];   // rgb 亮度，a = 水上光路的强度
+// —— 第七幕「开天」——
+uniform float uRise;       // 门上的石头升天走到哪了（0..1）
+uniform float uCrack;      // 门裂开：缝里透光、轻轻抖
+uniform float uGone;       // 门洞里那片光走了多少
+uniform float uSky;        // 进了第七幕多少：星挂到无穷远那个球上
+uniform float uRiseW;      // 石头往两边散多开（竖着的手机屏窄，收一点，别都飞出屏）
+uniform vec3 uFive[5];     // 五样造物的颜色（线性）：琥珀金、品红、冷青、暗红、靛紫
 
 float hash12(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * .1031);
@@ -93,7 +100,7 @@ vec3 portal(vec3 ro, vec3 rd, out float inside) {
   vec3 halo = uLightCol * (g + cor) + vec3(.4) * cor * exp(-d / 3.);
   if (d0 < 0.) {
     inside = 1.;
-    float core = 40. * exp(-length(q - vec2(0., DH * .46)) / 190.) + 8.;
+    float core = mix(40. * exp(-length(q - vec2(0., DH * .46)) / 190.) + 8., 6. * exp(-abs(q.x) / 13.) * (.5 + .5 * exp(-abs(q.y - DH * .45) / 80.)) + .12 + 1.1 * exp(-length(q - vec2(0., DH * .46)) / 34.), uCrack);
     vec3 c = mix(uLightCol, vec3(1.), .78) * core;
     for (int k = 0; k < 5; k++) {
       float a = uHoleCol[k].a;
@@ -104,9 +111,10 @@ vec3 portal(vec3 ro, vec3 rd, out float inside) {
         c = mix(c, mix(uHoleCol[k].rgb * 1.7, vec3(1., .97, .92) * 3.2, cen * .7) * (1. + 2.2 * cen), (1. - smoothstep(-1.5, 3., dh)) * a);
       }
     }
-    return mix(halo, c, smoothstep(.5, 1.8, -d0)) * uLight;
+    // 第七幕：石头把光带上天，门洞里只剩空的（门原来的位置什么都不剩）
+    return mix(halo, c, smoothstep(.5, mix(1.8, 14., uCrack), -d0)) * uLight * (1. - uGone);
   }
-  return halo * uLight;
+  return halo * uLight * (1. - uGone * .85) * mix(1., .28, max(uSky, uCrack));
 }
 // 门后的光照亮的空气（雾），门脚最浓
 vec3 airLight(vec3 p, vec3 rd) { return mix(uLightCol, vec3(1.), .4) * coreGlow(p.xy) * .2 * uLight + skyBase(rd); }
@@ -119,6 +127,33 @@ bool inAperture(vec3 P) {
   vec2 q = e.xy + (P.xy - e.xy) * t;
   return abs(q.x) < DW * .5 && q.y > 0. && q.y < DH;
 }
+
+// —— 第七幕：门上的石头一块块松开、往上飞，到了天上炸成星 ——
+// 门上 (col, row) 那块石头的中心（门扇转了 uOpen 以后）
+vec3 doorCell(float col, float row) {
+  float side = col < 5.5 ? -1. : 1.;
+  vec3 c0 = vec3(-DW * .5 + (col + .5) * CELL, (row + .5) * CELL, Z0 - DT * .5);
+  float a = -side * uOpen;
+  float ca = cos(a), sa = sin(a);
+  vec3 hinge = vec3(side * DW * .5, 0., Z0);
+  vec3 r = c0 - hinge;
+  return hinge + vec3(ca * r.x + sa * r.z, r.y, -sa * r.x + ca * r.z);
+}
+// 什么时候松开（uRise 的单位）：从顶上一行一行往下，带一点乱；松开以后飞 0.42
+float riseT(float row, float r) { return .58 * clamp(.74 * (1. - row / 26.) + .26 * r, 0., 1.); }
+float riseS(float row, float r) { return clamp((uRise - riseT(row, r)) / .42, 0., 1.); }
+// 飞的路：先松开、往上浮，再越飞越快、往两边散；s = 0.55 那一下在天上炸成星
+vec3 risePath(vec3 pc, vec4 rnd, float s) {
+  float e = s * s * (3. - 2. * s);
+  float side = pc.x < 0. ? -1. : 1.;
+  vec3 P1 = pc + vec3(side * 4. * rnd.z, 40. + 70. * rnd.y, 8. * (rnd.w - .5));
+  vec3 P2 = vec3(pc.x * mix(1., 1.8, uRiseW) + side * (20. + 60. * rnd.z) * uRiseW, pc.y + 150. + 140. * rnd.x, pc.z + 50. * (rnd.y - .5));
+  vec3 P3 = vec3(pc.x * mix(1., 3., uRiseW) + side * (90. + 260. * rnd.w) * uRiseW, 520. + 380. * rnd.z + pc.y * .4, pc.z + 60. - 120. * rnd.y);
+  float u = 1. - e;
+  return u * u * u * pc + 3. * u * u * e * P1 + 3. * u * e * e * P2 + e * e * e * P3;
+}
+// 五种颜色里挑一种（石头被光点亮时带一点它的颜色）
+vec3 five(float r) { return r < .2 ? uFive[0] : r < .4 ? uFive[1] : r < .6 ? uFive[2] : r < .8 ? uFive[3] : uFive[4]; }
 
 // 五样造物各自那盏灯照到一个面上
 vec3 creationLight(vec3 P, vec3 N, vec3 V) {
@@ -170,8 +205,93 @@ uniform float uGrid;       // 第六幕：水上的格网
 uniform float uGridR;
 uniform vec3 uGridCol;
 uniform float uGap;        // 门缝的半宽（世界单位），管水上那道扇形的光
-uniform float uFloodB;     // 第七幕：整屏的白（来了又退）
+uniform float uFloodB;     // 整屏的白（v3 第七幕用的，v3.1 起一直是 0）
+uniform float uCalm;       // 第七幕：水面平成一面镜子
+uniform float uNeb;        // 第七幕：星云铺开了多少（0..1）
+uniform float uNebI;       // 星云多亮
+uniform float uNebQ;       // 档位：2 = 云 + 丝 + 尘；1 = 少一层丝
+uniform vec4 uFin;         // 最后那个镜头：x 抬头（弧度）、y 竖直半视角正切、z 宽高比、w 移轴
+uniform vec4 uNebSrc[5];   // 五样造物在最后那个镜头里的位置（x 乘过宽高比）：xy；z 它从什么时候开始散；w 亮度
+uniform vec4 uTextWin;     // 那句话那块天（同样的坐标）：中心 xy、半宽半高 zw；留暗
 varying vec2 vNdc;
+
+// —— 第七幕的星云：五种颜色从五样造物身上散开，铺满整片天 ——
+// 坐标用最后那个镜头的屏幕坐标（x 乘宽高比）：星云挂在无穷远，镜头怎么升、怎么抬头，它都钉在天上；倒影用反射的方向查同一片
+float n2(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3. - 2. * f);
+  return mix(mix(hash12(i), hash12(i + vec2(1., 0.)), f.x), mix(hash12(i + vec2(0., 1.)), hash12(i + vec2(1., 1.)), f.x), f.y);
+}
+float fbm(vec2 p, float oct) {
+  float s = 0., a = .5, w = 0.;
+  for (int i = 0; i < 5; i++) {
+    if (float(i) >= oct) break;
+    s += a * n2(p);
+    w += a;
+    p = mat2(1.62, 1.18, -1.18, 1.62) * p + 7.31;
+    a *= .5;
+  }
+  return s / w;
+}
+vec2 finScreen(vec3 d, out float front) {
+  float cp = cos(uFin.x), sp = sin(uFin.x);
+  vec3 v = vec3(d.x, cp * d.y + sp * d.z, -sp * d.y + cp * d.z);
+  front = -v.z;
+  float iz = 1. / max(-v.z, .05);
+  return vec2(v.x * iz / uFin.y, v.y * iz / uFin.y + uFin.w);
+}
+vec3 nebula(vec3 d) {
+  if (uNeb <= 0.) return vec3(0.);
+  float fr;
+  vec2 S = finScreen(d, fr);
+  if (fr < .08) return vec3(0.);
+  float t = uTime * .003;
+  vec2 p = S * .95 + vec2(3.1, 1.7);
+  // 轻轻搅一下（搅狠了像大理石、像烟）
+  vec2 q = vec2(fbm(p * 1.1 + t, 3.), fbm(p * 1.1 + vec2(5.2, 1.3) - t, 3.));
+  vec2 w = p * 1.7 + (q - .5) * 1.25;
+  float big = fbm(p * .62 + q * .35, 3.);                       // 大块：哪几片天被照亮
+  float cloud = fbm(w, uNebQ > 1.5 ? 5. : 4.);                  // 一团一团的云
+  float fil = 0.;                                               // 丝（低档少这一层）
+  if (uNebQ > 1.5) { fil = 1. - abs(2. * fbm(w * 2.6 + q * 1.7, 4.) - 1.); fil = fil * fil * fil; }
+  float dn = fbm(w * 1.55 + vec2(7.7, 2.2), 4.);               // 尘：暗的沟，沟沿被照亮
+  // 五种颜色：每样造物把它的颜色往外散。颜色各占一片，交界被湍流搅在一起（不是一条彩虹）；离谁都远的地方是靛紫（律管着一切）
+  vec3 hue = uFive[4] * .05;
+  float wsum = .05, reach = 0.;
+  for (int k = 0; k < 5; k++) {
+    vec4 sr = uNebSrc[k];
+    float sp = clamp((uNeb - sr.z) / max(1. - sr.z, .01), 0., 1.);
+    sp = sp * sp * (3. - 2. * sp);
+    float jit = ((cloud - .5) * 1.1 + (q.y - .5) * .7);
+    float dd = length((S - sr.xy) * vec2(1., 1.15));
+    // 颜色各占多大一片按屏宽算：竖着的手机屏窄，每种颜色占的那片也跟着窄，不然五种颜色在手机上全搅成一种
+    float hr = mix(.06, (k == 4 ? 1.5 : .62) * clamp((uFin.z + .45) / 2.05, .38, 1.), sp);
+    float wk = exp(-pow(max(dd + jit * hr, 0.) / hr, 2.)) * sr.w;
+    hue += uFive[k] * wk * wk;
+    wsum += wk * wk;
+    float rad = mix(.05, 3.4, sp);   // 铺到最后比画面大一圈：点「进去」镜头扭过去也还是星云
+    reach = max(reach, smoothstep(rad, rad * .35, dd + jit * rad * .45) * smoothstep(0., .05, sp));
+  }
+  hue /= wsum;
+  float lit = smoothstep(.32, .74, big);
+  float dens = smoothstep(.28, .86, cloud);
+  dens *= dens;
+  float e = .05 + lit * (.18 + 1.75 * dens) + .9 * fil * lit * (.4 + dens);
+  float lane = smoothstep(.5, .6, dn);
+  float rim = smoothstep(.43, .5, dn) * (1. - smoothstep(.5, .57, dn));
+  e = e * (1. - .86 * lane) + rim * lit * .55;
+  // 那句话那块天留暗（还是星空，只是没那么亮、没那么花）；靠地平线的地方云薄一些
+  vec2 tw = (S - uTextWin.xy) / max(uTextWin.zw, vec2(.05));
+  float win = exp(-dot(tw, tw) * .7);
+  e *= 1. - .8 * win;
+  e *= .45 + .55 * smoothstep(-.02, .14, d.y);
+  e *= 1. - .45 * smoothstep(.8, 1.05, S.y);
+  e *= reach;
+  vec3 c = hue * e;
+  // 最亮的芯子发白，颜色只在外圈
+  c += vec3(1., .95, .88) * max(e - 1.2, 0.) * .45;
+  return c * uNebI;
+}
 
 vec3 waterNormal(vec2 p, float fpx, float fpz) {
   vec2 g = vec2(0.);
@@ -197,6 +317,7 @@ vec3 waterNormal(vec2 p, float fpx, float fpz) {
     float fade = 1. - smoothstep(4., 16., fpz);
     g += (dv / dd) * .05 * uShockI * rip * sin(behind * .22) * fade;
   }
+  g *= 1. - .88 * uCalm;   // 第七幕：浪平下去，水成一面镜子
   return normalize(vec3(-g.x, 1., -g.y));
 }
 
@@ -226,7 +347,7 @@ void main() {
   vec3 skyC = vec3(0.);
   if (elPx > -1.5) {
     float ins;
-    skyC = skyBase(rd) + portal(ro, rd, ins) + halos(ro, rd);
+    skyC = skyBase(rd) + portal(ro, rd, ins) + halos(ro, rd) + nebula(rd);
   }
   vec3 waterC = vec3(0.);
   if (elPx < 1.5) {
@@ -244,6 +365,7 @@ void main() {
     float ins;
     vec3 refl = skyBase(R) + portal(P, R, ins) + halos(P, R);
     if (ins > .5) refl = min(refl, vec3(2.4 * uLight));
+    refl += nebula(R);
     // 门、造物的倒影：前面那一遍画好的（翻过来、压暗、被细浪推得一行一行错开）
     if (uReflOn > .5) {
       vec2 uv = gl_FragCoord.xy / uRes + vec2(N.x * .55, N.z * .2);
@@ -251,7 +373,7 @@ void main() {
       vec3 L = m.rgb / max(vec3(1.) - m.rgb, vec3(.004));
       refl = refl * (1. - m.a) + L;
     }
-    waterC = refl * F * .36;
+    waterC = refl * mix(F * .36, .08 + .6 * F, uCalm);
 
     float far = 1. - smoothstep(.0009, .004, down);
     float shin = mix(1900., 260., far);
@@ -271,12 +393,12 @@ void main() {
     }
     // 远处细浪抹平以后，门的光路变成一条柔和的亮带
     float soft = exp(-abs(az) / (.005 + .3 * down)) * smoothstep(.0002, .006, down) * (1. - smoothstep(.01, .085, down)) * .26 * uLight;
-    waterC += mix(uLightCol, vec3(1.), .4) * soft * F * smoothstep(.12, .6, uDawn) * reachM;
+    waterC += mix(uLightCol, vec3(1.), .4) * soft * F * smoothstep(.12, .6, uDawn) * reachM * (1. - uGone);
     // 门缝里的光落到水上：一道扇形，门开得越大越宽
     if (toDoor > 0.) {
       float hw = uGap + toDoor * (.04 + uGap * .012);
       float fan = exp(-abs(P.x) / max(hw, .5)) * exp(-toDoor / 700.) * smoothstep(0., 20., toDoor);
-      waterC += mix(uLightCol, vec3(1.), .3) * fan * uLight * .02 * (.3 + .7 * smoothstep(.0, .2, uOpen)) * reachM;
+      waterC += mix(uLightCol, vec3(1.), .3) * fan * uLight * .02 * (.3 + .7 * smoothstep(.0, .2, uOpen)) * reachM * (1. - uGone);
     }
     // 冲击波：一圈贴着水面的光，朝你扫过来
     if (uShockI > .001) {
@@ -336,6 +458,7 @@ varying vec4 vRand;
 varying vec4 vInfo;
 varying vec2 vDoor;
 varying float vFree;
+varying float vLit;
 void main() {
   float col = aInfo.z, row = aInfo.w;
   float side = col < 5.5 ? -1. : 1.;
@@ -364,6 +487,18 @@ void main() {
       vFree = fl;
     }
   }
+  // 第七幕：门自己裂开——先轻轻抖、缝里透光，然后一块块松开往上飞，飞的时候被光点亮，飞到天上缩没（那一下炸成星）
+  vLit = 0.;
+  if (aInfo.x < -.5 && (uRise > 0. || uCrack > 0.)) {
+    float s = riseS(row, aRand.x);
+    float shake = uCrack * (1. - smoothstep(0., .1, s)) * (.16 + .3 * aRand.y);
+    vec3 q = risePath(pc, aRand, s);
+    mat3 Rt = rotAxis(normalize(aRand.zxy - .5 + vec3(1e-3)), s * s * (2.5 + aRand.w * 6.));
+    float sc = 1. - .3 * smoothstep(.15, .5, s) - .7 * smoothstep(.5, .66, s);
+    wp = q + vec3(sin(uTime * 41. + aRand.y * 50.), .5 * sin(uTime * 37. + aRand.z * 40.), 0.) * shake + Rt * (R * lp) * sc;
+    vLit = smoothstep(.02, .42, s);
+    vFree = max(vFree, smoothstep(0., .08, s));
+  }
   vWorld = wp;
   vLocal = position;
   vLN = normal;
@@ -390,6 +525,7 @@ varying vec4 vRand;
 varying vec4 vInfo;
 varying vec2 vDoor;
 varying float vFree;
+varying float vLit;
 
 void main() {
   if (vWorld.y < -.05) discard;
@@ -463,6 +599,21 @@ void main() {
   col += max(dot(N, Ld), 0.) * mix(uLightCol, vec3(1.), .45) * uLight * 2.4 * exp(-dl / 150.) * smoothstep(.01, .08, uOpen) * (1. - .7 * smoothstep(.5, 1.2, uOpen));
   col += creationLight(vWorld, N, V) * .3;
   col *= 1. - uDark * .93;
+  // 第七幕：门裂开，每条缝都透出光（越靠正中那道缝越亮）；松开飞起来的石头被光点亮，边上最烫，带一点五种颜色里的一种
+  if (uCrack > 0.) {
+    float cw = max(.32, pw * 1.3);
+    float crackM = (1. - smoothstep(0., cw, dEdge)) * min(1., .5 / cw);
+    float nearC = .7 + 1.3 * exp(-abs(vDoor.x) / 20.);
+    col += crackM * uCrack * (1. - vLit) * nearC * mix(uLightCol, vec3(1.), .4) * 4.5;
+  }
+  if (vLit > 0.) {
+    // 被光点亮：先是边上一圈亮起来（光从缝里漫上来），越往上飞，整块越亮、越透，最后像一颗烧着的星；带一点五种颜色里的一种
+    vec3 tint = mix(vec3(1., .84, .62), five(vRand.w), .42);
+    float edge = 1. - smoothstep(0., max(.4, pw * 1.7), dEdge);
+    float ndv = max(dot(N, V), 0.);
+    float body = vLit * vLit;
+    col = col * (1. - .8 * body) + tint * body * (.9 + 1.6 * ndv * ndv) + mix(tint, vec3(1., .95, .88), .6) * edge * (2. + 5. * body) * smoothstep(0., .25, vLit);
+  }
 
   float dist = length(vWorld - E);
   float haze = 1. - exp(-dist * .000035);
@@ -614,6 +765,7 @@ uniform float uSettle;     // 0 = 跟着路游，1 = 停在天上
 uniform mat3 uWRot;        // 停下来以后的朝向
 uniform vec3 uDC;          // 门的正中（绕行的圆心）
 uniform float uWR;         // 绕门那一圈的半径
+uniform float uWave;       // 停下来以后身子还摆多大（第四到第六幕 0.25；第七幕在星云里游，摆得大一些）
 float wRad(float u) {
   float head = sqrt(smoothstep(0., .16, u));
   float tail = mix(1., .1, smoothstep(.36, .9, u));
@@ -645,7 +797,7 @@ void spine(float u, float L, out vec3 p, out vec3 T, out vec3 Up, out vec3 Nl) {
   Nl = normalize(cross(T, vec3(0., 1., 0.)));
   Up = cross(Nl, T);
   // 游：上下摆，越往尾巴摆得越大；停下以后只剩很慢的呼吸
-  float sw = mix(1., .25, uSettle);
+  float sw = mix(1., uWave, uSettle);
   p += Up * L * .035 * u * u * sin(TAU * u * .9 - uTime * 1.5) * sw;
 }
 void chip(out vec3 P, out mat3 R, out vec3 S, out float heat) {
@@ -976,7 +1128,8 @@ void main() {
   float az = (aSeed.z - .5) * mix(2.8, 1.6, uNarrowR);
   float el = asin(mix(.025, .96, pow(aSeed.w, 1.5)));
   vec3 sd = vec3(sin(az) * cos(el), sin(el), -cos(az) * cos(el));
-  vec3 sky = uCamPos + sd * 2600.;
+  // 第七幕镜头升到天上：星挂在以眼睛为心的球上，倒影那遍用翻过来的眼睛，水里的星才对得上（前六幕照旧）
+  vec3 sky = mix(uCamPos, eyePos(), uSky) + sd * 2600.;
   float rel = smoothstep(aSeed.x * .4, aSeed.x * .4 + .6, uStarFree);
   vec3 p = mix(g, sky, rel * rel * (3. - 2. * rel));
   vWorld = p;
@@ -988,9 +1141,65 @@ void main() {
   vec4 mv = viewMatrix * vec4(rp, 1.);
   gl_Position = projectionMatrix * mv;
   float dist = -mv.z;
-  float sz = mix(1.6, 2.6, aSeed.z) * mix(1., 1.6, 1. - rel) * clamp(uPxScale / 900., .7, 2.2);
+  float sz = mix(1.6, 2.6, aSeed.z) * mix(1., 1.6, 1. - rel) * clamp(uPxScale / 900., .7, 2.2) * mix(1., .8, uSky);
   gl_PointSize = sz;
-  vA = on * b * (1. - uDark);
+  vA = on * b * (1. - uDark) * mix(1., .25 + 1.4 * aSeed.z * aSeed.z, uSky);
+}
+`;
+
+// 第七幕：门上的石头炸成的星。每颗星跟着它那块石头飞，石头飞到 s = 0.55 那一下炸开，星各自飞去天上自己的位置（多少颗跟着档位走）
+export const SKYSTAR_VERT = /* glsl */ `
+attribute vec4 aBlk;       // 它是哪块石头炸出来的：列、行、那块石头的两个随机数
+attribute vec4 aBlk2;      // 那块石头另外两个随机数、星自己的两个随机数
+attribute vec4 aSeed;      // 星在最后那个镜头里的位置（-1..1）、亮度、闪的快慢
+uniform vec4 uFin;         // 最后那个镜头：抬头、竖直半视角正切、宽高比、移轴
+uniform float uPxScale;
+varying float vA;
+varying vec3 vTint;
+void main() {
+  vec4 rnd = vec4(aBlk.z, aBlk.w, aBlk2.x, aBlk2.y);
+  float s = riseS(aBlk.y, rnd.x);
+  // 每颗星什么时候从它那块石头上迸出来：石头一边飞一边往外迸火星，飞到 0.6 缩没的时候正好迸完
+  float te = .28 + .36 * fract(aBlk2.z * 13.7 + aSeed.w * 7.1);
+  vA = 0.;
+  gl_PointSize = 0.;
+  gl_Position = vec4(0., 0., 2., 1.);
+  if (s < te) return;
+  vec3 pc = doorCell(aBlk.x, aBlk.y);
+  vec3 B = risePath(pc, rnd, te);
+  // 最后那个镜头里这颗星在哪（地平线以上铺满，两边、上面多留一点边）
+  float hz = uFin.w - tan(uFin.x) / uFin.y;
+  vec2 ndc = vec2(mix(-1.12, 1.12, aSeed.x), mix(hz + .015, 1.12, pow(aSeed.y, .85)));
+  vec3 v = normalize(vec3(ndc.x * uFin.y * uFin.z, (ndc.y - uFin.w) * uFin.y, -1.));
+  float cp = cos(uFin.x), sp = sin(uFin.x);
+  vec3 dir = vec3(v.x, cp * v.y - sp * v.z, sp * v.y + cp * v.z);
+  vec3 S = eyePos() + dir * 2600.;
+  float u = (s - te) / (1. - te);
+  float k = u * u * u * (u * (u * 6. - 15.) + 10.);
+  vec3 p = mix(B, S, k);
+  vec3 rp = p;
+  if (uMirror > .5) rp.y = -rp.y;
+  gl_Position = projectionMatrix * viewMatrix * vec4(rp, 1.);
+  float flash = 1. - smoothstep(0., .35, u);
+  float tw = .7 + .3 * sin(uTime * (1.1 + aSeed.w * 2.6) + aBlk2.w * 40.);
+  // 亮的少、暗的多：大多数是一粒细细的暗星，少数几颗大而亮
+  float m = pow(aBlk2.w, 5.);
+  float b = mix(.22, 3.2, m) * tw;
+  gl_PointSize = mix(1.25, 4.2, m) * clamp(uPxScale / 900., .7, 2.2) * (1. + 1.2 * flash);
+  vA = b * (1. + 3. * flash) * smoothstep(0., .03, u);
+  vTint = mix(vec3(1., .97, .93), five(fract(aBlk2.z * 7.13 + aBlk2.w * 3.7)), .28 + .4 * flash);
+}
+`;
+export const SKYSTAR_FRAG = /* glsl */ `
+varying float vA;
+varying vec3 vTint;
+void main() {
+  if (vA < .002) discard;
+  vec2 c = gl_PointCoord - .5;
+  float a = exp(-dot(c, c) * 16.) + exp(-length(c) * 9.) * .12;
+  vec3 col = vTint * a * vA * .85;
+  if (uMirror > .5) { gl_FragColor = vec4(col / (1. + col), 0.); return; }
+  gl_FragColor = outGlow(col);
 }
 `;
 export const STAR_FRAG = /* glsl */ `

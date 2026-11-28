@@ -11,10 +11,7 @@ export const ui = {
       desc: 'A door on the horizon. Scroll, and it makes things: a sun, a ring, a whale, an armillary, the law. Five ways in: QIANSHOU LAB, the Cyber Bodega, Specimens, Artifacts and the Codex.',
       skip: 'Skip to content',
     },
-    home: {
-      tagline: 'One set. Five subsets. No flesh involved.',
-      entries: 'Five ways in',
-    },
+
     entry: {
       qianshou: { name: 'QIANSHOU LAB', line: 'A thousand monks toil while you unwind.' },
       zahuopu: { name: 'CYBER BODEGA', line: 'Small tools on the shelf. Grab one and go.' },
@@ -23,15 +20,11 @@ export const ui = {
       codex: { name: 'CODEX', line: 'The laws, with knobs on.' },
     },
     nav: { label: 'Sections', home: 'Back to the door' },
+    // 首页：v3.1 起画面上只留名字（幕名、代码行、口号、标本签、小月标签都拿掉了），这里只剩这几样
     acts: {
       label: 'Seven acts',
-      jump: 'Go to act',
-      hint: 'Scroll to create',
+      hint: 'Scroll',
       enter: 'Enter',
-      open1: '// In the beginning, there was one formula.',
-      n: { a1: 'LIGHT', a2: 'SUN', a3: 'RING', a4: 'LIFE', a5: 'FIRE', a6: 'LAW', a7: 'CLOCK OUT' },
-      price: '$0.00',
-      tag: { no: 'SPECIMEN 001', name: 'Balaena lapidea', stats: 'length 300 u · {n} stones', found: 'collected mid-swim' },
       doors: 'Five ways in',
     },
     lang: { label: 'Language' },
@@ -97,10 +90,7 @@ export const ui = {
       desc: '零肉身造物：地平线上一道门。往下滑，门里一样一样往外造东西：日、环、鲸、器、律。五个入口：千手院、赛博杂货铺、标本、文物、法典。',
       skip: '跳到正文',
     },
-    home: {
-      tagline: '一个全集，五个子集，不含肉身。',
-      entries: '五个入口',
-    },
+
     entry: {
       qianshou: { name: '千手院', line: '千僧替牛马，施主自风流。' },
       zahuopu: { name: '赛博杂货铺', line: '小工具都在货架上，拿了就走。' },
@@ -111,13 +101,8 @@ export const ui = {
     nav: { label: '栏目', home: '回到门前' },
     acts: {
       label: '七幕',
-      jump: '去第几幕',
-      hint: '往下滑，开始造物',
+      hint: '往下滑',
       enter: '进去',
-      open1: '// 太初，只有一条公式。',
-      n: { a1: '启光', a2: '燃日', a3: '布环', a4: '赋生', a5: '铸器', a6: '立法', a7: '收工' },
-      price: '$0.00',
-      tag: { no: '标本 001', name: '石鲸 Balaena lapidea', stats: '身长 300 · 石块 {n} 块', found: '采集于：游到一半' },
       doors: '五个入口',
     },
     lang: { label: '语言' },
