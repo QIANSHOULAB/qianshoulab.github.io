@@ -73,14 +73,23 @@ if (ONLY.includes(1)) {
     const react = reaction(page, 'data-ff');
     await page.tap('[data-index]');
     r.ms = await react;
-    // 快进途中：每一幕的名字、「进去」都不冒出来；半路截一张
-    let flashed = 0, shot = false;
-    while (Date.now() - t0 < 9000) {
-      const s = await page.evaluate(() => ({ fly: !!window.__zero?.flying(), P: window.__zero?.P() ?? 0, on: document.querySelectorAll('.act.on:not(.act7), .hero.on').length }));
+    // 快进途中：每一幕的名字、「进去」、首屏 wordmark 都不冒出来；过了一半那一下停住截一张，再放开走完
+    let flashed = 0;
+    const peek = () => page.evaluate(() => ({ fly: !!window.__zero?.flying(), P: window.__zero?.P() ?? 0, on: document.querySelectorAll('.act.on:not(.act7), .hero.on').length }));
+    await page.waitForFunction(() => !window.__zero || window.__zero.P() > 3.2 || !window.__zero.flying(), null, { timeout: 15000, polling: 16 }).catch(() => {});
+    if (gl === 'yes' && (await peek()).fly) {
+      await page.evaluate(() => window.__zero.ffHold(true));
+      const s = await peek();
+      if (s.on) flashed++;
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${out}/${ENGINE}-目录-快进半路.jpg`, type: 'jpeg', quality: 80 });
+      await page.evaluate(() => window.__zero.ffHold(false));
+    }
+    while (Date.now() - t0 < 12000) {
+      const s = await peek();
       if (s.fly && s.on) flashed++;
-      if (s.fly && !shot && s.P > 3) { await page.screenshot({ path: `${out}/${ENGINE}-目录-快进半路.jpg`, type: 'jpeg', quality: 80 }); shot = true; }
       if (!s.fly && s.P > 6.99) break;
-      await page.waitForTimeout(120);
+      await page.waitForTimeout(100);
     }
     await page.waitForTimeout(1600);
     const end = await page.evaluate(() => ({

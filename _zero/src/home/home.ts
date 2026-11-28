@@ -503,6 +503,7 @@ function frameNames(p: number) {
   if (!g) return;
   const m = g.marks;
   if (mode === 'list') { updateHot(); return; }
+  if (going) return;   // 正在往里扎：名字跟着整层字一起淡掉，位置不用再摆
   const want = m.ok && !q.has('still') && (namesOn ? p >= NAMES.hide : p >= NAMES.show);
   if (want !== namesOn) {
     namesOn = want;
@@ -558,6 +559,7 @@ function toIndex(byKey = false) {
   ffing = true;
   root.setAttribute('data-ff', '');
   g.fly(7, ms);
+  textFor(p);   // 首屏的 wordmark、这一幕的名字马上收起来（不等下一帧）
 }
 indexBtn?.addEventListener('click', (e) => toIndex(e.detail === 0));
 indexBtn?.setAttribute('aria-expanded', 'false');
@@ -673,6 +675,7 @@ async function boot() {
     state: () => g?.state,
     tick: () => tickFor(g?.P ?? P),
     flying: () => !!g?.flying,
+    ffHold: (on: boolean) => g?.holdFlight(on),
     names: () => ({ mode, on: namesOn, boxes: boxes.map((b) => (b ? { ...b } : null)), dirs: [...dirs], lead: leadAt, collide, obst }),
     marks: () => g?.marks,
     project: (p: V3) => g?.project(p),

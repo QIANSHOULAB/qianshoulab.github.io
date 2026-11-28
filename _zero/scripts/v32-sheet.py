@@ -45,13 +45,13 @@ for r in rows:
     boost = im.point(lambda v: min(255, v * 8))
     out.paste(boost, (0, h))
     dr = ImageDraw.Draw(out)
-    dr.text((8, 8), 'opening 0s (ink)', fill=(150, 150, 150))
-    dr.text((w + 8, 8), '#000000', fill=(150, 150, 150))
-    dr.text((8, h + 8), 'x8 brightness: banding check', fill=(150, 150, 150))
-    dr.text((w + 8, h + 8), '#000000 x8', fill=(150, 150, 150))
     # 左上那块的平均颜色
     px = list(im.crop((w // 8, h // 10, w // 3, h // 3)).getdata())
     avg = tuple(round(sum(p[i] for p in px) / len(px)) for i in range(3))
-    dr.text((8, 24), 'sky avg #%02X%02X%02X' % avg, fill=(150, 150, 150))
+    # 字都写在右边纯黑那两块上，不压左边的画面
+    dr.text((w + 12, 12), 'left: opening 0s (ink)   sky avg #%02X%02X%02X' % avg, fill=(150, 150, 150))
+    dr.text((w + 12, 28), 'right: #000000', fill=(150, 150, 150))
+    dr.text((w + 12, h + 12), 'left: same, x8 brightness (banding check)', fill=(150, 150, 150))
+    dr.text((w + 12, h + 28), 'right: #000000 x8', fill=(150, 150, 150))
     out.save(os.path.join(dst, f"{r['engine']}-{r['size']}-开场0秒跟纯黑并排.png"))
     print('并排', r['engine'], r['size'], 'sky avg', avg)

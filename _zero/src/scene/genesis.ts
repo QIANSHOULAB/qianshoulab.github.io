@@ -496,7 +496,14 @@ export function createGenesis(opts: GenesisOpts) {
   function fastForward() { if (ff || opener >= 1) return; ff = { from: opener, t0: performance.now() }; }
   // 「目录」：进度从现在这里自己走到 to（开场还没走完就连开场一起，一口气）。滚动位置由 home.ts 每帧跟着摆。
   // 中途用户一动（land）：就停在半路，接着由滚动接手，不跳。
-  let flight: { from: number; to: number; t0: number; ms: number } | null = null;
+  let flight: { from: number; to: number; t0: number; ms: number; held?: number } | null = null;
+  /** 截图用：快进停在半路（held = 停住那一刻的时间点），再放开接着走 */
+  function holdFlight(on: boolean) {
+    if (!flight) return;
+    const now = performance.now();
+    if (on && flight.held == null) flight.held = now;
+    else if (!on && flight.held != null) { flight.t0 += now - flight.held; flight.held = undefined; }
+  }
   function fly(to: number, ms: number) {
     if (opts.freezeP != null) return;
     flight = { from: P, to: clamp(to, 0, 7), t0: performance.now(), ms: Math.max(1, ms) };
@@ -873,7 +880,7 @@ export function createGenesis(opts: GenesisOpts) {
     if (opts.freezeP != null) P = opts.freezeP;
     else if (flight) {
       // 「目录」快进：进度照缓动曲线自己走（不停顿帧，开场没走完就连开场一起）
-      const k = clamp((now - flight.t0) / flight.ms);
+      const k = clamp(((flight.held ?? now) - flight.t0) / flight.ms);
       P = mix(flight.from, flight.to, flyEase(k));
       if (opener < 1) { opener = Math.min(1, Math.max(opener, P)); if (opener >= 1) ff = null; }
       ps = Math.max(1, P);
@@ -1007,6 +1014,7 @@ export function createGenesis(opts: GenesisOpts) {
     reset,
     fly,
     land,
+    holdFlight,
     setHot,
     setPhone,
     layout: () => layout(true),

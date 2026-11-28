@@ -50,7 +50,8 @@ const inspect = (page) => page.evaluate(() => {
   const vw = innerWidth, vh = innerHeight;
   const R = (el, px = 0, py = 0) => { const r = el.getBoundingClientRect(); return { x: r.left + px, y: r.top + py, w: r.width - 2 * px, h: r.height - 2 * py }; };
   const hit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
-  const nm = [...document.querySelectorAll('.nm.ok')].filter((a) => parseFloat(getComputedStyle(a).opacity) > 0.5).map((a) => R(a, 12, 14));
+  const diving = document.documentElement.hasAttribute('data-diving');   // 正在往里扎：整层字都淡掉了，不算
+  const nm = diving ? [] : [...document.querySelectorAll('.nm.ok')].filter((a) => parseFloat(getComputedStyle(a).opacity) > 0.5).map((a) => R(a, 12, 14));
   const clash = [];
   const motto = document.querySelector('.motto'), hd = document.querySelector('.hd-row');
   nm.forEach((a, i) => {
@@ -95,8 +96,14 @@ for (const eng of ENGINES) {
         const { page, gl, close } = await open('?tier=high');
         await page.waitForTimeout(800);
         await press(page, '[data-index]');
-        if (gl === 'yes') await page.waitForFunction(() => window.__zero.P() > 3.4 || !window.__zero.flying(), null, { timeout: 20000 }).catch(() => {});
+        // 快进过了一半那一下停住拍（截图那几百毫秒里滚动位置还在变，停住拍才是那一刻真正的样子），拍完放开走完
+        if (gl === 'yes') {
+          await page.waitForFunction(() => window.__zero.P() > 3.4 || !window.__zero.flying(), null, { timeout: 20000, polling: 16 }).catch(() => {});
+          await page.evaluate(() => window.__zero.ffHold(true));
+          await page.waitForTimeout(700);
+        }
         await shot(page, '快进半路', { flying: await page.evaluate(() => !!window.__zero?.flying?.()) });
+        if (gl === 'yes') await page.evaluate(() => window.__zero.ffHold(false));
         await close();
       }
       // 3. 天上五个名字
