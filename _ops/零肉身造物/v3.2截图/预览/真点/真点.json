@@ -1,0 +1,166 @@
+{
+ "base": "http://127.0.0.1:4321",
+ "engine": "webkit",
+ "device": "iPhone 13",
+ "at": "2026-11-28T03:34:54.830Z",
+ "total": 20,
+ "failed": [
+  "「目录」快进"
+ ],
+ "consoleErrors": [],
+ "rows": [
+  {
+   "name": "天上再点「目录」：不动、名字亮一下",
+   "ok": true
+  },
+  {
+   "name": "「目录」快进",
+   "ok": false,
+   "ms": 6,
+   "took": 6425,
+   "end": {
+    "P": 7,
+    "y": 8567,
+    "endY": 8567,
+    "names": 5,
+    "on": true
+   },
+   "note": "快进途中冒出来过 2 次幕名",
+   "errors": []
+  },
+  {
+   "name": "天上「千手院」",
+   "ok": true,
+   "ms": 5,
+   "url": "/qianshou/",
+   "errors": []
+  },
+  {
+   "name": "天上「赛博杂货铺」",
+   "ok": true,
+   "ms": 5,
+   "url": "/zahuopu/",
+   "errors": []
+  },
+  {
+   "name": "天上「标本」",
+   "ok": true,
+   "ms": 7,
+   "url": "/specimens/",
+   "errors": []
+  },
+  {
+   "name": "天上「文物」",
+   "ok": true,
+   "ms": 8,
+   "url": "/artifacts/",
+   "errors": []
+  },
+  {
+   "name": "天上「法典」",
+   "ok": true,
+   "ms": 5,
+   "url": "/codex/",
+   "errors": []
+  },
+  {
+   "name": "天上点「千手院」那样造物本身",
+   "ok": true,
+   "ms": 1,
+   "url": "/qianshou/",
+   "errors": []
+  },
+  {
+   "name": "天上点「标本」那样造物本身",
+   "ok": true,
+   "ms": 1,
+   "url": "/specimens/",
+   "errors": []
+  },
+  {
+   "name": "第2幕「进去」",
+   "ok": true,
+   "ms": 4,
+   "url": "/qianshou/",
+   "errors": []
+  },
+  {
+   "name": "第3幕「进去」",
+   "ok": true,
+   "ms": 3,
+   "url": "/zahuopu/",
+   "errors": []
+  },
+  {
+   "name": "第4幕「进去」",
+   "ok": true,
+   "ms": 3,
+   "url": "/specimens/",
+   "errors": []
+  },
+  {
+   "name": "第5幕「进去」",
+   "ok": true,
+   "ms": 3,
+   "url": "/artifacts/",
+   "errors": []
+  },
+  {
+   "name": "第6幕「进去」",
+   "ok": true,
+   "ms": 6,
+   "url": "/codex/",
+   "errors": []
+  },
+  {
+   "name": "从天上进「文物」再后退：回到那片天，名字还能点",
+   "ok": true,
+   "backUrl": "/zero/",
+   "after": {
+    "P": 7,
+    "names": true,
+    "diving": false,
+    "flood": 0,
+    "shown": 5,
+    "clickable": 5
+   },
+   "again": "/zahuopu/",
+   "errors": []
+  },
+  {
+   "name": "退路 B（390×664）：「目录」列表里点「千手院」",
+   "ok": true,
+   "ms": 4,
+   "url": "/qianshou/",
+   "errors": []
+  },
+  {
+   "name": "退路 B（390×664）：「目录」列表里点「赛博杂货铺」",
+   "ok": true,
+   "ms": 3,
+   "url": "/zahuopu/",
+   "errors": []
+  },
+  {
+   "name": "退路 B（390×664）：「目录」列表里点「标本」",
+   "ok": true,
+   "ms": 4,
+   "url": "/specimens/",
+   "errors": []
+  },
+  {
+   "name": "退路 B（390×664）：「目录」列表里点「文物」",
+   "ok": true,
+   "ms": 4,
+   "url": "/artifacts/",
+   "errors": []
+  },
+  {
+   "name": "退路 B（390×664）：「目录」列表里点「法典」",
+   "ok": true,
+   "ms": 3,
+   "url": "/codex/",
+   "errors": []
+  }
+ ]
+}
