@@ -1,4 +1,4 @@
-/* 零肉身造物（Zero-Flesh Creation）· 第三版「造物之门」：底子是黑、白、灰；颜色只在光里（首页每幕一种，栏目页顶上那束光是这个栏目的颜色）。
+/* 零肉身造物（Zero-Flesh Creation）· 第三版「造物之门」：底子是墨蓝（v3.2：接近黑、不是纯黑，--night），字是白、灰；颜色只在光里（首页每幕一种，栏目页顶上那束光是这个栏目的颜色）。
    字：wordmark 和标题用宽字距的大写衬线（Cormorant Garamond；中文用思源宋体只留用到的那百来个字），
    编号、小标签用等宽（IBM Plex Mono），正文用系统字。链接、焦点框、选中文字也都是灰度。 */
 @import "tailwindcss";
@@ -10,7 +10,10 @@
 
 :root {
   color-scheme: dark;
-  --bg: #000;
+  /* 这个世界的暗（墨蓝）：真正的值由 BaseLayout 从 tune.ts 的 INK 写到 <html style> 上，这里只是兜底 */
+  --night: #05070E;
+  --night-rgb: 5, 7, 14;
+  --bg: var(--night);
   --bg-2: #070707;
   --ink: #ececec;
   --ink-2: #a8a8a8;
@@ -27,7 +30,8 @@
   --t: 240ms;
   --wrap: 1040px;
   --gutter: 24px;
-  /* 颗粒：盖一层极淡的噪点，压住深色渐变的色带，也让纯黑有点质感 */
+  /* 颗粒：盖一层极淡的噪点，压住深色渐变的色带，也让暗处有点质感（首页、栏目页一样浓，冲进去以后底色对得上） */
+  --grain-o: .035;
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 @media (max-width: 640px) { :root { --gutter: 16px; } }
@@ -39,7 +43,7 @@ body {
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   font-variant-numeric: tabular-nums;
 }
-::selection { background: #e6e6e6; color: #000; }
+::selection { background: #e6e6e6; color: var(--bg); }
 a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 1px solid #fff; outline-offset: 4px; border-radius: 2px; }
 button { font: inherit; color: inherit; }
@@ -54,7 +58,7 @@ html[data-lang="zh"] body { line-height: 1.75; }
 .nw { white-space: nowrap; }
 
 /* —— 顶栏：左 EN / 中文，右声音，中间（子页面）小 wordmark；下一行五道门 —— */
-.skip { position: absolute; left: 12px; top: -80px; z-index: 60; background: #fff; color: #000; padding: 8px 12px; font: 400 12px/1.2 var(--mono); letter-spacing: .08em; }
+.skip { position: absolute; left: 12px; top: -80px; z-index: 60; background: #fff; color: var(--bg); padding: 8px 12px; font: 400 12px/1.2 var(--mono); letter-spacing: .08em; }
 .skip:focus { top: 10px; }
 .hd { position: relative; z-index: 20; }
 .hd-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 60px; padding: 0 var(--gutter); }
@@ -67,6 +71,11 @@ html[data-lang="zh"] body { line-height: 1.75; }
 .toggle .sep { color: var(--ink-4); }
 .snd { appearance: none; background: none; border: 0; padding: 0 6px; min-height: 44px; cursor: pointer; font: 400 11px/1 var(--mono); letter-spacing: .14em; color: var(--ink-3); transition: color var(--t) var(--ease); white-space: nowrap; }
 .snd:hover { color: var(--ink); }
+/* 首页顶栏正中：「目录 / INDEX」，字体字号跟声音开关一个样；点得到的范围不小于 44 × 44 */
+.idx { appearance: none; background: none; border: 0; padding: 0 10px; min-height: 44px; min-width: 44px; cursor: pointer; font: 400 11px/1 var(--mono); letter-spacing: .14em; padding-left: calc(10px + .14em); color: var(--ink-3); transition: color var(--t) var(--ease); white-space: nowrap; }
+@media (hover: hover) { .idx:hover { color: var(--ink); } }
+html[data-names] .idx { color: var(--ink-2); }
+html[data-list] .idx { color: var(--ink); }
 .snd .st-on { display: none; }
 html[data-sound="on"] .snd { color: var(--ink); }
 html[data-sound="on"] .snd .st-on { display: inline; }
@@ -97,6 +106,7 @@ html[data-lang="zh"] .hd-nav .nm { font: 500 13px/1 var(--serif-zh); letter-spac
   .toggle { font-size: 10px; letter-spacing: .06em; }
   .toggle button { padding: 0 4px; min-width: 28px; }
   .snd { font-size: 10px; letter-spacing: .06em; padding: 0 2px; }
+  .idx { font-size: 10px; letter-spacing: .06em; padding: 0 8px; }
   .hd-mark { padding: 10px 0; }
   .hd-mark .a { font-size: 11px; letter-spacing: .18em; padding-left: .18em; }
   .hd-mark .b { font-size: 9px; letter-spacing: .5em; padding-left: .5em; }
@@ -105,7 +115,7 @@ html[data-lang="zh"] .hd-nav .nm { font: 500 13px/1 var(--serif-zh); letter-spac
 }
 
 /* —— 子页面的「同一束光」：顶上一条地平线，正中最亮，后面透出一点光；光是这个栏目自己那一幕的颜色 —— */
-.is-page { background: #000; --sec: 255, 255, 255; }
+.is-page { background: var(--bg); --sec: 255, 255, 255; }
 .is-page[data-sec="zahuopu"] { --sec: 255, 79, 163; }
 .is-page[data-sec="specimens"] { --sec: 111, 231, 255; }
 .is-page[data-sec="artifacts"] { --sec: 229, 56, 43; }
@@ -114,7 +124,7 @@ html[data-lang="zh"] .hd-nav .nm { font: 500 13px/1 var(--serif-zh); letter-spac
   background:
     radial-gradient(60% 46% at 50% 0%, rgba(255, 255, 255, .05), rgba(var(--sec), .045) 30%, rgba(var(--sec), .02) 55%, rgba(var(--sec), 0) 78%),
     radial-gradient(140% 70% at 50% 0%, rgba(var(--sec), .035), rgba(var(--sec), 0) 70%); }
-.is-page::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; background-image: var(--grain); opacity: .05; mix-blend-mode: screen; }
+.is-page::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; background-image: var(--grain); opacity: var(--grain-o); mix-blend-mode: screen; }
 .is-page .hd-nav { position: relative; border-top: 0; }
 .is-page .hd-nav::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
   background: linear-gradient(to right, rgba(var(--sec), 0), rgba(255, 255, 255, .55) 50%, rgba(var(--sec), 0)); box-shadow: 0 0 10px rgba(var(--sec), .5); }
@@ -156,7 +166,7 @@ a:hover .go .arr { transform: translateX(4px); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 0 20px; font: 400 11px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase;
   color: var(--ink); border: 1px solid var(--line-2); background: transparent; cursor: pointer; transition: background var(--t) var(--ease), border-color var(--t) var(--ease), color var(--t) var(--ease); white-space: nowrap; }
 .btn:hover { border-color: var(--ink-2); background: rgba(255, 255, 255, .05); }
-.btn.solid { background: var(--ink); color: #000; border-color: var(--ink); }
+.btn.solid { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .btn.solid:hover { background: #fff; border-color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {

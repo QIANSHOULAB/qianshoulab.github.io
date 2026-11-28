@@ -1,17 +1,19 @@
 // 造物之门的画面：一望无际的黑水，地平线正中一道门（两扇黑石门），门后一盏光。
 // 往下滑，门里一样一样往外生东西：日、环、鲸、器、律；第七幕「开天」：门推到全开，自己裂开，几百块石头升天变成满天的星，
 // 五种颜色从五样造物身上散开铺成星云，造物散到整片天上，镜头从水面一路升进天里，水面成了一面镜子。
-// 这个文件只管画：滚动、字、声音、进去在 ../home/home.ts。three.js 跟这个文件一起异步加载，不挡首屏。
+// 这个文件只管画：滚动、字、声音、进去、天上的名字在 ../home/home.ts。three.js 跟这个文件一起异步加载，不挡首屏。
+// v3.2：底子换成墨蓝（tune.ts 的 INK，画面里没有纯黑）；「目录」快进（fly：进度自己走到 7，滚动位置跟着走）；
+// 每帧把五样造物在屏幕上的位置量出来（marks：天上的名字挂在它们旁边、点造物本身也能进）；指着哪样，哪样亮一点（setHot）。
 import {
-  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CustomBlending, DoubleSide, Float32BufferAttribute, FrontSide,
+  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, Color, CustomBlending, DoubleSide, Float32BufferAttribute, FrontSide,
   InstancedBufferAttribute, InstancedBufferGeometry, LinearSRGBColorSpace, Matrix3, Matrix4, Mesh, OneFactor, PerspectiveCamera,
-  PlaneGeometry, Points, Quaternion, Raycaster, Scene, ShaderMaterial, SphereGeometry, UnsignedByteType, Vector2, Vector3,
-  Vector4, WebGLRenderTarget, WebGLRenderer, ZeroFactor, Box3, type Material, type Object3D,
+  PlaneGeometry, Points, Quaternion, Scene, ShaderMaterial, SphereGeometry, UnsignedByteType, Vector2, Vector3,
+  Vector4, WebGLRenderTarget, WebGLRenderer, ZeroFactor, type Object3D,
 } from 'three';
 import * as G from './glsl';
 import { H, W, T, DIST, Z_FRONT, CELL, clusters, blocks } from './layout';
-import { TIERS, type Tier, EXPOSURE, OPENER_MS, FF_MS, SMOOTH_S, HITSTOP_MS, SECTION_HEX, NEB_I, hexToLinear } from './tune';
-import { computeState, type State, type V3, type Q, type Fin, EYE, DC, COL, WHALE_L, WHALE_R, qMat, cl, ss, mix, RING_R } from './timeline';
+import { TIERS, type Tier, EXPOSURE, OPENER_MS, FF_MS, SMOOTH_S, HITSTOP_MS, SECTION_HEX, NEB_I, INK, INDEX, hexToLinear, hexToUnit } from './tune';
+import { computeState, type State, type V3, type Q, type Fin, EYE, DC, COL, WHALE_L, WHALE_R, qMat, qRot, cl, ss, mix, RING_R } from './timeline';
 
 export interface GenesisOpts {
   host: HTMLElement;             // 画布铺满它；--monof（门占屏高多少）从它的 CSS 读
@@ -19,6 +21,7 @@ export interface GenesisOpts {
   seen: boolean;                 // 这次会话看过开场了：1.5 秒快进
   freezeP?: number | null;       // 调试 / 截图：进度定在这里（?act=）
   freezeT?: number | null;       // 调试 / 截图：时钟定在这里（?t=）
+  startP?: number | null;        // 从栏目页按「后退」回来：不放开场，直接摆在离开时那个进度（天上那片天）
   tier?: Tier | null;            // 调试 / 截图：力气定在这一档（?tier=）
   nMoons: number;                // 环上几颗小月（= 杂货铺货架上几样工具）
   onLost?: () => void;           // 3D 丢了、又建不回来
@@ -26,6 +29,25 @@ export interface GenesisOpts {
 
 const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 
+/** 三次贝塞尔缓动（跟 CSS cubic-bezier(x1, y1, x2, y2) 一样）：给「目录」快进用 */
+function bezier([x1, y1, x2, y2]: [number, number, number, number]) {
+  const bx = (t: number) => 3 * x1 * t * (1 - t) * (1 - t) + 3 * x2 * t * t * (1 - t) + t * t * t;
+  const by = (t: number) => 3 * y1 * t * (1 - t) * (1 - t) + 3 * y2 * t * t * (1 - t) + t * t * t;
+  return (x: number) => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let lo = 0, hi = 1, t = x;
+    for (let i = 0; i < 28; i++) { t = (lo + hi) / 2; if (bx(t) < x) lo = t; else hi = t; }
+    return by(t);
+  };
+}
+const flyEase = bezier(INDEX.ease);
+
+/** 屏幕上的一样造物（CSS 像素，相对画布左上角）：中心、大致半径；鲸多一根从头到尾的轴；环、轨道多一圈采样点 */
+export interface Mark { x: number; y: number; r: number; front: boolean; ax?: number; ay?: number; bx?: number; by?: number; pts?: number[] }
+/** 一道轨道画出来的那一截在屏幕上的采样点（x, y 交替）和每个点的参数 u（世界坐标用 orbitPoint 再算） */
+export interface Arc { j: number; u: number[]; pts: number[] }
+export interface Marks { ok: boolean; sun: Mark; ring: Mark; whale: Mark; arm: Mark; arcs: Arc[] }
 function rng(seed: number) {
   let s = seed >>> 0;
   return () => {
@@ -59,7 +81,10 @@ export function createGenesis(opts: GenesisOpts) {
   canvas.setAttribute('aria-hidden', 'true');
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance', stencil: false });
   renderer.outputColorSpace = LinearSRGBColorSpace;
-  renderer.setClearColor(0x000000, 1);
+  // 底色是墨蓝（不是纯黑）：画布还没画第一帧的那一下也是它。输出不做色彩转换，所以直接把 sRGB 的值当「线性」写进去
+  const inkSky = hexToUnit(INK.sky);
+  const inkClear = new Color().setRGB(inkSky[0], inkSky[1], inkSky[2], LinearSRGBColorSpace);
+  renderer.setClearColor(inkClear, 1);
   host.prepend(canvas);
 
   const phone = Math.min(screen.width, screen.height) < 600 || matchMedia('(pointer: coarse)').matches;
@@ -99,6 +124,8 @@ export function createGenesis(opts: GenesisOpts) {
     uRiseW: { value: 1 },
     uFive: { value: secCol.map((c) => new Vector3(c[0], c[1], c[2])) },
     uFin: { value: new Vector4(0.24, 0.5, 1.6, 0) },
+    // v3.2：这个世界的暗（墨蓝）。门另给一档更暗的，在 doorMat 里盖掉
+    uInk: { value: new Vector3(...inkSky) },
   };
   const COMMON = G.COMMON, FRAGC = G.COMMON + G.FRAG;
   const additive = (m: ShaderMaterial) => {
@@ -123,6 +150,7 @@ export function createGenesis(opts: GenesisOpts) {
       uGridCol: { value: new Vector3(...COL.law) }, uGap: { value: 0 }, uFloodB: { value: 0 },
       uCalm: { value: 0 }, uNeb: { value: 0 }, uNebI: { value: 1 }, uNebQ: { value: 2 },
       uNebSrc: { value: [0, 1, 2, 3, 4].map(() => new Vector4()) }, uTextWin: { value: new Vector4(0, -0.2, 0.6, 0.15) },
+      uInkW: { value: new Vector3(...hexToUnit(INK.water)) },
     },
     vertexShader: G.WORLD_VERT,
     fragmentShader: FRAGC + G.WORLD_FRAG,
@@ -152,8 +180,8 @@ export function createGenesis(opts: GenesisOpts) {
   const doorMat = new ShaderMaterial({
     uniforms: {
       ...U, uOut: { value: [0, 0, 0, 0, 0] }, uOutTo: { value: clusters.map(() => new Vector3()) },
-      uHoleD: { value: holeD }, uHover: { value: -1 }, uHoverAmt: { value: 0 }, uHoverCol: { value: new Vector3() },
-      uSeam: { value: 0 }, uSlitI: { value: 0 },
+      uHoleD: { value: holeD }, uSeam: { value: 0 }, uSlitI: { value: 0 },
+      uInk: { value: new Vector3(...hexToUnit(INK.door)) },   // 门比底色更暗：暗里更暗的一块
     },
     vertexShader: COMMON + G.DOOR_VERT,
     fragmentShader: FRAGC + G.DOOR_FRAG,
@@ -180,7 +208,7 @@ export function createGenesis(opts: GenesisOpts) {
     return new ShaderMaterial({
       uniforms: {
         ...U, uN: { value: N }, uForm: { value: 0 }, uC: { value: new Vector3() }, uScale: { value: 1 },
-        uGlowCol: { value: new Vector3(...glow) }, uGlow: { value: 0 }, uHot: { value: hot }, uCDark: { value: 0 }, uEmit: { value: 0 }, ...more,
+        uGlowCol: { value: new Vector3(...glow) }, uGlow: { value: 0 }, uHot: { value: hot }, uCDark: { value: 0 }, uEmit: { value: 0 }, uBright: { value: 1 }, ...more,
       },
       vertexShader: COMMON + G.CHIP_HEAD + body + G.CHIP_MAIN,
       fragmentShader: FRAGC + G.CHIP_FRAG,
@@ -214,7 +242,7 @@ export function createGenesis(opts: GenesisOpts) {
   const moons = new Mesh(moonGeo, moonMat);
   // 太阳的芯子
   const coreMat = new ShaderMaterial({
-    uniforms: { ...U, uC: sunMat.uniforms.uC, uScale: sunMat.uniforms.uScale, uShape: sunMat.uniforms.uShape, uHeat: { value: 1 }, uGlowCol: { value: new Vector3(...COL.sun) } },
+    uniforms: { ...U, uC: sunMat.uniforms.uC, uScale: sunMat.uniforms.uScale, uShape: sunMat.uniforms.uShape, uHeat: { value: 1 }, uGlowCol: { value: new Vector3(...COL.sun) }, uBright: sunMat.uniforms.uBright },
     vertexShader: COMMON + G.CORE_VERT,
     fragmentShader: FRAGC + G.CORE_FRAG,
   });
@@ -447,20 +475,51 @@ export function createGenesis(opts: GenesisOpts) {
   ro.observe(host);
   window.addEventListener('orientationchange', () => setTimeout(() => layout(true), 250));
   layout(true);
+  renderer.clear();   // 第一帧画出来之前那一下：墨蓝，不闪黑
 
-  // —— 进度：开场（时间）+ 滚动（平滑）+ 顿帧 ——
-  let target = 1;
-  let ps = 1;
-  let opener = opts.reduced || opts.freezeP != null ? 1 : 0;
+  // —— 进度：开场（时间）+ 滚动（平滑）+ 顿帧 + 「目录」快进 ——
+  const back = opts.startP != null && opts.freezeP == null ? clamp(opts.startP, 1, 7) : null;
+  let target = back ?? 1;
+  let ps = back ?? 1;
+  let opener = opts.reduced || opts.freezeP != null || back != null ? 1 : 0;
   let openT0 = -1;
   let ff: { from: number; t0: number } | null = null;
   let hitUntil = 0;
   let clock = opts.freezeT ?? 3;
-  let P = opts.freezeP ?? (opts.reduced ? 1 : 0);
+  let P = opts.freezeP ?? back ?? (opts.reduced ? 1 : 0);
   let st: State = computeState(P, clock, { narrow, aspect, tanV: tanHero }, nM);
   let breathT0 = -1;
-  function setTarget(p: number) { target = clamp(p, 1, 7); if (opener < 1 && target > 1.02) fastForward(); }
+  // 手机竖屏：那句话下面那截天够不够摆浑天仪（home.ts 量好告诉这里），浑天仪摆在那截天正中
+  const phoneLay = { tall: 1, band: -0.33 };
+  function setPhone(tall: boolean, band: number) { phoneLay.tall = tall ? 1 : 0; phoneLay.band = band; }
+  function setTarget(p: number) { target = clamp(p, 1, 7); if (opener < 1 && target > 1.02 && !flight) fastForward(); }
   function fastForward() { if (ff || opener >= 1) return; ff = { from: opener, t0: performance.now() }; }
+  // 「目录」：进度从现在这里自己走到 to（开场还没走完就连开场一起，一口气）。滚动位置由 home.ts 每帧跟着摆。
+  // 中途用户一动（land）：就停在半路，接着由滚动接手，不跳。
+  let flight: { from: number; to: number; t0: number; ms: number; held?: number; holdAt?: number } | null = null;
+  let holdNext: number | null = null;
+  /** 截图用：快进停在半路（held = 停住那一刻的时间点），再放开接着走；at = 下一次快进走到这个进度就自己停住（机器再慢也停得准） */
+  function holdFlight(on: boolean, at?: number) {
+    if (on && at != null) { holdNext = at; return; }
+    if (!flight) return;
+    const now = performance.now();
+    if (on && flight.held == null) flight.held = now;
+    else if (!on && flight.held != null) { flight.t0 += now - flight.held; flight.held = undefined; }
+  }
+  function fly(to: number, ms: number) {
+    if (opts.freezeP != null) return;
+    flight = { from: P, to: clamp(to, 0, 7), t0: performance.now(), ms: Math.max(1, ms), holdAt: holdNext ?? undefined };
+    holdNext = null;
+    ff = null;
+    hitUntil = 0;
+  }
+  function land() {
+    if (!flight) return;
+    flight = null;
+    ps = Math.max(1, P);
+    // 开场还没走完就被叫停：开场接着从这里快进完（滚动位置还在最上面）
+    if (opener < 1) ff = { from: opener, t0: performance.now() };
+  }
   function snapReduced(p: number) {
     const k = Math.round(p);
     return k <= 1 ? 1 : k >= 7 ? 7 : k - 0.06;
@@ -478,32 +537,91 @@ export function createGenesis(opts: GenesisOpts) {
   }
   function reset() { dive = null; U.uExposure.value = EXPOSURE; }
 
-  // —— 首屏：指着门上哪撮 ——
-  let hover = -1, hoverAmt = 0, hoverShown = -1;
-  function setHover(k: number) { hover = k; if (k >= 0) hoverShown = k; }
-  const ray = new Raycaster();
-  const ndc = new Vector2();
-  const hit = new Vector3();
-  const bx = new Box3();
-  function pick(clientX: number, clientY: number) {
-    if (P > 1.15) return -1;
-    const rc = canvas.getBoundingClientRect();
-    ndc.set(((clientX - rc.left) / rc.width) * 2 - 1, -((clientY - rc.top) / rc.height) * 2 + 1);
-    ray.setFromCamera(ndc, camera);
-    let best = -1;
-    for (let k = 0; k < clusters.length; k++) {
-      const d = holeD[k];
-      bx.min.set(d.x - CELL * 0.35, d.y - CELL * 0.35, Z_FRONT - T);
-      bx.max.set(d.z + CELL * 0.35, d.w + CELL * 0.35, Z_FRONT + 1);
-      if (ray.ray.intersectBox(bx, hit)) best = k;
-    }
-    return best;
-  }
+  // （v3.1 首屏门上那五撮能指、能点的暗门，v3.2 连代码一起拿干净了：首屏只有门）
   const tmp = new Vector3();
   function project(p: V3) {
     tmp.set(p[0], p[1], p[2]).project(camera);
-    return { x: ((tmp.x + 1) / 2) * size.w, y: ((1 - tmp.y) / 2) * size.h, front: tmp.z < 1 };
+    return { x: ((tmp.x + 1) / 2) * size.w, y: ((1 - tmp.y) / 2) * size.h, front: tmp.z < 1 && tmp.z > -1 };
   }
+
+  // —— 天上：五样造物在屏幕上的位置（天上的名字挂在旁边、点造物本身也能进）。每帧镜头摆好以后量一次 ——
+  const blankMark = (): Mark => ({ x: 0, y: 0, r: 0, front: false });
+  const marks: Marks = { ok: false, sun: blankMark(), ring: blankMark(), whale: blankMark(), arm: blankMark(), arcs: [] };
+  const axV = new Vector3(), upV = new Vector3();
+  /** 世界里半径 rw 的一个球，在屏幕上大概多大（按镜头朝右那个方向量） */
+  function screenR(c: V3, rw: number) {
+    const a = project(c);
+    axV.setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(rw);
+    const b = project([c[0] + axV.x, c[1] + axV.y, c[2] + axV.z]);
+    return Math.hypot(b.x - a.x, b.y - a.y);
+  }
+  function setMark(m: Mark, c: V3, rw: number) {
+    const a = project(c);
+    m.x = a.x; m.y = a.y; m.front = a.front; m.r = screenR(c, rw);
+  }
+  /** 第 j 道轨道上参数 u（0..1 一圈）那个点的世界坐标：跟画线的那个矩阵一样算 */
+  function orbitPoint(j: number, u: number): V3 {
+    const o = st.orbits[j];
+    const a = u * Math.PI * 2;
+    const v = qRot(o.q, [o.R * Math.cos(a), 0, o.R * Math.sin(a)]);
+    return [o.c[0] + v[0], o.c[1] + v[1], o.c[2] + v[2]];
+  }
+  function measure(s: State) {
+    marks.ok = s.fam > 0.5;
+    if (!marks.ok) return;
+    // 日：本体半径 46 × scale（火舌再往外甩一点，名字贴着火舌外沿）
+    setMark(marks.sun, s.sun.c, 46 * s.sun.scale * 1.25);
+    // 器（浑天仪）：最外那道环 66 × scale
+    setMark(marks.arm, s.arm.c, 66 * s.arm.scale * 1.08);
+    // 环：一圈 24 个点（斜着的椭圆），中心、外接半径
+    {
+      const m = marks.ring;
+      setMark(m, s.ring.c, RING_R * s.ring.scale);
+      const pts: number[] = [];
+      let rr = 0;
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2;
+        const v = qRot(s.ring.rot, [RING_R * s.ring.scale * Math.cos(a), 0, RING_R * s.ring.scale * Math.sin(a)]);
+        const q = project([s.ring.c[0] + v[0], s.ring.c[1] + v[1], s.ring.c[2] + v[2]]);
+        pts.push(q.x, q.y);
+        rr = Math.max(rr, Math.hypot(q.x - m.x, q.y - m.y));
+      }
+      m.pts = pts;
+      m.r = rr;
+    }
+    // 鲸：从头到尾一根轴（脊背沿着自己的 x 轴，头在 +x），身子粗约体长的 0.1
+    {
+      const m = marks.whale;
+      const L = WHALE_L * s.whale.scale;
+      const h = qRot(s.whale.rot, [L * 0.5, 0, 0]);
+      const c = s.whale.c;
+      const a = project([c[0] + h[0], c[1] + h[1], c[2] + h[2]]);
+      const b = project([c[0] - h[0], c[1] - h[1], c[2] - h[2]]);
+      m.ax = a.x; m.ay = a.y; m.bx = b.x; m.by = b.y;
+      m.x = (a.x + b.x) / 2; m.y = (a.y + b.y) / 2; m.front = a.front && b.front;
+      m.r = screenR(c, L * 0.1);
+    }
+    // 轨道：每道画出来的那一截（参数 0..draw），每 1/96 圈一个点
+    marks.arcs.length = 0;
+    s.orbits.forEach((o, j) => {
+      if (o.draw <= 0.01 || o.I <= 0.01) return;
+      const u: number[] = [], pts: number[] = [];
+      const n = Math.max(2, Math.ceil(o.draw * 96));
+      for (let i = 0; i <= n; i++) {
+        const uu = (i / n) * o.draw;
+        const q = project(orbitPoint(j, uu));
+        if (!q.front) continue;
+        u.push(uu); pts.push(q.x, q.y);
+      }
+      marks.arcs.push({ j, u, pts });
+    });
+  }
+
+  // —— 指着哪样造物（天上的名字、造物本身），哪样亮一点：0 日 1 环 2 鲸 3 器 4 轨道 ——
+  let measureMs = 0;   // 每帧量这五样花多少毫秒（滑动平均，验收看）
+  const hot = [0, 0, 0, 0, 0];
+  let hotGoal = -1;
+  function setHot(k: number) { hotGoal = k; }
   function clusterPoint(k: number): V3 {
     const d = holeD[k];
     return [(d.x + d.z) / 2, (d.y + d.w) / 2, Z_FRONT];
@@ -549,8 +667,14 @@ export function createGenesis(opts: GenesisOpts) {
     tw.set((cx * 2 - 1) * aspect, 1 - cy * 2, Math.max(0.1, w * aspect * 0.62), Math.max(0.06, h * 0.9));
   }
 
-  function apply(s: State, now: number) {
+  function apply(s: State, now: number, dt: number) {
     const brk = breathT0 >= 0 && !opts.reduced ? 1 + 0.028 * Math.sin(((now - breathT0) / 7000) * Math.PI * 2) : 1;
+    // 指着的那样慢慢亮起来（约 0.2 秒），移开慢慢回去；只在天上（造物散到各自位置以后）才有
+    for (let k = 0; k < 5; k++) {
+      const goal = hotGoal === k && s.fam > 0.5 ? 1 : 0;
+      hot[k] += (goal - hot[k]) * (opts.reduced ? 1 : 1 - Math.exp(-dt / 0.09));
+    }
+    const lift = (k: number, a: number) => 1 + a * hot[k];
     U.uLight.value = s.light * brk;
     U.uLightCol.value.set(...s.lightCol);
     U.uOpen.value = s.open;
@@ -577,10 +701,6 @@ export function createGenesis(opts: GenesisOpts) {
     outTo[4].set(0, 60, Z_FRONT + 90);
     doorMat.uniforms.uSeam.value = s.slit;
     doorMat.uniforms.uSlitI.value = s.slitGlow * (s.a[1] < 1 ? 1 : 0.5);
-    hoverAmt += ((hover >= 0 && P < 1.15 ? 1 : 0) - hoverAmt) * 0.12;
-    doorMat.uniforms.uHover.value = hoverShown;
-    doorMat.uniforms.uHoverAmt.value = hoverAmt;
-    if (hoverShown >= 0) doorMat.uniforms.uHoverCol.value.set(...secCol[hoverShown]);
 
     // 第七幕「开天」
     U.uRise.value = s.rise;
@@ -623,6 +743,7 @@ export function createGenesis(opts: GenesisOpts) {
       sunMat.uniforms.uShape.value.set(...s.sun.shape);
       sunMat.uniforms.uSpin.value = s.sun.spin;
       sunMat.uniforms.uGlow.value = 0.6;
+      sunMat.uniforms.uBright.value = lift(0, 0.5);
       coreMat.uniforms.uHeat.value = s.sun.heat * s.sun.vis * ss(0.0, 0.25, s.sun.form);
       flareMat.uniforms.uIgnite.value = s.sun.ignite;
       flareMat.uniforms.uFlare.value = s.sun.flare;
@@ -636,7 +757,8 @@ export function createGenesis(opts: GenesisOpts) {
       setM3(ringMat.uniforms.uRot.value, s.ring.rot);
       ringMat.uniforms.uSpin.value = s.ring.spin;
       ringMat.uniforms.uGlow.value = 0.55 * s.ring.glow;
-      ringMat.uniforms.uEmit.value = 0.5 * s.ring.glow;
+      ringMat.uniforms.uEmit.value = 0.5 * s.ring.glow * lift(1, 1.1);
+      ringMat.uniforms.uBright.value = lift(1, 0.6);
       moonMat.uniforms.uGlow.value = 0.9 * s.ring.glow;
       moonMat.uniforms.uEmit.value = 0.35 * s.ring.glow;
       const mv = moonMat.uniforms.uMoon.value as Vector4[];
@@ -657,7 +779,8 @@ export function createGenesis(opts: GenesisOpts) {
       wu2.uGlow.value = 0.75 * s.whale.glow;
       wu2.uCDark.value = s.whale.dark;
       wu2.uWave.value = s.whale.wave;
-      wu2.uEmit.value = s.whale.emit;
+      wu2.uEmit.value = s.whale.emit * lift(2, 0.5);
+      wu2.uBright.value = lift(2, 0.35);
       const lm = (constLine.material as ShaderMaterial).uniforms;
       trs(lm.uM.value, s.whale.c, s.whale.rot, s.whale.scale);
       lm.uDraw.value = s.whale.lines;
@@ -674,8 +797,9 @@ export function createGenesis(opts: GenesisOpts) {
       au.uBlast.value = s.arm.blast;
       au.uC.value.set(...s.arm.c);
       au.uScale.value = s.arm.scale;
-      au.uHeatA.value = s.arm.heat;
+      au.uHeatA.value = s.arm.heat * lift(3, 0.25);
       au.uGlow.value = 0.35;
+      au.uBright.value = lift(3, 0.3);
       setM3(au.uRA.value, s.arm.rots[0]);
       setM3(au.uRB.value, s.arm.rots[1]);
       setM3(au.uRC.value, s.arm.rots[2]);
@@ -688,7 +812,7 @@ export function createGenesis(opts: GenesisOpts) {
       const u = (L.material as ShaderMaterial).uniforms;
       trs(u.uM.value, o.c, o.q, o.R);
       u.uDraw.value = o.draw;
-      u.uLineI.value = o.I * 1.1;
+      u.uLineI.value = o.I * 1.1 * lift(4, 0.9);
       u.uWidth.value = 0.85 * dpr;
     });
     // 星
@@ -706,10 +830,10 @@ export function createGenesis(opts: GenesisOpts) {
     gC[0].set(mix(lc[0], 1, 0.6) * si, mix(lc[1], 1, 0.6) * si, mix(lc[2], 1, 0.6) * si, 1);
     gP[1].set(...s.sun.c, sv ? 46 * s.sun.scale * 2.3 : 0);
     gS[1].set(1, 1);
-    const hs = 1.6 * s.sun.heat * s.sun.vis * (1 - s.dark) * mix(1, 0.62, s.fam);
+    const hs = 1.6 * s.sun.heat * s.sun.vis * (1 - s.dark) * mix(1, 0.62, s.fam) * lift(0, 0.7);
     gC[1].set(COL.sun[0] * hs, COL.sun[1] * hs, COL.sun[2] * hs, 2);
     // （第七幕浑天仪散到天上以后，也给它一团暗红的光，像一块还没冷透的铁）
-    const pi = s.arm.pointI + s.arm.flash * 4 + 0.55 * s.fam;
+    const pi = s.arm.pointI + s.arm.flash * 4 + 0.55 * s.fam * lift(3, 0.6);
     gP[2].set(...(s.arm.blast > 0 ? s.arm.c : s.arm.point), pi > 0.002 ? 14 + 22 * s.arm.pointI + 230 * s.arm.flash + 150 * s.fam * s.arm.scale : 0);
     gS[2].set(1, 1);
     gC[2].set(mix(COL.fire[0], 1, 0.35) * pi, mix(COL.fire[1], 1, 0.35) * pi, mix(COL.fire[2], 1, 0.35) * pi, 0);
@@ -749,16 +873,31 @@ export function createGenesis(opts: GenesisOpts) {
     last = now;
 
     // 开场（自己放）
-    if (opener < 1) {
+    if (opener < 1 && !flight) {
       let o = clamp((now - openT0) / OPENER_MS);
       if (ff) o = Math.max(o, ff.from + (1 - ff.from) * ss(0, 1, (now - ff.t0) / FF_MS));
       opener = o;
       if (opener >= 1 && breathT0 < 0) breathT0 = now;
-    } else if (breathT0 < 0) breathT0 = now;
+    } else if (opener >= 1 && breathT0 < 0) breathT0 = now;
     // 滚动：平滑地追；第五幕炸开前那一拍，真实时间里停一下
     let rate = 1;
     if (opts.freezeP != null) P = opts.freezeP;
-    else if (opts.reduced) P = snapReduced(target);
+    else if (flight) {
+      // 「目录」快进：进度照缓动曲线自己走（不停顿帧，开场没走完就连开场一起）
+      let k = clamp(((flight.held ?? now) - flight.t0) / flight.ms);
+      if (flight.holdAt != null && flight.held == null && mix(flight.from, flight.to, flyEase(k)) >= flight.holdAt) {
+        // 截图用：走到这个进度就停住（找到正好落在这个进度的那一刻）
+        let lo = 0, hi = k;
+        for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (mix(flight.from, flight.to, flyEase(m)) < flight.holdAt) lo = m; else hi = m; }
+        k = hi;
+        flight.held = flight.t0 + k * flight.ms;
+        flight.holdAt = undefined;
+      }
+      P = mix(flight.from, flight.to, flyEase(k));
+      if (opener < 1) { opener = Math.min(1, Math.max(opener, P)); if (opener >= 1) ff = null; }
+      ps = Math.max(1, P);
+      if (k >= 1) { P = flight.to; ps = Math.max(1, P); target = ps; flight = null; }
+    } else if (opts.reduced) P = snapReduced(target);
     else if (opener < 1) P = opener;
     else {
       if (now < hitUntil) { rate = 0; }
@@ -774,7 +913,7 @@ export function createGenesis(opts: GenesisOpts) {
     if (opts.freezeT != null) clock = opts.freezeT;
     else if (!opts.reduced) clock += dt * rate;
 
-    const view = { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, P)) };
+    const view = { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, P)), tall: phoneLay.tall, band: phoneLay.band };
     st = computeState(P, clock, view, nM);
     U.uTime.value = clock;
 
@@ -814,7 +953,10 @@ export function createGenesis(opts: GenesisOpts) {
     worldMat.uniforms.uCamWorld.value.copy(camera.matrixWorld);
     dustMat.uniforms.uPxScale.value = (size.h * dpr) / (2 * tanV);
 
-    apply(st, now);
+    apply(st, now, dt);
+    const m0 = performance.now();
+    measure(st);
+    measureMs += (performance.now() - m0 - measureMs) * 0.05;
 
     // 倒影：门和造物沿水面翻过来再画一遍（低档只画门）
     const tierCfg = TIERS[tier];
@@ -830,7 +972,7 @@ export function createGenesis(opts: GenesisOpts) {
     renderer.clear(true, true, false);
     renderer.render(scene, camera);
     renderer.setRenderTarget(null);
-    renderer.setClearColor(0x000000, 1);
+    renderer.setClearColor(inkClear, 1);
     U.uMirror.value = 0;
     for (const m of boxMats) m.side = FrontSide;
     mainOnly.forEach((o, i) => (o.visible = saved[i]));
@@ -879,17 +1021,25 @@ export function createGenesis(opts: GenesisOpts) {
     setTarget,
     fastForward,
     setParallax,
-    setHover,
-    pick,
     project,
     clusterPoint,
+    orbitPoint,
     enter,
     reset,
+    fly,
+    land,
+    holdFlight,
+    setHot,
+    setPhone,
     layout: () => layout(true),
     setTextBox,
     get P() { return P; },
     get state() { return st; },
     get opener() { return opener; },
+    get flying() { return flight != null; },
+    get flightHeld() { return flight?.held != null; },
+    get marks() { return marks; },
+    get measureMs() { return measureMs; },
     set onFrame(f: ((s: State, P: number) => void) | null) { onFrame = f; },
     set onHitstop(f: (() => void) | null) { onHitstop = f; },
     get frames() { return frames; },

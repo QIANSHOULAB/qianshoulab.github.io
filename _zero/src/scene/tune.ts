@@ -14,6 +14,37 @@ export const ACT_HEX = {
 /** 五个栏目各自的颜色（顺序 = 五撮 = 第二到第六幕） */
 export const SECTION_HEX = [ACT_HEX.sun, ACT_HEX.ring, ACT_HEX.life, ACT_HEX.fire, ACT_HEX.law] as const;
 
+/**
+ * 这个世界的暗（v3.2，Song 11-28 09:01「一开始的黑也不是纯黑，是某种颜色的深色但接近黑色」，09:13 选的 A 墨蓝）。
+ * 天、水、暗角、页面底色都是它，从开场一直用到结尾；每一幕的光照旧叠在它上面（画面里没有一块纯黑 #000）。
+ * 第一眼以为是黑，跟纯黑并排才看得出颜色；饱和度收着，不做成「深蓝科技风」。亮度上限 #0A0C14 那一档。
+ * sky：天、页面底色、iPhone Safari 顶上底下两条（theme-color）、四个栏目页的底色。
+ * water：水比天再暗一点。door：门比底色更暗——开场光还没出来的时候，门是暗里更暗的一块，轮廓读得出来。
+ */
+export const INK = {
+  sky: '#05070E',     // 加上页面那层胶片颗粒（平均抬亮 2–3 级），眼睛看到的约 #07090F
+  water: '#04060B',
+  door: '#020306',
+} as const;
+
+/** 「目录」快进（v3.2）：从现在的进度快进到结尾「开天」那片天。离得远走满 maxMs，近的短些，但不短于 minMs；起步、收尾都缓 */
+export const INDEX = {
+  maxMs: 2800,
+  minMs: 800,
+  /** 快进的缓动（三次贝塞尔，跟 CSS 的 cubic-bezier 一个意思）：起步慢、中间快、收尾拖长一点，让「开天」那一段落得慢 */
+  ease: [0.5, 0, 0.18, 1] as [number, number, number, number],
+};
+
+/**
+ * 天上的五个名字（v3.2）：「开天」落定以后，五样造物旁边各亮起自己的名字。
+ * show：进度过了这里才亮（照造出来的先后一个个亮，每个隔 stagger 毫秒）；hide：往回滑到这里以下，名字一下子收掉（造物 6.52 以下才开始飞回去，名字先走）。
+ */
+export const NAMES = {
+  show: 6.8,
+  hide: 6.7,
+  stagger: 170,
+};
+
 /** 滚动长度（单位：一屏高）。首屏停一小段，第二到第七幕各滑这么多，最后再留一点。全程约十屏半。 */
 export const SCROLL = {
   hold: 0.35,
@@ -82,6 +113,16 @@ export const NEB_I = 1.0;
 
 /** 每幕「进去」以后多久跳到栏目页（毫秒） */
 export const DIVE_MS = 1700;
+
+/** #RRGGBB → [r, g, b]（0..1，还是 sRGB 的值，不转线性）：着色器里「暗」是在显示空间里垫的 */
+export function hexToUnit(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+/** #RRGGBB → "r, g, b"（给 CSS 的 rgba(var(--night-rgb), a) 用） */
+export function hexToRgbList(hex: string) {
+  return hexToUnit(hex).map((v) => Math.round(v * 255)).join(', ');
+}
 
 export function hexToLinear(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);

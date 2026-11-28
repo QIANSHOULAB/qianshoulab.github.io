@@ -1,19 +1,23 @@
 ---
 // 首页：造物之门。发到 /zero/（根目录换不换看 _zero/home.mjs 那一行）。
 // 画布固定铺满，往下滑是在创世：七幕，全程跟手，倒着滑会倒放。画面跟着滚动走，字跟着画面走。
-// v3.1（Song 11-28）：画面上只留名字。首屏一个 wordmark 和一个很小的往下滑提示；第二到第六幕只有栏目名和「进去」；
-// 第七幕「开天」只有那句话、五个栏目名和页脚。读屏读到的、没有 WebGL 时的静态图上压的，也只有这些字。
-// three.js 异步加载，黑底和 wordmark 先出来，3D 后到。
+// v3.1（Song 11-28）：画面上只留名字。首屏一个 wordmark 和一个很小的往下滑提示；第二到第六幕只有栏目名和「进去」。
+// v3.2（Song 11-28 选的 C 星空目录）：名字只挂在造出来的东西上。第七幕「开天」那片天里，五个名字挂在五样造物旁边（太阳千手院、星环赛博杂货铺、
+// 巨鲸标本、浑天仪文物、轨道法典），点名字或者点造物本身就冲进去；顶栏正中「目录」一键快进到这片天。原来结尾底下那一排五个名字，
+// 只在没有 WebGL、没开 JS 的时候留着当兜底。底色是墨蓝（--night，tune.ts 的 INK），整页没有一块纯黑。
+// three.js 异步加载，墨蓝底和 wordmark 先出来，3D 后到。
 import BaseLayout from '../layouts/BaseLayout.astro';
 import T from '../components/core/T.astro';
 import { t, ENTRIES } from '../i18n/ui';
 import { shop } from '../data/tools';
-import { SCROLL, SECTION_HEX } from '../scene/tune';
+import { SCROLL, SECTION_HEX, NAMES } from '../scene/tune';
 // 七幕各一张静态图（scripts/stills.mjs 截的）：没有 WebGL 时首页用它们
 const stillMods = import.meta.glob('../assets/stills/*.jpg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const still = (k: number, o: 'l' | 'p') => stillMods[`../assets/stills/act${k}-${o}.jpg`];
 
 const ACTS = ENTRIES.map((e, i) => ({ ...e, k: i + 2, hex: SECTION_HEX[i] }));
+// 天上的名字照造出来的先后一个个亮：日 → 环 → 鲸 → 器 → 轨道（= 千手院 → 法典），每个隔这么久
+const stagger = NAMES.stagger;
 const units = SCROLL.hold + SCROLL.acts.reduce((a, b) => a + b, 0) + SCROLL.tail + 1;
 const chars = (s: string) => [...s].map((c, i) => ({ c, i }));
 const mail = ['oilsongchengmin', 'gmail.com'].join('@');
@@ -30,7 +34,7 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   <div class="stage" data-stage data-moons={shop.length} aria-hidden="true">
     <div class="gl-host" data-gl-host></div>
     <img class="still" alt="" data-stills={JSON.stringify(stills)} decoding="async" />
-    <noscript><img class="still on" src={still(1, 'l')} alt="" /></noscript>
+    <noscript><picture><source media="(max-aspect-ratio: 4/5)" srcset={still(7, 'p')} /><img class="still on" src={still(7, 'l')} alt="" /></picture></noscript>
   </div>
 
   <div class="ui" data-ui>
@@ -62,12 +66,20 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
           <span data-l="en" lang="en">{halves(motto.en).map((h, i) => <>{i > 0 && ' '}<span class="mh">{h}</span></>)}</span>
           <span data-l="zh" lang="zh-CN">{halves(motto.zh).map((h) => <span class="mh">{h}</span>)}</span>
         </h2>
+        {/* 兜底：没有 WebGL、没开 JS 的时候才露出来的一排五个名字（有 3D 的时候，五个名字挂在天上，这一排不占眼也不进读屏） */}
         <nav class="links" aria-label={t('en', 'acts.doors')} data-aria-en={t('en', 'acts.doors')} data-aria-zh={t('zh', 'acts.doors')}>
           {ENTRIES.map((e, i) => (
             <a href={e.href} data-end-go={i} style={`--c:${SECTION_HEX[i]}`}><T k={`entry.${e.key}.name`} /></a>
           ))}
         </nav>
       </div>
+      {/* 天上的五个名字（目录）：每帧由 home.ts 摆到各自那样造物旁边；法典多一根很短的细线，那头连在轨道上 */}
+      <nav class="sky" id="sky-index" aria-label={t('en', 'acts.index')} data-aria-en={t('en', 'acts.index')} data-aria-zh={t('zh', 'acts.index')} data-sky style={`--stagger:${stagger}ms`}>
+        <span class="lead" aria-hidden="true" data-lead></span>
+        {ENTRIES.map((e, i) => (
+          <a class="nm" href={e.href} data-sky-go={i} style={`--i:${i}`}><T k={`entry.${e.key}.name`} /></a>
+        ))}
+      </nav>
       <div class="foot" data-foot>
         <p class="co"><span class="co-nm" lang="zh-CN">零肉身造物 | Zero-Flesh Creation</span> <T k="company.p1" /></p>
         <T as="p" class="addr" k="company.addr" />
@@ -97,12 +109,12 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   .stage, .ui { position: fixed; left: 0; top: 0; width: 100%; height: 100vh; height: 100lvh; --hzf: .40; --monof: .38; }
   @media (max-aspect-ratio: 1/1) { .stage, .ui { --hzf: .37; --monof: .34; } }
   @media (max-aspect-ratio: 3/4) { .stage, .ui { --hzf: .355; --monof: .31; } }
-  .stage { z-index: 0; background: #000; overflow: hidden; }
+  .stage { z-index: 0; background: var(--bg); overflow: hidden; }
   .gl-host { position: absolute; inset: 0; }
   .gl-host :global(canvas.gl) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; transition: opacity .6s var(--ease); }
   :global(html[data-gl="no"]) .still, .still:global(.on) { display: block; }
-  .gl-host::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: var(--grain); background-size: 160px 160px; opacity: .045; mix-blend-mode: screen; }
+  .gl-host::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: var(--grain); background-size: 160px 160px; opacity: var(--grain-o); mix-blend-mode: screen; }
   .ui { z-index: 5; pointer-events: none; }
   .track { position: relative; height: calc(var(--units) * 100vh); height: calc(var(--units) * 100lvh); }
   :global(.is-home) :global(.hd) { position: fixed; top: 0; left: 0; right: 0; z-index: 30; transition: opacity .5s var(--ease); }
@@ -125,11 +137,11 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   :global(html[data-lang="zh"]) .wm-a { font: 500 clamp(24px, 2.4vw, 32px)/1 var(--serif-zh); letter-spacing: .72em; padding-left: .72em; }
   :global(html[data-lang="zh"]) .wm-b { font: 500 11px/1 var(--serif); letter-spacing: .5em; padding-left: .5em; }
   .hint { position: absolute; left: 0; right: 0; bottom: 26px; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 9px;
-    font: 400 9px/1 var(--mono); letter-spacing: .32em; padding-left: .32em; text-transform: uppercase; color: #a3a3a3; text-shadow: 0 0 6px #000, 0 0 2px #000; }
+    font: 400 9px/1 var(--mono); letter-spacing: .32em; padding-left: .32em; text-transform: uppercase; color: #a3a3a3; text-shadow: 0 0 6px var(--bg), 0 0 2px var(--bg); }
   :global(html[data-lang="zh"]) .hint { font: 500 10px/1 var(--serif-zh); letter-spacing: .5em; padding-left: .5em; }
   /* 提示正压在门的那条光路上：底下垫一小团暗，字才看得清 */
   .hint::before { content: ""; position: absolute; left: 50%; top: -16px; width: 150px; height: 64px; transform: translateX(-50%); z-index: -1;
-    background: radial-gradient(closest-side, rgba(0, 0, 0, .9), rgba(0, 0, 0, 0)); }
+    background: radial-gradient(closest-side, rgba(var(--night-rgb), .9), rgba(var(--night-rgb), 0)); }
   .hint-line { width: 1px; height: 26px; background: linear-gradient(#fff, rgba(255, 255, 255, 0)); opacity: .5; transform-origin: 50% 0; animation: drip 2.6s var(--slow) infinite; }
   @keyframes drip { 0% { transform: scaleY(0); opacity: 0; } 30% { opacity: .6; } 100% { transform: scaleY(1); opacity: 0; } }
 
@@ -138,14 +150,15 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   /* 名字还站在 v3 大字幕名的那个位置（下面那几行拿掉了，整块往上提，名字不往下掉）；「进去」紧跟在名字下面 */
   .card { position: absolute; left: max(24px, 6.5vw); bottom: calc(max(9vh, 60px) + 64px); width: min(560px, calc(100% - 48px)); padding: 0; transition: opacity .5s var(--ease); }
   .card::before { content: ""; position: absolute; left: -60px; right: -40px; top: -40px; bottom: -36px; z-index: -1; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0)); }
+    background: radial-gradient(closest-side, rgba(var(--night-rgb), .55), rgba(var(--night-rgb), 0)); }
   .act:not(:global(.on)) .card { opacity: 0; }
   .act:not(:global(.on)) .card .go { pointer-events: none; }
-  .act-name { margin: 0 0 22px; font: 500 clamp(30px, 3.4vw, 44px)/1.1 var(--serif); letter-spacing: .3em; color: #f4f4f4; text-shadow: 0 0 24px rgba(0, 0, 0, .7); }
+  .act-name { margin: 0 0 22px; font: 500 clamp(30px, 3.4vw, 44px)/1.1 var(--serif); letter-spacing: .3em; color: #f4f4f4; text-shadow: 0 0 24px rgba(var(--night-rgb), .7); }
   :global(html[data-lang="zh"]) .act-name { font-family: var(--serif-zh); letter-spacing: .5em; }
   .go { pointer-events: auto; display: inline-flex; align-items: center; gap: 12px; padding: 10px 0; font: 400 11.5px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, .35); transition: border-color .3s var(--ease), gap .3s var(--ease); }
   :global(html[data-lang="zh"]) .go { font: 500 14px/1 var(--serif-zh); letter-spacing: .4em; }
-  .go:hover, .go:focus-visible { border-color: #fff; gap: 18px; }
+  .go:focus-visible { border-color: #fff; gap: 18px; }
+  @media (hover: hover) { .go:hover { border-color: #fff; gap: 18px; } }
   .go .arr { font-family: var(--mono); letter-spacing: 0; }
 
   /* —— 第七幕「开天」：那句话在星空里慢慢亮起来，下面一排五个栏目名；页脚在最下面。
@@ -153,21 +166,22 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   .act7 { --end-y: 58%; }
   .act7 .end { position: absolute; left: 50%; top: var(--end-y); transform: translate(-50%, -50%); width: min(980px, calc(100% - 40px)); text-align: center; }
   .act7 .end::before { content: ""; position: absolute; left: -6%; right: -6%; top: -70%; bottom: -60%; z-index: -1; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(0, 0, 0, .42), rgba(0, 0, 0, .16) 62%, rgba(0, 0, 0, 0)); opacity: 0; transition: opacity 2.4s var(--ease); }
+    background: radial-gradient(closest-side, rgba(var(--night-rgb), .42), rgba(var(--night-rgb), .16) 62%, rgba(var(--night-rgb), 0)); opacity: 0; transition: opacity 2.4s var(--ease); }
   .motto { margin: 0 0 30px; font: 500 clamp(20px, 2.15vw, 30px)/1.45 var(--serif); letter-spacing: .08em; color: #fff;
-    text-shadow: 0 0 2px rgba(0, 0, 0, .5), 0 0 26px rgba(0, 0, 0, .75), 0 0 60px rgba(0, 0, 0, .5);
+    text-shadow: 0 0 2px rgba(var(--night-rgb), .5), 0 0 26px rgba(var(--night-rgb), .75), 0 0 60px rgba(var(--night-rgb), .5);
     opacity: 0; filter: blur(6px); transition: opacity 2.4s var(--slow), filter 2.4s var(--slow); }
   :global(html[data-lang="zh"]) .motto { font-family: var(--serif-zh); letter-spacing: .22em; padding-left: .22em; }
   .mh { display: inline-block; }
   .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 34px; margin: 0; opacity: 0; transform: translateY(6px); transition: opacity 1.2s var(--ease) .9s, transform 1.2s var(--ease) .9s; }
   .links a { pointer-events: auto; font: 500 13.5px/1 var(--serif); letter-spacing: .24em; padding: 9px 0 9px .24em; color: #e2e2e2; border-bottom: 1px solid transparent;
-    text-shadow: 0 0 14px rgba(0, 0, 0, .85), 0 0 3px rgba(0, 0, 0, .6); transition: color .3s var(--ease), border-color .3s var(--ease); }
+    text-shadow: 0 0 14px rgba(var(--night-rgb), .85), 0 0 3px rgba(var(--night-rgb), .6); transition: color .3s var(--ease), border-color .3s var(--ease); }
   :global(html[data-lang="zh"]) .links a { font: 500 14px/1 var(--serif-zh); letter-spacing: .36em; padding-left: .36em; }
-  .links a:hover, .links a:focus-visible { color: #fff; border-color: var(--c); }
+  .links a:focus-visible { color: #fff; border-color: var(--c); }
+  @media (hover: hover) { .links a:hover { color: #fff; border-color: var(--c); } }
   .act7 .foot { position: absolute; left: 50%; bottom: max(4vh, 22px); transform: translateX(-50%); width: min(820px, calc(100% - 40px)); text-align: center;
     opacity: 0; transition: opacity 1.4s var(--ease) 1.4s; }
   .act7 .foot::before { content: ""; position: absolute; left: -10%; right: -10%; top: -40%; bottom: -30%; z-index: -1; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0)); }
+    background: radial-gradient(closest-side, rgba(var(--night-rgb), .55), rgba(var(--night-rgb), 0)); }
   .act7:global(.on) .end::before { opacity: 1; }
   .act7:global(.on) .motto { opacity: 1; filter: none; }
   .act7:global(.on) .links { opacity: 1; transform: none; }
@@ -175,11 +189,43 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   .act7:not(:global(.on)) a { pointer-events: none; }
   .act7:not(:global(.on)) .links, .act7:not(:global(.on)) .foot, .act7:not(:global(.on)) .end::before { transition-delay: 0s; transition-duration: .5s; }
   .act7:not(:global(.on)) .motto { transition-duration: .7s; }
-  .co { margin: 0 0 6px; font-size: 13px; line-height: 1.6; color: #b9b9b9; text-shadow: 0 0 10px rgba(0, 0, 0, .9); }
+  .co { margin: 0 0 6px; font-size: 13px; line-height: 1.6; color: #b9b9b9; text-shadow: 0 0 10px rgba(var(--night-rgb), .9); }
   .co-nm { font: 500 13px/1 var(--serif); letter-spacing: .16em; color: #ececec; margin-right: 8px; white-space: nowrap; }
-  .act7 .foot :global(.addr) { margin: 0 auto 14px; max-width: 760px; font: 400 10.5px/1.75 var(--mono); letter-spacing: .02em; color: #969696; text-shadow: 0 0 8px rgba(0, 0, 0, .95); }
+  .act7 .foot :global(.addr) { margin: 0 auto 14px; max-width: 760px; font: 400 10.5px/1.75 var(--mono); letter-spacing: .02em; color: #969696; text-shadow: 0 0 8px rgba(var(--night-rgb), .95); }
   .mail { margin: 0; font: 400 11px/1 var(--mono); letter-spacing: .12em; }
   .mail a { pointer-events: auto; color: #c4c4c4; border-bottom: 1px solid rgba(255, 255, 255, .3); padding-bottom: 3px; }
+
+  /* —— v3.2 天上的五个名字（目录）：挂在五样造物旁边，home.ts 每帧摆位置（transform），造物在转、镜头在动，名字跟着走。
+     只写名字，字跟每幕的栏目名一路、小一号；白字，底下垫一小团墨蓝的暗（星云再亮也读得清）；颜色只留给造物自己的光，名字不染色。
+     有 3D 才挂；没有 WebGL、没开 JS 的时候不挂，结尾那一排五个名字露出来当兜底（一个名字不出现两回）。 —— */
+  .sky { position: absolute; inset: 0; pointer-events: none; display: none; --nm-fs: clamp(16px, 1.32vw, 20px); }
+  :global(html[data-gl="yes"]) .sky { display: block; }
+  :global(html[data-gl="yes"]) .links { visibility: hidden; }
+  .sky .nm { position: absolute; left: 0; top: 0; pointer-events: none; white-space: nowrap; box-sizing: border-box;
+    font: 500 var(--nm-fs, 18px)/1 var(--serif); letter-spacing: .26em; padding: 14px 12px 14px calc(12px + .26em);
+    color: #e9e9e9; text-shadow: 0 0 12px rgba(var(--night-rgb), .95), 0 0 3px rgba(var(--night-rgb), .85);
+    opacity: 0; transition: opacity .3s var(--ease), color .3s var(--ease); will-change: transform, opacity; }
+  :global(html[data-lang="zh"]) .sky .nm { font-family: var(--serif-zh); letter-spacing: .42em; padding-left: calc(12px + .42em); }
+  .sky .nm::before { content: ""; position: absolute; inset: -6px -22px; z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(var(--night-rgb), .58), rgba(var(--night-rgb), .3) 52%, rgba(var(--night-rgb), .08) 80%, rgba(var(--night-rgb), 0)); }
+  /* 落定以后照造出来的先后一个个亮；往回滑一下子收掉（造物飞回去之前，名字先走）。没亮的时候只是透明、点不着——键盘 Tab 照样走得到、读屏照样念得到 */
+  :global(html[data-names]) .sky .nm:global(.ok) { opacity: 1; pointer-events: auto;
+    transition: opacity .7s var(--ease) calc(var(--i) * var(--stagger)), color .3s var(--ease), text-shadow .3s var(--ease); }
+  :global(html[data-names-now]) .sky .nm:global(.ok) { transition-delay: 0s; }
+  /* 法典换落点（轨道的缺口快转到它那儿了）：先淡出，换个刚画上的点再亮 */
+  :global(html[data-names]) .sky .nm:global(.away) { opacity: 0; transition: opacity .3s var(--ease); }
+  .sky .nm:global(.hot), .sky .nm:focus-visible { color: #fff; text-shadow: 0 0 12px rgba(var(--night-rgb), .95), 0 0 3px rgba(var(--night-rgb), .85), 0 0 14px rgba(255, 255, 255, .6), 0 0 28px rgba(255, 255, 255, .25); }
+  .sky .nm:focus-visible { outline: 1px solid rgba(255, 255, 255, .85); outline-offset: -7px; }
+  :global(html[data-hot]) .track { cursor: pointer; }
+  /* 「目录」在天上再点一下：五个名字轻轻亮一下 */
+  .sky .nm:global(.pulse) { animation: pulse 1.2s var(--ease) calc(var(--i) * 80ms) both; }
+  @keyframes pulse { 0%, 100% { color: #e9e9e9; } 30% { color: #fff; text-shadow: 0 0 12px rgba(var(--night-rgb), .95), 0 0 3px rgba(var(--night-rgb), .85), 0 0 22px rgba(255, 255, 255, .6); } }
+  /* 法典：很短的一根细线，那头连在轨道上 */
+  .sky .lead { position: absolute; left: 0; top: 0; height: 1px; width: 0; transform-origin: 0 50%; pointer-events: none; opacity: 0;
+    background: linear-gradient(90deg, rgba(255, 255, 255, .62), rgba(255, 255, 255, .38)); box-shadow: 0 0 3px rgba(var(--night-rgb), .6); transition: opacity .35s var(--ease); }
+  :global(html[data-names]) .sky .lead:global(.on) { opacity: 1; transition: opacity .7s var(--ease) calc(4 * var(--stagger)); }
+  :global(html[data-names-now]) .sky .lead:global(.on) { transition-delay: 0s; }
+  .sky .lead::after { content: ""; position: absolute; right: -2px; top: -2px; width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 255, 255, .75); }
 
   /* —— 右边一列七个小刻度（不写字；滑到哪幕哪个亮，点了跳到那幕） —— */
   .ticks { position: fixed; right: max(12px, 1.5vw); top: 50%; transform: translateY(-50%); z-index: 20; display: flex; flex-direction: column; gap: 4px; transition: opacity .6s var(--ease); }
@@ -187,13 +233,13 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   .tk-m { width: 12px; height: 1px; background: currentColor; transition: width .35s var(--ease), background-color .35s var(--ease); }
   .ticks button:global(.on) { color: #fff; }
   .ticks button:global(.on) .tk-m { width: 26px; }
-  .ticks button:hover .tk-m { width: 20px; }
+  @media (hover: hover) { .ticks button:hover .tk-m { width: 20px; } }
   .ticks button:focus-visible { outline: 1px solid #fff; outline-offset: 2px; }
   :global(html[data-opening]) .ticks { opacity: 0; pointer-events: none; }
 
   /* 第七幕天最亮的时候，顶栏底下垫一层很淡的暗，EN / 中文、SOUND 照样看得清 */
   .ui::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 92px; pointer-events: none; opacity: 0; transition: opacity 1s var(--ease);
-    background: linear-gradient(rgba(0, 0, 0, .62), rgba(0, 0, 0, .28) 55%, rgba(0, 0, 0, 0)); }
+    background: linear-gradient(rgba(var(--night-rgb), .62), rgba(var(--night-rgb), .28) 55%, rgba(var(--night-rgb), 0)); }
   :global(html[data-sky]) .ui::before { opacity: 1; }
 
   .flood { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 90; }
@@ -221,6 +267,9 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
     .co { font-size: 11.5px; }
     .co-nm { font-size: 12px; }
     .act7 .foot :global(.addr) { font-size: 9.5px; line-height: 1.6; margin-bottom: 12px; }
+    .sky { --nm-fs: 14px; }
+    .sky .nm { letter-spacing: .2em; padding-left: calc(12px + .2em); }
+    :global(html[data-lang="zh"]) .sky .nm { --nm-fs: 15px; letter-spacing: .34em; padding-left: calc(12px + .34em); }
     .ticks { right: 6px; gap: 0; }
     .ticks button { padding: 5px 2px 5px 8px; }
     .tk-m { width: 8px; }
@@ -237,11 +286,30 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
     .hint { bottom: 14px; }
   }
 
+  /* —— 退路 B（Song 点过头的）：矮的手机竖屏、手机横着，天上挂不下五个名字——点「目录」画面压暗，五个名字竖着一列，点哪个直接进；
+     天上不挂名字，结尾那一排五个名字照旧露着 —— */
+  :global(html[data-bmode]) .links { visibility: visible; }
+  :global(html[data-bmode]) .sky { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; z-index: 4;
+    background: rgba(var(--night-rgb), .8); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s var(--ease), visibility 0s linear .3s; }
+  :global(html[data-bmode][data-list]) .sky { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .3s var(--ease); }
+  :global(html[data-bmode]) .sky .nm { position: relative; transform: none !important; opacity: 1; visibility: inherit; pointer-events: auto;
+    font-size: 19px; letter-spacing: .3em; padding: 13px 24px 13px calc(24px + .3em); transition: color .3s var(--ease); }
+  :global(html[data-bmode][data-lang="zh"]) .sky .nm { font-size: 20px; letter-spacing: .5em; padding-left: calc(24px + .5em); }
+  :global(html[data-bmode]) .sky .nm::before, :global(html[data-bmode]) .sky .lead { display: none; }
+
+  /* —— 没开 JS：一屏「开天」的静态图 + 那句话 + 那一排五个名字 + 页脚（兜底）；用不了的「目录」、刻度不露 —— */
+  :global(html:not(.js)) .track, :global(html:not(.js)) .ticks, :global(html:not(.js)) .hero, :global(html:not(.js)) .act:not(.act7) { display: none; }
+  :global(html:not(.js)) .act7 .end::before, :global(html:not(.js)) .act7 .motto, :global(html:not(.js)) .act7 .links, :global(html:not(.js)) .act7 .foot, :global(html:not(.js)) .ui::before { opacity: 1; filter: none; }
+  :global(html:not(.js)) .act7 .links { transform: none; }
+  :global(html:not(.js)) .act7 a { pointer-events: auto; }
+  :global(html:not(.js)) :global(.idx) { visibility: hidden; }
+
   /* 截静态图用：?still 只留画面 */
   :global(html[data-still]) .ui, :global(html[data-still]) .ticks, :global(html[data-still]) :global(.hd) { visibility: hidden; }
   @media (prefers-reduced-motion: reduce) {
     .chs :global(.ch) { transition: none !important; }
     .motto, .links, .act7 .foot, .act7 .end::before { transition: none !important; }
+    .sky .nm, .sky .lead { transition: none !important; animation: none !important; }
     .hint-line { animation: none; opacity: .4; }
   }
 </style>

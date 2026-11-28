@@ -5,18 +5,19 @@ name: 零肉身造物
 # 千手院 /qianshou/、每个工具的文件夹、_ops 一概不碰。GitHub Pages 照旧从 main 根目录发（Jekyll 不发下划线开头的文件夹，_zero/ 源码不会上线）。
 # 发完再对着真网址验一遍（_zero/scripts/live-check.mjs）：老网址全 200，根目录还是该是的那个，零肉身页面不报错、不横向溢出。
 # 拉最新 main 再放产物，推不上再拉再推，最多 5 次，不许 --force。提交作者沿用触发这次构建的那个提交的作者。
-# v3.1（每幕只留名字、收尾「开天」）在分支 zero-v3-1 上做：推分支只跑 preview（本地构建、本地起服务、三内核截图、总览图提交回分支），不发版；
-# 并进 main 以后才走 build → live 这条发版的路。（v3 当时用的分支 zero-v3-alt 已经并进 main，不再认它。）
+# v3.2（星空目录：「目录」快进到那片天、名字挂在天上的五样造物上、墨蓝底）在分支 zero-v3-2 上做：推分支只跑 preview
+# （本地构建、本地起服务、三内核截图、WebKit iPhone 真点测试、v3.2 交货截图，总览图提交回分支），不发版；
+# 并进 main 以后才走 build → live 这条发版的路。（v3、v3.1 当时用的分支 zero-v3-alt、zero-v3-1 已经并进 main，不再认它们。）
 on:
   push:
-    branches: [main, zero-v3-1]
+    branches: [main, zero-v3-2]
     paths:
       - '_zero/**'
       - '.github/workflows/zero.yml'
   workflow_dispatch:
     inputs:
       commit_shots:
-        description: '把造物之门的验收截图（总览图、验收.json、几张原图）提交到 _ops/零肉身造物/v3.1截图/'
+        description: '把造物之门的验收截图（总览图、验收.json、真点.json、v3.2 交货图）提交到 _ops/零肉身造物/v3.2截图/'
         type: boolean
         default: false
 
@@ -97,9 +98,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent || echo "没请动也没关系，推送本身会触发"
 
-  # 分支 zero-v3-1：只构建、在工作流机器上本地起服务、三内核截图，总览图提交回分支。不碰 main，不发版。
+  # 分支 zero-v3-2：只构建、在工作流机器上本地起服务、三内核截图、真点测试，总览图提交回分支。不碰 main，不发版。
   preview:
-    if: github.ref == 'refs/heads/zero-v3-1'
+    if: github.ref == 'refs/heads/zero-v3-2'
     runs-on: ubuntu-latest
     timeout-minutes: 100
     steps:
@@ -119,11 +120,12 @@ jobs:
           npm ci
           npm run build
 
-      - name: 本地起服务（摆成线上的样子：/zero/ 是首页）
+      - name: 本地起服务（摆成线上的样子：/zero/ 是首页；千手院 /qianshou/ 也摆上，点「千手院」落到真页面）
         run: |
           mkdir -p site/zero
           cp -r _zero/dist/* site/
           cp _zero/dist/index.html site/zero/index.html
+          cp -r qianshou site/qianshou
           (cd site && nohup python3 -m http.server 4321 --bind 127.0.0.1 > /dev/null 2>&1 &)
           sleep 2
           curl -sf -o /dev/null http://127.0.0.1:4321/zero/ && echo "本地服务起来了"
@@ -138,28 +140,46 @@ jobs:
           BASE: http://127.0.0.1:4321
         run: node scripts/genesis-shots.mjs "${{ github.workspace }}/preview-shots" || echo "::warning::有报错或溢出，见 验收.json"
 
+      - name: WebKit iPhone 真点（目录、天上五个名字、造物本身、第二到第六幕「进去」、后退回到天上）
+        id: tap
+        working-directory: _zero
+        env:
+          BASE: http://127.0.0.1:4321
+          ENGINE: webkit
+        run: node scripts/tap-test.mjs "${{ github.workspace }}/preview-shots/真点" || { echo "::warning::真点没全过，见 真点.json"; echo "failed=1" >> "$GITHUB_OUTPUT"; }
+
+      - name: v3.2 交货截图（三内核 × 1440×900、390×844）
+        working-directory: _zero
+        env:
+          BASE: http://127.0.0.1:4321
+        run: node scripts/v32-shots.mjs "${{ github.workspace }}/preview-shots/v3.2" || echo "::warning::交货截图有问题，见 v32.json"
+
       - name: 拼总览图
         run: |
           python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
           python3 _zero/scripts/shots-sheet.py preview-shots preview-sheets
+          python3 _zero/scripts/v32-sheet.py preview-shots/v3.2 preview-sheets/v3.2 || true
 
-      - name: 总览图、验收结果、几张原图提交回分支（_ops/零肉身造物/v3.1截图/预览/）
+      - name: 总览图、验收结果、几张原图提交回分支（_ops/零肉身造物/v3.2截图/预览/）
         run: |
           git config user.name "$(git log -1 --format=%an)"
           git config user.email "$(git log -1 --format=%ae)"
           for i in 1 2 3 4 5; do
-            git fetch -q origin zero-v3-1
-            git reset -q --hard origin/zero-v3-1
-            D="_ops/零肉身造物/v3.1截图/预览"
+            git fetch -q origin zero-v3-2
+            git reset -q --hard origin/zero-v3-2
+            D="_ops/零肉身造物/v3.2截图/预览"
             mkdir -p "$D"
-            rm -f "$D"/*
+            rm -rf "$D"/*
             cp preview-sheets/*.jpg "$D/"
             cp preview-shots/验收.json "$D/"
-            for e in chromium webkit firefox; do for z in 390x844 1440x900; do cp preview-shots/$e-$z-*.jpg "$D/" 2>/dev/null || true; done; done
+            mkdir -p "$D/真点" "$D/交货"
+            cp preview-shots/真点/* "$D/真点/" 2>/dev/null || true
+            cp preview-shots/v3.2/*.jpg preview-shots/v3.2/v32.json "$D/交货/" 2>/dev/null || true
+            cp preview-sheets/v3.2/* "$D/交货/" 2>/dev/null || true
             git add -A "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
-            git commit -q -m "零肉身造物 v3.1：分支预览截图（源码 ${GITHUB_SHA::7}）"
-            if git push -q origin HEAD:zero-v3-1; then exit 0; fi
+            git commit -q -m "零肉身造物 v3.2：分支预览截图、真点结果（源码 ${GITHUB_SHA::7}）"
+            if git push -q origin HEAD:zero-v3-2; then exit 0; fi
             sleep 8
           done
           exit 1
@@ -213,11 +233,23 @@ jobs:
         working-directory: _zero
         run: node scripts/genesis-shots.mjs "${{ github.workspace }}/live-shots/门截图"
 
+      - name: WebKit iPhone 真点（对着线上：目录、天上五个名字、造物本身、第二到第六幕「进去」、后退回到天上）
+        working-directory: _zero
+        env:
+          ENGINE: webkit
+        run: node scripts/tap-test.mjs "${{ github.workspace }}/live-shots/真点"
+
+      - name: v3.2 交货截图（三内核 × 1440×900、390×844）
+        if: always()
+        working-directory: _zero
+        run: node scripts/v32-shots.mjs "${{ github.workspace }}/live-shots/v3.2" || echo "::warning::交货截图有问题，见 v32.json"
+
       - name: 拼总览图
         if: always()
         run: |
           python3 -m pip install --quiet --break-system-packages pillow || sudo apt-get install -y -q python3-pil
           python3 _zero/scripts/shots-sheet.py live-shots/门截图 live-shots/门总览
+          python3 _zero/scripts/v32-sheet.py live-shots/v3.2 live-shots/v3.2总览 || true
 
       - name: 截图提交到 _ops（只有手动跑、勾了 commit_shots 才提交）
         if: github.event_name == 'workflow_dispatch' && inputs.commit_shots
@@ -227,11 +259,14 @@ jobs:
           for i in 1 2 3 4 5; do
             git fetch -q origin main
             git reset -q --hard origin/main
-            D="_ops/零肉身造物/v3.1截图"
-            mkdir -p "$D"
-            cp -f live-shots/门总览/*.jpg "$D/"
-            cp -f live-shots/门截图/验收.json "$D/"
-            for e in chromium webkit firefox; do for z in 390x844 1440x900; do cp -f live-shots/门截图/$e-$z-*.jpg "$D/" 2>/dev/null || true; done; done
+            D="_ops/零肉身造物/v3.2截图"
+            mkdir -p "$D/七幕" "$D/真点"
+            cp -f live-shots/门总览/*.jpg "$D/七幕/"
+            cp -f live-shots/门截图/验收.json "$D/七幕/"
+            for e in chromium webkit firefox; do for z in 390x844 1440x900; do cp -f live-shots/门截图/$e-$z-*.jpg "$D/七幕/" 2>/dev/null || true; done; done
+            cp -f live-shots/真点/* "$D/真点/" 2>/dev/null || true
+            cp -f live-shots/v3.2/*.jpg live-shots/v3.2/v32.json "$D/" 2>/dev/null || true
+            cp -f live-shots/v3.2总览/* "$D/" 2>/dev/null || true
             git add "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
             git commit -q -m "零肉身造物：造物之门线上验收截图（$(date -u +%m-%d\ %H:%M) UTC）"
