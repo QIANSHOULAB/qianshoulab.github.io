@@ -615,6 +615,7 @@ export function createGenesis(opts: GenesisOpts) {
   }
 
   // —— 指着哪样造物（天上的名字、造物本身），哪样亮一点：0 日 1 环 2 鲸 3 器 4 轨道 ——
+  let measureMs = 0;   // 每帧量这五样花多少毫秒（滑动平均，验收看）
   const hot = [0, 0, 0, 0, 0];
   let hotGoal = -1;
   function setHot(k: number) { hotGoal = k; }
@@ -942,7 +943,9 @@ export function createGenesis(opts: GenesisOpts) {
     dustMat.uniforms.uPxScale.value = (size.h * dpr) / (2 * tanV);
 
     apply(st, now, dt);
+    const m0 = performance.now();
     measure(st);
+    measureMs += (performance.now() - m0 - measureMs) * 0.05;
 
     // 倒影：门和造物沿水面翻过来再画一遍（低档只画门）
     const tierCfg = TIERS[tier];
@@ -1024,6 +1027,7 @@ export function createGenesis(opts: GenesisOpts) {
     get opener() { return opener; },
     get flying() { return flight != null; },
     get marks() { return marks; },
+    get measureMs() { return measureMs; },
     set onFrame(f: ((s: State, P: number) => void) | null) { onFrame = f; },
     set onHitstop(f: (() => void) | null) { onHitstop = f; },
     get frames() { return frames; },

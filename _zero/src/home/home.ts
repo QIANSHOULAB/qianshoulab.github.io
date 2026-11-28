@@ -522,6 +522,7 @@ function pulseNames() {
 
 // ———————————— 「目录」：快进到「开天」那片天 ————————————
 let wantIndex = false;
+let namesMs = 0;   // 每帧摆天上名字花多少毫秒（滑动平均，验收看）
 function cancelFF() {
   if (!ffing) return;
   ffing = false;
@@ -638,7 +639,9 @@ async function boot() {
       if (!g.flying) { ffing = false; root.removeAttribute('data-ff'); }
     }
     frameText(p);
+    const n0 = performance.now();
     frameNames(p);
+    namesMs += (performance.now() - n0 - namesMs) * 0.05;
   };
   const feed = () => g?.setTarget(scrollP());
   feed();
@@ -676,6 +679,7 @@ async function boot() {
     tick: () => tickFor(g?.P ?? P),
     flying: () => !!g?.flying,
     ffHold: (on: boolean) => g?.holdFlight(on),
+    cost: () => ({ measure: g?.measureMs ?? 0, names: namesMs }),
     names: () => ({ mode, on: namesOn, boxes: boxes.map((b) => (b ? { ...b } : null)), dirs: [...dirs], lead: leadAt, collide, obst }),
     marks: () => g?.marks,
     project: (p: V3) => g?.project(p),
