@@ -23,6 +23,8 @@ const ENGINE = process.env.ENGINE || 'chromium';
 const ONLY = (process.env.ONLY || 'scan,names,same,black').split(',');
 const PHONES = [[390, 844], [360, 780], [430, 932], [390, 664]];
 const OTHERS = [[844, 390], [1440, 900]];
+// EXTRA=820x1180,600x800：再量几个竖屏（平板竖着、0.75–0.8 那种窗口），只量重叠，记在 scan 里、不算过不过
+const EXTRA = (process.env.EXTRA || '').split(',').filter(Boolean).map((x) => x.split('x').map(Number));
 const SAME = [[844, 390], [1440, 900], [1180, 820]];
 const SAME_PS = [1, 1.5, 1.88, 2.5, 2.88, 3.5, 3.88, 4.5, 4.88, 5.15, 5.5, 5.88, 6.5, 7];
 const REST = [1, 1.88, 2.88, 3.88, 4.88, 5.88, 7];
@@ -58,8 +60,9 @@ async function open(w, h, url, extra = {}) {
 // ———— 1. 重叠检查 + 2. 名字 ————
 if (ONLY.includes('scan') || ONLY.includes('names')) {
   // 中文量一遍（重叠检查 + 名字），英文再量一遍名字（英文名字宽：CYBER BODEGA、SPECIMENS、ARTIFACTS）
-  for (const [w, h, lang] of [...PHONES.map(([a, b]) => [a, b, 'zh']), ...OTHERS.map(([a, b]) => [a, b, 'zh']), ...PHONES.map(([a, b]) => [a, b, 'en'])]) {
-    const phone = w < h && w / h < 0.8;
+  for (const [w, h, lang] of [...PHONES.map(([a, b]) => [a, b, 'zh']), ...OTHERS.map(([a, b]) => [a, b, 'zh']), ...EXTRA.map(([a, b]) => [a, b, 'zh']), ...PHONES.map(([a, b]) => [a, b, 'en'])]) {
+    const extra = EXTRA.some(([a, b]) => a === w && b === h);
+    const phone = w < h && w / h < 0.8 && !extra;
     const scanThis = lang === 'zh';
     if (!scanThis && !ONLY.includes('names')) continue;
     const t0 = Date.now();
@@ -77,7 +80,8 @@ if (ONLY.includes('scan') || ONLY.includes('names')) {
       for (const f of r.fails) { const k = `${f.P} ${f.a}–${f.b}`; const e = spots.get(k); if (!e || f.gap < e.gap) spots.set(k, f); }
       row.spots = spots.size;
       res.scan.push(row);
-      console.log(`scan ${w}x${h}${phone ? '（手机竖屏）' : ''}：${r.grid} 格 × ${r.clocks} 个时钟，最窄 ${r.worst} 像素（${r.worstAt}），叠/挤 ${r.fails.length} 格、${spots.size} 处`);
+      row.extra = extra;
+      console.log(`scan ${w}x${h}${phone ? '（手机竖屏）' : extra ? '（加量的竖屏，只记数）' : ''}：${r.grid} 格 × ${r.clocks} 个时钟，最窄 ${r.worst} 像素（${r.worstAt}），叠/挤 ${r.fails.length} 格、${spots.size} 处`);
       if (phone && r.fails.length) fail('重叠检查', `${w}x${h} 有 ${spots.size} 处缝不到 ${MIN_GAP} 像素：` + [...spots.values()].slice(0, 6).map((f) => `P ${f.P} ${f.a}–${f.b} ${f.gap}`).join('；'));
       if (errs.length) fail('控制台', `${w}x${h} ${errs[0]}`);
     }

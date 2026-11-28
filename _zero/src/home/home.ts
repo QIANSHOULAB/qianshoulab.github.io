@@ -810,13 +810,13 @@ function relayoutText() {
 }
 const cardAt = new Map<number, number[]>();
 /** 每帧：页面里的真字（看不见）摆到 3D 那份在屏幕上的位置；「进去」跟在名字下面 */
-function syncText() {
+function syncText(all = false) {
   if (!g || !dustOn) return;
   const l = lang();
   for (const [k, c] of cards) {
     if (k > 6) continue;
     const f = g.words.f(`a${k}`);
-    if (f < 0.01) continue;
+    if (f < 0.01 && !all) continue;
     const b = g.words.screenBox(`a${k}`, g.camera, l);
     if (!b) continue;
     // 整像素、动了一个像素以上才挪（镜头那一点点漂移不让「进去」一直抖）
@@ -838,7 +838,11 @@ async function startText() {
     await Promise.race([wait, new Promise((r) => setTimeout(r, 4000))]);
     await g.buildText(textDefs());
     dustOn = true;
+    // v3.4：先把每一幕的名字、「进去」摆到 3D 那份字的位置，再换成星尘字那套版式、马上按星尘字的规矩亮灭——
+    // 以前换版式那一帧，正亮着的那一幕「进去」会先跳到左上角（版式已经换了、位置还没摆，工作流 WebKit 截图截到过一次）
+    syncText(true);
     root.setAttribute('data-dust', 'yes');
+    textFor(g.P);
     g.words.setLang(lang(), false);
     if (backP != null) g.words.snap();
     relayoutText();
