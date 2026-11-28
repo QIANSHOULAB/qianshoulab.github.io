@@ -496,9 +496,11 @@ export function createGenesis(opts: GenesisOpts) {
   function fastForward() { if (ff || opener >= 1) return; ff = { from: opener, t0: performance.now() }; }
   // 「目录」：进度从现在这里自己走到 to（开场还没走完就连开场一起，一口气）。滚动位置由 home.ts 每帧跟着摆。
   // 中途用户一动（land）：就停在半路，接着由滚动接手，不跳。
-  let flight: { from: number; to: number; t0: number; ms: number; held?: number } | null = null;
-  /** 截图用：快进停在半路（held = 停住那一刻的时间点），再放开接着走 */
-  function holdFlight(on: boolean) {
+  let flight: { from: number; to: number; t0: number; ms: number; held?: number; holdAt?: number } | null = null;
+  let holdNext: number | null = null;
+  /** 截图用：快进停在半路（held = 停住那一刻的时间点），再放开接着走；at = 下一次快进走到这个进度就自己停住（机器再慢也停得准） */
+  function holdFlight(on: boolean, at?: number) {
+    if (on && at != null) { holdNext = at; return; }
     if (!flight) return;
     const now = performance.now();
     if (on && flight.held == null) flight.held = now;
@@ -506,7 +508,8 @@ export function createGenesis(opts: GenesisOpts) {
   }
   function fly(to: number, ms: number) {
     if (opts.freezeP != null) return;
-    flight = { from: P, to: clamp(to, 0, 7), t0: performance.now(), ms: Math.max(1, ms) };
+    flight = { from: P, to: clamp(to, 0, 7), t0: performance.now(), ms: Math.max(1, ms), holdAt: holdNext ?? undefined };
+    holdNext = null;
     ff = null;
     hitUntil = 0;
   }
@@ -881,7 +884,15 @@ export function createGenesis(opts: GenesisOpts) {
     if (opts.freezeP != null) P = opts.freezeP;
     else if (flight) {
       // 「目录」快进：进度照缓动曲线自己走（不停顿帧，开场没走完就连开场一起）
-      const k = clamp(((flight.held ?? now) - flight.t0) / flight.ms);
+      let k = clamp(((flight.held ?? now) - flight.t0) / flight.ms);
+      if (flight.holdAt != null && flight.held == null && mix(flight.from, flight.to, flyEase(k)) >= flight.holdAt) {
+        // 截图用：走到这个进度就停住（找到正好落在这个进度的那一刻）
+        let lo = 0, hi = k;
+        for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (mix(flight.from, flight.to, flyEase(m)) < flight.holdAt) lo = m; else hi = m; }
+        k = hi;
+        flight.held = flight.t0 + k * flight.ms;
+        flight.holdAt = undefined;
+      }
       P = mix(flight.from, flight.to, flyEase(k));
       if (opener < 1) { opener = Math.min(1, Math.max(opener, P)); if (opener >= 1) ff = null; }
       ps = Math.max(1, P);
@@ -1026,6 +1037,7 @@ export function createGenesis(opts: GenesisOpts) {
     get state() { return st; },
     get opener() { return opener; },
     get flying() { return flight != null; },
+    get flightHeld() { return flight?.held != null; },
     get marks() { return marks; },
     get measureMs() { return measureMs; },
     set onFrame(f: ((s: State, P: number) => void) | null) { onFrame = f; },

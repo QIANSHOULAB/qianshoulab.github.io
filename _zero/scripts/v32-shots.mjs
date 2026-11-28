@@ -95,12 +95,12 @@ for (const eng of ENGINES) {
       {
         const { page, gl, close } = await open('?tier=high');
         await page.waitForTimeout(800);
+        // 快进走到进度 4.4（第五幕，过了一半）那一下自己停住再拍（截图那几百毫秒里滚动位置还在变，停住拍才是那一刻真正的样子），拍完放开走完
+        if (gl === 'yes') await page.evaluate(() => window.__zero.ffHold(true, 4.4));
         await press(page, '[data-index]');
-        // 快进过了一半那一下停住拍（截图那几百毫秒里滚动位置还在变，停住拍才是那一刻真正的样子），拍完放开走完
         if (gl === 'yes') {
-          await page.waitForFunction(() => window.__zero.P() > 3.4 || !window.__zero.flying(), null, { timeout: 20000, polling: 16 }).catch(() => {});
-          await page.evaluate(() => window.__zero.ffHold(true));
-          await page.waitForTimeout(700);
+          await page.waitForFunction(() => window.__zero.ffHeld() || !window.__zero.flying(), null, { timeout: 20000 }).catch(() => {});
+          await page.waitForTimeout(900);
         }
         await shot(page, '快进半路', { flying: await page.evaluate(() => !!window.__zero?.flying?.()) });
         if (gl === 'yes') await page.evaluate(() => window.__zero.ffHold(false));

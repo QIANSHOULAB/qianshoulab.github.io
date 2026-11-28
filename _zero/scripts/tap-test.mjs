@@ -70,15 +70,15 @@ if (ONLY.includes(1)) {
   const r = { name: '「目录」快进', ok: false };
   try {
     const t0 = Date.now();
+    if (gl === 'yes') await page.evaluate(() => window.__zero.ffHold(true, 4.4));   // 走到第五幕半路自己停一下，截一张（放开以后接着走完）
     const react = reaction(page, 'data-ff');
     await page.tap('[data-index]');
     r.ms = await react;
     // 快进途中：每一幕的名字、「进去」、首屏 wordmark 都不冒出来；过了一半那一下停住截一张，再放开走完
     let flashed = 0;
     const peek = () => page.evaluate(() => ({ fly: !!window.__zero?.flying(), P: window.__zero?.P() ?? 0, on: document.querySelectorAll('.act.on:not(.act7), .hero.on').length }));
-    await page.waitForFunction(() => !window.__zero || window.__zero.P() > 3.2 || !window.__zero.flying(), null, { timeout: 15000, polling: 16 }).catch(() => {});
+    await page.waitForFunction(() => !window.__zero || window.__zero.ffHeld() || !window.__zero.flying(), null, { timeout: 15000 }).catch(() => {});
     if (gl === 'yes' && (await peek()).fly) {
-      await page.evaluate(() => window.__zero.ffHold(true));
       const s = await peek();
       if (s.on) flashed++;
       await page.waitForTimeout(500);
