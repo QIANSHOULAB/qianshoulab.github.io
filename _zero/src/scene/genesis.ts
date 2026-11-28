@@ -89,11 +89,17 @@ export function createGenesis(opts: GenesisOpts) {
   camera.position.set(0, EYE, 0);
   // v3.3：画面画进这张图（照档位的分辨率、多重采样、带深度：清楚的字按它判断造物在不在字前面），再放大铺满画布
   let sceneRT: WebGLRenderTarget | null = null;
+  // v3.3.1：尺寸变了不用 setSize。画过以后再 setSize，这张多重采样 + 深度图的画在核显上（ANGLE / D3D11）整张变黑，只剩字
+  // （Song 电脑 11-28 实测：自动降分辨率、拉窗口都黑，刷新才好）。所以尺寸一变就丢掉旧的，照开头的样子新建一张
+  const makeSceneRT = (w: number, h: number) => {
+    const rt = new WebGLRenderTarget(w, h, { samples: 4, type: UnsignedByteType, depthBuffer: true, depthTexture: new DepthTexture(w, h) });
+    rt.texture.minFilter = LinearFilter;
+    rt.texture.magFilter = LinearFilter;
+    rt.texture.generateMipmaps = false;
+    return rt;
+  };
   try {
-    sceneRT = new WebGLRenderTarget(2, 2, { samples: 4, type: UnsignedByteType, depthBuffer: true, depthTexture: new DepthTexture(2, 2) });
-    sceneRT.texture.minFilter = LinearFilter;
-    sceneRT.texture.magFilter = LinearFilter;
-    sceneRT.texture.generateMipmaps = false;
+    sceneRT = makeSceneRT(2, 2);
   } catch (e) { console.warn(e); sceneRT = null; }
   const blitScene = new Scene();
   const blitMat = new ShaderMaterial({ uniforms: { tColor: { value: sceneRT?.texture ?? null } }, vertexShader: G.BLIT_VERT, fragmentShader: G.BLIT_FRAG, depthTest: false, depthWrite: false });
@@ -497,7 +503,13 @@ export function createGenesis(opts: GenesisOpts) {
     renderer.setPixelRatio(sceneRT ? textDpr : dpr);
     renderer.setSize(w, h, false);
     const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-    sceneRT?.setSize(bw, bh);
+    if (sceneRT && (sceneRT.width !== bw || sceneRT.height !== bh)) {
+      const old = sceneRT;
+      sceneRT = makeSceneRT(bw, bh);
+      blitMat.uniforms.tColor.value = sceneRT.texture;
+      old.depthTexture?.dispose();
+      old.dispose();
+    }
     words.markDirty();
     worldMat.uniforms.uRes.value.set(bw, bh);
     res.set(bw, bh);
