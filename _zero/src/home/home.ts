@@ -386,6 +386,9 @@ function placeNames(m: Marks) {
         if (c < pickC) { pickC = c; pick = bx; pickD = d; }
       });
     }
+    // 点得到的那一圈（内边距）出屏几个像素：往里挪一挪，别让整块露在屏外
+    const pk = pick as Box | null;
+    if (pk) pick = { ...pk, x: Math.max(0, Math.min(pk.x, obst.W - pk.w)) };
     boxes[k] = pick; dirs[k] = pickD;
     if (pickC >= 500) collide++;
   }
@@ -406,7 +409,8 @@ function placeNames(m: Marks) {
   boxes[4] = null;
   if (law && w) {
     const a = g!.project(law.X)!;
-    const bx = candidate(law.dir, { cx: a.x, cy: a.y, rx: LEAD, ry: LEAD * 0.8 }, w, h, 0);
+    const b0 = candidate(law.dir, { cx: a.x, cy: a.y, rx: LEAD, ry: LEAD * 0.8 }, w, h, 0);
+    const bx = { ...b0, x: Math.max(0, Math.min(b0.x, obst.W - b0.w)) };
     boxes[4] = bx;
     if (badness(bx, 4, m) >= 500) collide++;
     // 细线：从字框边上（最靠近那个点的地方）连到轨道上那个点
