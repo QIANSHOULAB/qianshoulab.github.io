@@ -1,5 +1,6 @@
 // 造物之门的画面：一望无际的黑水，地平线正中一道门（两扇黑石门），门后一盏光。
-// 往下滑，门里一样一样往外生东西：日、环、鲸、器、律；第七幕门全开，白光盖满，万物成剪影。
+// 往下滑，门里一样一样往外生东西：日、环、鲸、器、律；第七幕「开天」：门推到全开，自己裂开，几百块石头升天变成满天的星，
+// 五种颜色从五样造物身上散开铺成星云，造物散到整片天上，镜头从水面一路升进天里，水面成了一面镜子。
 // 这个文件只管画：滚动、字、声音、进去在 ../home/home.ts。three.js 跟这个文件一起异步加载，不挡首屏。
 import {
   AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CustomBlending, DoubleSide, Float32BufferAttribute, FrontSide,
@@ -9,8 +10,8 @@ import {
 } from 'three';
 import * as G from './glsl';
 import { H, W, T, DIST, Z_FRONT, CELL, clusters, blocks } from './layout';
-import { TIERS, type Tier, EXPOSURE, OPENER_MS, FF_MS, SMOOTH_S, HITSTOP_MS, SECTION_HEX, hexToLinear } from './tune';
-import { computeState, type State, type V3, type Q, EYE, DC, COL, WHALE_L, WHALE_R, qMat, cl, ss, mix, RING_R } from './timeline';
+import { TIERS, type Tier, EXPOSURE, OPENER_MS, FF_MS, SMOOTH_S, HITSTOP_MS, SECTION_HEX, NEB_I, hexToLinear } from './tune';
+import { computeState, type State, type V3, type Q, type Fin, EYE, DC, COL, WHALE_L, WHALE_R, qMat, cl, ss, mix, RING_R } from './timeline';
 
 export interface GenesisOpts {
   host: HTMLElement;             // 画布铺满它；--monof（门占屏高多少）从它的 CSS 读
@@ -90,6 +91,13 @@ export function createGenesis(opts: GenesisOpts) {
     uHoleCol: { value: clusters.map(() => new Vector4()) },
     uLights: { value: [0, 1, 2, 3, 4, 5].map(() => new Vector4(0, 0, 0, 1)) },
     uLightC: { value: [0, 1, 2, 3, 4, 5].map(() => new Vector4()) },
+    // 第七幕「开天」
+    uRise: { value: 0 },
+    uCrack: { value: 0 },
+    uGone: { value: 0 },
+    uSky: { value: 0 },
+    uFive: { value: secCol.map((c) => new Vector3(c[0], c[1], c[2])) },
+    uFin: { value: new Vector4(0.24, 0.5, 1.6, 0) },
   };
   const COMMON = G.COMMON, FRAGC = G.COMMON + G.FRAG;
   const additive = (m: ShaderMaterial) => {
@@ -112,6 +120,8 @@ export function createGenesis(opts: GenesisOpts) {
       uRefl: { value: reflRT.texture }, uReflOn: { value: 1 }, uHorizon: { value: 0 }, uReach: { value: 0 },
       uShock: { value: new Vector4() }, uShockI: { value: 0 }, uGrid: { value: 0 }, uGridR: { value: 0 },
       uGridCol: { value: new Vector3(...COL.law) }, uGap: { value: 0 }, uFloodB: { value: 0 },
+      uCalm: { value: 0 }, uNeb: { value: 0 }, uNebI: { value: 1 }, uNebQ: { value: 2 },
+      uNebSrc: { value: [0, 1, 2, 3, 4].map(() => new Vector4()) }, uTextWin: { value: new Vector4(0, -0.2, 0.6, 0.15) },
     },
     vertexShader: G.WORLD_VERT,
     fragmentShader: FRAGC + G.WORLD_FRAG,
@@ -182,6 +192,7 @@ export function createGenesis(opts: GenesisOpts) {
   const ringChips = new Mesh(chipGeo(NMAX.ring), ringMat);
   const whaleMat = chipMat(G.WHALE_CHIP, NMAX.whale, COL.life, 0, {
     uSwim: { value: -1 }, uSettle: { value: 0 }, uWRot: { value: new Matrix3() }, uDC: { value: new Vector3(...DC) }, uWR: { value: WHALE_R },
+    uWave: { value: 0.25 },
   });
   const whale = new Mesh(chipGeo(NMAX.whale), whaleMat);
   const armMat = chipMat(G.ARM_CHIP, NMAX.arm, COL.fire, 1, {
@@ -324,6 +335,32 @@ export function createGenesis(opts: GenesisOpts) {
   stars.frustumCulled = false; stars.visible = false; stars.renderOrder = 3;
   scene.add(stars);
 
+  // —— 第七幕：门上的石头炸成的星（每颗星记着它是哪块石头炸出来的；按档位截断，剩下的还是均匀分在每块石头上）——
+  const skyGeo = new BufferGeometry();
+  {
+    const N = NMAX.skyStars;
+    const free = list.filter((b) => b.cluster < 0);   // 门上五撮早在第二到第六幕飞走了，剩下的才升天
+    const blk = new Float32Array(N * 4), blk2 = new Float32Array(N * 4), seed = new Float32Array(N * 4);
+    for (let i = 0; i < N; i++) {
+      const b = free[i % free.length];
+      blk.set([b.col, b.row, b.rand[0], b.rand[1]], i * 4);
+      blk2.set([b.rand[2], b.rand[3], r(), r()], i * 4);
+      seed.set([r(), r(), r(), r()], i * 4);
+    }
+    skyGeo.setAttribute('position', new Float32BufferAttribute(new Float32Array(N * 3), 3));
+    skyGeo.setAttribute('aBlk', new Float32BufferAttribute(blk, 4));
+    skyGeo.setAttribute('aBlk2', new Float32BufferAttribute(blk2, 4));
+    skyGeo.setAttribute('aSeed', new Float32BufferAttribute(seed, 4));
+  }
+  const skyMat = additive(new ShaderMaterial({
+    uniforms: { ...U, uPxScale: starMat.uniforms.uPxScale },
+    vertexShader: COMMON + G.SKYSTAR_VERT,
+    fragmentShader: FRAGC + G.SKYSTAR_FRAG,
+  }));
+  const skyStars = new Points(skyGeo, skyMat);
+  skyStars.frustumCulled = false; skyStars.visible = false; skyStars.renderOrder = 3;
+  scene.add(skyStars);
+
   // —— 光晕贴片 ——
   const glowGeo = new InstancedBufferGeometry();
   const pq = new PlaneGeometry(1, 1);
@@ -370,6 +407,8 @@ export function createGenesis(opts: GenesisOpts) {
     (arm.geometry as InstancedBufferGeometry).instanceCount = t.arm;
     flareGeo.instanceCount = t.flares;
     starGeo.setDrawRange(0, t.stars);
+    skyGeo.setDrawRange(0, t.skyStars);
+    worldMat.uniforms.uNebQ.value = t.nebula;
     dustGeo.setDrawRange(0, t.dust);
     dpr = Math.min(window.devicePixelRatio || 1, t.dprMax);
   }
@@ -493,6 +532,22 @@ export function createGenesis(opts: GenesisOpts) {
     out.set(x0, y0, x1, y1);
   }
 
+  // —— 第七幕：最后那个镜头的屏幕坐标（x 乘宽高比），星云、留暗的那块天都按它算 ——
+  // 星云挂在无穷远，只认方向：从现在这个镜头看过去那样造物在哪个方向，就从天上那个方向散开（升到最后正好落在它身后）
+  function finScreen(f: Fin, p: V3): [number, number] {
+    const e = camera.position;
+    const dx = p[0] - e.x, dy = p[1] - e.y, dz = p[2] - e.z;
+    const c = Math.cos(f.pitch), sn = Math.sin(f.pitch);
+    const vy = c * dy + sn * dz, vz = -sn * dy + c * dz;
+    const iz = 1 / Math.max(-vz, 1);
+    return [(dx * iz) / f.tanV, (vy * iz) / f.tanV + f.shift];
+  }
+  /** 那句话在屏幕上哪（中心、宽高，都是屏幕的几分之几）：那块天留暗 */
+  function setTextBox(cx: number, cy: number, w: number, h: number) {
+    const tw = worldMat.uniforms.uTextWin.value as Vector4;
+    tw.set((cx * 2 - 1) * aspect, 1 - cy * 2, Math.max(0.1, w * aspect * 0.62), Math.max(0.06, h * 0.9));
+  }
+
   function apply(s: State, now: number) {
     const brk = breathT0 >= 0 && !opts.reduced ? 1 + 0.028 * Math.sin(((now - breathT0) / 7000) * Math.PI * 2) : 1;
     U.uLight.value = s.light * brk;
@@ -526,7 +581,26 @@ export function createGenesis(opts: GenesisOpts) {
     doorMat.uniforms.uHoverAmt.value = hoverAmt;
     if (hoverShown >= 0) doorMat.uniforms.uHoverCol.value.set(...secCol[hoverShown]);
 
+    // 第七幕「开天」
+    U.uRise.value = s.rise;
+    U.uCrack.value = s.crack;
+    U.uGone.value = s.gone;
+    U.uSky.value = s.sky;
+    U.uFin.value.set(s.fin.pitch, s.fin.tanV, s.fin.aspect, s.fin.shift);
+    skyStars.visible = s.rise > 0.15;
+
     const wu = worldMat.uniforms;
+    wu.uCalm.value = s.calm;
+    wu.uNeb.value = s.neb;
+    wu.uNebI.value = NEB_I;
+    if (s.neb > 0) {
+      // 星云从五样造物身上散开：它们在最后那个镜头里的位置，各自什么时候开始散、多亮
+      const src = wu.uNebSrc.value as Vector4[];
+      const at = [s.sun.c, s.ring.c, s.whale.c, s.arm.c, s.orbits[2].c];
+      const delay = [0, 0.1, 0.05, 0.15, 0.24];
+      const bright = [1, 1, 1, 0.95, 0.85];
+      at.forEach((p, k) => { const v = finScreen(s.fin, p); src[k].set(v[0], v[1], delay[k], bright[k]); });
+    }
     wu.uHorizon.value = s.horizon;
     wu.uReach.value = s.reach;
     wu.uShock.value.set(s.shock.c[0], s.shock.c[1], s.shock.c[2], s.shock.r);
@@ -580,6 +654,8 @@ export function createGenesis(opts: GenesisOpts) {
       setM3(wu2.uWRot.value, s.whale.rot);
       wu2.uGlow.value = 0.75 * s.whale.glow;
       wu2.uCDark.value = s.whale.dark;
+      wu2.uWave.value = s.whale.wave;
+      wu2.uEmit.value = s.whale.emit;
       const lm = (constLine.material as ShaderMaterial).uniforms;
       trs(lm.uM.value, s.whale.c, s.whale.rot, s.whale.scale);
       lm.uDraw.value = s.whale.lines;
@@ -624,14 +700,15 @@ export function createGenesis(opts: GenesisOpts) {
     gP[0].set(0, seamTop / 2, Z_FRONT + 2, seamTop / 2 + 10);
     gS[0].set(40 / Math.max(seamTop / 2 + 10, 1), 1);
     const lc = s.lightCol;
-    const si = s.slitGlow * 1.6 + s.light * 0.35 * ss(0.02, 0.2, s.open);
+    const si = (s.slitGlow * 1.6 + s.light * 0.35 * ss(0.02, 0.2, s.open)) * (1 - s.gone);
     gC[0].set(mix(lc[0], 1, 0.6) * si, mix(lc[1], 1, 0.6) * si, mix(lc[2], 1, 0.6) * si, 1);
     gP[1].set(...s.sun.c, sv ? 46 * s.sun.scale * 2.3 : 0);
     gS[1].set(1, 1);
     const hs = 1.6 * s.sun.heat * s.sun.vis * (1 - s.dark);
     gC[1].set(COL.sun[0] * hs, COL.sun[1] * hs, COL.sun[2] * hs, 2);
-    const pi = s.arm.pointI + s.arm.flash * 4;
-    gP[2].set(...(s.arm.blast > 0 ? s.arm.c : s.arm.point), pi > 0.002 ? 14 + 22 * s.arm.pointI + 230 * s.arm.flash : 0);
+    // （第七幕浑天仪散到天上以后，也给它一团暗红的光，像一块还没冷透的铁）
+    const pi = s.arm.pointI + s.arm.flash * 4 + 0.55 * s.fam;
+    gP[2].set(...(s.arm.blast > 0 ? s.arm.c : s.arm.point), pi > 0.002 ? 14 + 22 * s.arm.pointI + 230 * s.arm.flash + 150 * s.fam * s.arm.scale : 0);
     gS[2].set(1, 1);
     gC[2].set(mix(COL.fire[0], 1, 0.35) * pi, mix(COL.fire[1], 1, 0.35) * pi, mix(COL.fire[2], 1, 0.35) * pi, 0);
     let best = -1, bh = 0;
@@ -705,10 +782,10 @@ export function createGenesis(opts: GenesisOpts) {
     const driftX = opts.reduced ? 0 : 0.32 * Math.sin(t * 0.031) + 0.12 * Math.sin(t * 0.077);
     const driftY = opts.reduced ? 0 : 0.05 * Math.sin(t * 0.047);
     const shake = st.shake * Math.sin(now * 0.09) * 1.4;
-    const tanV = view.tanV;
+    const tanV = st.tanV;
     const shift = 2 * st.hzf - 1;
     camera.position.set(driftX + par.x * 0.9, st.camY + driftY + par.y * 0.22 + shake, Z_FRONT + st.camD);
-    camera.rotation.set(0, 0, 0);
+    camera.rotation.set(st.pitch, 0, 0);
     let fov = (2 * Math.atan(tanV) * 180) / Math.PI;
     let sh = shift;
     if (dive) {
@@ -807,6 +884,7 @@ export function createGenesis(opts: GenesisOpts) {
     enter,
     reset,
     layout: () => layout(true),
+    setTextBox,
     get P() { return P; },
     get state() { return st; },
     get opener() { return opener; },

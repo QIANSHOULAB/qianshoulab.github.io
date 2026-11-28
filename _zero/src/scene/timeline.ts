@@ -2,7 +2,7 @@
 // 同一个 P 永远是同一个画面（时钟只管呼吸、自转、绕行这些「活着」的小动作），倒着滑就是倒放。
 // P 0..1 第一幕（开场自己放），1..2 第二幕……6..7 第七幕。这里只算数，不碰 three.js，也不碰 DOM。
 import { H, W, T, Z_FRONT } from './layout';
-import { ACT_HEX, CAM_D, DOOR_DEG, HZF, hexToLinear } from './tune';
+import { ACT_HEX, CAM_D, DOOR_DEG, HZF, SKY, hexToLinear } from './tune';
 
 export type V3 = [number, number, number];
 export type Q = [number, number, number, number];
@@ -46,6 +46,15 @@ export function qRot(q: Q, v: V3): V3 {
   return [m[0] * v[0] + m[3] * v[1] + m[6] * v[2], m[1] * v[0] + m[4] * v[1] + m[7] * v[2], m[2] * v[0] + m[5] * v[1] + m[8] * v[2]];
 }
 const X: V3 = [1, 0, 0], Y: V3 = [0, 1, 0], Z: V3 = [0, 0, 1];
+
+/** 第七幕：造物离开门、去天上自己的位置——先往自己那一边甩出去，再升上去（不从门顶正上方过：那会像「门上一只眼」） */
+function swing(a: V3, b: V3, k: number, side: number): V3 {
+  if (k <= 0) return a;
+  if (k >= 1) return b;
+  const c: V3 = [(a[0] + b[0]) / 2 + side * 320, Math.min(a[1], b[1]) + 40, (a[2] + b[2]) / 2 + 120];
+  const u = 1 - k;
+  return [u * u * a[0] + 2 * u * k * c[0] + k * k * b[0], u * u * a[1] + 2 * u * k * c[1] + k * k * b[1], u * u * a[2] + 2 * u * k * c[2] + k * k * b[2]];
+}
 
 function keyed(P: number, keys: [number, number][]) {
   if (P <= keys[0][0]) return keys[0][1];
@@ -108,89 +117,124 @@ export interface State {
   P: number;
   a: number[];                      // a[1..7]：各幕的幕内进度
   camD: number; camY: number; hzf: number; shake: number;
+  pitch: number; tanV: number;      // 第七幕：镜头抬头多少（弧度）、竖直半视角（正切）；前六幕 pitch = 0、tanV 照旧
   open: number;                     // 门开的角度（弧度）
   light: number; lightCol: V3;      // 门后那盏光
   slit: number; slitGlow: number;   // 开场：门缝从下往上亮到哪；那条缝的光晕
   horizon: number; reach: number; dawn: number;
-  flood: number; floodB: number; dark: number;      // 第七幕：门里的白光、整屏的白、造物成剪影
+  flood: number; floodB: number; dark: number;      // 门里的白光、整屏的白、造物压暗（v3.1 起第七幕不再用：不许变黑、不许剪影、不许白光吞屏）
   out: number[]; hole: number[]; holeWhite: number;
   sun: { vis: number; form: number; c: V3; scale: number; shape: V3; spin: number; heat: number; flare: number; ignite: number };
   ring: { vis: number; form: number; c: V3; scale: number; rot: Q; spin: number; glow: number };
   moons: { p: V3; s: number; hi: number }[];
-  whale: { vis: number; swim: number; settle: number; c: V3; rot: Q; scale: number; dark: number; glow: number; stars: number; lines: number; mid: V3 };
+  whale: { vis: number; swim: number; settle: number; c: V3; rot: Q; scale: number; dark: number; glow: number; stars: number; lines: number; mid: V3; wave: number; emit: number };
   arm: { vis: number; form: number; blast: number; c: V3; scale: number; heat: number; rots: Q[]; point: V3; pointI: number; flash: number };
   orbits: { c: V3; R: number; q: Q; draw: number; I: number }[];
   grid: number; gridR: number; starOn: number; starFree: number;
   shock: { c: V3; r: number; i: number };
   lights: { p: V3; c: V3; r: number; path: number }[];
+  // —— 第七幕「开天」——
+  sky: number;                      // 进了第七幕多少（0..1，管倒影、星怎么挂）
+  crack: number;                    // 门裂开：缝里透光、轻轻抖
+  rise: number;                     // 门上的石头升天走到哪（0..1）
+  gone: number;                     // 门洞里那片光走了多少
+  calm: number;                     // 水面平成一面镜子
+  neb: number;                      // 星云铺开了多少
+  fam: number;                      // 造物散到天上各自位置走了多少
+  fin: Fin;                         // 最后那个镜头（星云、留暗的那块天都按它算）
 }
 
-/** 第七幕「全家福」：每样造物在最后那个镜头里站哪（屏幕坐标 x、y，离镜头多远，占屏多大） */
-function slots(v: View) {
+/** 第七幕最后那个镜头：升到天里、抬头、视角放宽；地平线压到屏幕下面四分之一 */
+export interface Fin { pos: V3; pitch: number; tanV: number; aspect: number; shift: number }
+export function finalCam(v: View): Fin {
   const n = v.narrow;
-  const hz = mix(HZF.end, HZF.endPhone, n);
-  const shift = 2 * hz - 1;
-  const camZ = Z0 + CAM_D[7];
-  const at = (nx: number, ny: number, d: number): V3 => {
-    const dir = norm3([nx * v.tanV * v.aspect, (ny - shift) * v.tanV, -1]);
-    return add3([0, EYE, camZ], mul3(dir, d));
-  };
-  const hW = (d: number) => 2 * d * v.tanV;   // 那个距离上，一屏高是多少世界单位
-  const wW = (d: number) => 2 * d * v.tanV * v.aspect;
-  if (n < 0.5) {
-    return {
-      sun: { p: at(0.0, 0.62, 250), s: (0.105 * hW(250)) / 46 },
-      whale: { p: at(-0.56, 0.36, 262), s: (0.3 * wW(262)) / WHALE_L },
-      arm: { p: at(0.57, 0.36, 250), s: (0.1 * hW(250)) / 52 },
-      ring: { p: at(0.0, 0.12, 215), s: (0.16 * wW(215)) / RING_R },
-    };
-  }
+  const pitch = (mix(SKY.pitchDeg[0], SKY.pitchDeg[1], n) * Math.PI) / 180;
+  const tanV = mix(SKY.tanV[0], SKY.tanV[1], n);
+  const hz = mix(SKY.horizon[0], SKY.horizon[1], n);
+  // 投影矩阵的移轴量：抬头 pitch 以后，地平线还要落在离底 hz 的地方
+  const shift = 2 * hz - 1 + Math.tan(pitch) / tanV;
+  return { pos: [0, EYE + SKY.camY, Z0 + SKY.camD], pitch, tanV, aspect: v.aspect, shift };
+}
+/** 最后那个镜头里，屏幕坐标（nx、ny，-1..1）上、离镜头 d 远的那个点 */
+export function finAt(f: Fin, nx: number, ny: number, d: number): V3 {
+  const dir = norm3([nx * f.tanV * f.aspect, (ny - f.shift) * f.tanV, -1]);
+  return add3(f.pos, mul3(qRot(qAxis(X, f.pitch), dir), d));
+}
+
+/** 第七幕：每样造物在最后那个镜头里站哪（屏幕坐标、离镜头多远、占屏多大）。不挤在一起、不在门里、不压着门原来的位置，
+ *  也不压着正中下面那句话（index.astro 的 .end）。电脑横屏一套、手机竖屏一套，中间的屏按竖的程度插。 */
+function slots(f: Fin, n: number) {
+  const hW = (d: number) => 2 * d * f.tanV;               // 那个距离上，一屏高是多少世界单位
+  const wW = (d: number) => 2 * d * f.tanV * f.aspect;    // 一屏宽
+  const L = (k: [number, number]) => mix(k[0], k[1], n);
+  const sunD = 1300, whD = 1500, ringD = 1250, armD = 1100;
   return {
-    sun: { p: at(0.0, 0.64, 250), s: (0.07 * hW(250)) / 46 },
-    whale: { p: at(0.0, 0.47, 262), s: (0.78 * wW(262)) / WHALE_L },
-    arm: { p: at(-0.5, 0.2, 250), s: (0.06 * hW(250)) / 52 },
-    ring: { p: at(0.5, 0.2, 230), s: (0.28 * wW(230)) / RING_R },
+    sun: { p: finAt(f, L([-0.58, -0.46]), L([0.5, 0.78]), sunD), s: (L([0.058, 0.042]) * hW(sunD)) / 46 },
+    whale: { p: finAt(f, L([0.34, 0.14]), L([0.6, 0.5]), whD), s: (L([0.21, 0.46]) * wW(whD)) / WHALE_L, R: L([0.1, 0.16]) * wW(whD) },
+    ring: { p: finAt(f, L([0.62, 0.5]), L([0.24, 0.16]), ringD), s: (L([0.085, 0.24]) * wW(ringD)) / RING_R },
+    arm: { p: finAt(f, L([-0.74, -0.58]), L([0.04, 0.22]), armD), s: (L([0.068, 0.046]) * hW(armD)) / 66 },
   };
 }
 
 export function computeState(P: number, clock: number, v: View, nMoons: number): State {
   const a = [0, 0, 0, 0, 0, 0, 0, 0].map((_, k) => (k === 0 ? 0 : cl(P - (k - 1))));
   const n = v.narrow;
-  const fam = slots(v);
-  const toFam = ss(6.15, 6.62, P);
+  const a7 = a[7];
+  const fin = finalCam(v);
+  const fam = slots(fin, n);
+  const toFam = ss(SKY.fam[0], SKY.fam[1], a7);
+  const camK = ss(SKY.cam[0], SKY.cam[1], a7);
 
   // —— 镜头 ——
   let camD = CAM_D[0];
-  for (let k = 2; k <= 7; k++) {
-    if (P > k - 1) camD = mix(CAM_D[k - 1], CAM_D[k], k === 7 ? ss(0.05, 0.75, a[7]) : ss(0.0, 1.0, a[k]));
+  for (let k = 2; k <= 6; k++) {
+    if (P > k - 1) camD = mix(CAM_D[k - 1], CAM_D[k], ss(0.0, 1.0, a[k]));
   }
-  camD *= 1 + 0.16 * n * ss(1, 1.4, P) * (1 - ss(6.2, 6.8, P));
-  const hzHero = mix(HZF.hero, HZF.heroPhone, n), hzAct = mix(HZF.act, HZF.actPhone, n), hzEnd = mix(HZF.end, HZF.endPhone, n);
-  const hzf = mix(mix(hzHero, hzAct, ss(1.0, 1.32, P)), hzEnd, ss(6.1, 6.8, P));
-  // 第六幕：镜头升起来往下看（律要从上面看才看得清），第七幕再贴回水面
-  const camY = EYE + 64 * ss(5.04, 5.42, P) * (1 - ss(6.0, 6.38, P));
+  camD *= 1 + 0.16 * n * ss(1, 1.4, P);
+  // 第七幕：门推开的时候走近一点，然后停在那儿往上升
+  if (P > 6) camD = mix(camD, SKY.camD, ss(0.0, 0.3, a7));
+  const hzHero = mix(HZF.hero, HZF.heroPhone, n), hzAct = mix(HZF.act, HZF.actPhone, n);
+  let hzf = mix(hzHero, hzAct, ss(1.0, 1.32, P));
+  hzf = mix(hzf, (fin.shift + 1) / 2, camK);
+  // 第六幕：镜头升起来往下看（律要从上面看才看得清）；第七幕一进来先贴回水面，等石头飞起来，再跟着一路升进天里
+  let camY = EYE + 64 * ss(5.04, 5.42, P) * (1 - ss(6.0, 6.14, P));
+  camY += SKY.camY * ss(0.3, 0.95, a7);
+  // 抬头：跟着往上飞的石头多抬一点，最后落回能看见整片天和下面那面镜子的角度
+  const peak = (mix(SKY.peakDeg[0], SKY.peakDeg[1], n) * Math.PI) / 180;
+  const pitch = mix(0, peak, ss(0.2, 0.56, a7)) * (1 - ss(0.6, 0.94, a7)) + fin.pitch * ss(0.6, 0.94, a7);
+  const tanV = mix(v.tanV, fin.tanV, camK);
+
+  // —— 第七幕「开天」的几条进度（幕内 0..1）——
+  const sky = ss(0.02, 0.3, a7);
+  const crack = ss(SKY.crack[0], SKY.crack[1], a7);
+  const rise = cl((a7 - SKY.rise[0]) / (SKY.rise[1] - SKY.rise[0]));
+  const gone = ss(SKY.gone[0], SKY.gone[1], a7);
+  const calm = ss(0.3, 0.8, a7);
+  const neb = cl((a7 - SKY.neb[0]) / (SKY.neb[1] - SKY.neb[0]));
 
   // —— 门、光 ——
   const open = (keyed(P, DOOR_DEG) * Math.PI) / 180;
   const o = a[1];
   let light = 0.012 + 0.988 * Math.pow(ss(0.38, 0.72, o), 1.3);
   for (let k = 2; k <= 6; k++) light += 0.22 * ss(0.02, 0.12, a[k]) * (1 - ss(0.18, 0.45, a[k]));
-  light *= mix(1, 0.3, ss(0.78, 1, a[7]));
+  // 第七幕：石头把光带上天，门洞里的光跟着走光
+  light *= mix(1, 0.1, gone);
   let lightCol: V3 = [1, 1, 1];
   for (let k = 2; k <= 6; k++) {
     const s = ss(k - 1 + 0.01, k - 1 + 0.13, P) * (1 - ss(k - 0.08, k + 0.02, P));
     if (s > 0) lightCol = mix3([1, 1, 1], ACT_COL[k], s * 0.86);
   }
+  // 第七幕：门里的光是暖的（白里带一点金），不是灰白
+  if (a7 > 0) lightCol = mix3(lightCol, [1, 0.8, 0.58], 0.55 * ss(0.0, 0.1, a7));
   const slit = ss(0.14, 0.4, o);
-  const slitGlow = ss(0.13, 0.2, o) * mix(1, 0.55, ss(0.5, 0.8, o));
+  const slitGlow = ss(0.13, 0.2, o) * mix(1, 0.55, ss(0.5, 0.8, o)) * (1 - gone);
   const horizon = ss(0.48, 0.76, o), reach = ss(0.58, 0.9, o), dawn = ss(0.4, 0.92, o);
-  const flood = ss(0.42, 0.62, a[7]) * mix(1, 0.32, ss(0.76, 1, a[7]));
-  const floodB = ss(0.44, 0.6, a[7]) * (1 - ss(0.68, 0.9, a[7]));
-  const dark = ss(0.4, 0.6, a[7]);
+  // v3 第七幕的白光吞屏、剪影都不要了（Song 11-28：「不许变黑，不许剪影，不许白光吞屏」）
+  const flood = 0, floodB = 0, dark = 0;
 
   const out = [0, 1, 2, 3, 4].map((k) => ss(k + 1.0, k + 1.16, P));
-  const hole = [0, 1, 2, 3, 4].map((k) => ss(k + 1.05, k + 1.22, P));
-  const holeWhite = ss(6.2, 6.55, P);
+  const hole = [0, 1, 2, 3, 4].map((k) => ss(k + 1.05, k + 1.22, P) * (1 - crack));
+  const holeWhite = 0;
 
   // —— Ⅱ 燃日 ——
   const a2 = a[2];
@@ -204,16 +248,17 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   let sunC = mix3([0, 120, Z0 + 4], S1, ss(0.1, 0.5, a2));
   sunC = mix3(sunC, SP, park2);
   sunC = mix3(sunC, orbitPos(ORBITS[2], phSun, rS), sunCatch);
-  sunC = mix3(sunC, fam.sun.p, toFam);
+  sunC = swing(sunC, fam.sun.p, toFam, -1);
   let sunScale = mix(0.42, 1, ss(0.06, 0.42, a2)) * mix(1, 0.78, park2);
   sunScale = mix(sunScale, 0.6, sunCatch);
   sunScale = mix(sunScale, fam.sun.s, toFam);
   let sunHeat = mix(1, 0.3, park2);
   sunHeat = mix(sunHeat, 0.8, ss(0.3, 0.55, a[6]));
+  sunHeat = mix(sunHeat, 1, toFam);
   const sun = {
     vis: ss(0.015, 0.04, a2), form: cl(a2 / 0.56), c: sunC, scale: sunScale,
     shape: mix3([0.13, 2.1, 0.13], [1, 1, 1], ss(0.07, 0.34, a2)),
-    spin: clock * 0.045 + a2 * 0.9, heat: sunHeat, flare: sunHeat * sunHeat * (1 - toFam), ignite: ss(0.44, 0.96, a2),
+    spin: clock * 0.045 + a2 * 0.9, heat: sunHeat, flare: sunHeat * sunHeat, ignite: ss(0.44, 0.96, a2),
   };
 
   // —— Ⅲ 布环 ——
@@ -222,12 +267,13 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const ringSpin = clock * 0.025;
   let ringQ = qMul(qAxis(X, 0.24), qAxis(Z, 0.06));
   ringQ = qSlerp(ringQ, qMul(qAxis(X, 0.44), qAxis(Z, -0.12)), ss(5.3, 5.52, P));
-  ringQ = qSlerp(ringQ, qMul(qAxis(Z, -0.32), qAxis(X, 1.22)), toFam);
+  // 天上那道环：差不多水平，从下面仰着看是一个张开的椭圆（不是一条线）
+  ringQ = qSlerp(ringQ, qMul(qAxis(Z, mix(0.28, 0.2, n)), qAxis(X, mix(-0.22, -0.06, n))), toFam);
   const ringScale = mix(mix(1, 0.86, n), fam.ring.s, toFam);
-  const ringC = mix3(DC, fam.ring.p, toFam);
+  const ringC = swing(DC, fam.ring.p, toFam, 1);
   const ring = {
     vis: ss(0.005, 0.03, a3), form: ringForm, c: ringC, scale: ringScale, rot: ringQ, spin: ringSpin,
-    glow: mix(mix(1, 0.32, ss(3.02, 3.3, P)), 0.85, ss(5.3, 5.5, P)),
+    glow: mix(mix(mix(1, 0.32, ss(3.02, 3.3, P)), 0.85, ss(5.3, 5.5, P)), 1.15, toFam),
   };
   const moons: State['moons'] = [];
   const rq = ringQ;
@@ -248,18 +294,24 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const whaleCatch = ss(ORBITS[1].to - 0.08, ORBITS[1].to + 0.04, a[6]);
   const phW = ORBITS[1].ph0 + (clock / ORBITS[1].period) * Math.PI * 2;
   let wC = mix3(WF, orbitPos(ORBITS[1], phW, mix(1, 0.6, n)), whaleCatch);
-  wC = mix3(wC, fam.whale.p, toFam);
+  // 第七幕：在星云里游——绕着自己那块天兜一个很大的圈（水平的圈，从下面看是扁的），头朝着游的方向
+  // （起点挑过：时钟 5 秒——截图那一刻——它正往左游，跟第六幕挂在轨道上的朝向一样，换位置的时候不用掉头）
+  const phSky = 3.44 + (clock / 110) * Math.PI * 2;
+  const wSky = add3(fam.whale.p, [fam.whale.R * Math.sin(phSky), fam.whale.R * 0.05 * Math.sin(phSky * 2), fam.whale.R * 0.55 * Math.cos(phSky)]);
+  wC = swing(wC, wSky, toFam, Math.sign(wSky[0]) || 1);
   let wQ = qAxis(Y, Math.PI);
   wQ = qSlerp(wQ, qAxis(Y, Math.PI - (phW - ORBITS[1].ph0) * 0.0 + 0.35), whaleCatch);
-  wQ = qSlerp(wQ, qAxis(Y, Math.PI), toFam);
+  const headY = Math.atan2(0.55 * Math.sin(phSky), Math.cos(phSky));
+  wQ = qSlerp(wQ, qMul(qAxis(Y, headY), qAxis(X, -0.1)), toFam);
   const wScale = mix(mix(1, 0.72, n), fam.whale.s, toFam);
   const sp = wSpeed(swim);
   const midPath = wPath(swim - (0.4 * WHALE_L) / sp);
   const mid = mix3(midPath, wC, settle);
   const whale = {
     vis: ss(0.005, 0.03, a4), swim, settle, c: wC, rot: wQ, scale: wScale,
-    dark: ss(0.84, 0.95, a4) * 0.8, glow: mix(1, 0.3, ss(0.86, 1, a4)),
-    stars: ss(0.84, 0.96, a4), lines: ss(0.88, 1.0, a4), mid,
+    dark: ss(0.84, 0.95, a4) * 0.8 * (1 - toFam), glow: mix(mix(1, 0.3, ss(0.86, 1, a4)), 1.1, toFam),
+    stars: ss(0.84, 0.96, a4), lines: ss(0.88, 1.0, a4) * mix(1, 0.35, toFam), mid,
+    wave: mix(0.25, 0.85, toFam), emit: 0.5 * toFam,
   };
 
   // —— Ⅴ 铸器（滑到一半那一拍定住：幕内 0.45..0.5 画面不动）——
@@ -270,10 +322,10 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const armCatch = ss(ORBITS[0].to - 0.08, ORBITS[0].to + 0.04, a[6]);
   const phA = ORBITS[0].ph0 + (clock / ORBITS[0].period) * Math.PI * 2;
   let aC = mix3(CA, orbitPos(ORBITS[0], phA, mix(1, 0.62, n)), armCatch);
-  aC = mix3(aC, fam.arm.p, toFam);
+  aC = swing(aC, fam.arm.p, toFam, -1);
   const armScale = mix(mix(1, 0.9, n) * mix(1, 0.78, armCatch), fam.arm.s, toFam);
   // 浑天仪：赤道、子午、黄道三道环；整架往镜头倾一点、绕极轴慢慢转，三道环永远是三个不同的椭圆
-  const q0 = qMul(qAxis(Y, 0.65 + clock * 0.06), qAxis(X, 0.6));
+  const q0 = qSlerp(qMul(qAxis(Y, 0.65 + clock * 0.06), qAxis(X, 0.6)), qMul(qAxis(Z, 0.5), qMul(qAxis(Y, 0.4 + clock * 0.05), qAxis(X, 1.05))), toFam);
   const rots: Q[] = [
     q0,
     qMul(q0, qMul(qAxis(Y, 0.9 + clock * 0.13), qAxis(X, Math.PI / 2))),
@@ -282,6 +334,7 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   let armHeat = mix(1.7, 0.4, ss(0.12, 0.5, bt));
   armHeat = mix(armHeat, 0.28, ss(5.02, 5.3, P));
   armHeat = mix(armHeat, 0.55, ss(5.05, 5.25, P));
+  armHeat = mix(armHeat, 1.05, toFam);
   const arm = {
     vis: ss(0.05, 0.1, F), form: cl((F - 0.06) / 0.39), blast: bt, c: aC, scale: armScale, heat: armHeat, rots,
     point: mix3([0, 120, Z0 + 2], CA, ss(0.0, 0.13, F)),
@@ -291,34 +344,45 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const shake = bt > 0 ? Math.exp(-bt * 16) : 0;
   const shock = { c: [CA[0], 0, CA[2]] as V3, r: 1700 * Math.pow(cl(bt / 0.38), 0.72), i: bt > 0 ? 1 - ss(0.04, 0.38, bt) : 0 };
 
-  // —— Ⅵ 立法：器的三道环放大成轨道 ——
+  // —— Ⅵ 立法：器的三道环放大成轨道；第七幕三道轨道再放大，散成满天的大椭圆 ——
   const a6 = a[6];
+  // 天上三道轨道：各占一块天、斜着，只画大半圈，绕自己的轴慢慢转（像带着尾巴的星在走）
+  const SKY_ORB: { nx: [number, number]; ny: [number, number]; d: number; R: [number, number]; z: number; x: number; per: number }[] = [
+    { nx: [-0.5, -0.42], ny: [0.66, 0.9], d: 1700, R: [430, 300], z: 0.42, x: 1.12, per: 70 },
+    { nx: [0.5, 0.36], ny: [0.78, 0.96], d: 2000, R: [620, 420], z: -0.3, x: 1.2, per: 90 },
+    { nx: [0.0, 0.0], ny: [1.05, 1.18], d: 2600, R: [1700, 1000], z: 0.06, x: 0.42, per: 140 },
+  ];
   const orbits = ORBITS.map((ob, j) => {
     const g = ss(ob.from, ob.to, a6);
     const ringR = (66 - j * 7) * armScale;
-    const q = qSlerp(rots[j], orbitQ(ob), g);
-    return {
-      c: mix3(aC, DC, g), R: mix(ringR, ob.R * mix(1, 0.62, n), g), q,
-      draw: ss(ob.from, ob.from + (ob.to - ob.from) * 0.85, a6), I: (1 - ss(6.22, 6.5, P)),
-    };
+    let q = qSlerp(rots[j], orbitQ(ob), g);
+    let c = mix3(aC, DC, g), R = mix(ringR, ob.R * mix(1, 0.62, n), g);
+    const so = SKY_ORB[j];
+    const k = ss(SKY.fam[0] + 0.05 * j, SKY.fam[1] + 0.05 * j, a7);
+    q = qSlerp(q, qMul(qMul(qAxis(Z, so.z), qAxis(X, so.x)), qAxis(Y, (clock / so.per) * Math.PI * 2)), k);
+    c = mix3(c, finAt(fin, mix(so.nx[0], so.nx[1], n), mix(so.ny[0], so.ny[1], n), so.d), k);
+    R = mix(R, mix(so.R[0], so.R[1], n), k);
+    const draw = ss(ob.from, ob.from + (ob.to - ob.from) * 0.85, a6) * mix(1, 0.72, k);
+    return { c, R, q, draw, I: mix(1, 0.5, k) };
   });
-  const grid = ss(0.08, 0.36, a6) * (1 - ss(6.25, 6.6, P));
+  const grid = ss(0.08, 0.36, a6) * (1 - ss(6.06, 6.3, P));
   const gridR = mix(0, 2800, ss(0.08, 0.55, a6));
   const starOn = ss(0.62, 0.8, a6), starFree = ss(0.8, 0.985, a6);
 
   // —— 光：门后一盏 + 每样造物一盏（水面上的光路最多六条）——
   const lights: State['lights'] = [
-    { p: [0, H * 0.46, Z0 - 40], c: mul3(lightCol, light), r: 400, path: 1 },
-    { p: sun.c, c: mul3(COL.sun, 2.6 * sun.heat * sun.vis * (1 - dark)), r: 150 * sun.scale, path: 0.55 * sun.vis },
-    { p: moons.length ? moons.reduce((b, m) => (m.hi > b.hi ? m : b), moons[0]).p : DC, c: mul3(COL.ring, 1.2 * ring.glow * ring.vis * (1 - dark)), r: 200, path: 0.4 * ring.vis },
-    { p: mid, c: mul3(COL.life, 0.9 * whale.glow * whale.vis * (1 - dark)), r: 260, path: 0.35 * whale.vis },
-    { p: arm.vis > 0 ? aC : arm.point, c: mul3(COL.fire, (1.4 * arm.heat * arm.vis + 2 * arm.pointI + 18 * arm.flash) * (1 - dark)), r: 150, path: 0.6 * Math.max(arm.vis, ss(0, 0.05, F)) },
+    { p: [0, H * 0.46, Z0 - 40], c: mul3(lightCol, light), r: 400, path: 1 - gone },
+    { p: sun.c, c: mul3(COL.sun, 2.6 * sun.heat * sun.vis), r: 150 * sun.scale, path: 0.55 * sun.vis },
+    { p: mix3(moons.length ? moons.reduce((b, m) => (m.hi > b.hi ? m : b), moons[0]).p : DC, ringC, toFam), c: mul3(COL.ring, 1.2 * ring.glow * ring.vis), r: 200 * mix(1, ringScale, toFam), path: 0.4 * ring.vis },
+    { p: mid, c: mul3(COL.life, 0.9 * whale.glow * whale.vis), r: 260 * mix(1, wScale, toFam), path: 0.35 * whale.vis },
+    { p: arm.vis > 0 ? aC : arm.point, c: mul3(COL.fire, (1.4 * arm.heat * arm.vis + 2 * arm.pointI + 18 * arm.flash)), r: 150 * mix(1, armScale, toFam), path: 0.6 * Math.max(arm.vis, ss(0, 0.05, F)) },
     { p: [0, 40, Z0 + 60], c: mul3(COL.law, 1.1 * grid), r: 150, path: 0.5 * grid },
   ];
 
   return {
-    P, a, camD, camY, hzf, shake, open, light, lightCol, slit, slitGlow, horizon, reach, dawn, flood, floodB, dark,
+    P, a, camD, camY, hzf, shake, pitch, tanV, open, light, lightCol, slit, slitGlow, horizon, reach, dawn, flood, floodB, dark,
     out, hole, holeWhite, sun, ring, moons, whale, arm, orbits, grid, gridR, starOn, starFree, shock, lights,
+    sky, crack, rise, gone, calm, neb, fam: toFam, fin,
   };
 }
 

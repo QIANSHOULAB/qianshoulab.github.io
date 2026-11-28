@@ -180,6 +180,35 @@ export function blast() {
   n.start(t); n.stop(t + 3);
 }
 
+/** 第七幕石头升天（v3.1 只加这一声）：一阵往上走的气声，加上一颗一颗亮起来的星——A 大调五声音阶上的小铃音，越来越高 */
+export function rise() {
+  if (!wanted || !ensure() || !ctx || !master || !noiseBuf) return;
+  const t = ctx.currentTime + 0.02, d = 3.6;
+  const n = ctx.createBufferSource();
+  n.buffer = noiseBuf; n.loop = true;
+  const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.2;
+  f.frequency.setValueAtTime(500, t); f.frequency.exponentialRampToValueAtTime(5600, t + d);
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.0001, t);
+  ng.gain.exponentialRampToValueAtTime(0.1, t + 1.3);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.8);
+  n.connect(f).connect(ng).connect(master);
+  n.start(t); n.stop(t + d + 1);
+  const notes = [440, 493.88, 554.37, 659.26, 739.99, 880, 987.77, 1108.73, 1318.51, 1479.98, 1760];
+  notes.forEach((hz, i) => {
+    const at = t + 0.25 + i * 0.28 + Math.random() * 0.12;
+    const o = ctx!.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = hz;
+    const g = ctx!.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.045 - i * 0.002, at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 1.6);
+    o.connect(g).connect(master!);
+    o.start(at); o.stop(at + 1.7);
+  });
+}
+
 /** 进去：一口气涌上来，越来越亮 */
 export function swell() {
   if (!wanted || !ensure() || !ctx || !master || !noiseBuf) return;
