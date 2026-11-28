@@ -2,7 +2,7 @@
  "engine": "webkit",
  "base": "http://127.0.0.1:4321",
  "before": "https://qianshoulab.github.io",
- "at": "2026-11-28T11:56:33.632Z",
+ "at": "2026-11-28T12:14:16.638Z",
  "scan": [
   {
    "size": "390x844",
@@ -25,9 +25,10 @@
    "worstAt": "P 6.5、时钟 72：ring–whale",
    "fails": 0,
    "failList": [],
-   "ms": 5766,
+   "ms": 3182,
    "errors": [],
-   "spots": 0
+   "spots": 0,
+   "extra": false
   },
   {
    "size": "360x780",
@@ -50,9 +51,10 @@
    "worstAt": "P 6.5、时钟 72：ring–whale",
    "fails": 0,
    "failList": [],
-   "ms": 2079,
+   "ms": 1706,
    "errors": [],
-   "spots": 0
+   "spots": 0,
+   "extra": false
   },
   {
    "size": "430x932",
@@ -75,9 +77,10 @@
    "worstAt": "P 6.5、时钟 72：ring–whale",
    "fails": 0,
    "failList": [],
-   "ms": 1971,
+   "ms": 1429,
    "errors": [],
-   "spots": 0
+   "spots": 0,
+   "extra": false
   },
   {
    "size": "390x664",
@@ -100,9 +103,10 @@
    "worstAt": "P 4.85、时钟 0：ring–arm",
    "fails": 0,
    "failList": [],
-   "ms": 1844,
+   "ms": 1343,
    "errors": [],
-   "spots": 0
+   "spots": 0,
+   "extra": false
   },
   {
    "size": "844x390",
@@ -546,9 +550,10 @@
      "gap": -59.5
     }
    ],
-   "ms": 1771,
+   "ms": 1323,
    "errors": [],
-   "spots": 14
+   "spots": 14,
+   "extra": false
   },
   {
    "size": "1440x900",
@@ -992,9 +997,10 @@
      "gap": -137.2
     }
    ],
-   "ms": 1790,
+   "ms": 1481,
    "errors": [],
-   "spots": 14
+   "spots": 14,
+   "extra": false
   }
  ],
  "names": [
@@ -2187,8 +2193,8 @@
  "black": [
   {
    "step": "刚画出来",
-   "mean": 82.4,
-   "bright": 0.486,
+   "mean": 82.5,
+   "bright": 0.487,
    "dpr": 1.6,
    "tier": "mid",
    "size": "390x844",
@@ -2210,8 +2216,8 @@
   },
   {
    "step": "画布拉窄",
-   "mean": 82.6,
-   "bright": 0.495,
+   "mean": 83,
+   "bright": 0.496,
    "dpr": 1.6,
    "tier": "mid",
    "size": "390x844",
@@ -2234,8 +2240,8 @@
   },
   {
    "step": "画布拉回",
-   "mean": 81.7,
-   "bright": 0.485,
+   "mean": 82.3,
+   "bright": 0.486,
    "dpr": 1.6,
    "tier": "mid",
    "size": "390x844",
@@ -2258,8 +2264,8 @@
   },
   {
    "step": "横过来",
-   "mean": 82.8,
-   "bright": 0.495,
+   "mean": 83.4,
+   "bright": 0.497,
    "dpr": 1.6,
    "tier": "mid",
    "size": "844x390",
@@ -2282,7 +2288,7 @@
   },
   {
    "step": "竖回去",
-   "mean": 81.6,
+   "mean": 81.9,
    "bright": 0.485,
    "dpr": 1.6,
    "tier": "mid",
@@ -2306,8 +2312,8 @@
   },
   {
    "step": "自动降档（1.6、mid 降了一步）",
-   "mean": 82.5,
-   "bright": 0.489,
+   "mean": 82.8,
+   "bright": 0.49,
    "dpr": 1.2800000000000002,
    "tier": "mid",
    "size": "390x844",
@@ -2354,8 +2360,8 @@
   },
   {
    "step": "又降一次（1.0240000000000002、mid 再降一步）",
-   "mean": 82.5,
-   "bright": 0.488,
+   "mean": 82.7,
+   "bright": 0.489,
    "dpr": 1.25,
    "tier": "low",
    "size": "390x844",

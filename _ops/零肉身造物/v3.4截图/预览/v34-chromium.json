@@ -2,7 +2,7 @@
  "engine": "chromium",
  "base": "http://127.0.0.1:4321",
  "before": "https://qianshoulab.github.io",
- "at": "2026-11-28T11:56:26.933Z",
+ "at": "2026-11-28T12:14:11.281Z",
  "scan": [
   {
    "size": "390x844",
@@ -25,9 +25,10 @@
    "worstAt": "P 6.5、时钟 72：ring–whale",
    "fails": 0,
    "failList": [],
-   "ms": 3857,
+   "ms": 4014,
    "errors": [],
-   "spots": 0
+   "spots": 0,
+   "extra": false
   },
   {
    "size": "360x780",
@@ -50,9 +51,10 @@
    "worstAt": "P 6.5、时钟 72：ring–whale",
    "fails": 0,
    "failList": [],
-   "ms": 3776,
+   "ms": 3596,
    "errors": [],
-   "spots": 0
+   "spots": 0,
+   "extra": false
   },
   {
    "size": "430x932",
@@ -75,9 +77,10 @@
    "worstAt": "P 6.5、时钟 72：ring–whale",
    "fails": 0,
    "failList": [],
-   "ms": 4999,
+   "ms": 4294,
    "errors": [],
-   "spots": 0
+   "spots": 0,
+   "extra": false
   },
   {
    "size": "390x664",
@@ -100,9 +103,10 @@
    "worstAt": "P 4.85、时钟 0：ring–arm",
    "fails": 0,
    "failList": [],
-   "ms": 4200,
+   "ms": 4196,
    "errors": [],
-   "spots": 0
+   "spots": 0,
+   "extra": false
   },
   {
    "size": "844x390",
@@ -546,9 +550,10 @@
      "gap": -59.5
     }
    ],
-   "ms": 3472,
+   "ms": 4026,
    "errors": [],
-   "spots": 14
+   "spots": 14,
+   "extra": false
   },
   {
    "size": "1440x900",
@@ -992,9 +997,10 @@
      "gap": -137.2
     }
    ],
-   "ms": 7552,
+   "ms": 7155,
    "errors": [],
-   "spots": 14
+   "spots": 14,
+   "extra": false
   }
  ],
  "names": [
@@ -2253,7 +2259,7 @@
   },
   {
    "step": "画布拉回",
-   "mean": 74.1,
+   "mean": 74,
    "bright": 0.463,
    "dpr": 1.25,
    "tier": "low",
@@ -2277,7 +2283,7 @@
   },
   {
    "step": "横过来",
-   "mean": 84.7,
+   "mean": 84.6,
    "bright": 0.508,
    "dpr": 1.25,
    "tier": "low",
@@ -2301,7 +2307,7 @@
   },
   {
    "step": "竖回去",
-   "mean": 82.8,
+   "mean": 82.6,
    "bright": 0.49,
    "dpr": 1.25,
    "tier": "low",
