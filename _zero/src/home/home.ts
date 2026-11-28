@@ -255,6 +255,10 @@ let obst = { W: 1, H: 1, top: 56, ticks: null as Box | null, motto: null as Box 
 interface Box { x: number; y: number; w: number; h: number }
 const boxes: (Box | null)[] = [null, null, null, null, null];
 const picks: (string | null)[] = [null, null, null, null, null];   // 上一帧挑的那个候选（不来回跳）
+const shown: (Box | null)[] = [null, null, null, null, null];    // 上一帧摆出来的地方（换地方时从这里滑过去）
+const slideUntil = [0, 0, 0, 0, 0];
+const MOVE_COST = 0.45;                                          // 离上一帧的地方每远 1 像素多算几分
+let lastPlace = 0;
 /** 每个名字刚才 0.3 秒内待过的框：点在那儿也算点中 */
 const trail: { t: number; b: Box }[][] = [[], [], [], [], []];
 const TRAIL_MS = 300;
@@ -265,6 +269,7 @@ let collide = 0;
 const LEAD = 26;   // 细线多长（像素）
 
 function measureNames() {
+  shown.fill(null);                            // 版面变了：上一帧的地方不算数，不从那儿滑过来
   root.toggleAttribute('data-bmode', false);   // 先按「挂在天上」量名字的大小
   sizes = names.map((a) => ({ w: a.offsetWidth, h: a.offsetHeight }));
   root.toggleAttribute('data-bmode', mode === 'list');
@@ -386,11 +391,12 @@ function outline(m: Marks, k: number, tall: string): Cand[] {
     const l = Math.hypot(tx, ty) || 1;
     tx /= l; ty /= l;
     const px = -ty, py = tx;
-    for (let i = 0; i <= 6; i++) {
-      const u = i / 6, x = ax + (bx - ax) * u, y = ay + (by - ay) * u;
+    // 沿着身子 13 个点、两边各一排：鲸往前游、名字要让开别的东西时一小步一小步挪，不一下挪开一大截
+    for (let i = 0; i <= 12; i++) {
+      const u = i / 12, x = ax + (bx - ax) * u, y = ay + (by - ay) * u;
       for (const sgn of [1, -1]) {
         const nx = px * sgn, ny = py * sgn;
-        out.push({ id: `w${i}${sgn}`, ax: x + nx * w.r * 1.05, ay: y + ny * w.r * 1.05, nx, ny, pref: dirPref(nx, ny) });
+        out.push({ id: `w${i}${sgn > 0 ? 'a' : 'b'}`, ax: x + nx * w.r * 1.05, ay: y + ny * w.r * 1.05, nx, ny, pref: dirPref(nx, ny) });
       }
     }
     out.push({ id: 'wh', ax: ax - tx * w.r, ay: ay - ty * w.r, nx: -tx, ny: -ty, pref: dirPref(-tx, -ty) + 10 });
@@ -401,8 +407,10 @@ function outline(m: Marks, k: number, tall: string): Cand[] {
 function candidate(c: Cand, w: number, h: number, gap = 7): Box {
   const ax = c.ax + c.nx * gap, ay = c.ay + c.ny * gap;
   const iw = w - 2 * PAD_X, ih = h - 2 * PAD_Y;
-  const ix = c.nx > 0.38 ? ax : c.nx < -0.38 ? ax - iw : ax - iw / 2;
-  const iy = c.ny > 0.38 ? ay : c.ny < -0.38 ? ay - ih : ay - ih / 2;
+  // 往外的方向偏右就把字放在那一点右边、偏左放左边、居中放正中——连续地过渡（以前是三档，鲸一转身过了门槛，字一下挪开半个字宽）
+  const sx = Math.max(-1, Math.min(1, c.nx / 0.5)), sy = Math.max(-1, Math.min(1, c.ny / 0.5));
+  const ix = ax - (iw * (1 - sx)) / 2;
+  const iy = ay - (ih * (1 - sy)) / 2;
   return { x: ix - PAD_X, y: iy - PAD_Y, w, h };
 }
 /** 这个位置放名字有多糟：0 = 挺好；≥ 500 = 压到别的名字、那句话、顶栏、出屏 */
@@ -470,27 +478,39 @@ function placeNames(m: Marks) {
   const o = obst;
   const tall = o.W / o.H < 0.64 ? 'tall' : o.W / o.H < 0.9 ? 'tab' : 'wide';
   collide = 0;
+  const now0 = performance.now();
+  const dt = Math.min(100, Math.max(0, now0 - lastPlace));
+  lastPlace = now0;
   // 先放不动的（日、器、环），再放鲸（它在游）和法典
   for (const k of [0, 3, 1, 2]) {
     const { w, h } = sizes[k] ?? { w: 0, h: 0 };
     if (!w) continue;
     const cands = outline(m, k, tall);
+    // 离上一帧摆的地方越远越不划算（每像素 MOVE_COST 分）：鲸在游，候选点跟着它走，别为了一点点好处换到身子另一头
+    const was = shown[k];
+    const moveCost = (bx: Box) => (was ? MOVE_COST * Math.hypot(bx.x - was.x, bx.y - was.y) : 0);
     let pick: Box | null = null, pickC = 1e9, pickId: string | null = null;
     for (const cd of cands) {
       const bx = candidate(cd, w, h);
-      const c = badness(bx, k, m) + cd.pref;
+      const c = badness(bx, k, m) + cd.pref + moveCost(bx);
       if (c < pickC) { pickC = c; pick = bx; pickId = cd.id; }
     }
     // 上一帧挑的那个还够好就不换（不来回跳）：明显更好（省 25 分以上）才挪
     const prev = picks[k] ? cands.find((c) => c.id === picks[k]) : null;
     if (prev && prev.id !== pickId) {
       const bx = candidate(prev, w, h);
-      const c = badness(bx, k, m) + prev.pref;
+      const c = badness(bx, k, m) + prev.pref + moveCost(bx);
       if (c < 500 && c < pickC + 25) { pick = bx; pickC = c; pickId = prev.id; }
     }
     const pk = pick as Box | null;
     if (pk) pick = { ...pk, x: Math.max(0, Math.min(pk.x, obst.W - pk.w)) };
-    boxes[k] = pick; picks[k] = pickId;
+    // 真要换地方（换了候选、挪得远）：滑过去（约 0.25 秒），不一下跳开；跟着造物走的那一点点照常每帧跟上
+    if (pick && was && pickId !== picks[k] && Math.hypot(pick.x - was.x, pick.y - was.y) > 10) slideUntil[k] = now0 + 320;
+    if (pick && was && now0 < slideUntil[k]) {
+      const a = 1 - Math.exp(-dt / 85);
+      pick = { ...pick, x: was.x + (pick.x - was.x) * a, y: was.y + (pick.y - was.y) * a };
+    }
+    boxes[k] = pick; picks[k] = pickId; shown[k] = pick ? { ...pick } : null;
     if (pickC >= 500) collide++;
   }
   // 法典：挂在轨道上一个固定的点旁边；这个点快转进缺口了（或者位置压到别的了），名字先淡出，换个点再亮
