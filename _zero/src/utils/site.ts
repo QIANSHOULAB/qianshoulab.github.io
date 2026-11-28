@@ -2,7 +2,7 @@
 // 第一帧之前的语言、声音状态由 BaseLayout 头上那段内联脚本定好（不闪），这里只管点了以后的事。
 
 const root = document.documentElement;
-const LANG_KEY = 'qianshou.lang';          // 跟千手院总舵共用：在这边选了中文，进千手院也是中文
+const LANG_KEY = 'qianshou.lang';          // 名字沿用老家的；11-28 搬到 zeroflesh.github.io 以后跟千手院不是一个网站，各记各的
 const SOUND_KEY = 'zero.sound';
 
 function syncLang() {

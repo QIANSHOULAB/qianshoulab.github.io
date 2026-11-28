@@ -4,7 +4,7 @@
 // 第七幕天上那五个名字有没有打架（v3.2：互相压、压那句话、压顶栏、出屏都算；mode = sky 挂在天上 / list 退路 B）。
 // 结果写进 <输出目录>/验收.json。
 // 跑法：node scripts/genesis-shots.mjs <输出目录>
-//   BASE    网站根（默认线上 https://qianshoulab.github.io；工作流里预览分支时是本地起的服务）
+//   BASE    网站根（默认线上 https://zeroflesh.github.io；工作流里预览分支时是本地起的服务）
 //   ENGINES 跑哪几个内核（默认 chromium,webkit,firefox）；SIZES 只跑这几个尺寸（如 390x844,1440x900，本地调试用）
 // 画面用 ?act= 定住进度、?t= 定住时钟、?tier=high 定住力气：同一个进度永远是同一个画面，截图才对得上。
 // PW_MODULE：本地调试时可以指到别的 playwright（比如机器上预装的那份）
@@ -12,7 +12,7 @@ const { chromium, webkit, firefox } = await import(process.env.PW_MODULE || 'pla
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const out = process.argv[2] || 'genesis-shots';
-const BASE = (process.env.BASE || 'https://qianshoulab.github.io').replace(/\/$/, '');
+const BASE = (process.env.BASE || 'https://zeroflesh.github.io').replace(/\/$/, '');
 const ENGINES = (process.env.ENGINES || 'chromium,webkit,firefox').split(',');
 const SIZES = {
   chromium: [[360, 780], [390, 844], [430, 932], [844, 390], [820, 1180], [1280, 720], [1366, 768], [1440, 900], [1920, 1080], [2560, 1440], [3440, 1440]],
@@ -47,7 +47,7 @@ for (const eng of ENGINES) {
       const t0 = Date.now();
       let gl = '–', note = '';
       try {
-        await page.goto(`${BASE}/zero/?act=${P}&t=5&tier=high`, { waitUntil: 'load', timeout: 90000 });
+        await page.goto(`${BASE}/?act=${P}&t=5&tier=high`, { waitUntil: 'load', timeout: 90000 });
         await page.waitForFunction(() => document.documentElement.dataset.gl, null, { timeout: 90000 });
         gl = await page.evaluate(() => document.documentElement.dataset.gl);
         if (gl === 'yes') await page.waitForFunction(() => window.__zero && window.__zero.frames() >= 3, null, { timeout: 240000 });

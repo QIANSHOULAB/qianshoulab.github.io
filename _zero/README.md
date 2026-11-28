@@ -1,8 +1,15 @@
 # 零肉身造物（Zero-Flesh Creation）· 源码
 
-首页（造物之门 v3.4）：https://qianshoulab.github.io/zero/ 。根目录 / 11-28 起也是这个首页（`home.mjs` 里 `HOME_AT_ROOT = true`，Song 13:41 定的）；换不换只看那一行。
+首页（造物之门 v3.4）：https://zeroflesh.github.io/ （首页永远在 /）。11-28 从 https://qianshoulab.github.io/zero/ 搬来（Song 14:08 选的 A：新开组织 zeroflesh）；老家的 /、/zero/、四个栏目页和子页是跳到这里对应位置的跳转页。
 栏目：/zahuopu/（赛博杂货铺；/zhahuopu/ 是头一版打错字的网址，留了跳转）、/specimens/（标本）、/artifacts/（文物）、/codex/（法典）。
-千手院在 /qianshou/，那页是手写的单文件，不归这里管。
+千手院和每个工具留在老家：https://qianshoulab.github.io/qianshou/ （手写的单文件，不归这里管）。这边指过去的链接一律写全网址（`src/data/sites.ts`、`src/data/tools.ts`）；跨站以后语言记忆各记各的，从太阳冲进千手院落地那一下没有淡出。
+
+## 搬家（11-28，施工单 `_ops/零肉身造物/搬家施工单.md`，在老家 QIANSHOULAB/qianshoulab.github.io）
+
+- 从 qianshoulab.github.io 搬到这个仓库 zeroflesh/zeroflesh.github.io：源码 `_zero/`、脚本和测试、工作流整个搬过来，画面一个数没动（v3.3.1 的黑屏修法——`src/scene/genesis.ts` 的 `makeSceneRT` 尺寸一变就新建画面那张图、不用 `setSize`——原样）。
+- 首页在 /；`/zero/` 不要了；`HOME_AT_ROOT` 开关拿掉。canonical、og:url 跟着 `astro.config.mjs` 的 `site` 走（https://zeroflesh.github.io）。
+- 工作流 `.github/workflows/zero.yml`：推 main 构建、提交产物、等 Pages、对着新网址三个内核验（`live-check.mjs` 新家和老网址、`v34-check.mjs` 重叠检查和黑屏回归、交货截图、七幕截图、WebKit iPhone 真点、v3.3 交互验收）；推分支 `zero-*` 只跑预览，结果提交回分支 `_shots/预览/`；手动跑勾 `commit_shots` 把线上那套提交到 `_shots/线上/`。以前的截图留在老家 `_ops/零肉身造物/v*截图/`。
+- 本地调试 `tap-test.mjs` 的时候机器打不开外网：`QIANSHOU_LOCAL=http://127.0.0.1:端口` 把千手院的请求转到本地摆的老家。
 
 ## v3.4（手机竖屏上造出来的东西别挤在一起）
 
@@ -50,27 +57,27 @@
 - 没有 WebGL：换成一张天亮时的静态图（`src/assets/still-*.jpg`，自己的场景截的）+ 文字链接。
 
 ## 文件
-- `home.mjs`：首页放哪（换根目录的开关）。
+- `src/data/sites.ts`：两个家的网址（新家 zeroflesh.github.io、老家 qianshoulab.github.io）。11-28 搬家以后首页永远在 /，原来换根目录的 `home.mjs` 拿掉了。
 - `src/scene/`：画面。`layout.ts`（碑的尺寸、砖、五撮的位置）、`glsl.ts`（天、水、倒影、碑、光、浮尘的着色器）、`monolith.ts`（three.js 场景、黎明、出碑的弹簧、进门的镜头）。
 - `src/home/`：首页的手。`home.ts`（铭文、引线、一个字一个字写、点了进门、静态图后备）、`sound.ts`（三样声音）。
 - `src/components/core/`：`Header.astro`（左 EN / 中文，右声音；子页面中间小 wordmark + 五道门那一行）、`Footer.astro`（Song 那句公司的话 + 宇宙地址，一字不改）、`T.astro`（一段字出中英两份）。
 - `src/i18n/ui.ts`：所有给人看的字（en 门面、zh 第二语言）。改中文标题字以后照 `scripts/fonts/README.md` 补宋体小字库。
 - `src/data/tools.ts`：工具分拣（千手院 / 赛博杂货铺）。
 - `src/content/`：三套档案（标本、文物、法典），每篇一份英文、一份中文。
-- `scripts/publish.mjs`：把 dist 拷到仓库根目录名下那几样（dist/index.html → zero/index.html）。`scripts/live-check.mjs`：线上验收。
+- `scripts/publish.mjs`：把 dist 拷到仓库根目录（dist/index.html → 根目录 index.html，栏目页、zero-assets 整个拷）；`--to <目录>` 拷到别处（工作流预览、本地）。`scripts/live-check.mjs`：线上验收（新家页面、千手院那一下、老家留着的照旧 200 不跳、老网址落到新家对应的页）。
 
 ## 写一篇新标本（写完推上去就上线）
 1. 在 `src/content/specimens/` 放两份：`002-名字.en.mdx`、`002-名字.zh.mdx`（英文重写，不是翻译）。
 2. 头上照 `001-cinderfall-arena.zh.mdx` 那样写：id、lang、slug、title、date、species、scale、liveUrl、sourceUrl、sourceLabel、modelStack、summary。
 3. 两份的 id、date、链接、modelStack 必须一样，不一样构建报错。
-4. 推到 main：工作流 `.github/workflows/zero.yml` 自己构建、把产物提交到根目录（不碰根目录 index.html），GitHub Pages 发出去，再对着真网址验一遍。
+4. 推到 main：工作流 `.github/workflows/zero.yml` 自己构建、把产物提交到仓库根目录，GitHub Pages 发出去，再对着新网址验一遍。
 
 ## 本地
 ```
 cd _zero
 npm ci
 npm run build              # 出到 _zero/dist
-node scripts/publish.mjs   # 拷到仓库根目录（只动 zero、zahuopu、zhahuopu、specimens、artifacts、codex、zero-assets）
+node scripts/publish.mjs   # 拷到仓库根目录（只动 index.html、zahuopu、zhahuopu、specimens、artifacts、codex、zero-assets）
 ```
 平时不用本地拷：推上去工作流会做。`publish.mjs` 发现 dist 里有名单外的东西会直接停，不会踩到别人的网址。
 

@@ -5,7 +5,6 @@ import '../styles/global.css';
 import Header from '../components/core/Header.astro';
 import Footer from '../components/core/Footer.astro';
 import { t, type EntryKey } from '../i18n/ui';
-import { HOME_PATH } from '../../home.mjs';
 import { INK, hexToRgbList } from '../scene/tune';
 import d200 from '../fonts/zero-display-200.woff2?url';
 import d300 from '../fonts/zero-display-300.woff2?url';
@@ -25,7 +24,7 @@ const title = Astro.props.title
   ? { en: `${Astro.props.title.en} · Zero-Flesh Creation`, zh: `${Astro.props.title.zh} · 零肉身造物` }
   : site;
 const desc = Astro.props.desc ?? { en: t('en', 'site.desc'), zh: t('zh', 'site.desc') };
-const path = home ? HOME_PATH : Astro.url.pathname;
+const path = home ? '/' : Astro.url.pathname;   // 首页永远在 /（新家 zeroflesh.github.io，11-28 搬家）
 const url = new URL(path, Astro.site).href;
 // 构建记号：工作流里是源码那次提交的 SHA，线上验收靠它认「Pages 已经发到这一版了」；本地构建写 local
 const build = process.env.ZERO_BUILD || 'local';

@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import T from '../../components/core/T.astro';
 import { shop } from '../../data/tools';
 import { t } from '../../i18n/ui';
+import { QIANSHOU } from '../../data/sites';
 ---
 <BaseLayout current="zahuopu" title={{ en: t('en', 'zahuopu.h1'), zh: t('zh', 'zahuopu.h1') }} desc={{ en: t('en', 'zahuopu.lede'), zh: t('zh', 'zahuopu.lede') }}>
   <header class="wrap page-head">
@@ -39,7 +40,7 @@ import { t } from '../../i18n/ui';
         </li>
       ))}
     </ol>
-    <a class="temple slab" href="/qianshou/">
+    <a class="temple slab" href={QIANSHOU}>
       <T as="p" class="temple-t" k="zahuopu.also" />
       <span class="go"><span class="label nob">01</span> <T k="zahuopu.alsoGo" /> <span class="arr" aria-hidden="true">→</span></span>
     </a>

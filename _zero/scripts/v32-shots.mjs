@@ -8,7 +8,7 @@ const pw = await import(process.env.PW_MODULE || 'playwright');
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const out = process.argv[2] || 'v32-shots';
-const BASE = (process.env.BASE || 'https://qianshoulab.github.io').replace(/\/$/, '');
+const BASE = (process.env.BASE || 'https://zeroflesh.github.io').replace(/\/$/, '');
 const ENGINES = (process.env.ENGINES || 'chromium,webkit,firefox').split(',');
 const SIZES = (process.env.SIZES || '1440x900,390x844').split(',').map((s) => s.split('x').map(Number));
 const LAUNCH = {
@@ -81,9 +81,9 @@ for (const eng of ENGINES) {
       const ctx = await browser.newContext(ctxOpts);
       const page = await ctx.newPage();
       page.errs = [];
-      page.on('pageerror', (e) => { if (path(page.url()) === '/zero/') page.errs.push(String(e).slice(0, 200)); });
-      page.on('console', (m) => { if (m.type() === 'error' && path(page.url()) === '/zero/') page.errs.push(m.text().slice(0, 200)); });
-      await page.goto(`${BASE}/zero/${q}`, { waitUntil: 'load', timeout: 90000 });
+      page.on('pageerror', (e) => { if (path(page.url()) === '/') page.errs.push(String(e).slice(0, 200)); });
+      page.on('console', (m) => { if (m.type() === 'error' && path(page.url()) === '/') page.errs.push(m.text().slice(0, 200)); });
+      await page.goto(`${BASE}/${q}`, { waitUntil: 'load', timeout: 90000 });
       const gl = await ready(page, names);
       return { page, gl, close: () => ctx.close() };
     };

@@ -19,7 +19,7 @@ const pw = await import(process.env.PW_MODULE || 'playwright');
 import { mkdirSync, writeFileSync, readdirSync, renameSync } from 'node:fs';
 
 const out = process.argv[2] || 'v33-test';
-const BASE = (process.env.BASE || 'https://qianshoulab.github.io').replace(/\/$/, '');
+const BASE = (process.env.BASE || 'https://zeroflesh.github.io').replace(/\/$/, '');
 const ENGINE = process.env.ENGINE || 'webkit';
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',').map(Number) : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const TIER = process.env.TIER || 'low';
@@ -40,7 +40,7 @@ async function newPage(kind, extra = {}) {
   const ctx = await browser.newContext({ ...opts, ...extra });
   const page = await ctx.newPage();
   page.errs = [];
-  const mine = () => { try { return new URL(page.url()).pathname === '/zero/'; } catch { return false; } };
+  const mine = () => { try { return new URL(page.url()).pathname === '/'; } catch { return false; } };
   page.on('pageerror', (e) => { if (mine()) page.errs.push(String(e).slice(0, 200)); });
   page.on('console', (m) => { if (m.type() === 'error' && mine()) page.errs.push(m.text().slice(0, 200)); });
   page.cdp = ENGINE === 'chromium' ? await ctx.newCDPSession(page) : null;
@@ -49,7 +49,7 @@ async function newPage(kind, extra = {}) {
   return page;
 }
 async function open(page, q = '', dpr = LOWRES) {
-  await page.goto(`${BASE}/zero/?tier=${TIER}${dpr ? `&dpr=${dpr}` : ''}${q}`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/?tier=${TIER}${dpr ? `&dpr=${dpr}` : ''}${q}`, { waitUntil: 'load' });
   return ready(page);
 }
 async function ready(page) {
@@ -294,7 +294,7 @@ if (touchy && ONLY.some((n) => n <= 6)) {
       await page.waitForTimeout(1500);
       const s = await page.evaluate(() => ({ P: window.__zero.P(), diving: document.documentElement.hasAttribute('data-diving'), flood: +getComputedStyle(document.querySelector('[data-flood]')).opacity, path: location.pathname }));
       r.back = s; r.moved = moved;
-      r.ok = s.path === '/zero/' && near(s.P, 3.88) && !s.diving && s.flood < 0.02 && moved === 0;
+      r.ok = s.path === '/' && near(s.P, 3.88) && !s.diving && s.flood < 0.02 && moved === 0;
       r.note = `进去途中进度动了 ${moved} 回；后退回来 P = ${s.P.toFixed(4)}、满屏颜色 ${s.flood}`;
     } catch (e) { r.note = String(e).split('\n')[0].slice(0, 160); }
     log(r);
@@ -394,7 +394,7 @@ if (ONLY.some((n) => n >= 7)) {
       await page.waitForTimeout(1500);
       const s = await page.evaluate(() => ({ P: window.__zero.P(), diving: document.documentElement.hasAttribute('data-diving'), flood: +getComputedStyle(document.querySelector('[data-flood]')).opacity, path: location.pathname }));
       r.back = s; r.moved = moved;
-      r.ok = s.path === '/zero/' && near(s.P, 4.88) && !s.diving && s.flood < 0.02 && moved === 0;
+      r.ok = s.path === '/' && near(s.P, 4.88) && !s.diving && s.flood < 0.02 && moved === 0;
       r.note = `进去途中进度动了 ${moved} 回；后退回来 P = ${s.P.toFixed(4)}`;
     } catch (e) { r.note = String(e).split('\n')[0].slice(0, 160); }
     log(r);
@@ -437,7 +437,7 @@ if (ENGINE === 'chromium' && !process.env.NOVIDEO) {
 if (!process.env.NOFPS && gl === 'yes') {
   const page = await newPage(ENGINE === 'chromium' ? 'desk' : 'phone');
   try {
-    await page.goto(`${BASE}/zero/${ENGINE === 'chromium' ? '?tier=low' : ''}`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/${ENGINE === 'chromium' ? '?tier=low' : ''}`, { waitUntil: 'load' });
     await page.waitForFunction(() => window.__zero && window.__zero.frames() >= 3 && document.documentElement.dataset.dust, null, { timeout: 240000 });
     await settleAt(page, 1.88);
     const f = await page.evaluate(async () => {

@@ -9,7 +9,7 @@ const pw = await import(process.env.PW_MODULE || 'playwright');
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const out = process.argv[2] || 'sky-drift';
-const BASE = (process.env.BASE || 'https://qianshoulab.github.io').replace(/\/$/, '');
+const BASE = (process.env.BASE || 'https://zeroflesh.github.io').replace(/\/$/, '');
 const SIZES = (process.env.SIZES || '1280x720,1440x900,1920x969,390x844').split(',').map((s) => s.split('x').map(Number));
 const SECS = Number(process.env.SECS || 90);
 const NAMES = ['千手院', '赛博杂货铺', '标本', '文物'];
@@ -19,7 +19,7 @@ const rows = [];
 for (const [w, h] of SIZES) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, ...(w < 600 ? { isMobile: true, hasTouch: true } : {}) });
   const p = await ctx.newPage();
-  await p.goto(`${BASE}/zero/?act=7&tier=high`, { waitUntil: 'load', timeout: 90000 });
+  await p.goto(`${BASE}/?act=7&tier=high`, { waitUntil: 'load', timeout: 90000 });
   await p.waitForFunction(() => window.__zero && window.__zero.frames() >= 3 && document.querySelectorAll('.nm.ok').length === 5, null, { timeout: 120000 });
   await p.waitForTimeout(1500);
   const st = NAMES.map((name) => ({ name, max: 0, over40: 0, n: 0, worstAt: null, worstDir: null }));

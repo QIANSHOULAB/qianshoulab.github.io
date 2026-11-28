@@ -3,7 +3,6 @@
 // 首页中间是「目录 / INDEX」（v3.2）：点一下，世界快进到结尾「开天」那片天，五个名字挂在五样造物上让你挑。字体字号跟声音开关一个样，七幕全程都在。
 // 首页不放中间那个 wordmark（首页自己有大的），也不放五道门那行（五个名字在天上）。
 import { t, ENTRIES, type EntryKey } from '../../i18n/ui';
-import { HOME_PATH } from '../../../home.mjs';
 
 interface Props { home?: boolean; current?: EntryKey | null }
 const { home = false, current = null } = Astro.props;
@@ -21,7 +20,7 @@ const { home = false, current = null } = Astro.props;
         <span data-l="en" lang="en">INDEX</span><span data-l="zh" lang="zh-CN">目录</span>
       </button>
     ) : (
-      <a class="hd-mark" href={HOME_PATH} aria-label={`${t('en', 'nav.home')} · Zero-Flesh Creation`} data-aria-en={`${t('en', 'nav.home')} · Zero-Flesh Creation`} data-aria-zh={`${t('zh', 'nav.home')} · 零肉身造物`}>
+      <a class="hd-mark" href="/" aria-label={`${t('en', 'nav.home')} · Zero-Flesh Creation`} data-aria-en={`${t('en', 'nav.home')} · Zero-Flesh Creation`} data-aria-zh={`${t('zh', 'nav.home')} · 零肉身造物`}>
         <span class="a" data-l="en">ZERO-FLESH CREATION</span><span class="b" data-l="en" lang="zh-CN">零肉身造物</span>
         <span class="a" data-l="zh" lang="zh-CN">零肉身造物</span><span class="b" data-l="zh">ZERO-FLESH CREATION</span>
       </a>

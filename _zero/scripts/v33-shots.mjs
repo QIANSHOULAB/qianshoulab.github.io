@@ -9,7 +9,7 @@ const pw = await import(process.env.PW_MODULE || 'playwright');
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const out = process.argv[2] || 'v33-shots';
-const BASE = (process.env.BASE || 'https://qianshoulab.github.io').replace(/\/$/, '');
+const BASE = (process.env.BASE || 'https://zeroflesh.github.io').replace(/\/$/, '');
 const ENGINES = (process.env.ENGINES || 'chromium,webkit').split(',');
 const SIZES = (process.env.SIZES || '390x844,1440x900').split(',').map((s) => s.split('x').map(Number));
 const LANGS = (process.env.LANGS || 'en,zh').split(',');
@@ -41,7 +41,7 @@ for (const eng of ENGINES) {
         errs = [];
         let note = '', gl = '–';
         try {
-          await page.goto(`${BASE}/zero/?act=${P}&t=5&tier=high&lang=${lang}`, { waitUntil: 'load', timeout: 90000 });
+          await page.goto(`${BASE}/?act=${P}&t=5&tier=high&lang=${lang}`, { waitUntil: 'load', timeout: 90000 });
           await page.waitForFunction(() => document.documentElement.dataset.gl, null, { timeout: 90000 });
           gl = await page.evaluate(() => document.documentElement.dataset.gl);
           if (gl === 'yes') {
@@ -95,7 +95,7 @@ for (const eng of ENGINES) {
     // —— 字体：全首页每个有字的元素，算出来的字体里没有宋体 ——
     for (const lang of LANGS) {
       try {
-        await page.goto(`${BASE}/zero/?act=7&t=5&tier=high&lang=${lang}`, { waitUntil: 'load', timeout: 90000 });
+        await page.goto(`${BASE}/?act=7&t=5&tier=high&lang=${lang}`, { waitUntil: 'load', timeout: 90000 });
         await page.waitForTimeout(2500);
         const r = await page.evaluate((src) => {
           const SONG = new RegExp(src, 'i');

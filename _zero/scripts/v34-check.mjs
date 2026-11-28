@@ -9,7 +9,7 @@
 //         把画布拉窄再拉回、手机横过来再竖回去、等它自己降一次档（navigator.webdriver 改成 false，降档那段才跑；没显卡的机器本来就慢，会降），
 //         每一步之后截门那一块量亮度，不许变黑。
 // 跑法：node scripts/v34-check.mjs <输出目录>
-//   BASE    网站根（默认线上 https://qianshoulab.github.io）；ENGINE chromium | webkit | firefox（默认 chromium）
+//   BASE    网站根（默认线上 https://zeroflesh.github.io）；ENGINE chromium | webkit | firefox（默认 chromium）
 //   BEFORE  改前的网站根，same 跟它比（默认线上；设成 none 不比——并进 main 以后线上就是这一版，没得比）
 //   ONLY    只跑这几部分（如 scan,names）；PW_MODULE 本地调试指到别的 playwright
 // 结果写进 <输出目录>/v34-<内核>.json；有一条不过，退出码就是 1。
@@ -17,8 +17,8 @@ const { chromium, webkit, firefox } = await import(process.env.PW_MODULE || 'pla
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const out = process.argv[2] || 'v34-check';
-const BASE = (process.env.BASE || 'https://qianshoulab.github.io').replace(/\/$/, '');
-const BEFORE = (process.env.BEFORE || 'https://qianshoulab.github.io').replace(/\/$/, '');
+const BASE = (process.env.BASE || 'https://zeroflesh.github.io').replace(/\/$/, '');
+const BEFORE = (process.env.BEFORE || 'https://zeroflesh.github.io').replace(/\/$/, '');
 const ENGINE = process.env.ENGINE || 'chromium';
 const ONLY = (process.env.ONLY || 'scan,names,same,black').split(',');
 const PHONES = [[390, 844], [360, 780], [430, 932], [390, 664]];
@@ -66,7 +66,7 @@ if (ONLY.includes('scan') || ONLY.includes('names')) {
     const scanThis = lang === 'zh';
     if (!scanThis && !ONLY.includes('names')) continue;
     const t0 = Date.now();
-    const { ctx, page, errs, gl } = await open(w, h, `${BASE}/zero/?act=1&t=5&tier=low&dpr=0.3&lang=${lang}`);
+    const { ctx, page, errs, gl } = await open(w, h, `${BASE}/?act=1&t=5&tier=low&dpr=0.3&lang=${lang}`);
     if (gl !== 'yes') { res.scan.push({ size: `${w}x${h}`, gl, note: '没有 WebGL（走静态图），量不了' }); await ctx.close(); continue; }
     // 名字摆在哪要等字体载好、星尘字搭好（最多等 20 秒；搭不起来名字那部分就记「量不到」）
     await page.waitForFunction(() => document.documentElement.dataset.dust, null, { timeout: 20000 }).catch(() => {});
@@ -158,7 +158,7 @@ if (ONLY.includes('scan') || ONLY.includes('names')) {
 // ———— 3. 宽高比 ≥ 0.8 跟改前一模一样 ————
 if (ONLY.includes('same') && ENGINE === 'chromium' && BEFORE !== 'none') {
   const pick = async (site, w, h, P, names = false) => {
-    const { ctx, page, gl } = await open(w, h, `${site}/zero/?act=${P}&t=5&tier=low&dpr=0.3`);
+    const { ctx, page, gl } = await open(w, h, `${site}/?act=${P}&t=5&tier=low&dpr=0.3`);
     let s = gl === 'yes' ? await page.evaluate(() => JSON.parse(JSON.stringify(window.__zero.state()))) : null;
     // 第二到第六幕的名字摆在哪（星尘字搭好以后量的；电脑上也一个像素不许挪）
     if (s && names) {
@@ -203,7 +203,7 @@ if (ONLY.includes('black')) {
   const errs = [];
   page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text().slice(0, 240)); });
   page.on('pageerror', (e) => errs.push('pageerror: ' + String(e).slice(0, 240)));
-  await page.goto(`${BASE}/zero/?act=${P}&t=5`, { waitUntil: 'load', timeout: 120000 });
+  await page.goto(`${BASE}/?act=${P}&t=5`, { waitUntil: 'load', timeout: 120000 });
   await page.waitForFunction(() => document.documentElement.dataset.gl, null, { timeout: 120000 });
   const gl = await page.evaluate(() => document.documentElement.dataset.gl);
   if (gl !== 'yes') { res.black.push({ note: '没有 WebGL（走静态图），不用量' }); console.log('black：没有 WebGL，跳过'); }

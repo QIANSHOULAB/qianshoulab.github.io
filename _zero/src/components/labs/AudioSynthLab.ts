@@ -89,7 +89,7 @@ export function play(id: Preset['id'], p: Record<string, number>, ctx: AudioCont
 
 // —— 复制出去的代码：跟上面 play() 一行对一行 ——
 export function code(id: Preset['id'], p: Record<string, number>) {
-  const head = '// Zero-Flesh Creation · Codex-01 · https://qianshoulab.github.io/codex/web-audio-formulas/\n';
+  const head = '// Zero-Flesh Creation · Codex-01 · https://zeroflesh.github.io/codex/web-audio-formulas/\n';
   if (id === 'slash') return head + `function slash(ctx = new AudioContext()) {
   const t = ctx.currentTime + 0.01, d = ${fmt(p.decay / 1000)};
   const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * (d + 0.1)), ctx.sampleRate);

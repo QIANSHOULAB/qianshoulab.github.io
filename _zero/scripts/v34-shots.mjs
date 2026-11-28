@@ -9,8 +9,8 @@ const { chromium, webkit, firefox } = await import(process.env.PW_MODULE || 'pla
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const out = process.argv[2] || 'v34-shots';
-const BASE = (process.env.BASE || 'https://qianshoulab.github.io').replace(/\/$/, '');
-const BEFORE = (process.env.BEFORE || 'https://qianshoulab.github.io').replace(/\/$/, '');
+const BASE = (process.env.BASE || 'https://zeroflesh.github.io').replace(/\/$/, '');
+const BEFORE = (process.env.BEFORE || 'https://zeroflesh.github.io').replace(/\/$/, '');
 const ENGINES = (process.env.ENGINES || 'chromium,webkit').split(',');
 const PHONES = [[390, 844], [360, 780], [430, 932], [390, 664]];
 const ACTS = [[2, 1.88], [3, 2.88], [4, 3.88], [5, 4.88], [6, 5.88], [7, 7]];
@@ -31,7 +31,7 @@ async function shoot(page, site, P, lang, file) {
   page.on('pageerror', onE);
   let note = '';
   try {
-    await page.goto(`${site}/zero/?act=${P}&t=5&tier=high&lang=${lang}`, { waitUntil: 'load', timeout: 120000 });
+    await page.goto(`${site}/?act=${P}&t=5&tier=high&lang=${lang}`, { waitUntil: 'load', timeout: 120000 });
     await page.waitForFunction(() => document.documentElement.dataset.gl, null, { timeout: 120000 });
     if (await page.evaluate(() => document.documentElement.dataset.gl) === 'yes') {
       await page.waitForFunction(() => window.__zero && window.__zero.frames() >= 3, null, { timeout: 300000 });

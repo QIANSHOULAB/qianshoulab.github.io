@@ -9,21 +9,25 @@
 // 跟施工单要的手机 390×844 一样；6 用 iPhone 13 原样的 390×664。
 // 有一个点了没反应、要点两下、落错地方，就算没过（退出码 1）。结果写到 <输出目录>/真点.json，截几张图放同一个目录。
 // 跑法：node scripts/tap-test.mjs <输出目录>
-//   BASE    网站根（默认线上 https://qianshoulab.github.io；预览时是工作流本地起的服务）
+//   BASE    网站根（默认线上 https://zeroflesh.github.io；预览时是工作流本地起的服务）。首页在 /
+//   千手院在老家 https://qianshoulab.github.io/qianshou/（跨站）：点太阳、点「千手院」要落到那里。
+//   QIANSHOU_LOCAL  设了就把 https://qianshoulab.github.io/ 的请求转到这个本地服务（打不开外网的机器上本地调试用）
 //   ENGINE  webkit（默认）或 chromium（这台云端机器上只有 Chromium，本地调试用）；DEVICE 默认 iPhone 13（390×844）
 //   PW_MODULE 可以指到机器上预装的 playwright；ONLY=1,5 只跑这几节（本地调试用）
 const pw = await import(process.env.PW_MODULE || 'playwright');
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const out = process.argv[2] || 'tap-shots';
-const BASE = (process.env.BASE || 'https://qianshoulab.github.io').replace(/\/$/, '');
+const BASE = (process.env.BASE || 'https://zeroflesh.github.io').replace(/\/$/, '');
 const ENGINE = process.env.ENGINE || 'webkit';
 const DEVICE = process.env.DEVICE || 'iPhone 13';
 mkdirSync(out, { recursive: true });
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',').map(Number) : [1, 2, 3, 4, 5, 6];
 
-const NAMES = [['千手院', '/qianshou/'], ['赛博杂货铺', '/zahuopu/'], ['标本', '/specimens/'], ['文物', '/artifacts/'], ['法典', '/codex/']];
-const ACTS = [[2, '/qianshou/'], [3, '/zahuopu/'], [4, '/specimens/'], [5, '/artifacts/'], [6, '/codex/']];
+// 站内的写路径；千手院在老家，写全网址（path() 对别的网站给 origin + 路径）
+const QIANSHOU = 'https://qianshoulab.github.io/qianshou/';
+const NAMES = [['千手院', QIANSHOU], ['赛博杂货铺', '/zahuopu/'], ['标本', '/specimens/'], ['文物', '/artifacts/'], ['法典', '/codex/']];
+const ACTS = [[2, QIANSHOU], [3, '/zahuopu/'], [4, '/specimens/'], [5, '/artifacts/'], [6, '/codex/']];
 const rows = [];
 const fails = [];
 const log = (r) => { rows.push(r); console.log(`${r.ok ? '✓' : '✗'} ${r.name}${r.ms != null ? ` 反应 ${r.ms}ms` : ''}${r.url ? ` → ${r.url}` : ''}${r.note ? ` （${r.note}）` : ''}`); if (!r.ok) fails.push(r.name); };
@@ -33,10 +37,14 @@ const dev = pw.devices[DEVICE];
 const TALL = { width: dev.viewport.width, height: dev.screen?.height ?? 844 };
 const newPage = async (viewport = TALL) => {
   const ctx = await browser.newContext({ ...dev, viewport, ...(ENGINE === 'firefox' ? { isMobile: undefined } : {}) });
+  if (process.env.QIANSHOU_LOCAL) await ctx.route('https://qianshoulab.github.io/**', async (r) => {
+    const res = await fetch(r.request().url().replace('https://qianshoulab.github.io', process.env.QIANSHOU_LOCAL.replace(/\/$/, '')));
+    await r.fulfill({ status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'text/html' }, body: Buffer.from(await res.arrayBuffer()) });
+  });
   const page = await ctx.newPage();
   page.errs = [];
   // 只记首页上的报错（栏目页、千手院不归这个测试管）
-  const mine = () => path(page.url()) === '/zero/';
+  const mine = () => path(page.url()) === '/';
   page.on('pageerror', (e) => { if (mine()) page.errs.push(String(e).slice(0, 200)); });
   page.on('console', (m) => { if (m.type() === 'error' && mine()) page.errs.push(m.text().slice(0, 200)); });
   return page;
@@ -48,7 +56,9 @@ const ready = async (page, needNames = false) => {
   if (needNames) await page.waitForFunction(() => document.documentElement.hasAttribute('data-names') && document.querySelectorAll('.nm.ok').length === 5, null, { timeout: 60000 });
   return gl;
 };
-const path = (u) => new URL(u).pathname;
+const ORIGIN = new URL(BASE).origin;
+/** 站内给路径（首页是 /），别的网站（千手院在老家）给 origin + 路径 */
+const path = (u) => { try { const x = new URL(u); return x.origin === ORIGIN ? x.pathname : x.origin + x.pathname; } catch { return String(u); } };
 /** 手指碰到屏幕以后多久有反应：页面开始往里扎（data-diving）或者开始快进（data-ff）。从页面自己收到 touchstart 那一刻算（-1 = 20 秒都没反应） */
 const reaction = (page, attr) => page.evaluate((a) => new Promise((ok) => {
   let t0 = -1;
@@ -64,7 +74,7 @@ const reaction = (page, attr) => page.evaluate((a) => new Promise((ok) => {
 // —— 1. 「目录」——
 if (ONLY.includes(1)) {
   const page = await newPage();
-  await page.goto(`${BASE}/zero/?tier=high`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/?tier=high`, { waitUntil: 'load' });
   const gl = await ready(page);
   await page.waitForFunction(() => !window.__zero || window.__zero.P() >= 1, null, { timeout: 20000 }).catch(() => {});
   const r = { name: '「目录」快进', ok: false };
@@ -119,7 +129,7 @@ for (let i = 0; i < 5 && ONLY.includes(2); i++) {
   const page = await newPage();
   const r = { name: `天上「${NAMES[i][0]}」`, ok: false };
   try {
-    await page.goto(`${BASE}/zero/?act=7&t=5&tier=high`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/?act=7&t=5&tier=high`, { waitUntil: 'load' });
     const gl = await ready(page, true);
     if (i === 0) await page.screenshot({ path: `${out}/${ENGINE}-天上五个名字.jpg`, type: 'jpeg', quality: 80 });
     const react = reaction(page, 'data-diving');
@@ -137,11 +147,11 @@ for (let i = 0; i < 5 && ONLY.includes(2); i++) {
 }
 
 // —— 3. 点造物本身：太阳、巨鲸 ——
-for (const [k, key, href] of ONLY.includes(3) ? [[0, 'sun', '/qianshou/'], [2, 'whale', '/specimens/']] : []) {
+for (const [k, key, href] of ONLY.includes(3) ? [[0, 'sun', QIANSHOU], [2, 'whale', '/specimens/']] : []) {
   const page = await newPage();
   const r = { name: `天上点「${NAMES[k][0]}」那样造物本身`, ok: false };
   try {
-    await page.goto(`${BASE}/zero/?act=7&t=5&tier=high`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/?act=7&t=5&tier=high`, { waitUntil: 'load' });
     await ready(page, true);
     const m = await page.evaluate((kk) => { const mk = window.__zero.marks()[kk]; return { x: mk.x, y: mk.y }; }, key);
     const react = reaction(page, 'data-diving');
@@ -162,7 +172,7 @@ for (const [k, href] of ONLY.includes(4) ? ACTS : []) {
   const page = await newPage();
   const r = { name: `第${k}幕「进去」`, ok: false };
   try {
-    await page.goto(`${BASE}/zero/?act=${k - 0.12}&t=5&tier=high`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/?act=${k - 0.12}&t=5&tier=high`, { waitUntil: 'load' });
     await ready(page);
     await page.waitForFunction((kk) => document.querySelector(`.act[data-act="${kk}"]`)?.classList.contains('on'), k, { timeout: 20000 });
     await page.waitForTimeout(700);
@@ -184,7 +194,7 @@ if (ONLY.includes(5)) {
   const page = await newPage();
   const r = { name: '从天上进「文物」再后退：回到那片天，名字还能点', ok: false };
   try {
-    await page.goto(`${BASE}/zero/?tier=high`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/?tier=high`, { waitUntil: 'load' });
     const gl = await ready(page);
     await page.waitForFunction(() => !window.__zero || window.__zero.P() >= 1, null, { timeout: 20000 }).catch(() => {});
     await page.tap('[data-index]');
@@ -208,7 +218,7 @@ if (ONLY.includes(5)) {
     });
     r.after = s;
     await page.screenshot({ path: `${out}/${ENGINE}-后退回到天上.jpg`, type: 'jpeg', quality: 80 });
-    const okBack = r.backUrl === '/zero/' && s.P > 6.9 && s.names && !s.diving && s.flood < 0.02 && s.shown === 5 && s.clickable === 5;
+    const okBack = r.backUrl === '/' && s.P > 6.9 && s.names && !s.diving && s.flood < 0.02 && s.shown === 5 && s.clickable === 5;
     // 回来以后再点一个（赛博杂货铺）：照样进
     const nav = page.waitForURL((u) => path(u.href) === '/zahuopu/', { timeout: 15000 });
     await page.tap('[data-sky-go="1"]');
@@ -226,7 +236,7 @@ for (let i = 0; i < 5 && ONLY.includes(6); i++) {
   const page = await newPage(dev.viewport);
   const r = { name: `退路 B（${dev.viewport.width}×${dev.viewport.height}）：「目录」列表里点「${NAMES[i][0]}」`, ok: false };
   try {
-    await page.goto(`${BASE}/zero/?tier=high`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/?tier=high`, { waitUntil: 'load' });
     const gl = await ready(page);
     const mode = gl === 'yes' ? await page.evaluate(() => window.__zero.names().mode) : 'nogl';
     if (gl === 'yes' && mode !== 'list') { r.note = `这个视口没走退路（${mode}）`; r.ok = true; log(r); await page.context().close(); break; }

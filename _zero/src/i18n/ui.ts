@@ -3,6 +3,7 @@
 // 改字只改这里；模板里用 <T k="home.tagline" /> 取，键写错了构建直接报错。
 // 公司那几句（company.*）的中文是 Song 的原话，一个字都别动；英文沿用第一版。
 // 改了中文标题字（wordmark、铭文、栏目名、页面大标题）以后，跑一遍 scripts/fonts/README.md 里那两行，把宋体小字库补上新字。
+import { QIANSHOU } from '../data/sites';
 
 export const ui = {
   en: {
@@ -167,9 +168,10 @@ export const ui = {
 
 export type Lang = keyof typeof ui;
 
-/** 五道门：首页五条铭文、五撮碑块、子页面顶上的栏目条都按这个顺序（Song 定的：01 千手院 … 05 法典）。 */
+/** 五道门：首页五条铭文、五撮碑块、子页面顶上的栏目条都按这个顺序（Song 定的：01 千手院 … 05 法典）。
+ *  千手院在老家（跨站，写全网址，见 ../data/sites.ts）；另外四个是本站的栏目页。 */
 export const ENTRIES = [
-  { key: 'qianshou', href: '/qianshou/' },
+  { key: 'qianshou', href: QIANSHOU },
   { key: 'zahuopu', href: '/zahuopu/' },
   { key: 'specimens', href: '/specimens/' },
   { key: 'artifacts', href: '/artifacts/' },
