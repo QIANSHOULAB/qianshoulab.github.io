@@ -73,7 +73,7 @@ export function createStardust(o: {
   tex.generateMipmaps = true;
   tex.flipY = false;
   tex.needsUpdate = true;
-  let texVer = -1;
+  let texVer = -1, texAt = -1e9, texH = atlas.H;
   const atlasSize = new Vector2(atlas.W, atlas.H);
   const canvasSize = new Vector2(1, 1);
   const nf = new Vector2(1, 6000);
@@ -308,10 +308,14 @@ export function createStardust(o: {
     built = true;
   }
 
-  /** 每帧：图集有新字就重传；画布、深度、远近平面 */
+  /** 每帧：图集有新字就重传（搭字那一阵最多 4 回/秒，别每帧传几 MB）；画布、深度、远近平面 */
   function frame(canvasW: number, canvasH: number, depth: Texture | null, near: number, far: number) {
-    if (atlas.version !== texVer) {
+    const now = performance.now();
+    if (atlas.version !== texVer && (built || now - texAt > 250)) {
       texVer = atlas.version;
+      texAt = now;
+      // 图集长高了：GL 那边的纹理大小是定死的（texStorage），得扔掉重建，不然往里写会越界、新字写不进去
+      if (atlas.H !== texH) { tex.dispose(); texH = atlas.H; }
       (tex.image as { data: Uint8Array; width: number; height: number }) = { data: atlas.data, width: atlas.W, height: atlas.H };
       atlasSize.set(atlas.W, atlas.H);
       tex.needsUpdate = true;

@@ -9,7 +9,7 @@
 import { Matrix3, PerspectiveCamera, Vector3 } from 'three';
 import type { Stardust, Lang, ItemRt } from './stardust';
 import { REST_PS, ACT_HEX, DUST, hexToUnit } from './tune';
-import { qMat, ss, mix, cl, WHALE_L, RING_R, type State, type V3 } from './timeline';
+import { qMat, ss, mix, cl, WHALE_L, RING_R, ORBITS, type State, type V3 } from './timeline';
 import { H as DH, W as DW, Z_FRONT } from './layout';
 
 export interface Box { x: number; y: number; w: number; h: number }
@@ -22,8 +22,8 @@ const HEX = [ACT_HEX.sun, ACT_HEX.ring, ACT_HEX.life, ACT_HEX.fire, ACT_HEX.law]
 
 export function createWords(o: {
   dust: Stardust;
-  /** 镜头摆到进度 P 的展示样子（不带漂移、视差），返回那一刻的状态 */
-  poseCam: (P: number, cam: PerspectiveCamera) => State;
+  /** 镜头摆到进度 P 的展示样子（不带漂移、视差），返回那一刻的状态（dClock：往后多少秒的样子，看转着的东西会走到哪） */
+  poseCam: (P: number, cam: PerspectiveCamera, dClock?: number) => State;
   size: () => { w: number; h: number };
   reduced: boolean;
   textDpr: () => number;
@@ -162,6 +162,14 @@ export function createWords(o: {
     const own = bodyCircles(pcam, s, k - 2);
     const others: Circle[] = [];
     for (let j = 0; j < 4; j++) if (j !== k - 2) others.push(...bodyCircles(pcam, s, j));
+    // 第六幕：日、鲸、器挂在轨道上一直转（一圈 66、46、28 秒），停在这一幕的时候它们迟早会转到字跟前。
+    // 把它们整圈走过的地方都当成不能压的：字摆在轨道外头，转过来的东西挡不着它、也不会像是在给它们起名字
+    const swept: Circle[] = [];
+    if (k === 6) {
+      const RIDE: [number, number][] = [[0, ORBITS[2].period], [2, ORBITS[1].period], [3, ORBITS[0].period]];   // [造物, 一圈几秒]
+      for (const [j, per] of RIDE) for (let i = 1; i < 24; i++) swept.push(...bodyCircles(pcam, o.poseCam(REST_PS[5], pcam, (i / 24) * per), j));
+      o.poseCam(REST_PS[k - 1], pcam);   // 镜头摆回现在这一刻
+    }
     // 门（含门缝那道光）
     const d0 = proj(pcam, [-DW * 0.62, -2, Z_FRONT]), d1 = proj(pcam, [DW * 0.62, DH * 1.06, Z_FRONT]);
     const door: Box = { x: Math.min(d0.x, d1.x), y: Math.min(d0.y, d1.y), w: Math.abs(d1.x - d0.x), h: Math.abs(d1.y - d0.y) };
@@ -192,6 +200,7 @@ export function createWords(o: {
       c += overlap(blk, door) > 0 ? 120 : 0;
       for (const b of own) { const r = rectCircle(txt, b); if (r > 0.08) c += 1000; c += 400 * r + 80 * rectCircle(blk, b); }
       for (const b of others) c += 300 * rectCircle(txt, b) + 60 * rectCircle(blk, b);
+      for (const b of swept) { const r = rectCircle(txt, b); if (r > 0.02) c += 1000; c += 300 * r + 60 * rectCircle(blk, b); }
       // 贴着它：离它越远越扣分（一眼看得出是谁的）
       c += 0.55 * gapTo(txt);
       if (!best || c < best.c) best = { cx: tx + tw / 2, cy: ty + th / 2, c };

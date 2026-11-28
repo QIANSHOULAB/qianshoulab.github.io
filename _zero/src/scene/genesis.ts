@@ -449,7 +449,7 @@ export function createGenesis(opts: GenesisOpts) {
   const sd = createStardust({ scene, textScene, U, depth: () => sceneRT?.depthTexture ?? null, mirrorOnly });
   const words = createWords({
     dust: sd,
-    poseCam: (p, cam) => poseCam(p, cam),
+    poseCam: (p, cam, dClock) => poseCam(p, cam, dClock),
     size: () => size,
     reduced: opts.reduced,
     textDpr: () => (sceneRT ? textDpr : dpr),
@@ -699,8 +699,8 @@ export function createGenesis(opts: GenesisOpts) {
     return [(dx * iz) / f.tanV, (vy * iz) / f.tanV + f.shift];
   }
   /** v3.3：把一台镜头摆到进度 p 的展示样子（不带漂移、视差、往里扎），返回那一刻的状态。星尘字在展示位置上量造物、挑字的位置用 */
-  function poseCam(p: number, cam: PerspectiveCamera): State {
-    const s = computeState(p, clock, { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, p)), tall: phoneLay.tall, band: phoneLay.band }, nM);
+  function poseCam(p: number, cam: PerspectiveCamera, dClock = 0): State {
+    const s = computeState(p, clock + dClock, { narrow, aspect, tanV: mix(tanHero, tanAct, ss(1, 1.3, p)), tall: phoneLay.tall, band: phoneLay.band }, nM);
     cam.aspect = aspect;
     cam.position.set(0, s.camY, Z_FRONT + s.camD);
     cam.rotation.set(s.pitch, 0, 0);

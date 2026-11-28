@@ -58,6 +58,12 @@ async function ready(page) {
     await page.waitForFunction(() => window.__zero.frames() >= 3, null, { timeout: 240000 });
     await page.waitForFunction(() => document.documentElement.dataset.dust, null, { timeout: 240000 }).catch(() => {});
   }
+  // 记下最后一下「不是自己走出来的」滚动（手指、惯性）：停手 = 手指离开、惯性也停了，从那一刻起算
+  await page.evaluate(() => {
+    if (window.__lastUserScroll != null) return;
+    window.__lastUserScroll = 0;
+    addEventListener('scroll', () => { if (!window.__zero?.gliding?.().on) window.__lastUserScroll = performance.now(); }, { passive: true });
+  });
   return gl;
 }
 const st = (page) => page.evaluate(() => { const z = window.__zero; const g = z.glide(); return { P: +z.P().toFixed(4), y: scrollY, gliding: z.gliding().on, to: z.gliding().to, gesture: !!g.gesture, rested: g.rested, u: g.u }; });
@@ -139,10 +145,12 @@ if (touchy && ONLY.some((n) => n <= 6)) {
       const s0 = await settleAt(page, 2.88);
       const tRel = await swipe(page, vh * 0.32, { ms: 240, v0: 6 });
       const L = await landedAt(page, 3.88);
-      r.took = L.t > 0 ? Math.round(L.t - tRel) : null;
+      const tEnd = Math.max(tRel, await page.evaluate(() => window.__lastUserScroll || 0));
+      r.took = L.t > 0 ? Math.round(L.t - tEnd) : null;          // 停手（惯性也停了）以后多久落定：单子的 1.5 秒按这个算
+      r.fromRelease = L.t > 0 ? Math.round(L.t - tRel) : null;   // 松手以后多久（含惯性那一段）
       r.P = L.P; r.from = s0.P;
       r.ok = near(L.P, 3.88) && L.t > 0 && r.took <= 1500;
-      r.note = `${s0.P} → ${(+L.P).toFixed(4)}，松手后 ${r.took} 毫秒落定`;
+      r.note = `${s0.P} → ${(+L.P).toFixed(4)}，惯性停了以后 ${r.took} 毫秒落定（松手后 ${r.fromRelease} 毫秒，含惯性 ${Math.round(tEnd - tRel)} 毫秒）`;
     } catch (e) { r.note = String(e).split('\n')[0].slice(0, 160); }
     log(r);
   }
@@ -248,8 +256,9 @@ if (touchy && ONLY.some((n) => n <= 6)) {
       const p0 = await page.evaluate(() => window.__zero.P());
       let moved = 0;
       for (let i = 0; i < 4; i++) {
-        await swipe(page, (i % 2 ? -1 : 1) * vh * 0.4, { ms: 120 }).catch(() => {});
-        await page.tap('[data-tick="2"]').catch(() => {});
+        // 已经跳到栏目页的话，发触摸的那一下可能永远等不到回音（CDP 没有超时）：最多等 3 秒就往下走
+        await Promise.race([swipe(page, (i % 2 ? -1 : 1) * vh * 0.4, { ms: 120 }), page.waitForTimeout(3000)]).catch(() => {});
+        await page.tap('[data-tick="2"]', { timeout: 2000 }).catch(() => {});
         const p = await page.evaluate(() => window.__zero?.P?.() ?? null).catch(() => null);
         if (p != null && Math.abs(p - p0) > 0.002) moved++;
       }
@@ -348,7 +357,7 @@ if (ONLY.some((n) => n >= 7)) {
       const p0 = await page.evaluate(() => window.__zero.P());
       let moved = 0;
       for (let i = 0; i < 10; i++) {
-        await page.mouse.wheel(0, i % 2 ? -120 : 240).catch(() => {});
+        await Promise.race([page.mouse.wheel(0, i % 2 ? -120 : 240), page.waitForTimeout(3000)]).catch(() => {});
         await page.waitForTimeout(60);
         const p = await page.evaluate(() => window.__zero?.P?.() ?? null).catch(() => null);
         if (p != null && Math.abs(p - p0) > 0.002) moved++;
