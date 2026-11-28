@@ -589,7 +589,7 @@ export function createGenesis(opts: GenesisOpts) {
     U.uSky.value = s.sky;
     U.uRiseW.value = mix(1, 0.42, narrow);
     U.uFin.value.set(s.fin.pitch, s.fin.tanV, s.fin.aspect, s.fin.shift);
-    skyStars.visible = s.rise > 0.15;
+    skyStars.visible = s.rise > 0.08;   // 顶上那几块最早 0.12 就开始迸火星
 
     const wu = worldMat.uniforms;
     wu.uCalm.value = s.calm;
