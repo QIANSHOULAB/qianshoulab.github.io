@@ -204,7 +204,7 @@ if (touchy && ONLY.some((n) => n <= 6)) {
     const r = { name: '手机：一口气猛滑过三幕 → 落在往前最近的那一幕，不来回晃', ok: false };
     try {
       await settleAt(page, 1.88);
-      await page.evaluate(() => { window.__trk = []; const z = window.__zero; const loop = () => { window.__trk.push([performance.now(), z.P(), z.gliding().on ? 1 : 0]); if (window.__trk.length < 4000) requestAnimationFrame(loop); }; requestAnimationFrame(loop); });
+      await page.evaluate(() => { window.__trk = []; const z = window.__zero; const loop = () => { window.__trk.push([performance.now(), z.P(), z.gliding().on ? 1 : 0, scrollY / document.querySelector('[data-stage]').clientHeight]); if (window.__trk.length < 4000) requestAnimationFrame(loop); }; requestAnimationFrame(loop); });
       // 一根手指推不出三幕那么长：在页面里发触摸事件、跟着滚、松手后带一段惯性（各内核一样）
       const tRel = await swipe(page, vh * 4.3, { ms: 480, v0: 40, emu: true });
       const L = await landedAt(page, 0);
@@ -212,11 +212,17 @@ if (touchy && ONLY.some((n) => n <= 6)) {
       // 松手以后（惯性、自己走）P 只增不减（容 0.004 的抖）；落在「往前最近」那一个：不小于松手以后到过的最远处
       let back = 0, max = -1;
       for (const [t, p] of track) { if (p < 0) continue; if (t < tRel) { max = Math.max(max, p); continue; } if (p < max - 0.004) back++; max = Math.max(max, p); }
-      const startGlide = track.find(([t, , g]) => t > tRel && g)?.[1] ?? null;
-      const passedActs = REST.filter((p) => p > 1.88 + 0.01 && p <= (startGlide ?? max)).length;
-      r.P = L.P; r.max = max; r.back = back; r.glideFrom = startGlide; r.passed = passedActs;
-      r.ok = back === 0 && passedActs >= 3 && near(L.P, REST.find((p) => p >= (startGlide ?? max) - 0.0005) ?? 7);
-      r.note = `松手后惯性停在 ${startGlide?.toFixed(3)}（滑过 ${passedActs} 个展示位置），落在 ${(+L.P).toFixed(4)}，往回走了 ${back} 帧`;
+      // 惯性停在哪：按滚动位置（屏）算，不按画面的 P——画面的 P 平滑地追滚动，帧慢的机器上会落后一大截
+      const restU = await page.evaluate(() => window.__zero.glide().restU);
+      const g0 = track.find(([t, , g]) => t > tRel && g);
+      const startU = g0 ? g0[3] : null;
+      const passedActs = startU == null ? 0 : restU.filter((u, i) => i >= 2 && u <= startU + 0.002).length;
+      const pOfU = (u) => { let k = 0; while (k < restU.length - 1 && restU[k + 1] <= u + 0.002) k++; return REST[k] + (k < restU.length - 1 ? ((REST[k + 1] - REST[k]) * (u - restU[k])) / (restU[k + 1] - restU[k]) : 0); };
+      const startGlide = startU == null ? null : pOfU(startU);
+      const ahead = startU == null ? 7 : REST[restU.findIndex((u) => u > startU + 0.002)] ?? 7;
+      r.P = L.P; r.max = max; r.back = back; r.glideFromU = startU; r.glideFrom = startGlide; r.glideFromShown = g0 ? g0[1] : null; r.passed = passedActs;
+      r.ok = back === 0 && passedActs >= 3 && near(L.P, ahead);
+      r.note = `松手后惯性停在 ${startGlide?.toFixed(3)}（滚动位置 ${startU?.toFixed(2)} 屏，滑过 ${passedActs} 个展示位置），落在 ${(+L.P).toFixed(4)}，往回走了 ${back} 帧`;
     } catch (e) { r.note = String(e).split('\n')[0].slice(0, 160); }
     log(r);
   }

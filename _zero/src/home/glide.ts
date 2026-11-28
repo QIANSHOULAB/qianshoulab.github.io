@@ -372,7 +372,7 @@ export function createGlide(o: GlideOpts) {
     },
     get held() { return glide?.held != null; },
     /** 调试、验收：现在的滚动位置（屏）、停在哪、P 换算 */
-    debug: () => ({ u: curU(), at: restAt(curU()), rested, gesture: gesture ? { ...gesture } : null, glide: glide ? { kind: glide.kind, from: glide.from, to: glide.to, ms: glide.ms } : null, touches, lastDir, last: lastGlide ? { ...lastGlide } : null }),
+    debug: () => ({ u: curU(), at: restAt(curU()), rested, gesture: gesture ? { ...gesture } : null, glide: glide ? { kind: glide.kind, from: glide.from, to: glide.to, ms: glide.ms } : null, touches, lastDir, last: lastGlide ? { ...lastGlide } : null, restU: REST_PS.map((_, i) => restU(i)) }),
     pOf, uOf, restAt,
   };
 }
