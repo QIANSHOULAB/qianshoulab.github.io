@@ -339,7 +339,7 @@ tr:last-child td{border-bottom:0}
 </head>
 <body>
 <header class="nav" id="nav">
-  <a class="nav-back" id="navBack" href="https://qianshoulab.github.io/"></a>
+  <a class="nav-back" id="navBack" href="https://qianshoulab.github.io/qianshou/"></a>
   <div class="nav-t" id="navT"></div>
   <div class="nav-r"><button type="button" class="nav-a" data-act="recipes" id="navRec"></button><span class="seg lang-seg" role="group" id="navLang"></span></div>
 </header>
@@ -1407,7 +1407,7 @@ function render() {
     if (v === 'pick') h += `<section class="ends">${srcCard()}</section>${tgtSection()}`;
     else h += `${renderEnds()}<section class="grp" id="doubt" hidden></section><section class="grp" id="tidy"${S.prep && (S.prep.g || S.prep.nb) ? '' : ' hidden'}>${renderTidyInner()}</section><section class="grp" id="maps">${renderMapsInner()}</section><section class="grp" id="prev">${renderPreviewInner()}</section>`;
   }
-  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp(VER)}</div><div>${STR.fbLead}<a class="fb" href="${esc(fbHref())}">${STR.fb}</a></div><div><span class="mail">${FB_TO}</span> · <a href="https://qianshoulab.github.io/">${STR.footHome}</a></div></footer>`;
+  app.innerHTML = h + `<footer class="foot"><div>${STR.footApp(VER)}</div><div>${STR.fbLead}<a class="fb" href="${esc(fbHref())}">${STR.fb}</a></div><div><span class="mail">${FB_TO}</span> · <a href="https://qianshoulab.github.io/qianshou/">${STR.footHome}</a></div></footer>`;
   if (v === 'work') renderDoubt();
   renderDock();
   const n = recipes().length;
