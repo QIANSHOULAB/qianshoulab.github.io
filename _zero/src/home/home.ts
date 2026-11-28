@@ -971,6 +971,24 @@ async function boot() {
       atlas: g ? [g.stardust.atlas.W, g.stardust.atlas.H] : null,
     }),
     marks: () => g?.marks,
+    // v3.4 验收：任一进度、时钟下四样造物的外圈、门、地平线，第二到第六幕名字和「进去」在那一刻的框（只算数，不画）
+    marksAt: (p: number, t: number) => {
+      if (!g) return null;
+      const m = g.marksAt(p, t);
+      const l = lang();
+      const names: Record<number, { name: Box; go: Box } | null> = {};
+      for (let k = 2; k <= 6; k++) {
+        const nb = g.words.screenBox(`a${k}`, m.cam, l);
+        const go = cards.get(k)?.go;
+        // 「进去」：跟在名字下面正中（index.astro：top 100% + 4px，高 44，左右各 6、上下各 10 的内边距），量看得见的那一截字
+        const gw = go ? Math.max(40, go.offsetWidth - 12) : 100;
+        names[k] = nb ? { name: nb, go: { x: nb.x + nb.w / 2 - gw / 2, y: nb.y + nb.h + 4 + 10, w: gw, h: 24 } } : null;
+      }
+      return { feet: m.feet, door: m.door, arcs: m.arcs, horizon: m.horizon, names, size: { w: obst.W, h: obst.H } };
+    },
+    overlapScan: (o: { from?: number; to?: number; step?: number; clocks?: number[]; minGap?: number }) => g?.overlapScan(o),
+    phone: () => g?.phoneLay,
+    built: () => (g ? { ...g.built } : null),
     hideText: (h: boolean) => g?.words.setHidden(h),
     project: (p: V3) => g?.project(p),
     orbitPoint: (j: number, u: number) => g?.orbitPoint(j, u),

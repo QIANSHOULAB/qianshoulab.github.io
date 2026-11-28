@@ -156,6 +156,7 @@ export function createWords(o: {
     const s = o.poseCam(REST_PS[k - 1], pcam);
     const { w: W, h: H } = o.size();
     const phone = W < 600 && W < H;
+    const portrait = W / H < 0.8;
     const px = actPx();
     const tw = Math.max(it.lay.en.w, it.lay.zh.w) * px, th = Math.max(it.lay.en.h, it.lay.zh.h) * px;
     const goW = 120, goH = 44, gap2 = 6;
@@ -203,7 +204,11 @@ export function createWords(o: {
       const goVis: Box = { x: tx + tw / 2 - 50, y: ty + th + gap2 + 12, w: 100, h: 20 };
       if (overlap(goVis, { x: door.x - 4, y: door.y - 6, w: door.w + 8, h: door.h + 10 }) > 0) c += 1000;
       for (const b of own) { const r = rectCircle(txt, b); if (r > 0.08) c += 1000; c += 400 * r + 80 * rectCircle(blk, b); }
-      for (const b of others) c += 300 * rectCircle(txt, b) + 60 * rectCircle(blk, b);
+      for (const b of others) {
+        c += 300 * rectCircle(txt, b) + 60 * rectCircle(blk, b);
+        // v3.4 竖屏（宽高比 < 0.8）：名字、「进去」那一行看得见的字压着别的造物，一律不要（电脑照旧只扣分，一个像素不动）
+        if (portrait && (rectCircle(txt, b) > 0 || rectCircle(goVis, b) > 0)) c += 1000;
+      }
       for (const b of swept) { const r = rectCircle(txt, b); if (r > 0.02) c += 1000; c += 300 * r + 60 * rectCircle(blk, b); }
       // 贴着它：离它越远越扣分（一眼看得出是谁的）
       c += 0.55 * gapTo(txt);
