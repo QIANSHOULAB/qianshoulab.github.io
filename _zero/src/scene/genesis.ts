@@ -1228,6 +1228,8 @@ export function createGenesis(opts: GenesisOpts) {
     get wordsMs() { return wordsMs; },
     get textDpr() { return sceneRT ? textDpr : dpr; },
     get rt() { return !!sceneRT; },
+    /** v3.4 验收（黑屏回归）：画面那张图现在多大、是第几张（尺寸一变就该是新建的一张，不是 setSize 改的那张） */
+    get rtInfo() { return sceneRT ? { w: sceneRT.width, h: sceneRT.height, id: sceneRT.texture.id, dpr, cw: size.w, ch: size.h } : null; },
     setTextOn(on: boolean) { textOn = on; },
     get frames() { return frames; },
     get dpr() { return dpr; },

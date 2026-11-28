@@ -989,6 +989,7 @@ async function boot() {
     overlapScan: (o: { from?: number; to?: number; step?: number; clocks?: number[]; minGap?: number }) => g?.overlapScan(o),
     phone: () => g?.phoneLay,
     built: () => (g ? { ...g.built } : null),
+    rt: () => g?.rtInfo ?? null,
     hideText: (h: boolean) => g?.words.setHidden(h),
     project: (p: V3) => g?.project(p),
     orbitPoint: (j: number, u: number) => g?.orbitPoint(j, u),

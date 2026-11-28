@@ -116,7 +116,7 @@ if (ONLY.includes('scan') || ONLY.includes('names')) {
                 if (g < worst) { worst = g; worstWho = f.id; }
               }
               // 离它自己那样东西多远：第二到第五幕是日、环、鲸、器的外圈；第六幕是三道轨道画出来的那一截
-              const o = k <= 5 ? footBox(m.feet[ids.indexOf(['sun', 'ring', 'whale', 'arm'][k - 2])], nb.name) : Math.min(...m.arcs.filter((a) => a.length).map((a) => ptsBox(a, nb.name)));
+              const o = k <= 5 ? footBox(m.feet.find((f) => f.id === ids[k - 2]), nb.name) : Math.min(...m.arcs.filter((a) => a.length).map((a) => ptsBox(a, nb.name)));
               own = Math.min(own, o);
               door = Math.min(door, boxBox(nb.name, m.door));
             }
@@ -203,7 +203,7 @@ if (ONLY.includes('black')) {
       // 等这一步以后再画 3 帧，再截门那一块（按这一刻的画布大小量门在哪）
       const f0 = await page.evaluate(() => window.__zero.frames());
       await page.waitForFunction((f) => window.__zero.frames() >= f + 3, f0, { timeout: 300000 });
-      const st = await page.evaluate((p) => { const m = window.__zero.marksAt(p, 5); return { door: m.door, dpr: window.__zero.dpr(), tier: window.__zero.tier(), w: innerWidth, h: innerHeight }; }, P);
+      const st = await page.evaluate((p) => { const m = window.__zero.marksAt(p, 5); return { door: m.door, dpr: window.__zero.dpr(), tier: window.__zero.tier(), w: innerWidth, h: innerHeight, rt: window.__zero.rt() }; }, P);
       const d = st.door;
       const clip = { x: Math.max(0, d.x), y: Math.max(0, d.y), width: Math.max(4, Math.min(st.w, d.x + d.w) - Math.max(0, d.x)), height: Math.max(4, Math.min(st.h, d.y + d.h) - Math.max(0, d.y)) };
       const buf = await page.screenshot({ clip });
@@ -220,10 +220,21 @@ if (ONLY.includes('black')) {
         for (let i = 0; i < px.length; i += 4) { const l = 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]; s += l; if (l > 60) hi++; }
         return { mean: s / (px.length / 4), bright: hi / (px.length / 4) };
       }, buf.toString('base64'));
-      writeFileSync(`${out}/黑屏回归-${res.black.length + 1}-${label}.png`, buf);
-      const row = { step: label, mean: +v.mean.toFixed(1), bright: +v.bright.toFixed(3), dpr: st.dpr, tier: st.tier, size: `${st.w}x${st.h}`, door: clip };
+      writeFileSync(`${out}/黑屏回归-${res.black.length + 1}-${label.replace(/[\/\\:*?"<>| ]+/g, '_')}.png`, buf);
+      const row = { step: label, mean: +v.mean.toFixed(1), bright: +v.bright.toFixed(3), dpr: st.dpr, tier: st.tier, size: `${st.w}x${st.h}`, door: clip, rt: st.rt };
+      // 画面那张图：尺寸一变就得是新建的一张（v3.3.1 的修法；改回 setSize 在核显上就黑），大小跟画布 × 画面分辨率对得上
+      const prev = res.black.filter((x) => x.rt).at(-1);
+      if (st.rt) {
+        const want = [Math.round(st.rt.cw * st.rt.dpr), Math.round(st.rt.ch * st.rt.dpr)];
+        row.rtOk = st.rt.w === want[0] && st.rt.h === want[1];
+        if (!row.rtOk) fail('黑屏回归', `${label}以后画面那张图 ${st.rt.w}×${st.rt.h}，跟画布 × 分辨率 ${want[0]}×${want[1]} 对不上`);
+        if (prev && (prev.rt.w !== st.rt.w || prev.rt.h !== st.rt.h)) {
+          row.rtNew = prev.rt.id !== st.rt.id;
+          if (!row.rtNew) fail('黑屏回归', `${label}：画面那张图尺寸变了（${prev.rt.w}×${prev.rt.h} → ${st.rt.w}×${st.rt.h}）却还是原来那张——改回 setSize 了？核显上会黑`);
+        }
+      }
       res.black.push(row);
-      console.log(`black ${label}：门那一块平均亮度 ${row.mean}（满 255），亮点占 ${(row.bright * 100).toFixed(1)}%，画面分辨率 ${st.dpr}、档位 ${st.tier}、${row.size}`);
+      console.log(`black ${label}：门那一块平均亮度 ${row.mean}（满 255），亮点占 ${(row.bright * 100).toFixed(1)}%，画面分辨率 ${st.dpr}、档位 ${st.tier}、${row.size}，画面那张图 ${st.rt ? `${st.rt.w}×${st.rt.h} 第 ${st.rt.id} 张${row.rtNew === true ? '（新建的）' : ''}` : '没有（直接画在画布上）'}`);
       return row;
     };
     const first = await lum('刚画出来');
@@ -248,14 +259,14 @@ if (ONLY.includes('black')) {
       if (first.dpr > 1.05 || first.tier !== 'low') fail('黑屏回归', `等了 240 秒没自动降档（webdriver=${webdriver}），降档以后那一步没量到`);
       else console.log('black：已经是最低档、分辨率 1，没得降');
     } else {
-      const r = await lum(`自动降档（${before.dpr}/${before.tier} → 降了）`);
+      const r = await lum(`自动降档（${before.dpr}、${before.tier} 降了一步）`);
       check(r);
       // 再等一次（降到底为止），每降一次量一次，最多再等两次
       for (let i = 0; i < 2; i++) {
         const b2 = await page.evaluate(() => ({ dpr: window.__zero.dpr(), tier: window.__zero.tier() }));
         const again = await page.waitForFunction((b) => window.__zero.dpr() !== b.dpr || window.__zero.tier() !== b.tier, b2, { timeout: 90000 }).then(() => true).catch(() => false);
         if (!again) break;
-        check(await lum(`又降一次（${b2.dpr}/${b2.tier} → 降了）`));
+        check(await lum(`又降一次（${b2.dpr}、${b2.tier} 再降一步）`));
       }
     }
     if (errs.length) fail('黑屏回归', `控制台报错：${errs[0]}`);
