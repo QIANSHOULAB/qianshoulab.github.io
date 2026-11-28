@@ -107,6 +107,7 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   .track { position: relative; height: calc(var(--units) * 100vh); height: calc(var(--units) * 100lvh); }
   :global(.is-home) :global(.hd) { position: fixed; top: 0; left: 0; right: 0; z-index: 30; transition: opacity .5s var(--ease); }
   :global(html[data-scrolled]) :global(.is-home) :global(.hd) { opacity: .72; }
+  :global(html[data-sky]) :global(.is-home) :global(.hd) { opacity: .95; }
 
   /* —— 一个字一个字写出来：.on 的时候按 --i 依次亮；退的时候一起退 —— */
   .chs :global(.ch) { opacity: 0; transition: opacity .18s var(--ease); }
@@ -192,7 +193,7 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
 
   /* 第七幕天最亮的时候，顶栏底下垫一层很淡的暗，EN / 中文、SOUND 照样看得清 */
   .ui::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 92px; pointer-events: none; opacity: 0; transition: opacity 1s var(--ease);
-    background: linear-gradient(rgba(0, 0, 0, .5), rgba(0, 0, 0, 0)); }
+    background: linear-gradient(rgba(0, 0, 0, .62), rgba(0, 0, 0, .28) 55%, rgba(0, 0, 0, 0)); }
   :global(html[data-sky]) .ui::before { opacity: 1; }
 
   .flood { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 90; }

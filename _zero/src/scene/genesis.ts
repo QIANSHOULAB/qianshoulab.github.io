@@ -96,6 +96,7 @@ export function createGenesis(opts: GenesisOpts) {
     uCrack: { value: 0 },
     uGone: { value: 0 },
     uSky: { value: 0 },
+    uRiseW: { value: 1 },
     uFive: { value: secCol.map((c) => new Vector3(c[0], c[1], c[2])) },
     uFin: { value: new Vector4(0.24, 0.5, 1.6, 0) },
   };
@@ -586,6 +587,7 @@ export function createGenesis(opts: GenesisOpts) {
     U.uCrack.value = s.crack;
     U.uGone.value = s.gone;
     U.uSky.value = s.sky;
+    U.uRiseW.value = mix(1, 0.42, narrow);
     U.uFin.value.set(s.fin.pitch, s.fin.tanV, s.fin.aspect, s.fin.shift);
     skyStars.visible = s.rise > 0.15;
 
@@ -704,7 +706,7 @@ export function createGenesis(opts: GenesisOpts) {
     gC[0].set(mix(lc[0], 1, 0.6) * si, mix(lc[1], 1, 0.6) * si, mix(lc[2], 1, 0.6) * si, 1);
     gP[1].set(...s.sun.c, sv ? 46 * s.sun.scale * 2.3 : 0);
     gS[1].set(1, 1);
-    const hs = 1.6 * s.sun.heat * s.sun.vis * (1 - s.dark);
+    const hs = 1.6 * s.sun.heat * s.sun.vis * (1 - s.dark) * mix(1, 0.62, s.fam);
     gC[1].set(COL.sun[0] * hs, COL.sun[1] * hs, COL.sun[2] * hs, 2);
     // （第七幕浑天仪散到天上以后，也给它一团暗红的光，像一块还没冷透的铁）
     const pi = s.arm.pointI + s.arm.flash * 4 + 0.55 * s.fam;

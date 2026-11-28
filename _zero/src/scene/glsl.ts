@@ -35,6 +35,7 @@ uniform float uRise;       // 门上的石头升天走到哪了（0..1）
 uniform float uCrack;      // 门裂开：缝里透光、轻轻抖
 uniform float uGone;       // 门洞里那片光走了多少
 uniform float uSky;        // 进了第七幕多少：星挂到无穷远那个球上
+uniform float uRiseW;      // 石头往两边散多开（竖着的手机屏窄，收一点，别都飞出屏）
 uniform vec3 uFive[5];     // 五样造物的颜色（线性）：琥珀金、品红、冷青、暗红、靛紫
 
 float hash12(vec2 p) {
@@ -146,8 +147,8 @@ vec3 risePath(vec3 pc, vec4 rnd, float s) {
   float e = s * s * (3. - 2. * s);
   float side = pc.x < 0. ? -1. : 1.;
   vec3 P1 = pc + vec3(side * 4. * rnd.z, 40. + 70. * rnd.y, 8. * (rnd.w - .5));
-  vec3 P2 = vec3(pc.x * 1.8 + side * (20. + 60. * rnd.z), pc.y + 150. + 140. * rnd.x, pc.z + 50. * (rnd.y - .5));
-  vec3 P3 = vec3(pc.x * 3. + side * (90. + 260. * rnd.w), 520. + 380. * rnd.z + pc.y * .4, pc.z + 60. - 120. * rnd.y);
+  vec3 P2 = vec3(pc.x * mix(1., 1.8, uRiseW) + side * (20. + 60. * rnd.z) * uRiseW, pc.y + 150. + 140. * rnd.x, pc.z + 50. * (rnd.y - .5));
+  vec3 P3 = vec3(pc.x * mix(1., 3., uRiseW) + side * (90. + 260. * rnd.w) * uRiseW, 520. + 380. * rnd.z + pc.y * .4, pc.z + 60. - 120. * rnd.y);
   float u = 1. - e;
   return u * u * u * pc + 3. * u * u * e * P1 + 3. * u * e * e * P2 + e * e * e * P3;
 }
@@ -493,7 +494,7 @@ void main() {
     float shake = uCrack * (1. - smoothstep(0., .1, s)) * (.16 + .3 * aRand.y);
     vec3 q = risePath(pc, aRand, s);
     mat3 Rt = rotAxis(normalize(aRand.zxy - .5 + vec3(1e-3)), s * s * (2.5 + aRand.w * 6.));
-    float sc = 1. - .55 * smoothstep(.12, .45, s) - .45 * smoothstep(.4, .6, s);
+    float sc = 1. - .3 * smoothstep(.15, .5, s) - .7 * smoothstep(.5, .66, s);
     wp = q + vec3(sin(uTime * 41. + aRand.y * 50.), .5 * sin(uTime * 37. + aRand.z * 40.), 0.) * shake + Rt * (R * lp) * sc;
     vLit = smoothstep(.02, .42, s);
     vFree = max(vFree, smoothstep(0., .08, s));
@@ -1159,7 +1160,7 @@ void main() {
   vec4 rnd = vec4(aBlk.z, aBlk.w, aBlk2.x, aBlk2.y);
   float s = riseS(aBlk.y, rnd.x);
   // 每颗星什么时候从它那块石头上迸出来：石头一边飞一边往外迸火星，飞到 0.6 缩没的时候正好迸完
-  float te = .16 + .42 * fract(aBlk2.z * 13.7 + aSeed.w * 7.1);
+  float te = .28 + .36 * fract(aBlk2.z * 13.7 + aSeed.w * 7.1);
   vA = 0.;
   gl_PointSize = 0.;
   gl_Position = vec4(0., 0., 2., 1.);
