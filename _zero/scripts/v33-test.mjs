@@ -109,7 +109,9 @@ async function swipe(page, dy, o = {}) {
     document.body.dispatchEvent(ev('touchend'));
     // 惯性：跟真的一样跟着帧走（每一帧滚一段，按这一帧过了多久算滚多远、慢下来多少），总长、时长跟帧快慢无关。
     // 以前用 16 毫秒的计时器：工作流机器上一帧三四百毫秒，计时器被画面饿着，两帧之间一下都没滚，像是惯性停了
+    // 跟真的一样：手指一离开惯性马上接着滚（第一下不等下一帧——等的话慢机器上那一帧里一下都没滚，页面会当惯性已经停了）
     let v = v0, last = performance.now();
+    if (Math.abs(v) > 0.6) { window.scrollBy(0, v); v *= 0.93; }
     while (Math.abs(v) > 0.6) {
       await new Promise((r) => requestAnimationFrame(r));
       const now = performance.now(), k = Math.max(0.25, (now - last) / 16);
