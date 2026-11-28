@@ -14,7 +14,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 2875
+   "ms": 3725
   },
   {
    "engine": "webkit",
@@ -26,7 +26,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3547
+   "ms": 5023
   },
   {
    "engine": "webkit",
@@ -38,7 +38,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 4145
+   "ms": 6301
   },
   {
    "engine": "webkit",
@@ -50,7 +50,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 4263
+   "ms": 6507
   },
   {
    "engine": "webkit",
@@ -62,7 +62,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3976
+   "ms": 6202
   },
   {
    "engine": "webkit",
@@ -74,7 +74,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 5188
+   "ms": 6314
   },
   {
    "engine": "webkit",
@@ -86,7 +86,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 2666
+   "ms": 4064
   },
   {
    "engine": "webkit",
@@ -98,7 +98,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3228
+   "ms": 4172
   },
   {
    "engine": "webkit",
@@ -110,7 +110,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3722
+   "ms": 5359
   },
   {
    "engine": "webkit",
@@ -122,7 +122,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3824
+   "ms": 6384
   },
   {
    "engine": "webkit",
@@ -134,7 +134,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3693
+   "ms": 5881
   },
   {
    "engine": "webkit",
@@ -146,7 +146,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 5021
+   "ms": 6546
   },
   {
    "engine": "webkit",
@@ -184,7 +184,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 2822
+   "ms": 3659
   },
   {
    "engine": "webkit",
@@ -196,7 +196,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3295
+   "ms": 4451
   },
   {
    "engine": "webkit",
@@ -208,7 +208,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3942
+   "ms": 5622
   },
   {
    "engine": "webkit",
@@ -220,7 +220,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3769
+   "ms": 5808
   },
   {
    "engine": "webkit",
@@ -232,7 +232,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 4480
+   "ms": 5731
   },
   {
    "engine": "webkit",
@@ -244,7 +244,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 5386
+   "ms": 6313
   },
   {
    "engine": "webkit",
@@ -256,7 +256,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 2951
+   "ms": 3814
   },
   {
    "engine": "webkit",
@@ -268,7 +268,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3347
+   "ms": 4191
   },
   {
    "engine": "webkit",
@@ -280,7 +280,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3915
+   "ms": 5497
   },
   {
    "engine": "webkit",
@@ -292,7 +292,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3835
+   "ms": 5762
   },
   {
    "engine": "webkit",
@@ -304,7 +304,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3650
+   "ms": 5468
   },
   {
    "engine": "webkit",
@@ -316,7 +316,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 5340
+   "ms": 6401
   },
   {
    "engine": "webkit",
@@ -328,7 +328,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 2967
+   "ms": 4185
   },
   {
    "engine": "webkit",
@@ -340,7 +340,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3168
+   "ms": 4529
   },
   {
    "engine": "webkit",
@@ -352,7 +352,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3904
+   "ms": 5941
   },
   {
    "engine": "webkit",
@@ -364,7 +364,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 3923
+   "ms": 6080
   },
   {
    "engine": "webkit",
@@ -376,7 +376,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 4163
+   "ms": 5843
   },
   {
    "engine": "webkit",
@@ -388,7 +388,7 @@
    "errors": [],
    "overflow": false,
    "note": "",
-   "ms": 5689
+   "ms": 7304
   }
  ]
 }

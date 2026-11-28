@@ -2,7 +2,7 @@
  "engine": "firefox",
  "base": "http://127.0.0.1:4321",
  "before": "https://qianshoulab.github.io",
- "at": "2026-11-28T11:34:07.018Z",
+ "at": "2026-11-28T11:56:11.400Z",
  "scan": [
   {
    "size": "390x844",
