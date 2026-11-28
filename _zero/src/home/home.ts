@@ -18,8 +18,6 @@ const endBox = document.querySelector<HTMLElement>('[data-end]')!;
 const still = document.querySelector<HTMLImageElement>('.still')!;
 const stills: { l: string[]; p: string[] } = JSON.parse(still.dataset.stills || '{"l":[],"p":[]}');
 const nMoons = Number(stage.dataset.moons || 0);
-// 五个栏目的网址（顺序 = 门上五撮 = 第二到第六幕）
-const sectionHref = (i: number) => document.querySelector<HTMLAnchorElement>(`[data-go="${i + 2}"]`)?.href ?? '/zero/';
 
 const q = new URLSearchParams(location.search);
 const num = (k: string) => (q.has(k) && Number.isFinite(parseFloat(q.get(k)!)) ? parseFloat(q.get(k)!) : null);
@@ -69,13 +67,6 @@ function markEnd() {
   const r = endBox.getBoundingClientRect();
   const W = Math.max(1, innerWidth), H = Math.max(1, vh());
   g.setTextBox((r.left + r.right) / 2 / W, (r.top + r.bottom) / 2 / H, r.width / W, r.height / H);
-}
-
-// —— 首屏：指着门上哪撮（没有字，只有那撮亮成它的颜色；点了进那个栏目）——
-let hoverK = -1;
-function setHover(k: number) {
-  hoverK = k;
-  g?.setHover(k);
 }
 
 // —— 声音：门动一下响一声；第五幕炸开；第七幕石头升天（只加这一声）；进去 ——
@@ -221,23 +212,12 @@ async function boot() {
   // 开场的时候点一下、按个键、滚一下：快进
   const hurry = () => g?.fastForward();
   for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const) window.addEventListener(ev, hurry, { passive: true });
-  // 首屏：指着门上那撮，那撮亮成它的颜色；点了进那个栏目（手机上第一下先亮，第二下才进）
+  // 鼠标动一动，镜头跟着有一点点视差。首屏门上那五撮不再能指、能点（v3.1：首屏只留 wordmark 和往下滑的提示，门上不留暗门）
   g.canvas.addEventListener('pointermove', (e) => {
     if (!g || e.pointerType === 'touch') return;
-    const k = g.pick(e.clientX, e.clientY);
-    if (k !== hoverK) setHover(k);
-    g.canvas.style.cursor = k >= 0 ? 'pointer' : '';
     g.setParallax((e.clientX / innerWidth) * 2 - 1, -((e.clientY / innerHeight) * 2 - 1));
   });
-  g.canvas.addEventListener('pointerleave', () => { setHover(-1); g?.setParallax(0, 0); });
-  g.canvas.addEventListener('click', (e) => {
-    if (!g) return;
-    const k = g.pick(e.clientX, e.clientY);
-    if (k < 0) return;
-    if ((e as PointerEvent).pointerType === 'touch' && hoverK !== k) { setHover(k); return; }
-    const p = g.clusterPoint(k);
-    go(sectionHref(k), SECTION_HEX[k], [p[0], p[1], p[2] + 2]);
-  });
+  g.canvas.addEventListener('pointerleave', () => { g?.setParallax(0, 0); });
   // iPhone：画布跟着可见视口对齐（带灵动岛的机型，滑动以后视口会往上窜）
   const vv = window.visualViewport;
   if (vv) {
