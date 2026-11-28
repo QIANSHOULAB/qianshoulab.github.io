@@ -1,0 +1,74 @@
+{
+ "base": "https://qianshoulab.github.io",
+ "engine": "firefox",
+ "gl": "no",
+ "at": "2026-11-28T10:52:44.348Z",
+ "total": 4,
+ "failed": [],
+ "consoleErrors": [],
+ "rows": [
+  {
+   "name": "电脑：滚轮一格往下 → 走到下一幕；连着滚三格 → 只走一幕，不连跳",
+   "ok": true,
+   "one": 3.8797,
+   "three": 4.88,
+   "note": "一格：2.88 → 3.8797；连着三格：3.8797 → 4.88"
+  },
+  {
+   "name": "电脑：触控板惯性（连续小 delta 的 wheel）没完不接管，完了再走",
+   "ok": true,
+   "takeoverDuring": 0,
+   "maxGap": 17,
+   "note": "惯性那一串里接管了 0 次（两下之间最长隔 17 毫秒）；完了以后落在 4.88"
+  },
+  {
+   "name": "电脑：键盘 ↓ / PageUp / End / Home 都走到展示位置",
+   "ok": true,
+   "each": [
+    {
+     "key": "ArrowDown",
+     "P": 2.88,
+     "ok": true
+    },
+    {
+     "key": " ",
+     "P": 3.8797,
+     "ok": true
+    },
+    {
+     "key": "PageUp",
+     "P": 2.88,
+     "ok": true
+    },
+    {
+     "key": "End",
+     "P": 7,
+     "ok": true
+    },
+    {
+     "key": "ArrowUp",
+     "P": 5.8797,
+     "ok": true
+    },
+    {
+     "key": "Home",
+     "P": 1,
+     "ok": true
+    }
+   ],
+   "note": "ArrowDown→2.88、空格→3.8797、PageUp→2.88、End→7、ArrowUp→5.8797、Home→1"
+  },
+  {
+   "name": "电脑：点「进去」以后连滚滚轮 → 照样进栏目页；后退回来就在展示位置",
+   "ok": true,
+   "back": {
+    "P": 4.880000000000001,
+    "diving": false,
+    "flood": 0,
+    "path": "/zero/"
+   },
+   "moved": 0,
+   "note": "进去途中进度动了 0 回；后退回来 P = 4.8800"
+  }
+ ]
+}
