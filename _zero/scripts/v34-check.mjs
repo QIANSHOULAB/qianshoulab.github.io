@@ -3,8 +3,8 @@
 //         （第七幕鲸在天上兜圈子、转着头游，兜到哪都要量）。造好了的东西两两外圈（src/scene/marks.ts）之间至少 8 像素，一格都不许叠。
 //         手机横着 844×390、电脑 1440×900 也照样量一遍，只记数（电脑上第五、六幕本来就叠着，那套不动）。
 //  names  第二到第六幕的展示位置上：那一幕的名字、「进去」不被造好的东西压着；造好的东西不出屏；量名字离它那样东西多远。
-//  same   手机横着、电脑、横着的平板（宽高比 ≥ 0.8）：跟改前（BEFORE，默认线上）在 13 个进度上比整个画面状态（每样造物的位置、大小、
-//         转角、镜头），一个数都不许差——宽高比 ≥ 0.8 一个像素不动。只在 Chromium 跑（只是算数，跟内核无关）。
+//  same   手机横着、电脑、横着的平板（宽高比 ≥ 0.8）：跟改前（BEFORE，默认线上）在 14 个进度上比整个画面状态（每样造物的位置、大小、
+//         转角、镜头），再比第二到第六幕名字摆在哪，一个数都不许差——宽高比 ≥ 0.8 一个像素不动。只在 Chromium 跑（只是算数，跟内核无关）。
 //  black  黑屏回归（v3.3.1 修的那个：核显上自动降分辨率、拉窗口以后整张画面变黑只剩字）：手机竖屏、两倍屏，画面画出来以后
 //         把画布拉窄再拉回、手机横过来再竖回去、等它自己降一次档（navigator.webdriver 改成 false，降档那段才跑；没显卡的机器本来就慢，会降），
 //         每一步之后截门那一块量亮度，不许变黑。
@@ -153,9 +153,15 @@ if (ONLY.includes('scan') || ONLY.includes('names')) {
 
 // ———— 3. 宽高比 ≥ 0.8 跟改前一模一样 ————
 if (ONLY.includes('same') && ENGINE === 'chromium' && BEFORE !== 'none') {
-  const pick = async (site, w, h, P) => {
+  const pick = async (site, w, h, P, names = false) => {
     const { ctx, page, gl } = await open(w, h, `${site}/zero/?act=${P}&t=5&tier=low&dpr=0.3`);
-    const s = gl === 'yes' ? await page.evaluate(() => JSON.parse(JSON.stringify(window.__zero.state()))) : null;
+    let s = gl === 'yes' ? await page.evaluate(() => JSON.parse(JSON.stringify(window.__zero.state()))) : null;
+    // 第二到第六幕的名字摆在哪（星尘字搭好以后量的；电脑上也一个像素不许挪）
+    if (s && names) {
+      await page.waitForFunction(() => document.documentElement.dataset.dust, null, { timeout: 30000 }).catch(() => {});
+      await page.waitForTimeout(400);
+      s = { state: s, place: await page.evaluate(() => { const p = window.__zero.dust().place || {}; return Object.fromEntries(['a2', 'a3', 'a4', 'a5', 'a6'].map((k) => [k, p[k] ? { cx: p[k].cx, cy: p[k].cy, px: p[k].px } : null])); }) };
+    }
     await ctx.close();
     return s;
   };
@@ -169,7 +175,8 @@ if (ONLY.includes('same') && ENGINE === 'chromium' && BEFORE !== 'none') {
     let n = 0;
     const bad = [];
     for (const P of SAME_PS) {
-      const [a, b] = [await pick(BASE, w, h, P), await pick(BEFORE, w, h, P)];
+      const names = P === SAME_PS[0];
+      const [a, b] = [await pick(BASE, w, h, P, names), await pick(BEFORE, w, h, P, names)];
       if (!a || !b) { bad.push(`P ${P} 拿不到画面状态`); continue; }
       const d = diff(a, b);
       n++;

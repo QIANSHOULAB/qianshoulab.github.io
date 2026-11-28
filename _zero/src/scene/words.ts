@@ -212,6 +212,18 @@ export function createWords(o: {
       for (const b of swept) { const r = rectCircle(txt, b); if (r > 0.02) c += 1000; c += 300 * r + 60 * rectCircle(blk, b); }
       // 贴着它：离它越远越扣分（一眼看得出是谁的）
       c += 0.55 * gapTo(txt);
+      // v3.4 竖屏：名字（连同「进去」那一行）得离它自己那样东西比离别的东西近，一眼看得出是谁的名字（第六幕「法典」别贴在浑天仪底下）
+      if (portrait) {
+        const gOwn = Math.min(gapTo(txt), gapTo(goVis));
+        let gOther = 1e9;
+        for (const o of others) {
+          for (const bx of [txt, goVis]) {
+            const dx = Math.max(bx.x - o.x, 0, o.x - (bx.x + bx.w)), dy = Math.max(bx.y - o.y, 0, o.y - (bx.y + bx.h));
+            gOther = Math.min(gOther, Math.max(0, Math.hypot(dx, dy) - o.r));
+          }
+        }
+        if (gOther < gOwn + 12) c += 150 + 3 * (gOwn + 12 - gOther);
+      }
       if (!best || c < best.c) best = { cx: tx + tw / 2, cy: ty + th / 2, c };
     };
     const tryAt = (ax: number, ay: number, nx: number, ny: number, pref: number) => {
@@ -237,8 +249,9 @@ export function createWords(o: {
         tryAt(b.x + nx * (b.r + gap), b.y + ny * (b.r + gap), nx, ny, pref);
       }
     }
-    // 外沿上挑不出来（手机竖屏窄、门正好在中间）：整屏按格子扫一遍，挑离它最近、什么都不压的地方
-    if (!best || (best as { c: number }).c >= 1000) {
+    // 外沿上挑不出来（手机竖屏窄、门正好在中间）：整屏按格子扫一遍，挑离它最近、什么都不压的地方。
+    // v3.4 竖屏（宽高比 < 0.8）：一律再扫一遍（外沿那几个点挨着刻度、挨着别的造物的时候，旁边常有更好的地方；电脑照旧）
+    if (portrait || !best || (best as { c: number }).c >= 1000) {
       for (let y = obst.top + 10; y < horizon; y += 8) {
         for (let i = 0; i <= 14; i++) {
           const x = 14 + ((W - 28 - bw) * i) / 14 + (bw - tw) / 2;
