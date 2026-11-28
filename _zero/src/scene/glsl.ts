@@ -268,7 +268,7 @@ vec3 nebula(vec3 d) {
     float wk = exp(-pow(max(dd + jit * hr, 0.) / hr, 2.)) * sr.w;
     hue += uFive[k] * wk * wk;
     wsum += wk * wk;
-    float rad = mix(.05, 2.4, sp);
+    float rad = mix(.05, 3.4, sp);   // 铺到最后比画面大一圈：点「进去」镜头扭过去也还是星云
     reach = max(reach, smoothstep(rad, rad * .35, dd + jit * rad * .45) * smoothstep(0., .05, sp));
   }
   hue /= wsum;
