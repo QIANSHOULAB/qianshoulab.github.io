@@ -1,5 +1,5 @@
-// 造物之门的着色器。底子是黑；颜色只在光里（芯子发白，外圈带这一幕的颜色）。
-// 每个着色器最后都过一遍胶片曲线、转 sRGB、加一点抖动（防色带）。倒影那一遍（uMirror = 1）不做这些，
+// 造物之门的着色器。底子是墨蓝（v3.2：这个世界的暗只有这一种颜色，tune.ts 的 INK；没有一块纯黑）；颜色只在光里（芯子发白，外圈带这一幕的颜色）。
+// 每个着色器最后都过一遍胶片曲线、转 sRGB、垫上那层墨蓝（光叠在它上面：1 - (1 - 墨)(1 - 光)）、加一点抖动（防色带）。倒影那一遍（uMirror = 1）不做这些，
 // 把线性亮度压进 0..1 存起来，水面再解开来用。天、水、门后的光、门缝、水上的光路、格网、冲击波都是现算的，没有贴图。
 import { H, W, T, Z_FRONT, CELL } from './layout';
 
@@ -174,10 +174,13 @@ vec3 creationLight(vec3 P, vec3 N, vec3 V) {
 
 // 只有片元着色器用：按像素抖动；倒影那一遍把线性亮度压进 0..1
 export const FRAG = /* glsl */ `
+uniform vec3 uInk;         // 这个世界的暗（墨蓝，显示空间 0..1）：没有光的地方就是它；门用更暗的一档
 float dither() { return (hash12(gl_FragCoord.xy) + hash12(gl_FragCoord.xy + 17.17) - 1.) / 255.; }
+// 光叠在墨蓝上（滤色）：一点光都没有的地方正好是墨蓝，亮的地方照旧亮
+vec3 inked(vec3 srgb, vec3 ink) { return 1. - (1. - ink) * (1. - srgb); }
 vec4 outColor(vec3 lin) {
   if (uMirror > .5) { vec3 e = lin / (1. + lin); return vec4(min(e, vec3(.996)), 1.); }
-  return vec4(toSRGB(tonemap(lin)) + dither(), 1.);
+  return vec4(inked(toSRGB(tonemap(lin)), uInk) + dither(), 1.);
 }
 vec4 outGlow(vec3 lin) { return vec4(toSRGB(tonemap(lin)), 1.); }
 `;
@@ -213,6 +216,7 @@ uniform float uNebQ;       // 档位：2 = 云 + 丝 + 尘；1 = 少一层丝
 uniform vec4 uFin;         // 最后那个镜头：x 抬头（弧度）、y 竖直半视角正切、z 宽高比、w 移轴
 uniform vec4 uNebSrc[5];   // 五样造物在最后那个镜头里的位置（x 乘过宽高比）：xy；z 它从什么时候开始散；w 亮度
 uniform vec4 uTextWin;     // 那句话那块天（同样的坐标）：中心 xy、半宽半高 zw；留暗
+uniform vec3 uInkW;        // 水的暗：比天（uInk）再暗一点
 varying vec2 vNdc;
 
 // —— 第七幕的星云：五种颜色从五样造物身上散开，铺满整片天 ——
@@ -441,7 +445,8 @@ void main() {
   col += vec3(1., .985, .96) * (uFlood * (2.2 * exp(-dang / .2) + .22 * exp(-dang / .75)) + uFloodB * (6. + 1.5 * exp(-dang / .7)));
   float vg = 1. - .42 * pow(length(vNdc * vec2(.8, 1.)) * .72, 2.2);
   col *= max(vg, 0.);
-  gl_FragColor = vec4(toSRGB(tonemap(col)) + dither(), 1.);
+  // 暗角、没有光的天和水，最暗也只到墨蓝（水比天再暗一点）
+  gl_FragColor = vec4(inked(toSRGB(tonemap(col)), mix(uInkW, uInk, wv)) + dither(), 1.);
 }
 `;
 
@@ -513,9 +518,6 @@ void main() {
 
 export const DOOR_FRAG = /* glsl */ `
 uniform vec4 uHoleD[5];    // 五撮在门面上原来的矩形（不随门转）
-uniform float uHover;      // 首屏指着哪撮（-1 没有）
-uniform float uHoverAmt;
-uniform vec3 uHoverCol;
 uniform float uSeam;       // 开场：正中那道缝从下往上亮到哪（0..1）
 uniform float uSlitI;
 varying vec3 vWorld;
@@ -563,13 +565,11 @@ void main() {
 
   float sw = max(.2, pw * 1.05);
   float seamM = (1. - smoothstep(0., sw, dEdge)) * min(1., .2 / sw) * mix(.12, 1.5, vRand.z * vRand.z);
-  float hov = abs(vInfo.x - uHover) < .5 ? uHoverAmt : 0.;
   if (front) {
     // 门缝漏光
     float nearSlit = exp(-abs(vDoor.x) / 14.);
     vec3 seamC = mix(uLightCol, vec3(1.), .35) * coreGlow(vDoor) * (.035 + .09 * nearSlit) * uLight;
-    col += seamM * (seamC + uHoverCol * hov * 1.6);
-    col += uHoverCol * hov * .03;
+    col += seamM * seamC;
     // 门的外沿：一圈细亮边，跟天上那圈光接上
     float e = floor(vInfo.y + .5);
     float dO = 1e3;
@@ -910,6 +910,7 @@ uniform float uGlow;       // 石缝里透出来的光
 uniform float uHot;        // 1 = 烧红的石块（日、器）
 uniform float uCDark;      // 这样造物自己压暗（鲸变成星座以后）
 uniform float uEmit;       // 每块石头自己发多少光（环上的尘）
+uniform float uBright;     // 天上鼠标指着它、键盘停在它的名字上：整样造物亮一点（1 = 照常）
 varying vec3 vWorld;
 varying vec3 vLocal;
 varying vec3 vLN;
@@ -965,7 +966,7 @@ void main() {
   float dist = length(vWorld - E);
   float haze = 1. - exp(-dist * .00003);
   col = mix(col, airLight(vWorld, -V), clamp(haze, 0., .8) * (1. - uDark));
-  gl_FragColor = outColor(col);
+  gl_FragColor = outColor(col * uBright);
 }
 `;
 
@@ -988,6 +989,7 @@ void main() {
 export const CORE_FRAG = /* glsl */ `
 uniform float uHeat;
 uniform vec3 uGlowCol;
+uniform float uBright;
 varying vec3 vWorld;
 varying vec3 vN;
 void main() {
@@ -996,7 +998,7 @@ void main() {
   vec3 V = normalize(eyePos() - vWorld);
   float ndv = max(dot(normalize(vN), V), 0.);
   vec3 c = mix(uGlowCol * 3., vec3(1., .96, .9) * 9., pow(ndv, 1.4)) * uHeat;
-  gl_FragColor = outColor(c * (1. - uDark));
+  gl_FragColor = outColor(c * (1. - uDark) * uBright);
 }
 `;
 

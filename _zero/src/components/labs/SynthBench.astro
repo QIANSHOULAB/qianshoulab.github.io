@@ -74,7 +74,7 @@ const { compact = false } = Astro.props;
   .picks button { appearance: none; border: 0; background: transparent; color: var(--ink-3); cursor: pointer; min-height: 40px; padding: 0 14px; font: 400 12px/1 var(--sans); transition: color var(--t) var(--ease), background var(--t) var(--ease); }
   .picks button + button { border-left: 1px solid var(--line); }
   .picks button:hover { color: var(--ink); }
-  .picks button[aria-pressed="true"] { color: #000; background: var(--ink); }
+  .picks button[aria-pressed="true"] { color: var(--bg); background: var(--ink); }
   .play { min-width: 112px; }
   .tri { width: 0; height: 0; border-left: 8px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
   .scope { position: relative; height: 96px; border: 1px solid var(--line); background: #030303; overflow: hidden; }
@@ -94,7 +94,7 @@ const { compact = false } = Astro.props;
   input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); margin-top: -6px; box-shadow: 0 0 0 4px rgba(255, 255, 255, .08); }
   input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 4px rgba(255, 255, 255, .08); }
   input[type="range"]:focus-visible { outline: none; }
-  input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px #000, 0 0 0 4px #fff; }
+  input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px #fff; }
   .bench-foot { margin: 12px 0 0; font-size: 13.5px; color: var(--ink-2); }
   .bench-foot a { color: var(--ink); border-bottom: 1px solid var(--line-2); white-space: nowrap; }
   .code { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
@@ -104,7 +104,7 @@ const { compact = false } = Astro.props;
   .code[open] summary::before { transform: rotate(45deg); }
   .code-in { position: relative; margin-top: 10px; }
   .code pre { margin: 0; padding: 16px; padding-top: 56px; background: #030303; border: 1px solid var(--line); overflow-x: auto; font: 400 12.5px/1.65 var(--mono); color: #cfcfcf; }
-  .copy { position: absolute; right: 10px; top: 10px; min-height: 34px; padding: 0 12px; background: #000; }
+  .copy { position: absolute; right: 10px; top: 10px; min-height: 34px; padding: 0 12px; background: var(--bg); }
   .copy .c2 { display: none; }
   .copy:global(.done) .c1 { display: none; }
   .copy:global(.done) .c2 { display: inline; }

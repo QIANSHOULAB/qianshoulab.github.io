@@ -64,8 +64,9 @@ function keyed(P: number, keys: [number, number][]) {
   return keys[keys.length - 1][1];
 }
 
-/** 版面：竖屏有多「竖」（0 = 横屏电脑，1 = 手机竖着）、宽高比、竖直半视角的正切 */
-export interface View { narrow: number; aspect: number; tanV: number }
+/** 版面：竖屏有多「竖」（0 = 横屏电脑，1 = 手机竖着）、宽高比、竖直半视角的正切。
+ *  v3.2 手机竖屏：tall = 那句话下面、页脚上面还空着够大的一截天（home.ts 量的），浑天仪落在那一截正中（band，屏幕坐标 y）；不够大就五样都摆在那句话上面 */
+export interface View { narrow: number; aspect: number; tanV: number; tall?: number; band?: number }
 
 // —— 五样造物的颜色（线性）——
 export const COL = {
@@ -161,9 +162,14 @@ export function finAt(f: Fin, nx: number, ny: number, d: number): V3 {
   return add3(f.pos, mul3(qRot(qAxis(X, f.pitch), dir), d));
 }
 
+/** 手机竖屏有多「手机」：竖得跟手机一样（宽高比 ≲ 0.6，iPhone Safari 工具栏展开时约 390×664 也算）才是 1；平板这种半竖的（≳ 0.68）还是 0，照 v3.1 的插法 */
+const phoneOf = (n: number) => ss(0.6, 0.74, n);
+
 /** 第七幕：每样造物在最后那个镜头里站哪（屏幕坐标、离镜头多远、占屏多大）。不挤在一起、不在门里、不压着门原来的位置，
- *  也不压着正中下面那句话（index.astro 的 .end）。电脑横屏一套、手机竖屏一套，中间的屏按竖的程度插。 */
-function slots(f: Fin, n: number) {
+ *  也不压着正中下面那句话（index.astro 的 .end）。电脑横屏一套、手机竖屏一套，中间的屏按竖的程度插。
+ *  v3.2：手机竖屏另摆（天上要挂名字）——五样上下错开、摆满整屏：日左上、鲸右上、环右中、器落到那句话下面、贴着水面那一截天，
+ *  名字各挂在各的旁边不打架。电脑、平板照 v3.1 不动。 */
+function slots(f: Fin, n: number, tall: number, band: number) {
   // 比 16:9 还宽的屏（带鱼屏、手机横着）：造物还是落在正中 16:9 的那个框里，两边多出来的只是更长的地平线、更多的星云
   const a16 = Math.min(f.aspect, 16 / 9), kx = a16 / f.aspect;
   const hW = (d: number) => 2 * d * f.tanV;               // 那个距离上，一屏高是多少世界单位
@@ -173,11 +179,18 @@ function slots(f: Fin, n: number) {
   const sunD = 1300, whD = 1500, ringD = 1250, armD = 1100;
   // 很宽的屏（手机横着、带鱼屏）：屏矮，器和环往上让一让，别压到那句话
   const wide = cl((f.aspect - 1.65) / 0.6);
+  // v3.2 手机竖屏的落点（屏幕坐标 -1..1，y 朝上）：跟 v3.1 的插值按「多像手机」再混一次；手机里再按长、矮各一套（tall 只取 0 或 1，不插：插了浑天仪会从那句话上穿过去）
+  const ph = phoneOf(n), tl = tall >= 0.5 ? 1 : 0;
+  const T2 = (t: number, short: number) => mix(short, t, tl);
+  const P2 = (a: number, b: number) => mix(a, b, ph);
   return {
-    sun: { p: finAt(f, X([-0.58, -0.46]), L([0.5, 0.78]), sunD), s: (L([0.058, 0.042]) * hW(sunD)) / 46 },
-    whale: { p: finAt(f, X([0.34, 0.14]), L([0.6, 0.5]), whD), s: (L([0.21, 0.46]) * wW(whD)) / WHALE_L, R: L([0.1, 0.16]) * wW(whD) },
-    ring: { p: finAt(f, X([0.62, 0.5]), L([0.24, 0.16]) + 0.1 * wide, ringD), s: (L([0.085, 0.24]) * wW(ringD)) / RING_R },
-    arm: { p: finAt(f, X([-0.74, -0.58]), L([0.04, 0.22]) + 0.1 * wide, armD), s: (L([0.068, 0.046]) * hW(armD)) / 66 },
+    sun: { p: finAt(f, P2(X([-0.58, -0.46]), -0.4), P2(L([0.5, 0.78]), T2(0.7, 0.72)), sunD), s: (L([0.058, 0.042]) * hW(sunD)) / 46 },
+    whale: {
+      p: finAt(f, P2(X([0.34, 0.14]), T2(0.2, 0.2)), P2(L([0.6, 0.5]), T2(0.42, 0.42)), whD),
+      s: (P2(L([0.21, 0.46]), T2(0.46, 0.4)) * wW(whD)) / WHALE_L, R: P2(L([0.1, 0.16]), T2(0.12, 0.08)) * wW(whD),
+    },
+    ring: { p: finAt(f, P2(X([0.62, 0.5]), T2(0.36, 0.46)), P2(L([0.24, 0.16]) + 0.1 * wide, T2(0.12, 0.2)), ringD), s: (P2(L([0.085, 0.24]), T2(0.24, 0.19)) * wW(ringD)) / RING_R },
+    arm: { p: finAt(f, P2(X([-0.74, -0.58]), T2(-0.56, -0.62)), P2(L([0.04, 0.22]) + 0.1 * wide, T2(band, 0.2)), armD), s: (L([0.068, 0.046]) * hW(armD)) / 66 },
   };
 }
 
@@ -186,7 +199,7 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   const n = v.narrow;
   const a7 = a[7];
   const fin = finalCam(v);
-  const fam = slots(fin, n);
+  const fam = slots(fin, n, v.tall ?? 1, v.band ?? -0.33);
   const toFam = ss(SKY.fam[0], SKY.fam[1], a7);
   const camK = ss(SKY.cam[0], SKY.cam[1], a7);
 
@@ -352,11 +365,13 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
   // —— Ⅵ 立法：器的三道环放大成轨道；第七幕三道轨道再放大，散成满天的大椭圆 ——
   const a6 = a[6];
   // 天上三道轨道：各占一块天、斜着，只画大半圈，绕自己的轴慢慢转（像带着尾巴的星在走）
-  const SKY_ORB: { nx: [number, number]; ny: [number, number]; d: number; R: [number, number]; z: number; x: number; per: number }[] = [
-    { nx: [-0.5, -0.42], ny: [0.66, 0.9], d: 1700, R: [430, 300], z: 0.42, x: 1.12, per: 70 },
-    { nx: [0.5, 0.36], ny: [0.78, 0.96], d: 2000, R: [620, 420], z: -0.3, x: 1.2, per: 90 },
-    { nx: [0.0, 0.0], ny: [1.05, 1.18], d: 2600, R: [1700, 1000], z: 0.06, x: 0.42, per: 140 },
+  const SKY_ORB: { nx: [number, number]; ny: [number, number]; d: number; R: [number, number]; z: number; x: number; per: number; phone: [number, number, number] }[] = [
+    // phone：v3.2 手机竖屏的落点（nx、ny、半径）
+    { nx: [-0.5, -0.42], ny: [0.66, 0.9], d: 1700, R: [430, 300], z: 0.42, x: 1.12, per: 70, phone: [-0.3, 0.62, 330] },
+    { nx: [0.5, 0.36], ny: [0.78, 0.96], d: 2000, R: [620, 420], z: -0.3, x: 1.2, per: 90, phone: [0.4, 0.94, 420] },
+    { nx: [0.0, 0.0], ny: [1.05, 1.18], d: 2600, R: [1700, 1000], z: 0.06, x: 0.42, per: 140, phone: [0, 1.18, 1000] },
   ];
+  const ph = phoneOf(n);
   const orbits = ORBITS.map((ob, j) => {
     const g = ss(ob.from, ob.to, a6);
     const ringR = (66 - j * 7) * armScale;
@@ -365,8 +380,9 @@ export function computeState(P: number, clock: number, v: View, nMoons: number):
     const so = SKY_ORB[j];
     const k = ss(SKY.fam[0] + 0.05 * j, SKY.fam[1] + 0.05 * j, a7);
     q = qSlerp(q, qMul(qMul(qAxis(Z, so.z), qAxis(X, so.x)), qAxis(Y, (clock / so.per) * Math.PI * 2)), k);
-    c = mix3(c, finAt(fin, mix(so.nx[0], so.nx[1], n) * Math.min(fin.aspect, 16 / 9) / fin.aspect, mix(so.ny[0], so.ny[1], n), so.d), k);
-    R = mix(R, mix(so.R[0], so.R[1], n), k);
+    const onx = mix(mix(so.nx[0], so.nx[1], n) * Math.min(fin.aspect, 16 / 9) / fin.aspect, so.phone[0], ph);
+    c = mix3(c, finAt(fin, onx, mix(mix(so.ny[0], so.ny[1], n), so.phone[1], ph), so.d), k);
+    R = mix(R, mix(mix(so.R[0], so.R[1], n), so.phone[2], ph), k);
     const draw = ss(ob.from, ob.from + (ob.to - ob.from) * 0.85, a6) * mix(1, 0.72, k);
     return { c, R, q, draw, I: mix(1, 0.5, k) };
   });

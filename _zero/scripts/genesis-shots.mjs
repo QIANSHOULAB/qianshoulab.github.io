@@ -1,6 +1,7 @@
 // 造物之门的三内核截图：Chromium 跑 11 个尺寸，WebKit、Firefox 各 4 个，七幕各一张（一共 133 张）；
 // 第七幕「开天」在 1440×900、390×844 上再多拍三张（门裂开、石头升天、满天星云），连最后那句字一共四张。
-// 每张顺手查四件事：控制台有没有报错、有没有横向溢出、亮着的字有没有出框、画面上亮着哪些字（words：第二到第六幕应该只有栏目名和「进去」）。
+// 每张顺手查五件事：控制台有没有报错、有没有横向溢出、亮着的字有没有出框、画面上亮着哪些字（words：第二到第六幕应该只有栏目名和「进去」）、
+// 第七幕天上那五个名字有没有打架（v3.2：互相压、压那句话、压顶栏、出屏都算；mode = sky 挂在天上 / list 退路 B）。
 // 结果写进 <输出目录>/验收.json。
 // 跑法：node scripts/genesis-shots.mjs <输出目录>
 //   BASE    网站根（默认线上 https://qianshoulab.github.io；工作流里预览分支时是本地起的服务）
@@ -55,7 +56,7 @@ for (const eng of ENGINES) {
       const check = await page.evaluate(() => {
         const vw = innerWidth, vh = innerHeight;
         const overflow = document.documentElement.scrollWidth > vw + 1;
-        const sel = ['.hero.on .title', '.hero.on .hint', '.act.on .card > *', '.act7.on .end > *', '.act7.on .foot > *', '.hd-row'];
+        const sel = ['.hero.on .title', '.hero.on .hint', '.act.on .card > *', '.act7.on .end > *', '.act7.on .foot > *', '.hd-row', 'html[data-names] .sky .nm.ok'];
         const clipped = [];
         for (const s of sel) {
           for (const el of document.querySelectorAll(s)) {
@@ -85,20 +86,31 @@ for (const eng of ENGINES) {
             if (seen(el)) words.push(t);
           }
         }
-        return { overflow, clipped, words: words.join('').replace(/\s+/g, ' ').trim() };
-      }).catch(() => ({ overflow: null, clipped: [], words: '' }));
+        // 天上的名字：字框（去掉内边距）互相压没压、压没压那句话、顶栏
+        const R = (el, px = 0, py = 0) => { const r = el.getBoundingClientRect(); return { x: r.left + px, y: r.top + py, w: r.width - 2 * px, h: r.height - 2 * py }; };
+        const hit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+        const nm = document.documentElement.hasAttribute('data-names') ? [...document.querySelectorAll('.sky .nm.ok')].map((a) => R(a, 12, 14)) : [];
+        const clash = [];
+        const motto = document.querySelector('.motto'), hd = document.querySelector('.hd-row');
+        nm.forEach((a, i) => {
+          nm.forEach((b, j) => { if (j > i && hit(a, b)) clash.push(`名字${i}压名字${j}`); });
+          if (motto && hit(a, R(motto))) clash.push(`名字${i}压那句话`);
+          if (hd && a.y < hd.getBoundingClientRect().bottom - 2) clash.push(`名字${i}压顶栏`);
+        });
+        return { overflow, clipped, words: words.join('').replace(/\s+/g, ' ').trim(), names: nm.length, clash, mode: window.__zero?.names?.().mode ?? '' };
+      }).catch(() => ({ overflow: null, clipped: [], words: '', names: 0, clash: [], mode: '' }));
       const file = `${eng}-${w}x${h}-${k}.jpg`;
       await page.screenshot({ path: `${out}/${file}`, type: 'jpeg', quality: 80 }).catch((e) => { note += ' screenshot: ' + String(e).slice(0, 120); });
-      rows.push({ engine: eng, size: `${w}x${h}`, act: k, col: COLS.indexOf(k), P, gl, ms: Date.now() - t0, errors: [...new Set(errs)], overflow: check.overflow, clipped: check.clipped, words: check.words, note, file });
-      console.log(`${eng} ${w}x${h} 第${k}幕 gl=${gl} ${Date.now() - t0}ms${errs.length ? ' 报错' + errs.length : ''}${check.overflow ? ' 溢出' : ''}${check.clipped.length ? ' 出框' + check.clipped.length : ''}${note ? ' ' + note : ''}`);
+      rows.push({ engine: eng, size: `${w}x${h}`, act: k, col: COLS.indexOf(k), P, gl, ms: Date.now() - t0, errors: [...new Set(errs)], overflow: check.overflow, clipped: check.clipped, words: check.words, names: check.names, clash: check.clash, mode: check.mode, note, file });
+      console.log(`${eng} ${w}x${h} 第${k}幕 gl=${gl} ${Date.now() - t0}ms${errs.length ? ' 报错' + errs.length : ''}${check.overflow ? ' 溢出' : ''}${check.clipped.length ? ' 出框' + check.clipped.length : ''}${check.clash?.length ? ' 名字打架 ' + check.clash.join(',') : ''}${k === '7' ? ` 天上名字 ${check.names}（${check.mode}）` : ''}${note ? ' ' + note : ''}`);
     }
     await ctx.close();
   }
   await browser.close();
 }
 
-const bad = rows.filter((r) => r.fatal || r.errors?.length || r.overflow || r.clipped?.length);
+const bad = rows.filter((r) => r.fatal || r.errors?.length || r.overflow || r.clipped?.length || r.clash?.length);
 writeFileSync(`${out}/验收.json`, JSON.stringify({ base: BASE, at: new Date().toISOString(), total: rows.length, problems: bad.length, rows }, null, 1));
 console.log(`一共 ${rows.length} 张，有问题的 ${bad.length} 张`);
-for (const r of bad.slice(0, 30)) console.log('  ', r.engine, r.size, r.act ?? '', r.fatal || '', (r.errors || []).join(' | '), r.overflow ? '溢出' : '', (r.clipped || []).join(' ; '));
+for (const r of bad.slice(0, 30)) console.log('  ', r.engine, r.size, r.act ?? '', r.fatal || '', (r.errors || []).join(' | '), r.overflow ? '溢出' : '', (r.clipped || []).join(' ; '), (r.clash || []).join(','));
 process.exit(bad.some((r) => r.fatal || r.errors?.length || r.overflow) ? 1 : 0);

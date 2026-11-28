@@ -5,6 +5,7 @@ import Header from '../components/core/Header.astro';
 import Footer from '../components/core/Footer.astro';
 import { t, type EntryKey } from '../i18n/ui';
 import { HOME_PATH } from '../../home.mjs';
+import { INK, hexToRgbList } from '../scene/tune';
 import corUrl from '../fonts/cormorant-garamond-500.woff2?url';
 import monoUrl from '../fonts/ibm-plex-mono-400.woff2?url';
 import scUrl from '../fonts/zero-serif-sc-500.woff2?url';
@@ -25,12 +26,15 @@ const path = home ? HOME_PATH : Astro.url.pathname;
 const url = new URL(path, Astro.site).href;
 // 构建记号：工作流里是源码那次提交的 SHA，线上验收靠它认「Pages 已经发到这一版了」；本地构建写 local
 const build = process.env.ZERO_BUILD || 'local';
-// 标签页小图标：黑底、一条地平线、一道门，正中一条亮缝
+// 这个世界的暗（墨蓝，v3.2）：页面底色、iPhone Safari 顶上底下两条、四个栏目页都用这一个，数在 tune.ts 的 INK
+const night = INK.sky;
+const nightVars = `--night:${night};--night-rgb:${hexToRgbList(night)}`;
+// 标签页小图标：墨蓝底、一条地平线、一道门，正中一条亮缝
 const icon = 'data:image/svg+xml,' + encodeURIComponent(
-  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='#000'/><rect x='6' y='48' width='52' height='1.5' fill='#8a8a8a'/><rect x='22.5' y='9' width='19' height='40' fill='#2a2a2a'/><rect x='31.3' y='9' width='1.4' height='40' fill='#fff'/></svg>");
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='${night}'/><rect x='6' y='48' width='52' height='1.5' fill='#8a8a8a'/><rect x='22.5' y='9' width='19' height='40' fill='#2a2a2a'/><rect x='31.3' y='9' width='1.4' height='40' fill='#fff'/></svg>`);
 ---
 <!doctype html>
-<html lang="en" data-lang="en" translate="no">
+<html lang="en" data-lang="en" translate="no" style={nightVars}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -39,7 +43,7 @@ const icon = 'data:image/svg+xml,' + encodeURIComponent(
   <meta name="zero:title-zh" content={title.zh} />
   <meta name="description" content={desc.en} />
   <meta name="color-scheme" content="dark" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content={night} />
   <meta name="zero:build" content={build} />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Zero-Flesh Creation · 零肉身造物" />
@@ -55,6 +59,7 @@ const icon = 'data:image/svg+xml,' + encodeURIComponent(
     // 第一帧之前：语言（?lang= 只管这一次 > 上次选的，跟千手院共用一个记忆 > 英文）、声音开关、是不是刚从黑碑的光里进来
     (function () {
       var d = document.documentElement, L = null, S = null, A = null;
+      d.classList.add('js');
       var q = /[?&]lang=(zh|en)(?:&|$)/.exec(location.search);
       try { L = localStorage.getItem('qianshou.lang'); S = localStorage.getItem('zero.sound'); A = sessionStorage.getItem('zero.arrive'); sessionStorage.removeItem('zero.arrive'); } catch (e) {}
       var l = q ? q[1] : (L === 'zh' || L === 'en' ? L : 'en');
