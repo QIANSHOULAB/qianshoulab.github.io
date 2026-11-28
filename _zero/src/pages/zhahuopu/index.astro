@@ -1,0 +1,19 @@
+---
+// /zhahuopu 是 11-27 头一版的网址（Song 打字把「杂货铺」打成了「炸货铺」）：留一张跳转页，老链接照样能到 /zahuopu/。
+import { INK } from '../../scene/tune';
+const css = `html,body{margin:0;background:${INK.sky};color:#8c8c8c;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}a{color:#fff}p{padding:24px}`;
+---
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>赛博杂货铺 · Cyber Bodega</title>
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://qianshoulab.github.io/zahuopu/" />
+  <meta http-equiv="refresh" content="0; url=/zahuopu/" />
+  <script is:inline>location.replace('/zahuopu/' + location.search + location.hash);</script>
+  <style is:inline set:html={css}></style>
+</head>
+<body><p>赛博杂货铺搬到了 <a href="/zahuopu/">/zahuopu/</a> · The Cyber Bodega lives at <a href="/zahuopu/">/zahuopu/</a></p></body>
+</html>

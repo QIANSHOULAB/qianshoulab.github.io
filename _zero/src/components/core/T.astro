@@ -1,0 +1,28 @@
+---
+// 一段字出两份：英文一份、中文一份，页面只亮当前语言那份（global.css 里 html[data-lang] 管）。
+// 用法：<T k="home.h1" />、<T k="home.lede" as="p" class="lede" />、或者直接给 en / zh。
+import { t, type Lang } from '../../i18n/ui';
+
+interface Props {
+  k?: string;
+  en?: string;
+  zh?: string;
+  as?: string;
+  class?: string;
+  html?: boolean;
+  vars?: Record<string, string | number>;
+}
+const { k, as = 'span', class: cls, html = false, vars = {} } = Astro.props;
+const fill = (s: string) => s.replace(/\{(\w+)\}/g, (_, n) => String(vars[n] ?? `{${n}}`));
+const pick = (lang: Lang) => {
+  const v = k ? t(lang, k) : Astro.props[lang];
+  if (typeof v !== 'string') throw new Error(`<T>: 缺 ${lang}`);
+  return fill(v);
+};
+const en = pick('en');
+const zh = pick('zh');
+const Tag = as;
+---
+{html
+  ? <><Tag class={cls} data-l="en" lang="en" set:html={en} /><Tag class={cls} data-l="zh" lang="zh-CN" set:html={zh} /></>
+  : <><Tag class={cls} data-l="en" lang="en">{en}</Tag><Tag class={cls} data-l="zh" lang="zh-CN">{zh}</Tag></>}

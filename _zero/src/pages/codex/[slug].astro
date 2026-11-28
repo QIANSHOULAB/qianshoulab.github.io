@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import T from '../../components/core/T.astro';
+import { render } from 'astro:content';
+import { pairs, ymd } from '../../utils/archive';
+
+export async function getStaticPaths() {
+  const list = await pairs('codex');
+  return list.filter((p) => p.en.data.status === 'live').map((pair) => ({ params: { slug: pair.slug }, props: { pair } }));
+}
+const { pair } = Astro.props;
+const en = pair.en.data, zh = pair.zh.data;
+const { Content: En } = await render(pair.en);
+const { Content: Zh } = await render(pair.zh);
+---
+<BaseLayout current="codex" title={{ en: `${en.id} · ${en.title}`, zh: `${zh.id} · ${zh.title}` }} desc={{ en: en.summary, zh: zh.summary }}>
+  <article class="wrap cx">
+    <p class="crumb label"><a href="/codex/">05 · <T k="codex.h1" /></a> <span aria-hidden="true">/</span> {en.id}</p>
+    <p class="meta"><span class="chip">{en.id}</span> <span class="label"><T k={`codex.cats.${en.category}`} /></span>{en.date && <span class="label">· <time datetime={ymd(en.date)}>{ymd(en.date)}</time></span>}</p>
+    <h1 class="cx-t"><T en={en.title} zh={zh.title} /></h1>
+    <div class="prose" data-l="en" lang="en"><En /></div>
+    <div class="prose" data-l="zh" lang="zh-CN"><Zh /></div>
+    <p class="back"><a class="go" href="/codex/"><span class="arr" aria-hidden="true">←</span> <T k="codex.back" /></a></p>
+  </article>
+</BaseLayout>
+<style>
+  .cx { padding-top: 56px; max-width: 900px; }
+  .crumb { margin: 0 0 22px; }
+  .crumb a { color: var(--ink-2); }
+  .crumb a:hover { color: var(--ink); }
+  .meta { display: flex; gap: 10px; align-items: center; margin: 0 0 16px; }
+  .cx-t { font: 500 clamp(34px, 4.6vw, 54px)/1.1 var(--serif); letter-spacing: .01em; margin: 0 0 32px; color: var(--ink); }
+  :global(html[data-lang="zh"]) .cx-t { font-family: var(--serif-zh); font-size: clamp(28px, 3.8vw, 42px); line-height: 1.3; letter-spacing: .03em; }
+  .back { margin: 56px 0 0; }
+  @media (max-width: 720px) { .cx { padding-top: 32px; } }
+</style>
