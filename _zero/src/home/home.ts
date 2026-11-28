@@ -971,6 +971,7 @@ async function boot() {
       atlas: g ? [g.stardust.atlas.W, g.stardust.atlas.H] : null,
     }),
     marks: () => g?.marks,
+    hideText: (h: boolean) => g?.words.setHidden(h),
     project: (p: V3) => g?.project(p),
     orbitPoint: (j: number, u: number) => g?.orbitPoint(j, u),
     go: (k: number) => document.querySelector<HTMLAnchorElement>(`[data-go="${Math.max(2, k)}"]`)?.click(),

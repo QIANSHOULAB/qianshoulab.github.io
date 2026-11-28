@@ -1081,13 +1081,14 @@ export function createGenesis(opts: GenesisOpts) {
     frames++;
     onFrame?.(st, P);
 
-    // 卡了就降：先降分辨率，再降一档；目标电脑 60 帧、手机 30 帧以上
+    // 卡了就降：先降画面分辨率，再降一档（碎块跟着少，字照样按原生分辨率画、照样清楚）。
+    // v3.3 起手机、核显电脑都按 60 帧要：90 帧平均一帧超过 20 毫秒（不到 50 帧）就降
     if (adaptive && now - perf.t0 > 1800) {
       perf.n++; perf.sum += dt;
       if (perf.n >= 90) {
         const avg = perf.sum / perf.n;
         perf.n = 0; perf.sum = 0;
-        const budget = phone ? 1 / 30 : 1 / 45;
+        const budget = 1 / 50;
         if (avg > budget && perf.drops < 4) {
           perf.drops++;
           if (dpr > 1.05) dpr = Math.max(1, dpr * 0.8);

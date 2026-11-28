@@ -1,7 +1,7 @@
 // v3.3 交货截图（施工单「测」里的字那几条）：
 //   - 每个展示位置（首屏 1、第二到第六幕 k − 0.12、「开天」7）390×844、1440×900 各一张，中英各一套；
 //   - 半路各一张：第三幕名字聚到一半（2.70）、「开天」那句话聚到一半（6.80）；
-//   - 「开天」那句话水里有倒影：最后那张下半截量一下亮度（倒影那块比旁边亮）；
+//   - 「开天」那句话水里有倒影：同一帧有字、没字各拍一张，比地平线下面、那句话正下方那块的亮度（有字那张亮 0.8 以上算有）；
 //   - 脚本查每个元素算出来的字体：全首页没有宋体（Chromium 还用 CDP 问一遍真正画出来用的是哪套字）。
 // 每张顺手记：画面上的字在哪（3D 那份在屏幕上的框）、聚到哪了、控制台报错。结果写进 <输出目录>/v33.json。
 // 跑法：node scripts/v33-shots.mjs <输出目录>   BASE（默认线上）  ENGINES（默认 chromium,webkit）  SIZES（默认 390x844,1440x900）  LANGS（默认 en,zh）
@@ -57,18 +57,39 @@ for (const eng of ENGINES) {
         }).catch(() => ({}));
         const file = `${eng}-${w}x${h}-${lang}-${name}.png`;
         await page.screenshot({ path: `${out}/${file}` }).catch(() => {});
-        // 「开天」：水里那句话的倒影——那句话正下方、地平线下面那一块，比左右两边亮
+        // 「开天」：水里那句话的倒影——同一帧（时钟定住）有字、把字藏起来各拍一张，比地平线下面、那句话正下方那一块的平均亮度：
+        // 有倒影的话，有字那张这一块更亮。没字那张也存下来（…-7-开天-无字.png），对着看
         let refl = null;
         if (P === 7 && gl === 'yes') {
-          refl = await page.evaluate(async () => {
-            const c = document.querySelector('canvas.gl');
-            const b = window.__zero.dust().boxes.motto;
-            if (!c || !b) return null;
-            return { motto: b };
-          }).catch(() => null);
+          try {
+            // 地平线：镜头那个高度、正前方很远的一点投到屏幕上（第七幕镜头往上仰，地平线不在屏幕正中）
+            const g0 = await page.evaluate(() => { const z = window.__zero, s = z.state(); return { b: z.dust().boxes.motto, hy: s ? z.project([0, s.camY, -1e6])?.y : null, W: innerWidth, H: innerHeight }; });
+            if (g0.b && g0.hy != null) {
+              const hy = Math.round(g0.hy);
+              // 倒影该在的那一块：那句话沿地平线翻下来（顶 = 地平线往下「字底到地平线」那么远，底 = 往下「字顶到地平线」那么远），出屏的截掉
+              const top = Math.max(hy + 2, Math.round(2 * hy - (g0.b.y + g0.b.h))), bot = Math.min(g0.H - 1, Math.round(2 * hy - g0.b.y));
+              const R = { x: Math.max(0, Math.round(g0.b.x)), y: Math.min(top, g0.H - 2), w: Math.max(1, Math.round(Math.min(g0.b.w, g0.W - Math.max(0, g0.b.x)))), h: Math.max(1, bot - Math.min(top, g0.H - 2)) };
+              const on = await page.screenshot();
+              await page.evaluate(() => window.__zero.hideText(true));
+              await page.waitForTimeout(700);
+              const off = await page.screenshot({ path: `${out}/${eng}-${w}x${h}-${lang}-7-开天-无字.png` });
+              await page.evaluate(() => window.__zero.hideText(false));
+              await page.waitForTimeout(400);
+              const lum = (buf) => page.evaluate(async ({ b64, R }) => {
+                const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+                const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+                const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+                const d = x.getImageData(R.x, R.y, R.w, R.h).data;
+                let s = 0; for (let i = 0; i < d.length; i += 4) s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+                return s / (d.length / 4);
+              }, { b64: buf.toString('base64'), R });
+              const a = await lum(on), z = await lum(off);
+              refl = { motto: g0.b, horizon: hy, region: R, withText: +a.toFixed(2), noText: +z.toFixed(2), diff: +(a - z).toFixed(2), ok: a - z >= 0.8 };
+            }
+          } catch (e) { refl = { error: String(e).slice(0, 160) }; }
         }
         rows.push({ engine: eng, size: `${w}x${h}`, lang, shot: name, P, gl, file, errors: [...new Set(errs)], note: note.trim(), ...meta, refl });
-        console.log(`${eng} ${w}x${h} ${lang} ${name} gl=${gl}${meta?.dust?.on ? ' 星尘字✓' : ''}${errs.length ? ' 报错' + errs.length : ''}${note ? ' ' + note : ''}`);
+        console.log(`${eng} ${w}x${h} ${lang} ${name} gl=${gl}${meta?.dust?.on ? ' 星尘字✓' : ''}${refl ? (refl.ok ? ` 倒影✓（水里那块亮了 ${refl.diff}）` : ` 倒影✗ ${JSON.stringify(refl).slice(0, 120)}`) : ''}${errs.length ? ' 报错' + errs.length : ''}${note ? ' ' + note : ''}`);
       }
     }
     // —— 字体：全首页每个有字的元素，算出来的字体里没有宋体 ——
@@ -113,7 +134,8 @@ for (const eng of ENGINES) {
   await browser.close();
 }
 const bad = rows.filter((r) => r.fatal || r.errors?.length);
+const noRefl = rows.filter((r) => r.refl && !r.refl.ok);
 const song = fontRows.filter((r) => r.song?.length || (r.rendered && Object.keys(r.rendered).some((f) => new RegExp(SONG.source, 'i').test(f))));
-writeFileSync(`${out}/v33.json`, JSON.stringify({ base: BASE, at: new Date().toISOString(), total: rows.length, problems: bad.length, songFound: song.length, fonts: fontRows, rows }, null, 1));
-console.log(`一共 ${rows.length} 张，有报错的 ${bad.length} 张；查字体 ${fontRows.length} 回，有宋体的 ${song.length} 回`);
-process.exit(bad.some((r) => r.fatal || r.errors?.length) || song.length ? 1 : 0);
+writeFileSync(`${out}/v33.json`, JSON.stringify({ base: BASE, at: new Date().toISOString(), total: rows.length, problems: bad.length, songFound: song.length, reflMissing: noRefl.length, fonts: fontRows, rows }, null, 1));
+console.log(`一共 ${rows.length} 张，有报错的 ${bad.length} 张；查字体 ${fontRows.length} 回，有宋体的 ${song.length} 回；「开天」水里没量到倒影的 ${noRefl.length} 张`);
+process.exit(bad.some((r) => r.fatal || r.errors?.length) || song.length || noRefl.length ? 1 : 0);

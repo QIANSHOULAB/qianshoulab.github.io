@@ -1466,6 +1466,7 @@ uniform vec3 uRight;
 uniform vec3 uUp;
 uniform float uF;
 uniform float uReveal;     // 1 = 不聚，直接整个亮（wordmark、减少动效）
+uniform float uMirInf;     // 1 = 倒影按「在无穷远」算（那句话：跟星、星云一样挂在天上，倒影跟地平线上下对称；不然镜头升高以后它的倒影落到屏幕外头）
 varying vec2 vUV;
 varying float vRev;
 varying float vKind;
@@ -1479,7 +1480,7 @@ void main() {
   vKind = aG.y;
   vQ = position.xy * 2. - 1.;
   vec3 rp = wp;
-  if (uMirror > .5) rp.y = -rp.y;
+  if (uMirror > .5) rp.y = uMirInf > .5 ? 2. * cameraPosition.y - rp.y : -rp.y;
   vec4 mv = viewMatrix * vec4(rp, 1.);
   vViewZ = -mv.z;
   gl_Position = projectionMatrix * mv;
@@ -1500,6 +1501,7 @@ uniform sampler2D uDepth;  // 画面的深度：造物在字前面就挡住字
 uniform vec2 uCanvas;
 uniform vec2 uNF;
 uniform float uUseDepth;
+uniform float uMirInf;
 varying vec2 vUV;
 varying float vRev;
 varying float vKind;
@@ -1532,7 +1534,8 @@ void main() {
   float sh = exp(-max(dTex, 0.) / (uSpread * .45)) * (1. - smoothstep(uSpread * .7, uSpread * .98, dTex));
   float a = uAlpha * vRev * occ;
   if (uMirror > .5) {
-    vec3 c = (uCore * core * .7 + uGlow * halo * .5) * a * 1.4;
+    // 那句话的倒影落在页脚那一带：淡一点，是水里一层亮，不跟片尾字幕抢
+    vec3 c = (uCore * core * .7 + uGlow * halo * .5) * a * (uMirInf > .5 ? .75 : 1.4);
     gl_FragColor = vec4(c / (1. + c), 0.);
     return;
   }

@@ -282,6 +282,7 @@ export function createStardust(o: {
         uAnchor: { value: new Vector3() }, uRight: { value: new Vector3(1, 0, 0) }, uUp: { value: new Vector3(0, 1, 0) }, uNorm: { value: new Vector3(0, 0, 1) },
         uF: { value: 0 }, uLang: { value: 0 }, uReveal: { value: 0 },
         uCore: { value: new Vector3(1, 1, 1) }, uCoreA: { value: 0.92 }, uGlow: { value: new Vector3(0.5, 0.5, 0.5) }, uShadow: { value: 0.5 }, uBold: { value: 0 },
+        uMirInf: { value: d.id === 'motto' ? 1 : 0 },
       };
       const n = Math.max(1, d.count);
       const en = layout(d, 'en', n), zh = layout(d, 'zh', n);

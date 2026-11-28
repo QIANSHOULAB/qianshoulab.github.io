@@ -37,6 +37,7 @@ export function createWords(o: {
   let lang = 0, langGoal = 0;            // 0 英文 → 1 中文
   let langT0 = -1, langFrom = 0;
   const placed = new Map<string, Placed>();
+  let hideAll = false;                   // 验收用：整页的星尘字先藏起来（量「开天」那句话的倒影：有字、没字各拍一张比亮度）
   const pdebug = new Map<string, unknown>();   // 验收看：每个栏目名在它那一幕的展示位置上挑在了哪、扣了多少分
   const f = new Map<string, number>();    // 显示出来的「聚到哪了」（按真实时间稍微追一下，倒着滑就倒放）
   let obst = { top: 60, ticks: null as Box | null, bottom: 40 };
@@ -293,7 +294,7 @@ export function createWords(o: {
   const setV = (u: { value: Vector3 }, a: [number, number, number] | Vector3) => (Array.isArray(a) ? u.value.set(a[0], a[1], a[2]) : u.value.copy(a));
   function apply(it: ItemRt, p: Placed | null, F: number, alpha: number, core: [number, number, number], coreA: number, glow: [number, number, number], shadow: number, reveal = 0) {
     const u = it.u;
-    const on = !!p && alpha > 0.002 && F > 0.002;
+    const on = !hideAll && !!p && alpha > 0.002 && F > 0.002;
     it.vis = on;
     const la = 1 - ss(0, 0.5, lang), lz = ss(0.5, 1, lang);
     it.alpha.en.value = on ? alpha * la : 0;
@@ -467,6 +468,7 @@ export function createWords(o: {
     /** 下一帧不追：直接摆到该在的样子（从栏目页后退回来、减少动效） */
     snap() { snapNext = true; },
     markDirty() { dirty = true; },
+    setHidden(h: boolean) { hideAll = h; },
     placed,
     debug: () => Object.fromEntries(pdebug),
   };

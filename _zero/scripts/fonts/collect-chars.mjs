@@ -13,6 +13,7 @@ const parts = [
   ...Object.values(zh.entry).flatMap((e) => [e.name, e.line]),
   ...Object.values(zh.acts),
   zh.nav.home, zh.nav.label, zh.lang.label,
+  zh.site.skip,                        // 「跳到正文」（按 Tab 才露出来的那个）
   zh.sound.label, zh.sound.on, zh.sound.off,
   zh.company.h, zh.company.p1, zh.company.motto, zh.company.addr,
   zh.foot.mail,
