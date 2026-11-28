@@ -214,7 +214,9 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
     :global(html[data-lang="zh"]) .motto { font-size: 18px; letter-spacing: .16em; padding-left: .16em; }
     .links { gap: 0 22px; max-width: 330px; margin: 0 auto; }
     .links a { font-size: 12px; padding: 8px 0 8px .24em; }
-    :global(html[data-lang="zh"]) .links a { font-size: 13px; }
+    /* 中文五个名字一排放得下（「下面一排五个栏目名」）；英文太长，手机上只能两排 */
+    :global(html[data-lang="zh"]) .links { gap: 0 15px; max-width: none; }
+    :global(html[data-lang="zh"]) .links a { font-size: 13px; letter-spacing: .2em; padding-left: .2em; }
     .act7 .foot { bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); }
     .co { font-size: 11.5px; }
     .co-nm { font-size: 12px; }
