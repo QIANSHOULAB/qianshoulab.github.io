@@ -2,7 +2,7 @@
  "base": "http://127.0.0.1:4321",
  "engine": "firefox",
  "gl": "no",
- "at": "2026-11-28T08:45:25.619Z",
+ "at": "2026-11-28T09:50:16.689Z",
  "total": 4,
  "failed": [],
  "consoleErrors": [],
@@ -18,8 +18,8 @@
    "name": "电脑：触控板惯性（连续小 delta 的 wheel）没完不接管，完了再走",
    "ok": true,
    "takeoverDuring": 0,
-   "maxGap": 17,
-   "note": "惯性那一串里接管了 0 次（两下之间最长隔 17 毫秒）；完了以后落在 4.88"
+   "maxGap": 18,
+   "note": "惯性那一串里接管了 0 次（两下之间最长隔 18 毫秒）；完了以后落在 4.88"
   },
   {
    "name": "电脑：键盘 ↓ / PageUp / End / Home 都走到展示位置",

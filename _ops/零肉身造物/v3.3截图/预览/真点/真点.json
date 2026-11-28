@@ -2,7 +2,7 @@
  "base": "http://127.0.0.1:4321",
  "engine": "webkit",
  "device": "iPhone 13",
- "at": "2026-11-28T08:52:12.384Z",
+ "at": "2026-11-28T09:58:38.520Z",
  "total": 20,
  "failed": [],
  "consoleErrors": [],
@@ -14,8 +14,8 @@
   {
    "name": "「目录」快进",
    "ok": true,
-   "ms": 3,
-   "took": 6948,
+   "ms": 6,
+   "took": 8254,
    "end": {
     "P": 7,
     "y": 8567,
@@ -28,35 +28,35 @@
   {
    "name": "天上「千手院」",
    "ok": true,
-   "ms": 5,
+   "ms": 8,
    "url": "/qianshou/",
    "errors": []
   },
   {
    "name": "天上「赛博杂货铺」",
    "ok": true,
-   "ms": 4,
+   "ms": 10,
    "url": "/zahuopu/",
    "errors": []
   },
   {
    "name": "天上「标本」",
    "ok": true,
-   "ms": 3,
+   "ms": 6,
    "url": "/specimens/",
    "errors": []
   },
   {
    "name": "天上「文物」",
    "ok": true,
-   "ms": 4,
+   "ms": 8,
    "url": "/artifacts/",
    "errors": []
   },
   {
    "name": "天上「法典」",
    "ok": true,
-   "ms": 3,
+   "ms": 5,
    "url": "/codex/",
    "errors": []
   },
@@ -77,35 +77,35 @@
   {
    "name": "第2幕「进去」",
    "ok": true,
-   "ms": 2,
+   "ms": 6,
    "url": "/qianshou/",
    "errors": []
   },
   {
    "name": "第3幕「进去」",
    "ok": true,
-   "ms": 2,
+   "ms": 5,
    "url": "/zahuopu/",
    "errors": []
   },
   {
    "name": "第4幕「进去」",
    "ok": true,
-   "ms": 2,
+   "ms": 7,
    "url": "/specimens/",
    "errors": []
   },
   {
    "name": "第5幕「进去」",
    "ok": true,
-   "ms": 2,
+   "ms": 6,
    "url": "/artifacts/",
    "errors": []
   },
   {
    "name": "第6幕「进去」",
    "ok": true,
-   "ms": 2,
+   "ms": 6,
    "url": "/codex/",
    "errors": []
   },
@@ -127,35 +127,35 @@
   {
    "name": "退路 B（390×664）：「目录」列表里点「千手院」",
    "ok": true,
-   "ms": 4,
+   "ms": 3,
    "url": "/qianshou/",
    "errors": []
   },
   {
    "name": "退路 B（390×664）：「目录」列表里点「赛博杂货铺」",
    "ok": true,
-   "ms": 4,
+   "ms": 6,
    "url": "/zahuopu/",
    "errors": []
   },
   {
    "name": "退路 B（390×664）：「目录」列表里点「标本」",
    "ok": true,
-   "ms": 2,
+   "ms": 5,
    "url": "/specimens/",
    "errors": []
   },
   {
    "name": "退路 B（390×664）：「目录」列表里点「文物」",
    "ok": true,
-   "ms": 2,
+   "ms": 4,
    "url": "/artifacts/",
    "errors": []
   },
   {
    "name": "退路 B（390×664）：「目录」列表里点「法典」",
    "ok": true,
-   "ms": 3,
+   "ms": 6,
    "url": "/codex/",
    "errors": []
   }
