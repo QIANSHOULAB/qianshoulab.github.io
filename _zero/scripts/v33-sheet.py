@@ -37,7 +37,8 @@ if os.path.exists(rep_p):
         sheet.save(os.path.join(dst, f'{eng}-v33-总览.jpg'), quality=84)
         print(eng, len(mine), '张')
 
-# 录屏 → gif（宽 360，12 帧/秒，调色板两遍：颜色不脏）
+# 录屏 → gif（8 帧/秒；手机竖着宽 288、电脑宽 480；调色板两遍、只记变了的那块：颜色不脏，文件不太大——星云一直在动，
+# 12 帧/秒、宽 360 的话手机那段要 10 MB 多）。头 2.5 秒是页面还在加载，剪掉
 if len(sys.argv) > 3 and os.path.isdir(sys.argv[3]):
     vd = sys.argv[3]
     for f in sorted(os.listdir(vd)):
@@ -45,9 +46,10 @@ if len(sys.argv) > 3 and os.path.isdir(sys.argv[3]):
             continue
         a = os.path.join(vd, f)
         b = os.path.join(dst, f[:-5] + '.gif')
+        w = 288 if '390x844' in f else 480
         try:
-            subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', a, '-vf',
-                            'fps=12,scale=360:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=160[p];[s1][p]paletteuse=dither=bayer:bayer_scale=4', b], check=True)
+            subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-ss', '2.5', '-i', a, '-vf',
+                            f'fps=8,scale={w}:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=112:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle', b], check=True)
             print('gif', b, os.path.getsize(b) // 1024, 'KB')
         except Exception as e:  # 没有 ffmpeg：留着 webm
             print('gif 没转成', f, e)
