@@ -732,7 +732,7 @@ export function createGenesis(opts: GenesisOpts) {
       sunMat.uniforms.uShape.value.set(...s.sun.shape);
       sunMat.uniforms.uSpin.value = s.sun.spin;
       sunMat.uniforms.uGlow.value = 0.6;
-      sunMat.uniforms.uBright.value = lift(0, 0.32);
+      sunMat.uniforms.uBright.value = lift(0, 0.5);
       coreMat.uniforms.uHeat.value = s.sun.heat * s.sun.vis * ss(0.0, 0.25, s.sun.form);
       flareMat.uniforms.uIgnite.value = s.sun.ignite;
       flareMat.uniforms.uFlare.value = s.sun.flare;
@@ -746,8 +746,8 @@ export function createGenesis(opts: GenesisOpts) {
       setM3(ringMat.uniforms.uRot.value, s.ring.rot);
       ringMat.uniforms.uSpin.value = s.ring.spin;
       ringMat.uniforms.uGlow.value = 0.55 * s.ring.glow;
-      ringMat.uniforms.uEmit.value = 0.5 * s.ring.glow * lift(1, 0.5);
-      ringMat.uniforms.uBright.value = lift(1, 0.35);
+      ringMat.uniforms.uEmit.value = 0.5 * s.ring.glow * lift(1, 1.1);
+      ringMat.uniforms.uBright.value = lift(1, 0.6);
       moonMat.uniforms.uGlow.value = 0.9 * s.ring.glow;
       moonMat.uniforms.uEmit.value = 0.35 * s.ring.glow;
       const mv = moonMat.uniforms.uMoon.value as Vector4[];
@@ -819,7 +819,7 @@ export function createGenesis(opts: GenesisOpts) {
     gC[0].set(mix(lc[0], 1, 0.6) * si, mix(lc[1], 1, 0.6) * si, mix(lc[2], 1, 0.6) * si, 1);
     gP[1].set(...s.sun.c, sv ? 46 * s.sun.scale * 2.3 : 0);
     gS[1].set(1, 1);
-    const hs = 1.6 * s.sun.heat * s.sun.vis * (1 - s.dark) * mix(1, 0.62, s.fam) * lift(0, 0.45);
+    const hs = 1.6 * s.sun.heat * s.sun.vis * (1 - s.dark) * mix(1, 0.62, s.fam) * lift(0, 0.7);
     gC[1].set(COL.sun[0] * hs, COL.sun[1] * hs, COL.sun[2] * hs, 2);
     // （第七幕浑天仪散到天上以后，也给它一团暗红的光，像一块还没冷透的铁）
     const pi = s.arm.pointI + s.arm.flash * 4 + 0.55 * s.fam * lift(3, 0.6);

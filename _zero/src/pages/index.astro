@@ -214,7 +214,7 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
   :global(html[data-names-now]) .sky .nm:global(.ok) { transition-delay: 0s; }
   /* 法典换落点（轨道的缺口快转到它那儿了）：先淡出，换个刚画上的点再亮 */
   :global(html[data-names]) .sky .nm:global(.away) { opacity: 0; transition: opacity .3s var(--ease); }
-  .sky .nm:global(.hot), .sky .nm:focus-visible { color: #fff; text-shadow: 0 0 12px rgba(var(--night-rgb), .95), 0 0 3px rgba(var(--night-rgb), .85), 0 0 16px rgba(255, 255, 255, .4); }
+  .sky .nm:global(.hot), .sky .nm:focus-visible { color: #fff; text-shadow: 0 0 12px rgba(var(--night-rgb), .95), 0 0 3px rgba(var(--night-rgb), .85), 0 0 14px rgba(255, 255, 255, .6), 0 0 28px rgba(255, 255, 255, .25); }
   .sky .nm:focus-visible { outline: 1px solid rgba(255, 255, 255, .85); outline-offset: -7px; }
   :global(html[data-hot]) .track { cursor: pointer; }
   /* 「目录」在天上再点一下：五个名字轻轻亮一下 */
@@ -299,7 +299,8 @@ const tickName = (l: 'en' | 'zh', k: number) => (k === 1 ? (l === 'en' ? 'Zero-F
 
   /* —— 没开 JS：一屏「开天」的静态图 + 那句话 + 那一排五个名字 + 页脚（兜底）；用不了的「目录」、刻度不露 —— */
   :global(html:not(.js)) .track, :global(html:not(.js)) .ticks, :global(html:not(.js)) .hero, :global(html:not(.js)) .act:not(.act7) { display: none; }
-  :global(html:not(.js)) .act7 .end::before, :global(html:not(.js)) .act7 .motto, :global(html:not(.js)) .act7 .links, :global(html:not(.js)) .act7 .foot, :global(html:not(.js)) .ui::before { opacity: 1; filter: none; transform: none; }
+  :global(html:not(.js)) .act7 .end::before, :global(html:not(.js)) .act7 .motto, :global(html:not(.js)) .act7 .links, :global(html:not(.js)) .act7 .foot, :global(html:not(.js)) .ui::before { opacity: 1; filter: none; }
+  :global(html:not(.js)) .act7 .links { transform: none; }
   :global(html:not(.js)) .act7 a { pointer-events: auto; }
   :global(html:not(.js)) :global(.idx) { visibility: hidden; }
 

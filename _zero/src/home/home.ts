@@ -267,7 +267,8 @@ function decideMode() {
     band = 1 - ((y0 + y1) / o.H);
   }
   g?.setPhone(tall, band);
-  const m = (phonePortrait && !tall) || shortLandscape || q.has('list') ? 'list' : 'sky';
+  // ?list 当退路 B、?sky 硬挂在天上（截「打架」的图用）
+  const m = q.has('sky') ? 'sky' : (phonePortrait && !tall) || shortLandscape || q.has('list') ? 'list' : 'sky';
   if (m !== mode) {
     mode = m;
     root.toggleAttribute('data-bmode', m === 'list');

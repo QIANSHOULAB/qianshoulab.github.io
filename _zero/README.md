@@ -13,7 +13,7 @@
 - 底色：这个世界的暗是墨蓝（`tune.ts` 的 `INK`：天 #05070E、水更暗一点、门比底色更暗），从开场一直用到结尾，整页没有一块纯黑；页面底色、iPhone Safari 顶上底下两条（theme-color）、四个栏目页都是它。
 - 从栏目页按「后退」：回到离开时那片天，五个名字还在、还能点（不放开场、不回开头）。
 - 能调的数都在 `src/scene/tune.ts`（第七幕的节奏、镜头、档位在 `SKY`、`TIERS`；底色 `INK`；快进 `INDEX`；天上名字 `NAMES`）；画面在 `src/scene/`（`timeline.ts` 算数、`genesis.ts` 画、`glsl.ts` 着色器、`layout.ts` 门的砖）；首页的手在 `src/home/`（`home.ts` 字、刻度、进去、目录、天上的名字、静态图兜底，`sound.ts` 声音）。
-- 调试、截图用的网址参数（只影响自己这一次）：`?act=6.5` 进度定在这里、`?t=5` 时钟定住、`?tier=low|mid|high` 力气定住、`?still` 只留画面、`?nogl` 当没有 WebGL、`?hq` 不自动降档、`?lang=zh` 中文、`?list` 当退路 B。
+- 调试、截图用的网址参数（只影响自己这一次）：`?act=6.5` 进度定在这里、`?t=5` 时钟定住、`?tier=low|mid|high` 力气定住、`?still` 只留画面、`?nogl` 当没有 WebGL、`?hq` 不自动降档、`?lang=zh` 中文、`?list` 当退路 B、`?sky` 硬把名字挂在天上（看矮屏上为什么打架）。
 - 截图、验收：`scripts/genesis-shots.mjs`（三内核、七幕，第七幕多拍三张，顺手查画面上亮着哪些字、天上名字打没打架）、`scripts/tap-test.mjs`（WebKit iPhone 真点：目录、天上五个名字、造物本身、第二到第六幕「进去」、后退回到天上、退路 B）、`scripts/v32-shots.mjs` + `v32-sheet.py`（v3.2 交货图、开场跟纯黑并排）、`scripts/stills.mjs`（没有 WebGL 时用的静态图）。工作流 `zero.yml`：推 main 发版并对着真网址验；推分支 `zero-v3-2` 只跑预览。
 
 以下是第二版（黑碑）的说明，留着备查。
