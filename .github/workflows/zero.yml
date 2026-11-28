@@ -236,9 +236,17 @@ jobs:
               [ -f preview/$e/字/v33.json ] && cp preview/$e/字/v33.json "$D/交货-$e.json" || true
             done
             mkdir -p "$D/真点" && cp preview/webkit/真点/* "$D/真点/" 2>/dev/null || true
-            # 交货图原图（390、1440 两个尺寸，中英，Chromium 和 WebKit）
+            # 交货图原图（390、1440 两个尺寸，中英，Chromium 和 WebKit）：存成 JPG（质量 92，一张几百 KB；PNG 一张 1–2 MB，几十张太压仓库）
             mkdir -p "$D/交货"
-            cp preview/chromium/字/*.png preview/webkit/字/*.png "$D/交货/" 2>/dev/null || true
+            python3 - "$D/交货" preview/chromium/字 preview/webkit/字 <<'PY'
+          import os, sys
+          from PIL import Image
+          for d in sys.argv[2:]:
+              if os.path.isdir(d):
+                  for f in sorted(os.listdir(d)):
+                      if f.endswith('.png'):
+                          Image.open(os.path.join(d, f)).convert('RGB').save(os.path.join(sys.argv[1], f[:-4] + '.jpg'), quality=92)
+          PY
             git add -A "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
             git commit -q -m "零肉身造物 v3.3：分支预览截图、录屏、验收结果（源码 ${GITHUB_SHA::7}）"
@@ -383,7 +391,15 @@ jobs:
               cp -f live/$e/v33/v33-$e.json "$D/线上/" 2>/dev/null || true
               [ -f live/$e/字/v33.json ] && cp -f live/$e/字/v33.json "$D/线上/交货-$e.json" || true
             done
-            cp -f live/chromium/字/*.png live/webkit/字/*.png "$D/线上/交货/" 2>/dev/null || true
+            python3 - "$D/线上/交货" live/chromium/字 live/webkit/字 <<'PY'
+          import os, sys
+          from PIL import Image
+          for d in sys.argv[2:]:
+              if os.path.isdir(d):
+                  for f in sorted(os.listdir(d)):
+                      if f.endswith('.png'):
+                          Image.open(os.path.join(d, f)).convert('RGB').save(os.path.join(sys.argv[1], f[:-4] + '.jpg'), quality=92)
+          PY
             cp -f live/webkit/真点/* "$D/线上/真点/" 2>/dev/null || true
             git add "$D"
             if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
