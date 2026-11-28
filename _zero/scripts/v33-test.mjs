@@ -146,11 +146,18 @@ if (touchy && ONLY.some((n) => n <= 6)) {
       const tRel = await swipe(page, vh * 0.32, { ms: 240, v0: 6 });
       const L = await landedAt(page, 3.88);
       const tEnd = Math.max(tRel, await page.evaluate(() => window.__lastUserScroll || 0));
-      r.took = L.t > 0 ? Math.round(L.t - tEnd) : null;          // 停手（惯性也停了）以后多久落定：单子的 1.5 秒按这个算
-      r.fromRelease = L.t > 0 ? Math.round(L.t - tRel) : null;   // 松手以后多久（含惯性那一段）
+      const last = await page.evaluate(() => window.__zero.glide().last);
+      // 停手（惯性也停了）以后多久落到位：单子的 1.5 秒按这个算。落到位的那一刻按自己走的那一段「按时间该到」算（起步 + 时长），
+      // 不按测试看到落定的那一帧：没显卡的机器上一帧 150–500 毫秒，看到的那一帧会晚一两帧（真机一帧 16 毫秒）
+      const arrive = last && last.kind === 'settle' ? last.end : L.t;
+      r.took = L.t > 0 ? Math.round(arrive - tEnd) : null;
+      r.seen = L.t > 0 ? Math.round(L.t - tEnd) : null;           // 测试看到落定的那一帧
+      r.detect = last ? Math.round(last.t0 - tEnd) : null;         // 惯性停了以后多久起步
+      r.glideMs = last ? Math.round(last.ms) : null;
+      r.fromRelease = L.t > 0 ? Math.round(L.t - tRel) : null;    // 松手以后多久（含惯性那一段）
       r.P = L.P; r.from = s0.P;
       r.ok = near(L.P, 3.88) && L.t > 0 && r.took <= 1500;
-      r.note = `${s0.P} → ${(+L.P).toFixed(4)}，惯性停了以后 ${r.took} 毫秒落定（松手后 ${r.fromRelease} 毫秒，含惯性 ${Math.round(tEnd - tRel)} 毫秒）`;
+      r.note = `${s0.P} → ${(+L.P).toFixed(4)}，惯性停了以后 ${r.took} 毫秒到位（${r.detect} 毫秒起步 + 走 ${r.glideMs} 毫秒；看到落定那一帧 ${r.seen} 毫秒；松手后 ${r.fromRelease} 毫秒，含惯性 ${Math.round(tEnd - tRel)} 毫秒）`;
     } catch (e) { r.note = String(e).split('\n')[0].slice(0, 160); }
     log(r);
   }

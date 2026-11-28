@@ -74,6 +74,7 @@ export function createGlide(o: GlideOpts) {
   }
 
   let glide: Glide | null = null;
+  let lastGlide: { kind: GlideKind; from: number; to: number; t0: number; ms: number; end: number; landedAt: number } | null = null;
   let gesture: Gesture | null = null;
   let rested: number | null = restAt(curU()) >= 0 ? REST_PS[restAt(curU())] : null;   // 停在哪个展示位置（P）：屏高变了按它摆回去
   let ownY = -1, ownT = -1e9;            // 自己滚到的位置：这一下 scroll 不算用户
@@ -130,6 +131,7 @@ export function createGlide(o: GlideOpts) {
     if (holdNext != null) { g.holdAt = holdNext; holdNext = null; }
     if (Math.abs(target - from) < 1e-4 && Math.abs(g.offU) * vh() < 1.5) { stop(); d?.jump(target); land(target); return; }
     glide = g;
+    lastGlide = { kind, from, to: target, t0: g.t0, ms: g.ms, end: g.t0 + g.ms, landedAt: -1 };
     rested = null;
     addGuard();
     notify(null);
@@ -165,6 +167,7 @@ export function createGlide(o: GlideOpts) {
     const u = uOf(Math.max(1, p)) + (1 - e) * g.offU;
     setScroll(yFor(u, p));
     if (k >= 1 && g.held == null) {
+      if (lastGlide) { lastGlide.end = g.t0 + g.ms; lastGlide.landedAt = now; }   // 验收看：按时间该到的那一刻、真正落定的那一帧
       glide = null;
       removeGuard();
       setScroll(yFor(uOf(g.to), g.to));
@@ -369,7 +372,7 @@ export function createGlide(o: GlideOpts) {
     },
     get held() { return glide?.held != null; },
     /** 调试、验收：现在的滚动位置（屏）、停在哪、P 换算 */
-    debug: () => ({ u: curU(), at: restAt(curU()), rested, gesture: gesture ? { ...gesture } : null, glide: glide ? { kind: glide.kind, from: glide.from, to: glide.to, ms: glide.ms } : null, touches, lastDir }),
+    debug: () => ({ u: curU(), at: restAt(curU()), rested, gesture: gesture ? { ...gesture } : null, glide: glide ? { kind: glide.kind, from: glide.from, to: glide.to, ms: glide.ms } : null, touches, lastDir, last: lastGlide ? { ...lastGlide } : null }),
     pOf, uOf, restAt,
   };
 }
