@@ -2,11 +2,9 @@
  "base": "http://127.0.0.1:4321",
  "engine": "webkit",
  "device": "iPhone 13",
- "at": "2026-11-28T03:34:54.830Z",
+ "at": "2026-11-28T04:23:03.992Z",
  "total": 20,
- "failed": [
-  "「目录」快进"
- ],
+ "failed": [],
  "consoleErrors": [],
  "rows": [
   {
@@ -15,9 +13,9 @@
   },
   {
    "name": "「目录」快进",
-   "ok": false,
-   "ms": 6,
-   "took": 6425,
+   "ok": true,
+   "ms": 5,
+   "took": 7844,
    "end": {
     "P": 7,
     "y": 8567,
@@ -25,7 +23,6 @@
     "names": 5,
     "on": true
    },
-   "note": "快进途中冒出来过 2 次幕名",
    "errors": []
   },
   {
@@ -45,14 +42,14 @@
   {
    "name": "天上「标本」",
    "ok": true,
-   "ms": 7,
+   "ms": 6,
    "url": "/specimens/",
    "errors": []
   },
   {
    "name": "天上「文物」",
    "ok": true,
-   "ms": 8,
+   "ms": 5,
    "url": "/artifacts/",
    "errors": []
   },
@@ -66,14 +63,14 @@
   {
    "name": "天上点「千手院」那样造物本身",
    "ok": true,
-   "ms": 1,
+   "ms": 2,
    "url": "/qianshou/",
    "errors": []
   },
   {
    "name": "天上点「标本」那样造物本身",
    "ok": true,
-   "ms": 1,
+   "ms": 2,
    "url": "/specimens/",
    "errors": []
   },
@@ -87,7 +84,7 @@
   {
    "name": "第3幕「进去」",
    "ok": true,
-   "ms": 3,
+   "ms": 4,
    "url": "/zahuopu/",
    "errors": []
   },
@@ -108,7 +105,7 @@
   {
    "name": "第6幕「进去」",
    "ok": true,
-   "ms": 6,
+   "ms": 3,
    "url": "/codex/",
    "errors": []
   },
@@ -144,7 +141,7 @@
   {
    "name": "退路 B（390×664）：「目录」列表里点「标本」",
    "ok": true,
-   "ms": 4,
+   "ms": 3,
    "url": "/specimens/",
    "errors": []
   },
